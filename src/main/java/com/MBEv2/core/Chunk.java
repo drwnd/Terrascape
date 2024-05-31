@@ -5,13 +5,12 @@ import com.MBEv2.test.GameLogic;
 import org.joml.Vector3i;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import static com.MBEv2.core.utils.Constants.*;
 
 public class Chunk {
 
-    public static HashMap<Long, Chunk> world = new HashMap<>();
+    private static final Chunk[] world = new Chunk[RENDERED_WORLD_WIDTH * RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT];
 
     private final byte[] blocks;
 
@@ -21,10 +20,11 @@ public class Chunk {
     public final int X, Y, Z;
     private final Vector3i worldCoordinate;
     private final long id;
+    private final int index;
+
     private boolean isMeshed = false;
     private boolean isGenerated = false;
     private boolean isModified = false;
-    private boolean isLoaded = false;
 
     private Model model;
     private Model transparentModel;
@@ -36,6 +36,7 @@ public class Chunk {
         worldCoordinate = new Vector3i(x << 5, y << 5, z << 5);
         blocks = new byte[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
         id = GameLogic.getChunkId(X, Y, Z);
+        index = GameLogic.getChunkIndex(X, Y, Z);
     }
 
     public void generate(double[][] heightMap, int[][] stoneMap, double[][] featureMap, byte[][] treeMap) {
@@ -201,13 +202,16 @@ public class Chunk {
     }
 
     public void generateIfNecessary(int x, int y, int z) {
-        long index = GameLogic.getChunkId(x, y, z);
-        if (!world.containsKey(index)) {
-            Chunk chunk = new Chunk(x, y, z);
+        long id = GameLogic.getChunkId(x, y, z);
+        int index = GameLogic.getChunkIndex(x, y, z);
+        Chunk chunk = getChunk(index);
+
+        if (chunk == null || chunk.getId() != id) {
+            chunk = new Chunk(x, y, z);
             generateChunk(chunk);
             storeChunk(chunk);
         } else {
-            Chunk chunk = getChunk(index);
+            chunk = getChunk(index);
             if (!chunk.isGenerated)
                 generateChunk(chunk);
         }
@@ -441,7 +445,7 @@ public class Chunk {
     }
 
     public static byte getBlockInWorld(int x, int y, int z) {
-        Chunk chunk = world.get(GameLogic.getChunkId(x >> 5, y >> 5, z >> 5));
+        Chunk chunk = world[GameLogic.getChunkIndex(x >> 5, y >> 5, z >> 5)];
         if (chunk == null)
             return OUT_OF_WORLD;
         return chunk.getSaveBlock(x & 31, y & 31, z & 31);
@@ -458,15 +462,19 @@ public class Chunk {
     }
 
     public static Chunk getChunk(int x, int y, int z) {
-        return world.get(GameLogic.getChunkId(x, y, z));
+        return world[GameLogic.getChunkIndex(x, y, z)];
     }
 
-    public static Chunk getChunk(long index) {
-        return world.get(index);
+    public static Chunk getChunk(int index) {
+        return world[index];
     }
 
     public static void storeChunk(Chunk chunk) {
-        world.put(chunk.getId(), chunk);
+        world[chunk.getIndex()] = chunk;
+    }
+
+    public static void setNull(int index){
+        world[index] = null;
     }
 
     public int[] getVertices() {
@@ -506,6 +514,10 @@ public class Chunk {
         return id;
     }
 
+    public int getIndex() {
+        return index;
+    }
+
     public boolean isMeshed() {
         return isMeshed;
     }
@@ -526,11 +538,7 @@ public class Chunk {
         isModified = true;
     }
 
-    public boolean isLoaded() {
-        return isLoaded;
-    }
-
-    public void setLoaded(boolean loaded) {
-        isLoaded = loaded;
+    public static Chunk[] getWorld(){
+        return world;
     }
 }

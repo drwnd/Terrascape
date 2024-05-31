@@ -27,8 +27,8 @@ public class Launcher {
 
     private static void generateWorld() {
 
-        for (int x = -RENDER_DISTANCE_XZ - 1; x < RENDER_DISTANCE_XZ + 1; x++) {
-            for (int z = -RENDER_DISTANCE_XZ - 1; z < RENDER_DISTANCE_XZ + 1; z++) {
+        for (int x = -RENDER_DISTANCE_XZ - 1; x <= RENDER_DISTANCE_XZ + 1; x++) {
+            for (int z = -RENDER_DISTANCE_XZ - 1; z <= RENDER_DISTANCE_XZ + 1; z++) {
 
                 double[][] heightMap = GameLogic.heightMap(x, z);
                 int[][] stoneMap = GameLogic.stoneMap(x, z, heightMap);
@@ -39,7 +39,6 @@ public class Launcher {
                     Chunk chunk = new Chunk(x, y, z);
                     chunk.generate(heightMap, stoneMap, featureMap, treeMap);
                     Chunk.storeChunk(chunk);
-                    chunk.setLoaded(true);
                 }
             }
         }

@@ -5,11 +5,7 @@ import com.MBEv2.core.entity.*;
 import org.joml.Vector3f;
 import org.joml.Vector3i;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL20;
-import org.lwjgl.opengl.GL30;
 
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 
 import static com.MBEv2.core.utils.Constants.*;
@@ -18,10 +14,7 @@ public class GameLogic {
 
     private final WindowManager window;
     private Texture atlas;
-    private HashMap<Long, Model> chunkModels;
-    private HashMap<Long, Model> transparentChunkModels;
     private LinkedList<Chunk> toBufferChunks;
-    private LinkedList<Chunk> toUnloadChunks;
     private ChunkGenerator generator;
 
     private Player player;
@@ -32,10 +25,7 @@ public class GameLogic {
 
     public void init() throws Exception {
 
-        chunkModels = new HashMap<>();
-        transparentChunkModels = new HashMap<>();
         toBufferChunks = new LinkedList<>();
-        toUnloadChunks = new LinkedList<>();
         generator = new ChunkGenerator(this);
 
         atlas = new Texture(ObjectLoader.loadTexture("textures/atlas256.png"));
@@ -43,7 +33,7 @@ public class GameLogic {
         for (int x = -RENDER_DISTANCE_XZ; x < RENDER_DISTANCE_XZ; x++) {
             for (int y = 0; y < RENDER_DISTANCE_Y * 2; y++) {
                 for (int z = -RENDER_DISTANCE_XZ; z < RENDER_DISTANCE_XZ; z++) {
-                    long index = GameLogic.getChunkId(x, y, z);
+                    int index = GameLogic.getChunkIndex(x, y, z);
                     Chunk chunk = Chunk.getChunk(index);
                     chunk.generateMesh();
                     bufferChunkMesh(chunk);
@@ -51,14 +41,14 @@ public class GameLogic {
             }
         }
 
-        player = new Player(chunkModels, transparentChunkModels, this, atlas);
+        player = new Player(this, atlas);
         player.init();
 
         player.getRenderer().init();
-
     }
 
     public void loadUnloadChunks() {
+        unloadChunks();
         generator.continueRunning();
     }
 
@@ -113,14 +103,14 @@ public class GameLogic {
     public void regenerateChunkMesh(Chunk chunk) {
         chunk.generateMesh();
 
-        if (chunkModels.get(chunk.getId()) != null) {
-            GL30.glDeleteVertexArrays(chunk.getModel().getId());
-            GL20.glDeleteBuffers(chunk.getModel().getVbo());
+        if (chunk.getModel() != null) {
+            ObjectLoader.removeVAO(chunk.getModel().getVao());
+            ObjectLoader.removeVBO(chunk.getModel().getVbo());
         }
 
-        if (transparentChunkModels.get(chunk.getId()) != null) {
-            GL30.glDeleteVertexArrays(chunk.getTransparentModel().getId());
-            GL20.glDeleteBuffers(chunk.getTransparentModel().getVbo());
+        if (chunk.getTransparentModel() != null) {
+            ObjectLoader.removeVAO(chunk.getTransparentModel().getVao());
+            ObjectLoader.removeVBO(chunk.getTransparentModel().getVbo());
         }
 
         bufferChunkMesh(chunk);
@@ -129,92 +119,63 @@ public class GameLogic {
     public void bufferChunkMesh(Chunk chunk) {
         if (chunk.getVertices().length != 0) {
             Model model = ObjectLoader.loadModel(chunk.getVertices(), chunk.getWorldCoordinate());
-            chunk.setModel(model);
             model.setTexture(atlas);
-            chunkModels.put(chunk.getId(), model);
+            chunk.setModel(model);
         } else
-            chunkModels.remove(chunk.getId());
+            chunk.setModel(null);
 
         if (chunk.getTransparentVertices().length != 0) {
             Model transparentModel = ObjectLoader.loadModel(chunk.getTransparentVertices(), chunk.getWorldCoordinate());
-            chunk.setTransparentModel(transparentModel);
             transparentModel.setTexture(atlas);
-            transparentChunkModels.put(chunk.getId(), transparentModel);
+            chunk.setTransparentModel(transparentModel);
         } else
-            transparentChunkModels.remove(chunk.getId());
+            chunk.setTransparentModel(null);
 
         chunk.clearMesh();
     }
 
     public void update() {
-        for (int i = 0; i < MAX_CHUNKS_TO_BUFFEr_PER_FRAME && toBufferChunks.size() > 1; i++) {
+        for (int i = 0; i < MAX_CHUNKS_TO_BUFFER_PER_FRAME && toBufferChunks.size() > 1; i++) {
             Chunk chunk = toBufferChunks.removeFirst();
+            if (chunk.getModel() != null) {
+                ObjectLoader.removeVAO(chunk.getModel().getVao());
+                ObjectLoader.removeVBO(chunk.getModel().getVbo());
+            }
+
+            if (chunk.getTransparentModel() != null) {
+                ObjectLoader.removeVAO(chunk.getTransparentModel().getVao());
+                ObjectLoader.removeVBO(chunk.getTransparentModel().getVbo());
+            }
             bufferChunkMesh(chunk);
         }
 
         player.update();
-
-        LinkedList<Chunk> chunks = toUnloadChunks;
-
-        for (Chunk chunk : chunks) {
-            unloadChunk(chunk);
-        }
-        removeUnusedModels();
     }
 
-    public void removeUnusedModels() {
+    public void unloadChunks() {
         Vector3f cameraPosition = player.getCamera().getPosition();
 
         int chunkX = (int) Math.floor(cameraPosition.x) >> 5;
         int chunkY = (int) Math.floor(cameraPosition.y) >> 5;
         int chunkZ = (int) Math.floor(cameraPosition.z) >> 5;
 
-        for (Iterator<Model> iterator = chunkModels.values().iterator(); iterator.hasNext(); ) {
-            Model model = iterator.next();
-            Vector3i worldCoordinate = model.getPosition();
-            int x = worldCoordinate.x >> 5;
-            int y = worldCoordinate.y >> 5;
-            int z = worldCoordinate.z >> 5;
+        for (Chunk chunk : Chunk.getWorld()) {
+            if (chunk == null)
+                continue;
 
-            if (Math.abs(x - chunkX) > RENDER_DISTANCE_XZ + 2 || Math.abs(z - chunkZ) > RENDER_DISTANCE_XZ + 2 || Math.abs(y - chunkY) > RENDER_DISTANCE_Y + 2) {
-                iterator.remove();
-                GL30.glDeleteVertexArrays(model.getId());
-                GL20.glDeleteBuffers(model.getVbo());
+            if (Math.abs(chunk.X - chunkX) > RENDER_DISTANCE_XZ + 2 || Math.abs(chunk.Z - chunkZ) > RENDER_DISTANCE_XZ + 2 || Math.abs(chunk.Y - chunkY) > RENDER_DISTANCE_Y + 2) {
+                if (chunk.getModel() != null) {
+                    ObjectLoader.removeVAO(chunk.getModel().getVao());
+                    ObjectLoader.removeVBO(chunk.getModel().getVbo());
+                    Chunk.setNull(chunk.getIndex());
+                }
+                if (chunk.getTransparentModel() != null) {
+                    ObjectLoader.removeVAO(chunk.getTransparentModel().getVao());
+                    ObjectLoader.removeVBO(chunk.getTransparentModel().getVbo());
+                    Chunk.setNull(chunk.getIndex());
+                }
             }
         }
-
-        for (Iterator<Model> iterator = transparentChunkModels.values().iterator(); iterator.hasNext(); ) {
-            Model transparentModel = iterator.next();
-            Vector3i worldCoordinate = transparentModel.getPosition();
-            int x = worldCoordinate.x >> 5;
-            int y = worldCoordinate.y >> 5;
-            int z = worldCoordinate.z >> 5;
-
-            if (Math.abs(x - chunkX) > RENDER_DISTANCE_XZ + 2 || Math.abs(z - chunkZ) > RENDER_DISTANCE_XZ + 2 || Math.abs(y - chunkY) > RENDER_DISTANCE_Y + 2) {
-                iterator.remove();
-                GL30.glDeleteVertexArrays(transparentModel.getId());
-                GL20.glDeleteBuffers(transparentModel.getVbo());
-            }
-        }
-    }
-
-    public void unloadChunk(Chunk chunk) {
-        if (chunkModels.get(chunk.getId()) != null) {
-            GL30.glDeleteVertexArrays(chunk.getModel().getId());
-            GL20.glDeleteBuffers(chunk.getModel().getVbo());
-        }
-
-        if (transparentChunkModels.get(chunk.getId()) != null) {
-            GL30.glDeleteVertexArrays(chunk.getTransparentModel().getId());
-            GL20.glDeleteBuffers(chunk.getTransparentModel().getVbo());
-        }
-
-        chunkModels.remove(chunk.getId());
-        transparentChunkModels.remove(chunk.getId());
-        chunk.setLoaded(false);
-        chunk.setMeshed(false);
-        chunk.setModel(null);
-        chunk.setTransparentModel(null);
     }
 
     public void input() {
@@ -398,12 +359,22 @@ public class GameLogic {
         toBufferChunks.add(chunk);
     }
 
-    public void setToUnloadChunks(LinkedList<Chunk> toUnloadChunks) {
-        this.toUnloadChunks = toUnloadChunks;
-    }
-
     public static long getChunkId(int x, int y, int z) {
         return (long) (x & MAX_XZ) << 37 | (long) (y & MAX_Y) << 27 | (z & MAX_XZ);
+    }
+
+    public static int getChunkIndex(int x, int y, int z) {
+
+        x = (x % RENDERED_WORLD_WIDTH);
+        x += x < 0 ? RENDERED_WORLD_WIDTH : 0;
+
+        y = (y % RENDERED_WORLD_HEIGHT);
+        y += y < 0 ? RENDERED_WORLD_HEIGHT : 0;
+
+        z = (z % RENDERED_WORLD_WIDTH);
+        z += z < 0 ? RENDERED_WORLD_WIDTH : 0;
+
+        return x * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH + y * RENDERED_WORLD_WIDTH + z;
     }
 
     public void startChunkGenerator() {

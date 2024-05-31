@@ -4,20 +4,20 @@ import org.joml.Vector3i;
 
 public class Model {
 
-    private final int id, vbo;
+    private final int vao, vbo;
     private final int vertexCount;
     private final Vector3i position;
     private Texture texture;
 
-    public Model(int id, int vertexCount, Vector3i pos, int vbo) {
-        this.id = id;
+    public Model(int vao, int vertexCount, Vector3i pos, int vbo) {
+        this.vao = vao;
         this.vertexCount = vertexCount;
         this.position = pos;
         this.vbo = vbo;
     }
 
-    public int getId() {
-        return id;
+    public int getVao() {
+        return vao;
     }
 
     public int getVertexCount() {

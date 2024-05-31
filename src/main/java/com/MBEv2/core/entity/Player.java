@@ -12,7 +12,6 @@ import org.joml.Vector3i;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 public class Player {
@@ -24,9 +23,6 @@ public class Player {
     private final MouseInput mouseInput;
 
     private final Vector3f cameraInc;
-
-    private final HashMap<Long, Model> chunkModels;
-    private final HashMap<Long, Model> transparentChunkModels;
 
     private final List<GUIElement> GUIElements = new ArrayList<>();
     private final List<GUIElement> hotBarElements = new ArrayList<>();
@@ -49,15 +45,13 @@ public class Player {
     private int selectedHotBar = 0;
     private int selectedHotBarSlot = 0;
 
-    public Player(HashMap<Long, Model> chunkModels, HashMap<Long, Model> transparentChunkModels, GameLogic gameLogic, Texture atlas) {
+    public Player(GameLogic gameLogic, Texture atlas) {
         renderer = new RenderManager();
         window = Launcher.getWindow();
         camera = new Camera(this);
         mouseInput = new MouseInput();
         cameraInc = new Vector3f(0, 0, 0);
         camera.setPosition(0, 100, 0);
-        this.chunkModels = chunkModels;
-        this.transparentChunkModels = transparentChunkModels;
         this.gameLogic = gameLogic;
         this.atlas = atlas;
         pos1 = new Vector3i();
@@ -89,7 +83,7 @@ public class Player {
         mouseInput.init();
     }
 
-    public void loadUnloadChunks(){
+    public void loadUnloadChunks() {
         gameLogic.loadUnloadChunks();
     }
 
@@ -257,11 +251,15 @@ public class Player {
     }
 
     public void render() {
-        for (Model model : chunkModels.values())
-            renderer.processModel(model);
+        for (Chunk chunk : Chunk.getWorld()) {
+            if (chunk == null)
+                continue;
+            if (chunk.getModel() != null)
+                renderer.processModel(chunk.getModel());
 
-        for (Model transparentModel : transparentChunkModels.values())
-            renderer.processTransparentModel(transparentModel);
+            if (chunk.getTransparentModel() != null)
+                renderer.processTransparentModel(chunk.getTransparentModel());
+        }
 
         for (GUIElement GUIElement : GUIElements)
             renderer.processGUIElement(GUIElement);

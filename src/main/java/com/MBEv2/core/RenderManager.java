@@ -87,7 +87,7 @@ public class RenderManager {
     }
 
     public void bindModel(Model model) {
-        GL30.glBindVertexArray(model.getId());
+        GL30.glBindVertexArray(model.getVao());
         GL20.glEnableVertexAttribArray(0);
 
         GL13.glActiveTexture(GL13.GL_TEXTURE0);

@@ -3,7 +3,6 @@ package com.MBEv2.core;
 import com.MBEv2.test.GameLogic;
 import org.joml.Vector3f;
 
-import java.util.Iterator;
 import java.util.LinkedList;
 
 import static com.MBEv2.core.utils.Constants.RENDER_DISTANCE_XZ;
@@ -40,7 +39,6 @@ public class ChunkGenerator {
             int chunkZ = (int) Math.floor(cameraPosition.z) >> 5;
 
             LinkedList<Chunk> toMeshChunks = loadChunks(chunkX, chunkY, chunkZ);
-            unloadChunks(chunkX, chunkY, chunkZ);
             meshChunks(toMeshChunks);
         }
     }
@@ -48,45 +46,26 @@ public class ChunkGenerator {
     private LinkedList<Chunk> loadChunks(int chunkX, int chunkY, int chunkZ) {
         LinkedList<Chunk> toMeshChunks = new LinkedList<>();
 
-        for (int x = -RENDER_DISTANCE_XZ; x < RENDER_DISTANCE_XZ; x++)
-            for (int y = -RENDER_DISTANCE_Y; y < RENDER_DISTANCE_Y; y++)
-                for (int z = -RENDER_DISTANCE_XZ; z < RENDER_DISTANCE_XZ; z++) {
+        for (int x = -RENDER_DISTANCE_XZ; x <= RENDER_DISTANCE_XZ; x++)
+            for (int y = -RENDER_DISTANCE_Y; y <= RENDER_DISTANCE_Y; y++)
+                for (int z = -RENDER_DISTANCE_XZ; z <= RENDER_DISTANCE_XZ; z++) {
 
                     long id = GameLogic.getChunkId(chunkX + x, chunkY + y, chunkZ + z);
+                    int index = GameLogic.getChunkIndex(chunkX + x, chunkY + y, chunkZ + z);
+                    Chunk chunk = Chunk.getChunk(index);
 
-                    if (!Chunk.world.containsKey(id)) {
-                        Chunk chunk = new Chunk(chunkX + x, chunkY + y, chunkZ + z);
+                    if (chunk == null || chunk.getId() != id) {
+                        chunk = new Chunk(chunkX + x, chunkY + y, chunkZ + z);
                         Chunk.storeChunk(chunk);
                         chunk.setMeshed(true);
-                        chunk.setLoaded(true);
                         toMeshChunks.add(chunk);
-                    } else if (!Chunk.getChunk(id).isMeshed()) {
-                        Chunk chunk = Chunk.getChunk(id);
+                    } else if (!chunk.isMeshed()) {
                         chunk.setMeshed(true);
-                        chunk.setLoaded(true);
                         toMeshChunks.add(chunk);
                     }
                 }
 
-
         return toMeshChunks;
-    }
-
-    private void unloadChunks(int chunkX, int chunkY, int chunkZ) {
-        LinkedList<Chunk> toUnloadChunks = new LinkedList<>();
-
-        for (Iterator<Chunk> iterator = Chunk.world.values().iterator(); iterator.hasNext(); ) {
-            Chunk chunk = iterator.next();
-            if (!chunk.isLoaded()) continue;
-
-            if (Math.abs(chunk.X - chunkX) > RENDER_DISTANCE_XZ + 2 || Math.abs(chunk.Z - chunkZ) > RENDER_DISTANCE_XZ + 2 || Math.abs(chunk.Y - chunkY) > RENDER_DISTANCE_Y + 2) {
-                toUnloadChunks.add(chunk);
-
-                if (!chunk.isModified())
-                    iterator.remove();
-            }
-        }
-        gameLogic.setToUnloadChunks(toUnloadChunks);
     }
 
     private void meshChunks(LinkedList<Chunk> toMeshChunks) {

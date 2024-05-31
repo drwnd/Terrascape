@@ -115,12 +115,22 @@ public class ObjectLoader {
         GL30.glBindVertexArray(0);
     }
 
+    public static void removeVAO(int vao){
+        VAOs.remove((Integer) vao);
+        GL30.glDeleteVertexArrays(vao);
+    }
+
+    public static void removeVBO(int vbo){
+        VBOs.remove((Integer) vbo);
+        GL30.glDeleteBuffers(vbo);
+    }
+
     public static void cleanUp() {
         for (int vao : VAOs)
             GL30.glDeleteVertexArrays(vao);
 
         for (int vbo : VBOs)
-            GL20.glDeleteBuffers(vbo);
+            GL30.glDeleteBuffers(vbo);
 
         for (int texture : textures)
             GL11.glDeleteTextures(texture);
