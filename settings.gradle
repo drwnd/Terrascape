@@ -1,0 +1,3 @@
+rootProject.name = 'Minecäft Bad Edition V2'
+include 'src'
+

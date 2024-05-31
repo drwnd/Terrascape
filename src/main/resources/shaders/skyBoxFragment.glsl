@@ -1,0 +1,16 @@
+#version 400 core
+
+in vec2 fragTextureCoordinates;
+flat in float fragTime;
+
+out vec4 fragColor;
+
+uniform sampler2D textureSampler1;
+uniform sampler2D textureSampler2;
+
+void main() {
+    vec4 color1 = texture(textureSampler1, fragTextureCoordinates);
+    vec4 color2 = texture(textureSampler2, fragTextureCoordinates);
+
+    fragColor = color1 * fragTime + color2 * (1 - fragTime);
+}
