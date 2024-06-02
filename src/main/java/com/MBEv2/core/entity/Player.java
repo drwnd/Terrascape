@@ -19,7 +19,6 @@ public class Player {
     private final RenderManager renderer;
     private final WindowManager window;
     private final Camera camera;
-    private final GameLogic gameLogic;
     private final MouseInput mouseInput;
 
     private final Vector3f cameraInc;
@@ -45,14 +44,13 @@ public class Player {
     private int selectedHotBar = 0;
     private int selectedHotBarSlot = 0;
 
-    public Player(GameLogic gameLogic, Texture atlas) {
+    public Player(Texture atlas) {
         renderer = new RenderManager();
         window = Launcher.getWindow();
         camera = new Camera(this);
         mouseInput = new MouseInput();
         cameraInc = new Vector3f(0, 0, 0);
         camera.setPosition(0, 100, 0);
-        this.gameLogic = gameLogic;
         this.atlas = atlas;
         pos1 = new Vector3i();
         pos2 = new Vector3i();
@@ -66,11 +64,11 @@ public class Player {
         skyBox.setPosition(camera.getPosition());
         renderer.processSkyBox(skyBox);
 
-        GUIElement crossHair = ObjectLoader.loadGUIElement(gameLogic.getCrossHairVertices(), GUI_ELEMENT_TEXTURE_COORDINATES);
+        GUIElement crossHair = ObjectLoader.loadGUIElement(GameLogic.getCrossHairVertices(), GUI_ELEMENT_TEXTURE_COORDINATES);
         crossHair.setTexture(new Texture(ObjectLoader.loadTexture("textures/CrossHair.png")));
         GUIElements.add(crossHair);
 
-        GUIElement hotBarGUIElement = ObjectLoader.loadGUIElement(gameLogic.getHotBarVertices(), GUI_ELEMENT_TEXTURE_COORDINATES);
+        GUIElement hotBarGUIElement = ObjectLoader.loadGUIElement(GameLogic.getHotBarVertices(), GUI_ELEMENT_TEXTURE_COORDINATES);
         hotBarGUIElement.setTexture(new Texture(ObjectLoader.loadTexture("textures/HotBar.png")));
         GUIElements.add(hotBarGUIElement);
 
@@ -84,7 +82,7 @@ public class Player {
     }
 
     public void loadUnloadChunks() {
-        gameLogic.loadUnloadChunks();
+        GameLogic.loadUnloadChunks();
     }
 
     public void update() {
@@ -99,7 +97,7 @@ public class Player {
         long currentTime = System.nanoTime();
 
         if (leftButtonPressTime != -1) if (currentTime - leftButtonPressTime > 300_000_000 || leftButtonWasJustPressed)
-            gameLogic.placeBlock(AIR, getTarget(0, camera.getDirection()));
+            GameLogic.placeBlock(AIR, getTarget(0, camera.getDirection()));
 
         if (rightButtonPressTime != -1)
             if (currentTime - rightButtonPressTime > 300_000_000 || rightButtonWasJustPressed)
@@ -108,7 +106,7 @@ public class Player {
                     Vector3f cD = camera.getDirection();
                     byte toPlaceBlock = hotBars[selectedHotBar][selectedHotBarSlot];
 
-                    gameLogic.placeBlock(Block.getToPlaceBlock(toPlaceBlock, camera.getPrimaryDirection(cD)), getTarget(1, cD));
+                    GameLogic.placeBlock(Block.getToPlaceBlock(toPlaceBlock, camera.getPrimaryDirection(cD)), getTarget(1, cD));
                 }
     }
 
@@ -144,7 +142,6 @@ public class Player {
         else if (window.isKeyPressed(GLFW.GLFW_KEY_F)) selectedHotBarSlot = 6;
         else if (mouseInput.isMouseButton5IsPressed()) selectedHotBarSlot = 7;
         else if (mouseInput.isMouseButton4IsPressed()) selectedHotBarSlot = 8;
-
         else if
         (window.isKeyPressed(GLFW.GLFW_KEY_UP) && !UPArrowPressed) {
             selectedHotBar = (selectedHotBar + 1) % hotBars.length;
@@ -254,6 +251,7 @@ public class Player {
         for (Chunk chunk : Chunk.getWorld()) {
             if (chunk == null)
                 continue;
+
             if (chunk.getModel() != null)
                 renderer.processModel(chunk.getModel());
 
@@ -299,7 +297,7 @@ public class Player {
         for (int i = 0; i < hotBars[selectedHotBar].length; i++) {
             int textureIndex = Block.getTextureIndex(hotBars[selectedHotBar][i], 0) - 1;
             float[] textureCoordinates = getTextureCoordinates(textureIndex);
-            GUIElement element = ObjectLoader.loadGUIElement(gameLogic.getHotBarElementVertices(i), textureCoordinates);
+            GUIElement element = ObjectLoader.loadGUIElement(GameLogic.getHotBarElementVertices(i), textureCoordinates);
             element.setTexture(atlas);
             hotBarElements.add(element);
         }

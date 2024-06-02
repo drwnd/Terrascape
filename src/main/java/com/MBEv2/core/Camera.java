@@ -42,10 +42,10 @@ public class Camera {
         if ((int) Math.floor(oldPosition.x) >> 5 != (int) Math.floor(position.x) >> 5)
             player.loadUnloadChunks();
 
-        if ((int) Math.floor(oldPosition.y) >> 5 != (int) Math.floor(position.y) >> 5)
+        else if ((int) Math.floor(oldPosition.y) >> 5 != (int) Math.floor(position.y) >> 5)
             player.loadUnloadChunks();
 
-        if ((int) Math.floor(oldPosition.z) >> 5 != (int) Math.floor(position.z) >> 5)
+        else if ((int) Math.floor(oldPosition.z) >> 5 != (int) Math.floor(position.z) >> 5)
             player.loadUnloadChunks();
     }
 

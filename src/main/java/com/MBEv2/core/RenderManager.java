@@ -251,7 +251,7 @@ public class RenderManager {
         if (dotProduct(cameraDirection, deltaX, deltaY, deltaZ) < 0)
             return Math.PI;
 
-        float inverseLength = (float) (1f / Math.sqrt(deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ));
+        float inverseLength = (float) (1.0 / Math.sqrt(deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ));
         return Math.acos(dotProduct(cameraDirection, deltaX * inverseLength, deltaY * inverseLength, deltaZ * inverseLength));
     }
 

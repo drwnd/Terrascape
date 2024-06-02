@@ -10,14 +10,14 @@ import static com.MBEv2.core.utils.Constants.*;
 
 public class Chunk {
 
-    private static final Chunk[] world = new Chunk[RENDERED_WORLD_WIDTH * RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT];
+    private static final Chunk[] world = new Chunk[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
 
     private final byte[] blocks;
 
     private int[] vertices;
     private int[] transparentVertices;
 
-    public final int X, Y, Z;
+    private final int X, Y, Z;
     private final Vector3i worldCoordinate;
     private final long id;
     private final int index;
@@ -30,10 +30,10 @@ public class Chunk {
     private Model transparentModel;
 
     public Chunk(int x, int y, int z) {
-        X = x;
-        Y = y;
-        Z = z;
-        worldCoordinate = new Vector3i(x << 5, y << 5, z << 5);
+        this.X = x;
+        this.Y = y;
+        this.Z = z;
+        worldCoordinate = new Vector3i(X << 5, Y << 5, Z << 5);
         blocks = new byte[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
         id = GameLogic.getChunkId(X, Y, Z);
         index = GameLogic.getChunkIndex(X, Y, Z);
@@ -202,19 +202,25 @@ public class Chunk {
     }
 
     public void generateIfNecessary(int x, int y, int z) {
-        long id = GameLogic.getChunkId(x, y, z);
+        long expectedId = GameLogic.getChunkId(x, y, z);
         int index = GameLogic.getChunkIndex(x, y, z);
         Chunk chunk = getChunk(index);
 
-        if (chunk == null || chunk.getId() != id) {
+        if (chunk == null) {
             chunk = new Chunk(x, y, z);
             generateChunk(chunk);
             storeChunk(chunk);
-        } else {
-            chunk = getChunk(index);
-            if (!chunk.isGenerated)
-                generateChunk(chunk);
-        }
+
+        } else if (chunk.getId() != expectedId) {
+            GameLogic.addToUnloadModel(chunk.getModel());
+            GameLogic.addToUnloadModel(chunk.getTransparentModel());
+
+            chunk = new Chunk(x, y, z);
+            Chunk.storeChunk(chunk);
+            generateChunk(chunk);
+
+        } else if (!chunk.isGenerated)
+            generateChunk(chunk);
     }
 
     public void addSideToList(int x, int y, int z, int u, int v, int side, ArrayList<Integer> verticesList, byte block) {
@@ -473,8 +479,8 @@ public class Chunk {
         world[chunk.getIndex()] = chunk;
     }
 
-    public static void setNull(int index){
-        world[index] = null;
+    public static void storeChunk(Chunk chunk, int index){
+        world[index] = chunk;
     }
 
     public int[] getVertices() {
@@ -490,8 +496,8 @@ public class Chunk {
     }
 
     public void clearMesh() {
-        vertices = new int[0];
-        transparentVertices = new int[0];
+        vertices = null;
+        transparentVertices = null;
     }
 
     public Model getModel() {
@@ -538,7 +544,19 @@ public class Chunk {
         isModified = true;
     }
 
-    public static Chunk[] getWorld(){
+    public static Chunk[] getWorld() {
         return world;
+    }
+
+    public int getX() {
+        return X;
+    }
+
+    public int getY() {
+        return Y;
+    }
+
+    public int getZ() {
+        return Z;
     }
 }

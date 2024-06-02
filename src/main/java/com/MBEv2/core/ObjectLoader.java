@@ -25,27 +25,27 @@ public class ObjectLoader {
     private static final ArrayList<Integer> textures = new ArrayList<>();
 
     public static Model loadModel(int[] vertices, Vector3i position) {
-        int id = createVAO();
+        int vao = createVAO();
         int vbo = storeDateInAttributeList(vertices);
         unbind();
-        return new Model(id, vertices.length, position, vbo);
+        return new Model(vao, vertices.length, position, vbo);
     }
 
     public static SkyBox loadSkyBox(float[] vertices, float[] textureCoordinates, int[] indices, Vector3f position) {
-        int id = createVAO();
+        int vao = createVAO();
         storeIndicesInBuffer(indices);
         storeDateInAttributeList(0, 3, vertices);
         storeDateInAttributeList(1, 2, textureCoordinates);
         unbind();
-        return new SkyBox(id, indices.length, position);
+        return new SkyBox(vao, indices.length, position);
     }
 
     public static GUIElement loadGUIElement(float[] vertices, float[] textureCoordinates) {
-        int id = createVAO();
+        int vao = createVAO();
         storeDateInAttributeList(0, 2, vertices);
         storeDateInAttributeList(1, 2, textureCoordinates);
         unbind();
-        return new GUIElement(id, vertices.length);
+        return new GUIElement(vao, vertices.length);
     }
 
     public static int loadTexture(String filename) throws Exception {
@@ -77,10 +77,10 @@ public class ObjectLoader {
     }
 
     private static int createVAO() {
-        int id = GL30.glGenVertexArrays();
-        VAOs.add(id);
-        GL30.glBindVertexArray(id);
-        return id;
+        int vao = GL30.glGenVertexArrays();
+        VAOs.add(vao);
+        GL30.glBindVertexArray(vao);
+        return vao;
     }
 
     private static void storeIndicesInBuffer(int[] indices) {
@@ -104,8 +104,7 @@ public class ObjectLoader {
         int vbo = GL15.glGenBuffers();
         VBOs.add(vbo);
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
-        IntBuffer buffer = Utils.storeDateInIntBuffer(data);
-        GL15.glBufferData(GL15.GL_ARRAY_BUFFER, buffer, GL15.GL_STATIC_DRAW);
+        GL15.glBufferData(GL15.GL_ARRAY_BUFFER, data, GL15.GL_STATIC_DRAW);
         GL30.glVertexAttribIPointer(0, 2, GL15.GL_INT, 0, 0);
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
         return vbo;
@@ -117,23 +116,30 @@ public class ObjectLoader {
 
     public static void removeVAO(int vao){
         VAOs.remove((Integer) vao);
+        GL30.glBindVertexArray(vao);
         GL30.glDeleteVertexArrays(vao);
     }
 
     public static void removeVBO(int vbo){
         VBOs.remove((Integer) vbo);
+        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
         GL30.glDeleteBuffers(vbo);
     }
 
+    public static void removeTexture(int texture){
+        textures.remove((Integer) texture);
+        GL15.glBindTexture(GL15.GL_TEXTURE_2D, texture);
+        GL11.glDeleteTextures(texture);
+    }
+
     public static void cleanUp() {
-        for (int vao : VAOs)
-            GL30.glDeleteVertexArrays(vao);
+        while (!VAOs.isEmpty())
+            removeVAO(VAOs.getFirst());
 
-        for (int vbo : VBOs)
-            GL30.glDeleteBuffers(vbo);
+        while (!VBOs.isEmpty())
+            removeVBO(VBOs.getFirst());
 
-        for (int texture : textures)
-            GL11.glDeleteTextures(texture);
-
+        while (!textures.isEmpty())
+            removeTexture(textures.getFirst());
     }
 }

@@ -17,17 +17,17 @@ public class EngineManager {
 
     private WindowManager window;
     private GLFWErrorCallback errorCallback;
-    private GameLogic gameLogic;
 
     private void init() throws Exception {
         GLFW.glfwSetErrorCallback(errorCallback = GLFWErrorCallback.createPrint(System.err));
         window = Launcher.getWindow();
-        gameLogic = Launcher.getGame();
         window.init();
-        gameLogic.init();
+        GameLogic.init();
     }
 
     public void start() throws Exception {
+        Block.init();
+        Launcher.generateWorld();
         init();
         if (isRunning)
             return;
@@ -36,7 +36,7 @@ public class EngineManager {
 
     public void run() {
         isRunning = true;
-        gameLogic.startChunkGenerator();
+        GameLogic.startChunkGenerator();
         int frames = 0;
         long frameCounter = 0;
         long lastTime = System.nanoTime();
@@ -83,20 +83,20 @@ public class EngineManager {
     }
 
     public void input() {
-        gameLogic.input();
+        GameLogic.input();
     }
 
     private void render() {
-        gameLogic.render();
+        GameLogic.render();
         window.update();
     }
 
     private void update() {
-        gameLogic.update();
+        GameLogic.update();
     }
 
     private void cleanUp() {
-        gameLogic.cleanUp();
+        GameLogic.cleanUp();
         window.cleanUp();
         errorCallback.free();
         GLFW.glfwTerminate();

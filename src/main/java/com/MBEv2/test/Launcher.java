@@ -7,16 +7,11 @@ import static com.MBEv2.core.utils.Constants.*;
 public class Launcher {
 
     private static WindowManager window;
-    private static GameLogic game;
 
     public static void main(String[] args) {
         EngineManager engine;
         window = new WindowManager(TITLE, 0, 0, true);
         engine = new EngineManager();
-        game = new GameLogic();
-
-        Block.init();
-        generateWorld();
 
         try {
             engine.start();
@@ -25,7 +20,7 @@ public class Launcher {
         }
     }
 
-    private static void generateWorld() {
+    public static void generateWorld() {
 
         for (int x = -RENDER_DISTANCE_XZ - 1; x <= RENDER_DISTANCE_XZ + 1; x++) {
             for (int z = -RENDER_DISTANCE_XZ - 1; z <= RENDER_DISTANCE_XZ + 1; z++) {
@@ -46,9 +41,5 @@ public class Launcher {
 
     public static WindowManager getWindow() {
         return window;
-    }
-
-    public static GameLogic getGame() {
-        return game;
     }
 }

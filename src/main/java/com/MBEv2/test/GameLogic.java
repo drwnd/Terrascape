@@ -7,26 +7,25 @@ import org.joml.Vector3i;
 import org.lwjgl.opengl.GL11;
 
 import java.util.LinkedList;
+import java.util.NoSuchElementException;
 
 import static com.MBEv2.core.utils.Constants.*;
 
 public class GameLogic {
 
-    private final WindowManager window;
-    private Texture atlas;
-    private LinkedList<Chunk> toBufferChunks;
-    private ChunkGenerator generator;
+    private static Texture atlas;
+    public static LinkedList<Chunk> toBufferChunks;
+    public static LinkedList<Model> toUnloadModels;
+    private static ChunkGenerator generator;
 
-    private Player player;
+    private static Player player;
 
-    public GameLogic() {
-        window = Launcher.getWindow();
-    }
 
-    public void init() throws Exception {
+    public static void init() throws Exception {
 
         toBufferChunks = new LinkedList<>();
-        generator = new ChunkGenerator(this);
+        toUnloadModels = new LinkedList<>();
+        generator = new ChunkGenerator();
 
         atlas = new Texture(ObjectLoader.loadTexture("textures/atlas256.png"));
 
@@ -41,18 +40,18 @@ public class GameLogic {
             }
         }
 
-        player = new Player(this, atlas);
+        player = new Player(atlas);
         player.init();
 
         player.getRenderer().init();
     }
 
-    public void loadUnloadChunks() {
+    public static void loadUnloadChunks() {
         unloadChunks();
         generator.continueRunning();
     }
 
-    public void placeBlock(byte block, Vector3i position) {
+    public static void placeBlock(byte block, Vector3i position) {
         if (position == null)
             return;
 
@@ -100,23 +99,15 @@ public class GameLogic {
         }
     }
 
-    public void regenerateChunkMesh(Chunk chunk) {
+    public static void regenerateChunkMesh(Chunk chunk) {
         chunk.generateMesh();
 
-        if (chunk.getModel() != null) {
-            ObjectLoader.removeVAO(chunk.getModel().getVao());
-            ObjectLoader.removeVBO(chunk.getModel().getVbo());
-        }
-
-        if (chunk.getTransparentModel() != null) {
-            ObjectLoader.removeVAO(chunk.getTransparentModel().getVao());
-            ObjectLoader.removeVBO(chunk.getTransparentModel().getVbo());
-        }
-
+        deleteChunkMeshBuffers(chunk);
         bufferChunkMesh(chunk);
+
     }
 
-    public void bufferChunkMesh(Chunk chunk) {
+    public static void bufferChunkMesh(Chunk chunk) {
         if (chunk.getVertices().length != 0) {
             Model model = ObjectLoader.loadModel(chunk.getVertices(), chunk.getWorldCoordinate());
             model.setTexture(atlas);
@@ -134,25 +125,36 @@ public class GameLogic {
         chunk.clearMesh();
     }
 
-    public void update() {
-        for (int i = 0; i < MAX_CHUNKS_TO_BUFFER_PER_FRAME && toBufferChunks.size() > 1; i++) {
-            Chunk chunk = toBufferChunks.removeFirst();
-            if (chunk.getModel() != null) {
-                ObjectLoader.removeVAO(chunk.getModel().getVao());
-                ObjectLoader.removeVBO(chunk.getModel().getVbo());
+    public static void update() {
+        for (int i = 0; i < MAX_CHUNKS_TO_BUFFER_PER_FRAME && !toBufferChunks.isEmpty(); i++) {
+            Chunk chunk;
+            try {
+                chunk = toBufferChunks.removeFirst();
+            } catch (NoSuchElementException e) {
+                System.out.println("buffer chunks " + toBufferChunks.size());
+                break;
             }
-
-            if (chunk.getTransparentModel() != null) {
-                ObjectLoader.removeVAO(chunk.getTransparentModel().getVao());
-                ObjectLoader.removeVBO(chunk.getTransparentModel().getVbo());
-            }
+            deleteChunkMeshBuffers(chunk);
             bufferChunkMesh(chunk);
+        }
+
+        while (!toUnloadModels.isEmpty()) {
+            Model model;
+            try {
+                model = toUnloadModels.removeFirst();
+            } catch (NoSuchElementException e) {
+                System.out.println("unload models " + toUnloadModels.size());
+                break;
+            }
+            if (model != null)
+                deleteModelBuffers(model);
+
         }
 
         player.update();
     }
 
-    public void unloadChunks() {
+    public static void unloadChunks() {
         Vector3f cameraPosition = player.getCamera().getPosition();
 
         int chunkX = (int) Math.floor(cameraPosition.x) >> 5;
@@ -163,26 +165,37 @@ public class GameLogic {
             if (chunk == null)
                 continue;
 
-            if (Math.abs(chunk.X - chunkX) > RENDER_DISTANCE_XZ + 2 || Math.abs(chunk.Z - chunkZ) > RENDER_DISTANCE_XZ + 2 || Math.abs(chunk.Y - chunkY) > RENDER_DISTANCE_Y + 2) {
-                if (chunk.getModel() != null) {
-                    ObjectLoader.removeVAO(chunk.getModel().getVao());
-                    ObjectLoader.removeVBO(chunk.getModel().getVbo());
-                    Chunk.setNull(chunk.getIndex());
-                }
-                if (chunk.getTransparentModel() != null) {
-                    ObjectLoader.removeVAO(chunk.getTransparentModel().getVao());
-                    ObjectLoader.removeVBO(chunk.getTransparentModel().getVbo());
-                    Chunk.setNull(chunk.getIndex());
-                }
-            }
+            if (Math.abs(chunk.getX() - chunkX) <= RENDER_DISTANCE_XZ + 2 && Math.abs(chunk.getZ() - chunkZ) <= RENDER_DISTANCE_XZ + 2 && Math.abs(chunk.getY() - chunkY) <= RENDER_DISTANCE_Y + 2)
+                continue;
+
+            toBufferChunks.remove(chunk);
+            deleteChunkMeshBuffers(chunk);
+            Chunk.storeChunk(null, chunk.getIndex());
         }
     }
 
-    public void input() {
+    public static void deleteChunkMeshBuffers(Chunk chunk) {
+        if (chunk.getModel() != null) {
+            ObjectLoader.removeVAO(chunk.getModel().getVao());
+            ObjectLoader.removeVBO(chunk.getModel().getVbo());
+        }
+        if (chunk.getTransparentModel() != null) {
+            ObjectLoader.removeVAO(chunk.getTransparentModel().getVao());
+            ObjectLoader.removeVBO(chunk.getTransparentModel().getVbo());
+        }
+    }
+
+    public static void deleteModelBuffers(Model model) {
+        ObjectLoader.removeVAO(model.getVao());
+        ObjectLoader.removeVBO(model.getVbo());
+    }
+
+    public static void input() {
         player.input();
     }
 
-    public float[] getCrossHairVertices() {
+    public static float[] getCrossHairVertices() {
+        WindowManager window = Launcher.getWindow();
 
         int width = window.getWidth();
         int height = window.getHeight();
@@ -199,7 +212,8 @@ public class GameLogic {
         };
     }
 
-    public float[] getHotBarVertices() {
+    public static float[] getHotBarVertices() {
+        WindowManager window = Launcher.getWindow();
 
         int width = window.getWidth();
         int height = window.getHeight();
@@ -218,7 +232,8 @@ public class GameLogic {
         };
     }
 
-    public float[] getHotBarElementVertices(int index) {
+    public static float[] getHotBarElementVertices(int index) {
+        WindowManager window = Launcher.getWindow();
 
         int width = window.getWidth();
         int height = window.getHeight();
@@ -241,19 +256,15 @@ public class GameLogic {
         };
     }
 
-    public void render() {
+    public static void render() {
+        WindowManager window = Launcher.getWindow();
+
         if (window.isResize()) {
             GL11.glViewport(0, 0, window.getWidth(), window.getHeight());
             window.setResize(true);
         }
         player.render();
         player.getRenderer().render(player.getCamera());
-
-    }
-
-    public void cleanUp() {
-        player.getRenderer().cleanUp();
-        ObjectLoader.cleanUp();
     }
 
     public static double[][] heightMap(int x, int z) {
@@ -355,8 +366,12 @@ public class GameLogic {
         return treeMap;
     }
 
-    public void addToBufferChunk(Chunk chunk) {
+    public static void addToBufferChunk(Chunk chunk) {
         toBufferChunks.add(chunk);
+    }
+
+    public static void addToUnloadModel(Model model) {
+        toUnloadModels.add(model);
     }
 
     public static long getChunkId(int x, int y, int z) {
@@ -374,14 +389,20 @@ public class GameLogic {
         z = (z % RENDERED_WORLD_WIDTH);
         z += z < 0 ? RENDERED_WORLD_WIDTH : 0;
 
-        return x * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH + y * RENDERED_WORLD_WIDTH + z;
+        return (x * RENDERED_WORLD_HEIGHT + y) * RENDERED_WORLD_WIDTH + z;
     }
 
-    public void startChunkGenerator() {
+    public static void startChunkGenerator() {
         generator.start();
     }
 
-    public Player getPlayer() {
+    public static Player getPlayer() {
         return player;
+    }
+
+    public static void cleanUp() {
+        player.getRenderer().cleanUp();
+        ObjectLoader.cleanUp();
+        generator.cleanUp();
     }
 }
