@@ -95,7 +95,7 @@ public class RenderManager {
     }
 
     public void bindSkyBox(SkyBox skyBox) {
-        GL30.glBindVertexArray(skyBox.getId());
+        GL30.glBindVertexArray(skyBox.getVao());
         GL20.glEnableVertexAttribArray(0);
         GL20.glEnableVertexAttribArray(1);
 
@@ -106,7 +106,7 @@ public class RenderManager {
     }
 
     public void bindGUIElement(GUIElement element) {
-        GL30.glBindVertexArray(element.getId());
+        GL30.glBindVertexArray(element.getVao());
         GL20.glEnableVertexAttribArray(0);
         GL20.glEnableVertexAttribArray(1);
 

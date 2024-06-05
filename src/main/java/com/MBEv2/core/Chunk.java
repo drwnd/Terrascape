@@ -5,12 +5,14 @@ import com.MBEv2.test.GameLogic;
 import org.joml.Vector3i;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import static com.MBEv2.core.utils.Constants.*;
 
 public class Chunk {
 
     private static final Chunk[] world = new Chunk[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
+    private static final HashMap<Long, Chunk> savedChunks = new HashMap<>();
 
     private final byte[] blocks;
 
@@ -149,55 +151,30 @@ public class Chunk {
 
     public void generateSurroundingChunks() {
         generateIfNecessary(X - 1, Y - 1, Z - 1);
-
         generateIfNecessary(X - 1, Y - 1, Z);
-
         generateIfNecessary(X - 1, Y - 1, Z + 1);
-
         generateIfNecessary(X - 1, Y, Z - 1);
-
         generateIfNecessary(X - 1, Y, Z);
-
         generateIfNecessary(X - 1, Y, Z + 1);
-
         generateIfNecessary(X - 1, Y + 1, Z - 1);
-
         generateIfNecessary(X - 1, Y + 1, Z);
-
         generateIfNecessary(X - 1, Y + 1, Z + 1);
-
         generateIfNecessary(X, Y - 1, Z - 1);
-
         generateIfNecessary(X, Y - 1, Z);
-
         generateIfNecessary(X, Y - 1, Z + 1);
-
         generateIfNecessary(X, Y, Z - 1);
-
         generateIfNecessary(X, Y, Z + 1);
-
         generateIfNecessary(X, Y + 1, Z - 1);
-
         generateIfNecessary(X, Y + 1, Z);
-
         generateIfNecessary(X, Y + 1, Z + 1);
-
         generateIfNecessary(X + 1, Y - 1, Z - 1);
-
         generateIfNecessary(X + 1, Y - 1, Z);
-
         generateIfNecessary(X + 1, Y - 1, Z + 1);
-
         generateIfNecessary(X + 1, Y, Z - 1);
-
         generateIfNecessary(X + 1, Y, Z);
-
         generateIfNecessary(X + 1, Y, Z + 1);
-
         generateIfNecessary(X + 1, Y + 1, Z - 1);
-
         generateIfNecessary(X + 1, Y + 1, Z);
-
         generateIfNecessary(X + 1, Y + 1, Z + 1);
     }
 
@@ -207,17 +184,29 @@ public class Chunk {
         Chunk chunk = getChunk(index);
 
         if (chunk == null) {
-            chunk = new Chunk(x, y, z);
-            generateChunk(chunk);
+            if (containsSavedChunk(expectedId))
+                chunk = removeSavedChunk(expectedId);
+            else
+                chunk = new Chunk(x, y, z);
+
             storeChunk(chunk);
+            if (!chunk.isGenerated)
+                generateChunk(chunk);
 
         } else if (chunk.getId() != expectedId) {
-            GameLogic.addToUnloadModel(chunk.getModel());
-            GameLogic.addToUnloadModel(chunk.getTransparentModel());
+            GameLogic.addToUnloadChunk(chunk);
 
-            chunk = new Chunk(x, y, z);
+            if (chunk.isModified)
+                putSavedChunk(chunk);
+
+            if (containsSavedChunk(expectedId))
+                chunk = removeSavedChunk(expectedId);
+            else
+                chunk = new Chunk(x, y, z);
+
             Chunk.storeChunk(chunk);
-            generateChunk(chunk);
+            if (!chunk.isGenerated)
+                generateChunk(chunk);
 
         } else if (!chunk.isGenerated)
             generateChunk(chunk);
@@ -479,8 +468,8 @@ public class Chunk {
         world[chunk.getIndex()] = chunk;
     }
 
-    public static void storeChunk(Chunk chunk, int index){
-        world[index] = chunk;
+    public static void setNull(int index) {
+        world[index] = null;
     }
 
     public int[] getVertices() {
@@ -546,6 +535,19 @@ public class Chunk {
 
     public static Chunk[] getWorld() {
         return world;
+    }
+
+    public static boolean containsSavedChunk(long id) {
+        return savedChunks.containsKey(id);
+    }
+
+    public static void putSavedChunk(Chunk chunk) {
+        savedChunks.put(chunk.getId(), chunk);
+        chunk.setMeshed(false);
+    }
+
+    public static Chunk removeSavedChunk(long id) {
+        return savedChunks.remove(id);
     }
 
     public int getX() {

@@ -2,7 +2,6 @@ package com.MBEv2.test;
 
 import com.MBEv2.core.*;
 import com.MBEv2.core.entity.*;
-import org.joml.Vector3f;
 import org.joml.Vector3i;
 import org.lwjgl.opengl.GL11;
 
@@ -14,8 +13,8 @@ import static com.MBEv2.core.utils.Constants.*;
 public class GameLogic {
 
     private static Texture atlas;
-    public static LinkedList<Chunk> toBufferChunks;
-    public static LinkedList<Model> toUnloadModels;
+    private static LinkedList<Chunk> toBufferChunks;
+    private static LinkedList<Chunk> toUnloadChunks;
     private static ChunkGenerator generator;
 
     private static Player player;
@@ -24,7 +23,7 @@ public class GameLogic {
     public static void init() throws Exception {
 
         toBufferChunks = new LinkedList<>();
-        toUnloadModels = new LinkedList<>();
+        toUnloadChunks = new LinkedList<>();
         generator = new ChunkGenerator();
 
         atlas = new Texture(ObjectLoader.loadTexture("textures/atlas256.png"));
@@ -47,7 +46,6 @@ public class GameLogic {
     }
 
     public static void loadUnloadChunks() {
-        unloadChunks();
         generator.continueRunning();
     }
 
@@ -101,21 +99,19 @@ public class GameLogic {
 
     public static void regenerateChunkMesh(Chunk chunk) {
         chunk.generateMesh();
-
         deleteChunkMeshBuffers(chunk);
         bufferChunkMesh(chunk);
-
     }
 
     public static void bufferChunkMesh(Chunk chunk) {
-        if (chunk.getVertices().length != 0) {
+        if (chunk.getVertices() != null && chunk.getVertices().length != 0) {
             Model model = ObjectLoader.loadModel(chunk.getVertices(), chunk.getWorldCoordinate());
             model.setTexture(atlas);
             chunk.setModel(model);
         } else
             chunk.setModel(null);
 
-        if (chunk.getTransparentVertices().length != 0) {
+        if (chunk.getTransparentVertices() != null && chunk.getTransparentVertices().length != 0) {
             Model transparentModel = ObjectLoader.loadModel(chunk.getTransparentVertices(), chunk.getWorldCoordinate());
             transparentModel.setTexture(atlas);
             chunk.setTransparentModel(transparentModel);
@@ -132,66 +128,63 @@ public class GameLogic {
                 chunk = toBufferChunks.removeFirst();
             } catch (NoSuchElementException e) {
                 System.out.println("buffer chunks " + toBufferChunks.size());
+                toBufferChunks.clear();
                 break;
             }
             deleteChunkMeshBuffers(chunk);
             bufferChunkMesh(chunk);
         }
 
-        while (!toUnloadModels.isEmpty()) {
-            Model model;
+        while (!toUnloadChunks.isEmpty()) {
+            Chunk chunk;
             try {
-                model = toUnloadModels.removeFirst();
+                chunk = toUnloadChunks.removeFirst();
             } catch (NoSuchElementException e) {
-                System.out.println("unload models " + toUnloadModels.size());
+                System.out.println("unload models " + toUnloadChunks.size());
+                toUnloadChunks.clear();
                 break;
             }
-            if (model != null)
-                deleteModelBuffers(model);
-
+            if (chunk != null)
+                deleteChunkMeshBuffers(chunk);
         }
 
         player.update();
-    }
-
-    public static void unloadChunks() {
-        Vector3f cameraPosition = player.getCamera().getPosition();
-
-        int chunkX = (int) Math.floor(cameraPosition.x) >> 5;
-        int chunkY = (int) Math.floor(cameraPosition.y) >> 5;
-        int chunkZ = (int) Math.floor(cameraPosition.z) >> 5;
-
-        for (Chunk chunk : Chunk.getWorld()) {
-            if (chunk == null)
-                continue;
-
-            if (Math.abs(chunk.getX() - chunkX) <= RENDER_DISTANCE_XZ + 2 && Math.abs(chunk.getZ() - chunkZ) <= RENDER_DISTANCE_XZ + 2 && Math.abs(chunk.getY() - chunkY) <= RENDER_DISTANCE_Y + 2)
-                continue;
-
-            toBufferChunks.remove(chunk);
-            deleteChunkMeshBuffers(chunk);
-            Chunk.storeChunk(null, chunk.getIndex());
-        }
     }
 
     public static void deleteChunkMeshBuffers(Chunk chunk) {
         if (chunk.getModel() != null) {
             ObjectLoader.removeVAO(chunk.getModel().getVao());
             ObjectLoader.removeVBO(chunk.getModel().getVbo());
+            chunk.setModel(null);
         }
         if (chunk.getTransparentModel() != null) {
             ObjectLoader.removeVAO(chunk.getTransparentModel().getVao());
             ObjectLoader.removeVBO(chunk.getTransparentModel().getVbo());
+            chunk.setTransparentModel(null);
         }
-    }
-
-    public static void deleteModelBuffers(Model model) {
-        ObjectLoader.removeVAO(model.getVao());
-        ObjectLoader.removeVBO(model.getVbo());
     }
 
     public static void input() {
         player.input();
+    }
+
+    public static void render() {
+        WindowManager window = Launcher.getWindow();
+
+        if (window.isResize()) {
+            GL11.glViewport(0, 0, window.getWidth(), window.getHeight());
+            window.setResize(true);
+        }
+        player.render();
+        player.getRenderer().render(player.getCamera());
+    }
+
+    public static void addToBufferChunk(Chunk chunk) {
+        toBufferChunks.add(chunk);
+    }
+
+    public static void addToUnloadChunk(Chunk chunk) {
+        toUnloadChunks.add(chunk);
     }
 
     public static float[] getCrossHairVertices() {
@@ -209,26 +202,6 @@ public class GameLogic {
                 -size * GUI_SIZE / width, -size * GUI_SIZE / height,
                 size * GUI_SIZE / width, -size * GUI_SIZE / height,
                 size * GUI_SIZE / width, size * GUI_SIZE / height
-        };
-    }
-
-    public static float[] getHotBarVertices() {
-        WindowManager window = Launcher.getWindow();
-
-        int width = window.getWidth();
-        int height = window.getHeight();
-        float sizeX = 180;
-        float sizeY = 40;
-
-        return new float[]{
-
-                -sizeX * GUI_SIZE / width, -0.5f,
-                -sizeX * GUI_SIZE / width, sizeY * GUI_SIZE / height - 0.5f,
-                sizeX * GUI_SIZE / width, -0.5f,
-
-                -sizeX * GUI_SIZE / width, sizeY * GUI_SIZE / height - 0.5f,
-                sizeX * GUI_SIZE / width, sizeY * GUI_SIZE / height - 0.5f,
-                sizeX * GUI_SIZE / width, -0.5f
         };
     }
 
@@ -256,15 +229,24 @@ public class GameLogic {
         };
     }
 
-    public static void render() {
+    public static float[] getHotBarVertices() {
         WindowManager window = Launcher.getWindow();
 
-        if (window.isResize()) {
-            GL11.glViewport(0, 0, window.getWidth(), window.getHeight());
-            window.setResize(true);
-        }
-        player.render();
-        player.getRenderer().render(player.getCamera());
+        int width = window.getWidth();
+        int height = window.getHeight();
+        float sizeX = 180;
+        float sizeY = 40;
+
+        return new float[]{
+
+                -sizeX * GUI_SIZE / width, -0.5f,
+                -sizeX * GUI_SIZE / width, sizeY * GUI_SIZE / height - 0.5f,
+                sizeX * GUI_SIZE / width, -0.5f,
+
+                -sizeX * GUI_SIZE / width, sizeY * GUI_SIZE / height - 0.5f,
+                sizeX * GUI_SIZE / width, sizeY * GUI_SIZE / height - 0.5f,
+                sizeX * GUI_SIZE / width, -0.5f
+        };
     }
 
     public static double[][] heightMap(int x, int z) {
@@ -364,14 +346,6 @@ public class GameLogic {
             }
         }
         return treeMap;
-    }
-
-    public static void addToBufferChunk(Chunk chunk) {
-        toBufferChunks.add(chunk);
-    }
-
-    public static void addToUnloadModel(Model model) {
-        toUnloadModels.add(model);
     }
 
     public static long getChunkId(int x, int y, int z) {

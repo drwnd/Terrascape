@@ -4,19 +4,19 @@ import org.joml.Vector3f;
 
 public class SkyBox {
 
-    private final int id, vertexCount;
+    private final int vao, vertexCount;
     private Texture texture1;
     private Texture texture2;
-    private Vector3f position;
+    private final Vector3f position;
 
-    public SkyBox(int id, int vertexCount, Vector3f position) {
-        this.id = id;
+    public SkyBox(int vao, int vertexCount, Vector3f position) {
+        this.vao = vao;
         this.vertexCount = vertexCount;
         this.position = position;
     }
 
-    public int getId() {
-        return id;
+    public int getVao() {
+        return vao;
     }
 
     public int getVertexCount() {
@@ -38,9 +38,5 @@ public class SkyBox {
     public void setTexture(Texture texture1, Texture texture2) {
         this.texture1 = texture1;
         this.texture2 = texture2;
-    }
-
-    public void setPosition(Vector3f position) {
-        this.position = position;
     }
 }

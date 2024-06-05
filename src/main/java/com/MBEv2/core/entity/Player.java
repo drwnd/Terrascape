@@ -59,9 +59,8 @@ public class Player {
     public void init() throws Exception {
         Texture skyBoxTexture1 = new Texture(ObjectLoader.loadTexture("textures/706c5e1da58f47ad6e18145165caf55d.png"));
         Texture skyBoxTexture2 = new Texture(ObjectLoader.loadTexture("textures/82984-skybox-blue-atmosphere-sky-space-hd-image-free-png.png"));
-        SkyBox skyBox = ObjectLoader.loadSkyBox(SKY_BOX_VERTICES, SKY_BOX_TEXTURE_COORDINATES, SKY_BOX_INDICES, new Vector3f());
+        SkyBox skyBox = ObjectLoader.loadSkyBox(SKY_BOX_VERTICES, SKY_BOX_TEXTURE_COORDINATES, SKY_BOX_INDICES, camera.getPosition());
         skyBox.setTexture(skyBoxTexture1, skyBoxTexture2);
-        skyBox.setPosition(camera.getPosition());
         renderer.processSkyBox(skyBox);
 
         GUIElement crossHair = ObjectLoader.loadGUIElement(GameLogic.getCrossHairVertices(), GUI_ELEMENT_TEXTURE_COORDINATES);
@@ -293,10 +292,18 @@ public class Player {
     }
 
     private void updateHotBarElements() {
+        for (GUIElement element : hotBarElements){
+            if (element == null)
+                continue;
+            ObjectLoader.removeVAO(element.getVao());
+            ObjectLoader.removeVBO(element.getVbo1());
+            ObjectLoader.removeVBO(element.getVbo2());
+        }
         hotBarElements.clear();
+
         for (int i = 0; i < hotBars[selectedHotBar].length; i++) {
-            int textureIndex = Block.getTextureIndex(hotBars[selectedHotBar][i], 0) - 1;
-            float[] textureCoordinates = getTextureCoordinates(textureIndex);
+            final int textureIndex = Block.getTextureIndex(hotBars[selectedHotBar][i], 0) - 1;
+            final float[] textureCoordinates = getTextureCoordinates(textureIndex);
             GUIElement element = ObjectLoader.loadGUIElement(GameLogic.getHotBarElementVertices(i), textureCoordinates);
             element.setTexture(atlas);
             hotBarElements.add(element);
@@ -304,13 +311,13 @@ public class Player {
     }
 
     private static float[] getTextureCoordinates(int textureIndex) {
-        int textureX = textureIndex & 15;
-        int textureY = (textureIndex >> 4) & 15;
+        final int textureX = textureIndex & 15;
+        final int textureY = (textureIndex >> 4) & 15;
 
-        float upperX = textureX * 0.0625f;
-        float lowerX = (textureX + 1) * 0.0625f;
-        float upperY = textureY * 0.0625f;
-        float lowerY = (textureY + 1) * 0.0625f;
+        final float upperX = textureX * 0.0625f;
+        final float lowerX = (textureX + 1) * 0.0625f;
+        final float upperY = textureY * 0.0625f;
+        final float lowerY = (textureY + 1) * 0.0625f;
 
         return new float[]{
                 lowerX, lowerY,

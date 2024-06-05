@@ -18,53 +18,76 @@ public class ChunkGenerator {
     }
 
     private void run() {
-        while (EngineManager.isRunning) {
-            if (!shouldExecute)
-                break;
+        while (shouldExecute && EngineManager.isRunning) {
             shouldExecute = false;
 
             Vector3f cameraPosition = GameLogic.getPlayer().getCamera().getPosition();
 
-            int chunkX = (int) Math.floor(cameraPosition.x) >> 5;
-            int chunkY = (int) Math.floor(cameraPosition.y) >> 5;
-            int chunkZ = (int) Math.floor(cameraPosition.z) >> 5;
+            final int chunkX = (int) Math.floor(cameraPosition.x) >> 5;
+            final int chunkY = (int) Math.floor(cameraPosition.y) >> 5;
+            final int chunkZ = (int) Math.floor(cameraPosition.z) >> 5;
 
+            unloadChunks(chunkX, chunkY, chunkZ);
             LinkedList<Chunk> toMeshChunks = loadChunks(chunkX, chunkY, chunkZ);
             meshChunks(toMeshChunks);
         }
     }
 
-    private LinkedList<Chunk> loadChunks(int chunkX, int chunkY, int chunkZ) {
+    public static void unloadChunks(final int chunkX, final int chunkY, final int chunkZ) {
+
+        for (Chunk chunk : Chunk.getWorld()) {
+            if (chunk == null)
+                continue;
+
+            if (Math.abs(chunk.getX() - chunkX) <= RENDER_DISTANCE_XZ + 2 && Math.abs(chunk.getZ() - chunkZ) <= RENDER_DISTANCE_XZ + 2 && Math.abs(chunk.getY() - chunkY) <= RENDER_DISTANCE_Y + 2)
+                continue;
+
+            chunk.clearMesh();
+            GameLogic.addToUnloadChunk(chunk);
+
+            if (chunk.isModified())
+                Chunk.putSavedChunk(chunk);
+
+            Chunk.setNull(chunk.getIndex());
+        }
+    }
+
+    private LinkedList<Chunk> loadChunks(final int chunkX, final int chunkY, final int chunkZ) {
         LinkedList<Chunk> toMeshChunks = new LinkedList<>();
 
-        for (int x = -RENDER_DISTANCE_XZ; x <= RENDER_DISTANCE_XZ; x++)
-            for (int y = -RENDER_DISTANCE_Y; y <= RENDER_DISTANCE_Y; y++)
-                for (int z = -RENDER_DISTANCE_XZ; z <= RENDER_DISTANCE_XZ; z++) {
+        for (int x = -RENDER_DISTANCE_XZ + chunkX; x <= RENDER_DISTANCE_XZ + chunkX; x++)
+            for (int y = -RENDER_DISTANCE_Y + chunkY; y <= RENDER_DISTANCE_Y + chunkY; y++)
+                for (int z = -RENDER_DISTANCE_XZ + chunkZ; z <= RENDER_DISTANCE_XZ + chunkZ; z++) {
 
-                    long expectedId = GameLogic.getChunkId(chunkX + x, chunkY + y, chunkZ + z);
-                    int index = GameLogic.getChunkIndex(chunkX + x, chunkY + y, chunkZ + z);
+                    final long expectedId = GameLogic.getChunkId(x, y, z);
+                    final int index = GameLogic.getChunkIndex(x, y, z);
                     Chunk chunk = Chunk.getChunk(index);
 
                     if (chunk == null) {
-                        chunk = new Chunk(chunkX + x, chunkY + y, chunkZ + z);
+                        if (Chunk.containsSavedChunk(expectedId))
+                            chunk = Chunk.removeSavedChunk(expectedId);
+                        else
+                            chunk = new Chunk(x, y, z);
+
                         Chunk.storeChunk(chunk);
-                        chunk.setMeshed(true);
                         toMeshChunks.add(chunk);
 
                     } else if (chunk.getId() != expectedId) {
-                        GameLogic.addToUnloadModel(chunk.getModel());
-                        GameLogic.addToUnloadModel(chunk.getTransparentModel());
+                        GameLogic.addToUnloadChunk(chunk);
 
-                        chunk = new Chunk(chunkX + x, chunkY + y, chunkZ + z);
+                        if (chunk.isModified())
+                            Chunk.putSavedChunk(chunk);
+
+                        if (Chunk.containsSavedChunk(expectedId))
+                            chunk = Chunk.removeSavedChunk(expectedId);
+                        else
+                            chunk = new Chunk(x, y, z);
+
                         Chunk.storeChunk(chunk);
-                        Chunk.generateChunk(chunk);
-                        chunk.setMeshed(true);
                         toMeshChunks.add(chunk);
 
-                    } else if (!chunk.isMeshed()) {
-                        chunk.setMeshed(true);
+                    } else if (!chunk.isMeshed())
                         toMeshChunks.add(chunk);
-                    }
                 }
 
         return toMeshChunks;

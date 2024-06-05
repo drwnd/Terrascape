@@ -42,10 +42,10 @@ public class ObjectLoader {
 
     public static GUIElement loadGUIElement(float[] vertices, float[] textureCoordinates) {
         int vao = createVAO();
-        storeDateInAttributeList(0, 2, vertices);
-        storeDateInAttributeList(1, 2, textureCoordinates);
+        int vbo1 = storeDateInAttributeList(0, 2, vertices);
+        int vbo2 = storeDateInAttributeList(1, 2, textureCoordinates);
         unbind();
-        return new GUIElement(vao, vertices.length);
+        return new GUIElement(vao, vertices.length, vbo1, vbo2);
     }
 
     public static int loadTexture(String filename) throws Exception {
@@ -90,7 +90,7 @@ public class ObjectLoader {
         GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, buffer, GL15.GL_STATIC_DRAW);
     }
 
-    private static void storeDateInAttributeList(int attributeNo, int vertexCount, float[] data) {
+    private static int storeDateInAttributeList(int attributeNo, int vertexCount, float[] data) {
         int vbo = GL15.glGenBuffers();
         VBOs.add(vbo);
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
@@ -98,6 +98,7 @@ public class ObjectLoader {
         GL15.glBufferData(GL15.GL_ARRAY_BUFFER, buffer, GL15.GL_STATIC_DRAW);
         GL20.glVertexAttribPointer(attributeNo, vertexCount, GL15.GL_FLOAT, false, 0, 0);
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+        return vbo;
     }
 
     private static int storeDateInAttributeList(int[] data) {
