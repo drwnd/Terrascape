@@ -237,6 +237,19 @@ public class Block {
             case GLASS_UP_DOWN_WALL, GLASS_FRONT_BACK_WALL, GLASS_LEFT_RIGHT_WALL -> {
                 return GLASS;
             }
+            case OAK_PLANKS_FRONT_SLAB, OAK_PLANKS_TOP_SLAB, OAK_PLANKS_RIGHT_SLAB, OAK_PLANKS_BACK_SLAB,
+                 OAK_PLANKS_BOTTOM_SLAB, OAK_PLANKS_LEFT_SLAB -> {
+                return OAK_PLANKS;
+            }
+            case SPRUCE_PLANKS_FRONT_SLAB, SPRUCE_PLANKS_TOP_SLAB, SPRUCE_PLANKS_RIGHT_SLAB, SPRUCE_PLANKS_BACK_SLAB,
+                 SPRUCE_PLANKS_BOTTOM_SLAB, SPRUCE_PLANKS_LEFT_SLAB -> {
+                return SPRUCE_PLANKS;
+            }
+            case DARK_OAK_PLANKS_FRONT_SLAB, DARK_OAK_PLANKS_TOP_SLAB, DARK_OAK_PLANKS_RIGHT_SLAB,
+                 DARK_OAK_PLANKS_BACK_SLAB, DARK_OAK_PLANKS_BOTTOM_SLAB, DARK_OAK_PLANKS_LEFT_SLAB -> {
+                return DARK_OAK_PLANKS;
+            }
+
         }
         return block;
     }
@@ -329,7 +342,13 @@ public class Block {
             if (toPlaceBlock == COBBLESTONE_SLAB)
                 return COBBLESTONE_SLABS[primaryCameraDirection];
             if (toPlaceBlock == STONE_BRICK_SLAB)
-                return STONE_BRICK_SLABS[primaryCameraDirection];
+                return STONE_BRICKS_SLABS[primaryCameraDirection];
+            if (toPlaceBlock == OAK_PLANKS_SLAB)
+                return OAK_PLANKS_SLABS[primaryCameraDirection];
+            if (toPlaceBlock == SPRUCE_PLANKS_SLAB)
+                return SPRUCE_PLANKS_SLABS[primaryCameraDirection];
+            if (toPlaceBlock == DARK_OAK_PLANKS_SLAB)
+                return DARK_OAK_PLANKS_SLABS[primaryCameraDirection];
         }
         if (isPostType(toPlaceBlock)) {
             if (toPlaceBlock == COBBLESTONE_POST)
@@ -450,7 +469,7 @@ public class Block {
     }
 
     public static boolean isSlabType(byte block) {
-        return block == COBBLESTONE_SLAB || block == STONE_BRICK_SLAB;
+        return block == COBBLESTONE_SLAB || block == STONE_BRICK_SLAB || block == OAK_PLANKS_SLAB || block == SPRUCE_PLANKS_SLAB || block == DARK_OAK_PLANKS_SLAB;
     }
 
     public static boolean isPostType(byte block) {
@@ -471,7 +490,7 @@ public class Block {
 
     public static void init() {
         BLOCK_TYPE[AIR] = AIR_TYPE;
-         BLOCK_TYPE[Byte.toUnsignedInt(OUT_OF_WORLD)] = AIR_TYPE;
+        BLOCK_TYPE[Byte.toUnsignedInt(OUT_OF_WORLD)] = AIR_TYPE;
 
         BLOCK_TYPE[GRASS] = FULL_BLOCK;
         BLOCK_TYPE[DIRT] = FULL_BLOCK;
@@ -507,6 +526,29 @@ public class Block {
         BLOCK_TYPE[STONE_BRICK_BACK_SLAB] = BACK_SLAB;
         BLOCK_TYPE[STONE_BRICK_LEFT_SLAB] = LEFT_SLAB;
         BLOCK_TYPE[STONE_BRICK_RIGHT_SLAB] = RIGHT_SLAB;
+
+        BLOCK_TYPE[Byte.toUnsignedInt(OAK_PLANKS_BOTTOM_SLAB)] = BOTTOM_SLAB;
+        BLOCK_TYPE[Byte.toUnsignedInt(OAK_PLANKS_TOP_SLAB)] = TOP_SLAB;
+        BLOCK_TYPE[Byte.toUnsignedInt(OAK_PLANKS_FRONT_SLAB)] = FRONT_SLAB;
+        BLOCK_TYPE[Byte.toUnsignedInt(OAK_PLANKS_BACK_SLAB)] = BACK_SLAB;
+        BLOCK_TYPE[Byte.toUnsignedInt(OAK_PLANKS_LEFT_SLAB)] = LEFT_SLAB;
+        BLOCK_TYPE[Byte.toUnsignedInt(OAK_PLANKS_RIGHT_SLAB)] = RIGHT_SLAB;
+
+        BLOCK_TYPE[Byte.toUnsignedInt(SPRUCE_PLANKS_BOTTOM_SLAB)] = BOTTOM_SLAB;
+        BLOCK_TYPE[Byte.toUnsignedInt(SPRUCE_PLANKS_TOP_SLAB)] = TOP_SLAB;
+        BLOCK_TYPE[Byte.toUnsignedInt(SPRUCE_PLANKS_FRONT_SLAB)] = FRONT_SLAB;
+        BLOCK_TYPE[Byte.toUnsignedInt(SPRUCE_PLANKS_BACK_SLAB)] = BACK_SLAB;
+        BLOCK_TYPE[Byte.toUnsignedInt(SPRUCE_PLANKS_LEFT_SLAB)] = LEFT_SLAB;
+        BLOCK_TYPE[Byte.toUnsignedInt(SPRUCE_PLANKS_RIGHT_SLAB)] = RIGHT_SLAB;
+
+
+        BLOCK_TYPE[Byte.toUnsignedInt(DARK_OAK_PLANKS_BOTTOM_SLAB)] = BOTTOM_SLAB;
+        BLOCK_TYPE[Byte.toUnsignedInt(DARK_OAK_PLANKS_TOP_SLAB)] = TOP_SLAB;
+        BLOCK_TYPE[Byte.toUnsignedInt(DARK_OAK_PLANKS_FRONT_SLAB)] = FRONT_SLAB;
+        BLOCK_TYPE[Byte.toUnsignedInt(DARK_OAK_PLANKS_BACK_SLAB)] = BACK_SLAB;
+        BLOCK_TYPE[Byte.toUnsignedInt(DARK_OAK_PLANKS_LEFT_SLAB)] = LEFT_SLAB;
+        BLOCK_TYPE[Byte.toUnsignedInt(DARK_OAK_PLANKS_RIGHT_SLAB)] = RIGHT_SLAB;
+
 
         BLOCK_TYPE[COBBLESTONE_UP_DOWN_POST] = UP_DOWN_POST;
         BLOCK_TYPE[COBBLESTONE_FRONT_BACK_POST] = FRONT_BACK_POST;

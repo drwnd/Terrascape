@@ -29,7 +29,7 @@ public class Constants {
     public static final int REACH_ACCURACY = 100;
     public static final int MAX_CHUNKS_TO_BUFFER_PER_FRAME = 10;
 
-    public static final int RENDER_DISTANCE_XZ = 4;
+    public static final int RENDER_DISTANCE_XZ = 8;
     public static final int RENDER_DISTANCE_Y = 5;
 
     public static final int RENDERED_WORLD_WIDTH = RENDER_DISTANCE_XZ * 2 + 5;
@@ -76,6 +76,9 @@ public class Constants {
     public static final byte GLASS_WALL = 88;
     public static final byte COBBLESTONE_WALL = 29;
     public static final byte STONE_BRICK_WALL = 61;
+    public static final byte OAK_PLANKS_SLAB = -108;
+    public static final byte SPRUCE_PLANKS_SLAB = -107;
+    public static final byte DARK_OAK_PLANKS_SLAB = -106;
 
     //Only in world
     public static final byte COBBLESTONE_BOTTOM_SLAB = 20;
@@ -92,7 +95,31 @@ public class Constants {
     public static final byte STONE_BRICK_BACK_SLAB = 55;
     public static final byte STONE_BRICK_RIGHT_SLAB = 56;
     public static final byte STONE_BRICK_LEFT_SLAB = 57;
-    public static final byte[] STONE_BRICK_SLABS = new byte[]{STONE_BRICK_FRONT_SLAB, STONE_BRICK_TOP_SLAB, STONE_BRICK_RIGHT_SLAB, STONE_BRICK_BACK_SLAB, STONE_BRICK_BOTTOM_SLAB, STONE_BRICK_LEFT_SLAB};
+    public static final byte[] STONE_BRICKS_SLABS = new byte[]{STONE_BRICK_FRONT_SLAB, STONE_BRICK_TOP_SLAB, STONE_BRICK_RIGHT_SLAB, STONE_BRICK_BACK_SLAB, STONE_BRICK_BOTTOM_SLAB, STONE_BRICK_LEFT_SLAB};
+
+    public static final byte OAK_PLANKS_BOTTOM_SLAB = -108;
+    public static final byte OAK_PLANKS_TOP_SLAB = -92;
+    public static final byte OAK_PLANKS_FRONT_SLAB = -76;
+    public static final byte OAK_PLANKS_BACK_SLAB = -60;
+    public static final byte OAK_PLANKS_RIGHT_SLAB = -44;
+    public static final byte OAK_PLANKS_LEFT_SLAB = -28;
+    public static final byte[] OAK_PLANKS_SLABS = new byte[]{OAK_PLANKS_FRONT_SLAB, OAK_PLANKS_TOP_SLAB, OAK_PLANKS_RIGHT_SLAB, OAK_PLANKS_BACK_SLAB, OAK_PLANKS_BOTTOM_SLAB, OAK_PLANKS_LEFT_SLAB};
+
+    public static final byte SPRUCE_PLANKS_BOTTOM_SLAB = -107;
+    public static final byte SPRUCE_PLANKS_TOP_SLAB = -91;
+    public static final byte SPRUCE_PLANKS_FRONT_SLAB = -75;
+    public static final byte SPRUCE_PLANKS_BACK_SLAB = -59;
+    public static final byte SPRUCE_PLANKS_RIGHT_SLAB = -43;
+    public static final byte SPRUCE_PLANKS_LEFT_SLAB = -27;
+    public static final byte[] SPRUCE_PLANKS_SLABS = new byte[]{SPRUCE_PLANKS_FRONT_SLAB, SPRUCE_PLANKS_TOP_SLAB, SPRUCE_PLANKS_RIGHT_SLAB, SPRUCE_PLANKS_BACK_SLAB, SPRUCE_PLANKS_BOTTOM_SLAB, SPRUCE_PLANKS_LEFT_SLAB};
+
+    public static final byte DARK_OAK_PLANKS_BOTTOM_SLAB = -106;
+    public static final byte DARK_OAK_PLANKS_TOP_SLAB = -90;
+    public static final byte DARK_OAK_PLANKS_FRONT_SLAB = -74;
+    public static final byte DARK_OAK_PLANKS_BACK_SLAB = -58;
+    public static final byte DARK_OAK_PLANKS_RIGHT_SLAB = -42;
+    public static final byte DARK_OAK_PLANKS_LEFT_SLAB = -26;
+    public static final byte[] DARK_OAK_PLANKS_SLABS = new byte[]{DARK_OAK_PLANKS_FRONT_SLAB, DARK_OAK_PLANKS_TOP_SLAB, DARK_OAK_PLANKS_RIGHT_SLAB, DARK_OAK_PLANKS_BACK_SLAB, DARK_OAK_PLANKS_BOTTOM_SLAB, DARK_OAK_PLANKS_LEFT_SLAB};
 
     public static final byte COBBLESTONE_UP_DOWN_POST = 26;
     public static final byte COBBLESTONE_FRONT_BACK_POST = 27;

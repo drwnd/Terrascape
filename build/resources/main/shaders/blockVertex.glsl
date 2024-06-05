@@ -27,12 +27,12 @@ void main(){
 
     float blockLight = ((data.y >> 18) & 15) * 0.0625;
     float skyLight = ((data.y >> 22) & 15) * 0.0625;
-    int ambientOcclusionLevel = (data.x >> 30) & 3;
+    float ambientOcclusionLevel = 1 - ((data.x >> 30) & 3) * 0.25;
     int side = (data.y >> 26) & 7;
     float alpha = time * 3.1415926536;
     vec3 sunDirection = vec3(cos(alpha) - sin(alpha), -0.3, cos(alpha) + sin(alpha));
     float absTime = abs(time);
     float sunIllumination = dot(normals[side], sunDirection) * 0.2 * skyLight * absTime;
 
-    fragLight = max(blockLight, max(0.3, skyLight) * (absTime * 0.75 + 0.25) + sunIllumination) - ambientOcclusionLevel * 0.16 * (absTime + 0.25);
+    fragLight = max(blockLight, max(0.3, skyLight) * (absTime * 0.75 + 0.25) + sunIllumination) * ambientOcclusionLevel;
 }
