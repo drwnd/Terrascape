@@ -6,8 +6,11 @@ public class Constants {
     public static final String TITLE = "Minecräft Bad Edition v2";
     public static final float Z_NEAR = 0.01f;
     public static final float Z_FAR = -1.0f;
-    public static final float HALF_PLAYER_WIDTH = 0.25f;
     public static final double TREE_THRESHOLD = 0.73;
+
+    public static final float HALF_PLAYER_WIDTH = 0.23f;
+    public static final float PLAYER_HEAD_OFFSET = 0.08f;
+    public static final float PLAYER_FEET_OFFSET = 1.4f;
 
     //Change to whatever you want
     public static final float TIME_SPEED = 0.000025f;

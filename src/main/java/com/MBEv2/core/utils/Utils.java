@@ -32,4 +32,9 @@ public class Utils {
         }
         return result;
     }
+
+    public static int floor(float value){
+        int addend = value < 0 ? -1 : 0;
+        return (int) value + addend;
+    }
 }

@@ -27,7 +27,7 @@ void main(){
 
     float blockLight = ((data.y >> 18) & 15) * 0.0625;
     float skyLight = ((data.y >> 22) & 15) * 0.0625;
-    float ambientOcclusionLevel = 1 - ((data.x >> 30) & 3) * 0.25;
+    float ambientOcclusionLevel = 1 - ((data.x >> 30) & 3) * 0.22;
     int side = (data.y >> 26) & 7;
     float alpha = time * 3.1415926536;
     vec3 sunDirection = vec3(cos(alpha) - sin(alpha), -0.3, cos(alpha) + sin(alpha));

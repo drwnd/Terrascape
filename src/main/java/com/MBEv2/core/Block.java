@@ -1,8 +1,5 @@
 package com.MBEv2.core;
 
-import org.joml.Vector3f;
-import org.joml.Vector3i;
-
 import static com.MBEv2.core.utils.Constants.*;
 
 public class Block {
@@ -64,34 +61,11 @@ public class Block {
         if (blockSideType != 0 && occludingSideType != 0)
             return true;
 
-        if (isBottomSlab(occludingBlock) && isBottomSlab(toTestBlock))
-            return side != TOP && side != BOTTOM;
-        if (isTopSlab(occludingBlock) && isTopSlab(toTestBlock))
-            return side != TOP && side != BOTTOM;
-        if (isFrontSlab(occludingBlock) && isFrontSlab(toTestBlock))
-            return side != FRONT && side != BACK;
-        if (isBackSlab(occludingBlock) && isBackSlab(toTestBlock))
-            return side != FRONT && side != BACK;
-        if (isLeftSlab(occludingBlock) && isLeftSlab(toTestBlock))
-            return side != LEFT && side != RIGHT;
-        if (isRightSlab(occludingBlock) && isRightSlab(toTestBlock))
-            return side != LEFT && side != RIGHT;
+        int occludingSide = (side + 3) % 6;
+        int occludingBlockData = BLOCK_DATA[BLOCK_TYPE[Byte.toUnsignedInt(occludingBlock)]];
+        int occludingBlockSideType = occludingBlockData & SIDE_MASKS[occludingSide];
 
-        if (isUpDownPost(occludingBlock) && isUpDownPost(toTestBlock))
-            return side == TOP || side == BOTTOM;
-        if (isFrontBackPost(occludingBlock) && isFrontBackPost(toTestBlock))
-            return side == FRONT || side == BACK;
-        if (isLeftRightPost(occludingBlock) && isLeftRightPost(toTestBlock))
-            return side == LEFT || side == RIGHT;
-
-        if (isUpDownWall(occludingBlock) && isUpDownWall(toTestBlock))
-            return side != TOP && side != BOTTOM;
-        if (isFrontBackWall(occludingBlock) && isFrontBackWall(toTestBlock))
-            return side != FRONT && side != BACK;
-        if (isLeftRightWall(occludingBlock) && isLeftRightWall(toTestBlock))
-            return side != LEFT && side != RIGHT;
-
-        return false;
+        return BLOCK_TYPE[Byte.toUnsignedInt(toTestBlock)] == BLOCK_TYPE[Byte.toUnsignedInt(occludingBlock)] && blockSideType != 0 && occludingBlockSideType != 0;
     }
 
     public static int getTextureIndex(byte block, int side) {
@@ -254,29 +228,24 @@ public class Block {
         return block;
     }
 
-    public static boolean playerIntersectsBlock(Vector3f playerPos, byte block, Vector3i blockPos) {
-        int lowX = (int) Math.floor(playerPos.x - HALF_PLAYER_WIDTH);
-        int highX = (int) Math.floor(playerPos.x + HALF_PLAYER_WIDTH);
-        int lowY = (int) Math.floor(playerPos.y - HALF_PLAYER_WIDTH);
-        int highY = (int) Math.floor(playerPos.y + HALF_PLAYER_WIDTH);
-        int lowZ = (int) Math.floor(playerPos.z - HALF_PLAYER_WIDTH);
-        int highZ = (int) Math.floor(playerPos.z + HALF_PLAYER_WIDTH);
 
-        if (lowX == blockPos.x && lowY == blockPos.y && lowZ == blockPos.z && intersectsBlock(playerPos.x - HALF_PLAYER_WIDTH, playerPos.y - HALF_PLAYER_WIDTH, playerPos.z - HALF_PLAYER_WIDTH, block))
-            return true;
-        if (lowX == blockPos.x && lowY == blockPos.y && highZ == blockPos.z && intersectsBlock(playerPos.x - HALF_PLAYER_WIDTH, playerPos.y - HALF_PLAYER_WIDTH, playerPos.z + HALF_PLAYER_WIDTH, block))
-            return true;
-        if (lowX == blockPos.x && highY == blockPos.y && lowZ == blockPos.z && intersectsBlock(playerPos.x - HALF_PLAYER_WIDTH, playerPos.y + HALF_PLAYER_WIDTH, playerPos.z - HALF_PLAYER_WIDTH, block))
-            return true;
-        if (lowX == blockPos.x && highY == blockPos.y && highZ == blockPos.z && intersectsBlock(playerPos.x - HALF_PLAYER_WIDTH, playerPos.y + HALF_PLAYER_WIDTH, playerPos.z + HALF_PLAYER_WIDTH, block))
-            return true;
-        if (highX == blockPos.x && lowY == blockPos.y && lowZ == blockPos.z && intersectsBlock(playerPos.x + HALF_PLAYER_WIDTH, playerPos.y - HALF_PLAYER_WIDTH, playerPos.z - HALF_PLAYER_WIDTH, block))
-            return true;
-        if (highX == blockPos.x && lowY == blockPos.y && highZ == blockPos.z && intersectsBlock(playerPos.x + HALF_PLAYER_WIDTH, playerPos.y - HALF_PLAYER_WIDTH, playerPos.z + HALF_PLAYER_WIDTH, block))
-            return true;
-        if (highX == blockPos.x && highY == blockPos.y && lowZ == blockPos.z && intersectsBlock(playerPos.x + HALF_PLAYER_WIDTH, playerPos.y + HALF_PLAYER_WIDTH, playerPos.z - HALF_PLAYER_WIDTH, block))
-            return true;
-        return highX == blockPos.x && highY == blockPos.y && highZ == blockPos.z && intersectsBlock(playerPos.x + HALF_PLAYER_WIDTH, playerPos.y + HALF_PLAYER_WIDTH, playerPos.z + HALF_PLAYER_WIDTH, block);
+    public static boolean playerIntersectsBlock(final float minX, final float maxX, final float minY, final float maxY, final float minZ, final float maxZ, final int blockX, final int blockY, final int blockZ, byte block) {
+        int blockType = BLOCK_TYPE[Byte.toUnsignedInt(block)];
+        byte[] blockXYZSubData = BLOCK_XYZ_SUB_DATA[blockType];
+
+        float minBlockX = blockX + blockXYZSubData[0] * 0.0625f;
+        float maxBlockX = 1 + blockX + blockXYZSubData[1] * 0.0625f;
+        float minBlockY = blockY + blockXYZSubData[2] * 0.0625f;
+        float maxBlockY = 1 + blockY + blockXYZSubData[3] * 0.0625f;
+        float minBlockZ = blockZ + blockXYZSubData[4] * 0.0625f;
+        float maxBlockZ = 1 + blockZ + blockXYZSubData[5] * 0.0625f;
+
+        return minX <= maxBlockX &&
+                maxX >= minBlockX &&
+                minY <= maxBlockY &&
+                maxY >= minBlockY &&
+                minZ <= maxBlockZ &&
+                maxZ >= minBlockZ;
     }
 
     public static boolean intersectsBlock(double x, double y, double z, byte block) {
@@ -393,19 +362,19 @@ public class Block {
     public static byte getSubX(byte block, int side, int corner) {
         if (BLOCK_XYZ_SUB_DATA[BLOCK_TYPE[Byte.toUnsignedInt(block)]].length == 0)
             return 0;
-        return BLOCK_XYZ_SUB_DATA[BLOCK_TYPE[Byte.toUnsignedInt(block)]][CORNERS_OF_SIDE[side][corner] * 3];
+        return BLOCK_XYZ_SUB_DATA[BLOCK_TYPE[Byte.toUnsignedInt(block)]][CORNERS_OF_SIDE[side][corner] & 1];
     }
 
     public static byte getSubY(byte block, int side, int corner) {
         if (BLOCK_XYZ_SUB_DATA[BLOCK_TYPE[Byte.toUnsignedInt(block)]].length == 0)
             return 0;
-        return BLOCK_XYZ_SUB_DATA[BLOCK_TYPE[Byte.toUnsignedInt(block)]][1 + CORNERS_OF_SIDE[side][corner] * 3];
+        return BLOCK_XYZ_SUB_DATA[BLOCK_TYPE[Byte.toUnsignedInt(block)]][CORNERS_OF_SIDE[side][corner] < 4 ? 3 : 2];
     }
 
     public static byte getSubZ(byte block, int side, int corner) {
         if (BLOCK_XYZ_SUB_DATA[BLOCK_TYPE[Byte.toUnsignedInt(block)]].length == 0)
             return 0;
-        return BLOCK_XYZ_SUB_DATA[BLOCK_TYPE[Byte.toUnsignedInt(block)]][2 + CORNERS_OF_SIDE[side][corner] * 3];
+        return BLOCK_XYZ_SUB_DATA[BLOCK_TYPE[Byte.toUnsignedInt(block)]][(CORNERS_OF_SIDE[side][corner] & 3) < 2 ? 5 : 4];
     }
 
     public static byte getSubU(byte block, int side, int corner) {
@@ -418,54 +387,6 @@ public class Block {
         if (BLOCK_UV_SUB_DATA[BLOCK_TYPE[Byte.toUnsignedInt(block)]].length == 0)
             return 0;
         return BLOCK_UV_SUB_DATA[BLOCK_TYPE[Byte.toUnsignedInt(block)]][(side << 3) + (corner << 1) + 1];
-    }
-
-    public static boolean isBottomSlab(byte block) {
-        return BLOCK_TYPE[Byte.toUnsignedInt(block)] == BOTTOM_SLAB;
-    }
-
-    public static boolean isTopSlab(byte block) {
-        return BLOCK_TYPE[Byte.toUnsignedInt(block)] == TOP_SLAB;
-    }
-
-    public static boolean isFrontSlab(byte block) {
-        return BLOCK_TYPE[Byte.toUnsignedInt(block)] == FRONT_SLAB;
-    }
-
-    public static boolean isBackSlab(byte block) {
-        return BLOCK_TYPE[Byte.toUnsignedInt(block)] == BACK_SLAB;
-    }
-
-    public static boolean isRightSlab(byte block) {
-        return BLOCK_TYPE[Byte.toUnsignedInt(block)] == RIGHT_SLAB;
-    }
-
-    public static boolean isLeftSlab(byte block) {
-        return BLOCK_TYPE[Byte.toUnsignedInt(block)] == LEFT_SLAB;
-    }
-
-    public static boolean isUpDownPost(byte block) {
-        return BLOCK_TYPE[Byte.toUnsignedInt(block)] == UP_DOWN_POST;
-    }
-
-    public static boolean isFrontBackPost(byte block) {
-        return BLOCK_TYPE[Byte.toUnsignedInt(block)] == FRONT_BACK_POST;
-    }
-
-    public static boolean isLeftRightPost(byte block) {
-        return BLOCK_TYPE[Byte.toUnsignedInt(block)] == LEFT_RIGHT_POST;
-    }
-
-    public static boolean isUpDownWall(byte block) {
-        return BLOCK_TYPE[Byte.toUnsignedInt(block)] == UP_DOWN_WALL;
-    }
-
-    public static boolean isFrontBackWall(byte block) {
-        return BLOCK_TYPE[Byte.toUnsignedInt(block)] == FRONT_BACK_WALL;
-    }
-
-    public static boolean isLeftRightWall(byte block) {
-        return BLOCK_TYPE[Byte.toUnsignedInt(block)] == LEFT_RIGHT_WALL;
     }
 
     public static boolean isSlabType(byte block) {
@@ -486,6 +407,14 @@ public class Block {
 
     public static boolean isLeaveType(byte block) {
         return BLOCK_TYPE[Byte.toUnsignedInt(block)] == LEAVE_TYPE;
+    }
+
+    public static boolean isAirType(byte block) {
+        return BLOCK_TYPE[Byte.toUnsignedInt(block)] == AIR_TYPE;
+    }
+
+    public static boolean isWaterType(byte block) {
+        return BLOCK_TYPE[Byte.toUnsignedInt(block)] == WATER_TYPE;
     }
 
     public static void init() {
@@ -646,33 +575,18 @@ public class Block {
         BLOCK_DATA[LEFT_RIGHT_WALL] = 0b00011011;
 
 
-        BLOCK_XYZ_SUB_DATA[UP_DOWN_WALL] = new byte[]{
-                0, -4, 0,
-                0, -4, 0,
-                0, -4, 0,
-                0, -4, 0,
-                0, 4, 0,
-                0, 4, 0,
-                0, 4, 0,
-                0, 4, 0};
+        BLOCK_XYZ_SUB_DATA[UP_DOWN_WALL] = new byte[]{0, 0, 4, -4, 0, 0};
 
         BLOCK_UV_SUB_DATA[UP_DOWN_WALL] = new byte[]{
                 0, 4, 0, 4, 0, -4, 0, -4,
-                0, 0, 0, 0, 0, -4, 0, -4,
-                0, 4, 0, 4, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+                0, 4, 0, 4, 0, -4, 0, -4,
                 0, 4, 0, 4, 0, -4, 0, -4,
                 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 4, 0, 4, 0, -4, 0, -4};
 
-        BLOCK_XYZ_SUB_DATA[FRONT_BACK_WALL] = new byte[]{
-                0, 0, -4,
-                0, 0, -4,
-                0, 0, 4,
-                0, 0, 4,
-                0, 0, -4,
-                0, 0, -4,
-                0, 0, 4,
-                0, 0, 4};
+
+        BLOCK_XYZ_SUB_DATA[FRONT_BACK_WALL] = new byte[]{0, 0, 0, 0, 4, -4};
 
         BLOCK_UV_SUB_DATA[FRONT_BACK_WALL] = new byte[]{
                 0, 0, 0, 0, 0, 0, 0, 0,
@@ -682,15 +596,7 @@ public class Block {
                 0, -5, 0, 3, 0, -5, 0, 3,// !!??!?!?
                 -4, 0, 4, 0, -4, 0, 4, 0};
 
-        BLOCK_XYZ_SUB_DATA[LEFT_RIGHT_WALL] = new byte[]{
-                4, 0, 0,
-                -4, 0, 0,
-                4, 0, 0,
-                -4, 0, 0,
-                4, 0, 0,
-                -4, 0, 0,
-                4, 0, 0,
-                -4, 0, 0};
+        BLOCK_XYZ_SUB_DATA[LEFT_RIGHT_WALL] = new byte[]{4, -4, 0, 0, 0, 0};
 
         BLOCK_UV_SUB_DATA[LEFT_RIGHT_WALL] = new byte[]{
                 4, 0, -4, 0, 4, 0, -4, 0,
@@ -701,15 +607,7 @@ public class Block {
                 0, 0, 0, 0, 0, 0, 0, 0
         };
 
-        BLOCK_XYZ_SUB_DATA[LEFT_RIGHT_POST] = new byte[]{
-                0, -4, -4,
-                0, -4, -4,
-                0, -4, 4,
-                0, -4, 4,
-                0, 4, -4,
-                0, 4, -4,
-                0, 4, 4,
-                0, 4, 4};
+        BLOCK_XYZ_SUB_DATA[LEFT_RIGHT_POST] = new byte[]{0, 0, 4, -4, 4, -4};
 
         BLOCK_UV_SUB_DATA[LEFT_RIGHT_POST] = new byte[]{
                 0, 0, 0, 0, 0, -8, 0, -8,
@@ -719,15 +617,7 @@ public class Block {
                 0, 0, 0, 8, 0, 0, 0, 8,
                 -4, 4, 4, 4, -4, -4, 4, -4};
 
-        BLOCK_XYZ_SUB_DATA[FRONT_BACK_POST] = new byte[]{
-                4, -4, 0,
-                -4, -4, 0,
-                4, -4, 0,
-                -4, -4, 0,
-                4, 4, 0,
-                -4, 4, 0,
-                4, 4, 0,
-                -4, 4, 0};
+        BLOCK_XYZ_SUB_DATA[FRONT_BACK_POST] = new byte[]{4, -4, 4, -4, 0, 0};
 
         BLOCK_UV_SUB_DATA[FRONT_BACK_POST] = new byte[]{
                 4, 4, -4, 4, 4, -4, -4, -4,
@@ -737,15 +627,7 @@ public class Block {
                 -8, 0, -8, 0, 0, 0, 0, 0,
                 0, 0, 0, 0, 0, -8, 0, -8};
 
-        BLOCK_XYZ_SUB_DATA[UP_DOWN_POST] = new byte[]{
-                4, 0, -4,
-                -4, 0, -4,
-                4, 0, 4,
-                -4, 0, 4,
-                4, 0, -4,
-                -4, 0, -4,
-                4, 0, 4,
-                -4, 0, 4};
+        BLOCK_XYZ_SUB_DATA[UP_DOWN_POST] = new byte[]{4, -4, 0, 0, 4, -4};
 
         BLOCK_UV_SUB_DATA[UP_DOWN_POST] = new byte[]{
                 0, 0, -8, 0, 0, 0, -8, 0,
@@ -755,15 +637,7 @@ public class Block {
                 -4, -4, -4, 4, 4, -4, 4, 4,
                 0, 0, 8, 0, 0, 0, 8, 0};
 
-        BLOCK_XYZ_SUB_DATA[BOTTOM_SLAB] = new byte[]{
-                0, -8, 0,
-                0, -8, 0,
-                0, -8, 0,
-                0, -8, 0,
-                0, 0, 0,
-                0, 0, 0,
-                0, 0, 0,
-                0, 0, 0};
+        BLOCK_XYZ_SUB_DATA[BOTTOM_SLAB] = new byte[]{0, 0, 0, -8, 0, 0};
 
         BLOCK_UV_SUB_DATA[BOTTOM_SLAB] = new byte[]{
                 0, 8, 0, 8, 0, 0, 0, 0,
@@ -773,15 +647,7 @@ public class Block {
                 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 8, 0, 8, 0, 0, 0, 0};
 
-        BLOCK_XYZ_SUB_DATA[TOP_SLAB] = new byte[]{
-                0, 0, 0,
-                0, 0, 0,
-                0, 0, 0,
-                0, 0, 0,
-                0, 8, 0,
-                0, 8, 0,
-                0, 8, 0,
-                0, 8, 0};
+        BLOCK_XYZ_SUB_DATA[TOP_SLAB] = new byte[]{0, 0, 8, 0, 0, 0};
 
         BLOCK_UV_SUB_DATA[TOP_SLAB] = new byte[]{
                 0, 0, 0, 0, 0, -8, 0, -8,
@@ -791,15 +657,7 @@ public class Block {
                 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 0, 0, -8, 0, -8};
 
-        BLOCK_XYZ_SUB_DATA[FRONT_SLAB] = new byte[]{
-                0, 0, 0,
-                0, 0, 0,
-                0, 0, 8,
-                0, 0, 8,
-                0, 0, 0,
-                0, 0, 0,
-                0, 0, 8,
-                0, 0, 8};
+        BLOCK_XYZ_SUB_DATA[FRONT_SLAB] = new byte[]{0, 0, 0, 0, 8, 0};
 
         BLOCK_UV_SUB_DATA[FRONT_SLAB] = new byte[]{
                 0, 0, 0, 0, 0, 0, 0, 0,
@@ -809,15 +667,7 @@ public class Block {
                 0, -8, 0, 0, 0, -8, 0, 0,
                 -8, 0, 0, 0, -8, 0, 0, 0};
 
-        BLOCK_XYZ_SUB_DATA[BACK_SLAB] = new byte[]{
-                0, 0, -8,
-                0, 0, -8,
-                0, 0, 0,
-                0, 0, 0,
-                0, 0, -8,
-                0, 0, -8,
-                0, 0, 0,
-                0, 0, 0};
+        BLOCK_XYZ_SUB_DATA[BACK_SLAB] = new byte[]{0, 0, 0, 0, 0, -8};
 
         BLOCK_UV_SUB_DATA[BACK_SLAB] = new byte[]{
                 0, 0, 0, 0, 0, 0, 0, 0,
@@ -827,15 +677,7 @@ public class Block {
                 0, 0, 0, 8, 0, 0, 0, 8,
                 0, 0, 8, 0, 0, 0, 8, 0};
 
-        BLOCK_XYZ_SUB_DATA[RIGHT_SLAB] = new byte[]{
-                8, 0, 0,
-                0, 0, 0,
-                8, 0, 0,
-                0, 0, 0,
-                8, 0, 0,
-                0, 0, 0,
-                8, 0, 0,
-                0, 0, 0};
+        BLOCK_XYZ_SUB_DATA[RIGHT_SLAB] = new byte[]{8, 0, 0, 0, 0, 0};
 
         BLOCK_UV_SUB_DATA[RIGHT_SLAB] = new byte[]{
                 0, 0, -8, 0, 0, 0, -8, 0,
@@ -845,15 +687,7 @@ public class Block {
                 -8, 0, -8, 0, 0, 0, 0, 0,
                 0, 0, 0, 0, 0, 0, 0, 0};
 
-        BLOCK_XYZ_SUB_DATA[LEFT_SLAB] = new byte[]{
-                0, 0, 0,
-                -8, 0, 0,
-                0, 0, 0,
-                -8, 0, 0,
-                0, 0, 0,
-                -8, 0, 0,
-                0, 0, 0,
-                -8, 0, 0};
+        BLOCK_XYZ_SUB_DATA[LEFT_SLAB] = new byte[]{0, -8, 0, 0, 0, 0};
 
         BLOCK_UV_SUB_DATA[LEFT_SLAB] = new byte[]{
                 8, 0, 0, 0, 8, 0, 0, 0,
@@ -862,5 +696,9 @@ public class Block {
                 0, 0, -8, 0, 0, 0, -8, 0,
                 0, 0, 0, 0, 8, 0, 8, 0,
                 0, 0, 0, 0, 0, 0, 0, 0};
+
+        BLOCK_XYZ_SUB_DATA[FULL_BLOCK] = new byte[]{0, 0, 0, 0, 0, 0};
+        BLOCK_XYZ_SUB_DATA[LEAVE_TYPE] = new byte[]{0, 0, 0, 0, 0, 0};
+        BLOCK_XYZ_SUB_DATA[GLASS_TYPE] = new byte[]{0, 0, 0, 0, 0, 0};
     }
 }

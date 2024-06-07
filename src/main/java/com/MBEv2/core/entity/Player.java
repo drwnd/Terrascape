@@ -4,6 +4,7 @@ import com.MBEv2.core.*;
 
 import static com.MBEv2.core.utils.Constants.*;
 
+import com.MBEv2.core.utils.Utils;
 import com.MBEv2.test.GameLogic;
 import com.MBEv2.test.Launcher;
 import org.joml.Vector2f;
@@ -240,7 +241,16 @@ public class Player {
         double z = Math.floor(cP.z + i * interval * cD.z);
         Vector3i target = new Vector3i((int) x, (int) y, (int) z);
 
-        if (action == placing && Block.playerIntersectsBlock(camera.getPosition(), Block.getToPlaceBlock(hotBars[selectedHotBar][selectedHotBarSlot], camera.getPrimaryDirection()), target))
+        final float minX = cP.x - HALF_PLAYER_WIDTH;
+        final float maxX = cP.x + HALF_PLAYER_WIDTH;
+        final float minY = cP.y - PLAYER_FEET_OFFSET;
+        final float maxY = cP.y + PLAYER_HEAD_OFFSET;
+        final float minZ = cP.z - HALF_PLAYER_WIDTH;
+        final float maxZ = cP.z + HALF_PLAYER_WIDTH;
+
+        byte toPlaceBlock = Block.getToPlaceBlock(hotBars[selectedHotBar][selectedHotBarSlot], camera.getPrimaryDirection());
+
+        if (action == placing && Block.playerIntersectsBlock(minX, maxX, minY, maxY, minZ, maxZ, target.x, target.y, target.z, toPlaceBlock))
             return null;
 
         return target;
@@ -266,33 +276,30 @@ public class Player {
     }
 
     public boolean collidesWithBlock(float x, float y, float z) {
-        byte block = Chunk.getBlockInWorld((int) Math.floor(x - HALF_PLAYER_WIDTH), (int) Math.floor(y - HALF_PLAYER_WIDTH), (int) Math.floor(z - HALF_PLAYER_WIDTH));
-        if (Block.intersectsBlock(x - HALF_PLAYER_WIDTH, y - HALF_PLAYER_WIDTH, z - HALF_PLAYER_WIDTH, block))
-            return true;
-        block = Chunk.getBlockInWorld((int) Math.floor(x - HALF_PLAYER_WIDTH), (int) Math.floor(y - HALF_PLAYER_WIDTH), (int) Math.floor(z + HALF_PLAYER_WIDTH));
-        if (Block.intersectsBlock(x - HALF_PLAYER_WIDTH, y - HALF_PLAYER_WIDTH, z + HALF_PLAYER_WIDTH, block))
-            return true;
-        block = Chunk.getBlockInWorld((int) Math.floor(x - HALF_PLAYER_WIDTH), (int) Math.floor(y + HALF_PLAYER_WIDTH), (int) Math.floor(z - HALF_PLAYER_WIDTH));
-        if (Block.intersectsBlock(x - HALF_PLAYER_WIDTH, y + HALF_PLAYER_WIDTH, z - HALF_PLAYER_WIDTH, block))
-            return true;
-        block = Chunk.getBlockInWorld((int) Math.floor(x - HALF_PLAYER_WIDTH), (int) Math.floor(y + HALF_PLAYER_WIDTH), (int) Math.floor(z + HALF_PLAYER_WIDTH));
-        if (Block.intersectsBlock(x - HALF_PLAYER_WIDTH, y + HALF_PLAYER_WIDTH, z + HALF_PLAYER_WIDTH, block))
-            return true;
-        block = Chunk.getBlockInWorld((int) Math.floor(x + HALF_PLAYER_WIDTH), (int) Math.floor(y - HALF_PLAYER_WIDTH), (int) Math.floor(z - HALF_PLAYER_WIDTH));
-        if (Block.intersectsBlock(x + HALF_PLAYER_WIDTH, y - HALF_PLAYER_WIDTH, z - HALF_PLAYER_WIDTH, block))
-            return true;
-        block = Chunk.getBlockInWorld((int) Math.floor(x + HALF_PLAYER_WIDTH), (int) Math.floor(y - HALF_PLAYER_WIDTH), (int) Math.floor(z + HALF_PLAYER_WIDTH));
-        if (Block.intersectsBlock(x + HALF_PLAYER_WIDTH, y - HALF_PLAYER_WIDTH, z + HALF_PLAYER_WIDTH, block))
-            return true;
-        block = Chunk.getBlockInWorld((int) Math.floor(x + HALF_PLAYER_WIDTH), (int) Math.floor(y + HALF_PLAYER_WIDTH), (int) Math.floor(z - HALF_PLAYER_WIDTH));
-        if (Block.intersectsBlock(x + HALF_PLAYER_WIDTH, y + HALF_PLAYER_WIDTH, z - HALF_PLAYER_WIDTH, block))
-            return true;
-        block = Chunk.getBlockInWorld((int) Math.floor(x + HALF_PLAYER_WIDTH), (int) Math.floor(y + HALF_PLAYER_WIDTH), (int) Math.floor(z + HALF_PLAYER_WIDTH));
-        return Block.intersectsBlock(x + HALF_PLAYER_WIDTH, y + HALF_PLAYER_WIDTH, z + HALF_PLAYER_WIDTH, block);
+        final float minX = x - HALF_PLAYER_WIDTH;
+        final float maxX = x + HALF_PLAYER_WIDTH;
+        final float minY = y - PLAYER_FEET_OFFSET;
+        final float maxY = y + PLAYER_HEAD_OFFSET;
+        final float minZ = z - HALF_PLAYER_WIDTH;
+        final float maxZ = z + HALF_PLAYER_WIDTH;
+
+        for (int blockX = Utils.floor(minX); blockX <= Utils.floor(maxX); blockX++)
+            for (int blockY = Utils.floor(minY); blockY <= Utils.floor(maxY); blockY++)
+                for (int blockZ = Utils.floor(minZ); blockZ <= Utils.floor(maxZ); blockZ++) {
+
+                    byte block = Chunk.getBlockInWorld(blockX, blockY, blockZ);
+                    if (Block.isAirType(block) || Block.isWaterType(block))
+                        continue;
+
+                    if (Block.playerIntersectsBlock(minX, maxX, minY, maxY, minZ, maxZ, blockX, blockY, blockZ, block))
+                        return true;
+                }
+
+        return false;
     }
 
     private void updateHotBarElements() {
-        for (GUIElement element : hotBarElements){
+        for (GUIElement element : hotBarElements) {
             if (element == null)
                 continue;
             ObjectLoader.removeVAO(element.getVao());
