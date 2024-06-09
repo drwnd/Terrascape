@@ -29,12 +29,14 @@ public class Camera {
         }
         position.y += y;
 
-        if (!player.isNoClip() && player.collidesWithBlock(position.x, position.y, position.z)) {
-            if (player.collidesWithBlock(position.x, oldPosition.y, oldPosition.z))
+        int movementState = player.getMovementState();
+
+        if (!player.isNoClip() && player.collidesWithBlock(position.x, position.y, position.z, movementState)) {
+            if (player.collidesWithBlock(position.x, oldPosition.y, oldPosition.z, movementState))
                 position.x = oldPosition.x;
-            if (player.collidesWithBlock(oldPosition.x, position.y, oldPosition.z))
+            if (player.collidesWithBlock(oldPosition.x, position.y, oldPosition.z, movementState))
                 position.y = oldPosition.y;
-            if (player.collidesWithBlock(oldPosition.x, oldPosition.y, position.z))
+            if (player.collidesWithBlock(oldPosition.x, oldPosition.y, position.z, movementState))
                 position.z = oldPosition.z;
             return;
         }
@@ -47,6 +49,12 @@ public class Camera {
 
         else if ((int) Math.floor(oldPosition.z) >> 5 != (int) Math.floor(position.z) >> 5)
             player.loadUnloadChunks();
+    }
+
+    public void movePositionNoChecks(float x, float y, float z) {
+        position.x += x;
+        position.y += y;
+        position.z += z;
     }
 
     public Vector3f getDirection() {

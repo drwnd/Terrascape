@@ -45,6 +45,8 @@ public class Player {
     private int selectedHotBar = 0;
     private int selectedHotBarSlot = 0;
 
+    private int movementState = WALKING;
+
     public Player(Texture atlas) {
         renderer = new RenderManager();
         window = Launcher.getWindow();
@@ -119,9 +121,46 @@ public class Player {
 
         float movementSpeedModifier = 1;
 
-        if (window.isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT)) movementSpeedModifier *= 0.5f;
+        if (window.isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT)) {
+
+            if (movementState == WALKING) {
+                camera.movePositionNoChecks(0.0f, -0.25f, 0.0f);
+                movementState = CROUCHING;
+            }
+        } else if (movementState == CROUCHING) {
+            Vector3f position = camera.getPosition();
+            if (!collidesWithBlock(position.x, position.y + 0.25f, position.z, WALKING)) {
+                camera.movePositionNoChecks(0.0f, 0.25f, 0.0f);
+                movementState = WALKING;
+            }
+        }
+
+        if (window.isKeyPressed(GLFW.GLFW_KEY_CAPS_LOCK)) {
+            if (movementState == WALKING)
+                camera.movePositionNoChecks(0.0f, -1.25f, 0.0f);
+            else if (movementState == CROUCHING)
+                camera.movePositionNoChecks(0.0f, -1.0f, 0.0f);
+            movementState = CRAWLING;
+
+        } else if (movementState == CRAWLING) {
+            Vector3f position = camera.getPosition();
+            if (!collidesWithBlock(position.x, position.y + 1.25f, position.z, WALKING)) {
+                camera.movePositionNoChecks(0.0f, 1.25f, 0.0f);
+                movementState = WALKING;
+
+            } else if (!collidesWithBlock(position.x, position.y + 1.0f, position.z, CROUCHING)) {
+                camera.movePositionNoChecks(0.0f, 1.0f, 0.0f);
+                movementState = CROUCHING;
+            }
+        }
+
+        if (movementState == CROUCHING)
+            movementSpeedModifier *= 0.5f;
+        else if (movementState == CRAWLING)
+            movementSpeedModifier *= 0.35f;
+
         if (window.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL)) movementSpeedModifier *= 2;
-        if (window.isKeyPressed(GLFW.GLFW_KEY_CAPS_LOCK)) movementSpeedModifier *= 20;
+        if (window.isKeyPressed(GLFW.GLFW_KEY_TAB)) movementSpeedModifier *= 20;
 
         cameraInc.set(0, 0, 0);
         if (window.isKeyPressed(GLFW.GLFW_KEY_W)) cameraInc.z -= MOVEMENT_SPEED * movementSpeedModifier;
@@ -243,7 +282,7 @@ public class Player {
 
         final float minX = cP.x - HALF_PLAYER_WIDTH;
         final float maxX = cP.x + HALF_PLAYER_WIDTH;
-        final float minY = cP.y - PLAYER_FEET_OFFSET;
+        final float minY = cP.y - PLAYER_FEET_OFFSETS[movementState];
         final float maxY = cP.y + PLAYER_HEAD_OFFSET;
         final float minZ = cP.z - HALF_PLAYER_WIDTH;
         final float maxZ = cP.z + HALF_PLAYER_WIDTH;
@@ -275,10 +314,10 @@ public class Player {
             renderer.processGUIElement(GUIElement);
     }
 
-    public boolean collidesWithBlock(float x, float y, float z) {
+    public boolean collidesWithBlock(float x, float y, float z, int movementState) {
         final float minX = x - HALF_PLAYER_WIDTH;
         final float maxX = x + HALF_PLAYER_WIDTH;
-        final float minY = y - PLAYER_FEET_OFFSET;
+        final float minY = y - PLAYER_FEET_OFFSETS[movementState];
         final float maxY = y + PLAYER_HEAD_OFFSET;
         final float minZ = z - HALF_PLAYER_WIDTH;
         final float maxZ = z + HALF_PLAYER_WIDTH;
@@ -346,5 +385,9 @@ public class Player {
 
     public boolean isNoClip() {
         return noClip;
+    }
+
+    public int getMovementState() {
+        return movementState;
     }
 }

@@ -10,7 +10,11 @@ public class Constants {
 
     public static final float HALF_PLAYER_WIDTH = 0.23f;
     public static final float PLAYER_HEAD_OFFSET = 0.08f;
-    public static final float PLAYER_FEET_OFFSET = 1.4f;
+    public static final float[] PLAYER_FEET_OFFSETS = new float[]{1.65f, 1.4f, 0.4f};
+
+    public static final int WALKING = 0;
+    public static final int CROUCHING = 1;
+    public static final int CRAWLING = 2;
 
     //Change to whatever you want
     public static final float TIME_SPEED = 0.000025f;
