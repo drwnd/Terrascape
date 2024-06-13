@@ -9,7 +9,7 @@ import static com.MBEv2.core.utils.Constants.*;
 
 public class ChunkGenerator {
 
-    private Thread thread;
+    private final Thread thread;
 
     private boolean shouldExecute = false;
 
@@ -18,7 +18,18 @@ public class ChunkGenerator {
     }
 
     private void run() {
-        while (shouldExecute && EngineManager.isRunning) {
+        while (EngineManager.isRunning) {
+            if (!shouldExecute) {
+                try {
+                    synchronized (thread) {
+                        thread.wait();
+                    }
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            if (!shouldExecute)
+                break;
             shouldExecute = false;
 
             Vector3f cameraPosition = GameLogic.getPlayer().getCamera().getPosition();
@@ -105,10 +116,9 @@ public class ChunkGenerator {
 
     public void continueRunning() {
         shouldExecute = true;
-        if (thread.isAlive())
-            return;
-        thread = new Thread(this::run);
-        thread.start();
+        synchronized (thread) {
+            thread.notify();
+        }
     }
 
     public void start() {
@@ -117,5 +127,8 @@ public class ChunkGenerator {
 
     public void cleanUp() {
         shouldExecute = false;
+        synchronized (thread) {
+            thread.notify();
+        }
     }
 }

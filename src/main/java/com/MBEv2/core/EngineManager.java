@@ -8,7 +8,7 @@ import org.lwjgl.glfw.GLFWErrorCallback;
 
 public class EngineManager {
 
-    public static final double NANOSECOND = 1000000000;
+    public static final double NANOSECOND = 1_000_000_000;
     public static final float FRAME_RATE = 1000F;
 
     private static int fps;
@@ -51,7 +51,7 @@ public class EngineManager {
             unprocessedTime += passedTime / NANOSECOND;
             frameCounter += passedTime;
 
-            input();
+            input((float) (passedTime / NANOSECOND));
 
             float frameTime = 1 / FRAME_RATE;
             while (unprocessedTime > frameTime) {
@@ -82,8 +82,8 @@ public class EngineManager {
         isRunning = false;
     }
 
-    public void input() {
-        GameLogic.input();
+    public void input(float passedTime) {
+        GameLogic.input(passedTime);
     }
 
     private void render() {

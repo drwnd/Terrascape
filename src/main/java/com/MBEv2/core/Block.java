@@ -228,10 +228,11 @@ public class Block {
         return block;
     }
 
-
-    public static boolean playerIntersectsBlock(final float minX, final float maxX, final float minY, final float maxY, final float minZ, final float maxZ, final int blockX, final int blockY, final int blockZ, byte block) {
+    public static boolean playerIntersectsBlock(float minX, float maxX, float minY, float maxY, float minZ, float maxZ, int blockX, int blockY, int blockZ, byte block) {
         int blockType = BLOCK_TYPE[Byte.toUnsignedInt(block)];
         byte[] blockXYZSubData = BLOCK_XYZ_SUB_DATA[blockType];
+        if (blockXYZSubData.length == 0)
+            return false;
 
         float minBlockX = blockX + blockXYZSubData[0] * 0.0625f;
         float maxBlockX = 1 + blockX + blockXYZSubData[1] * 0.0625f;
@@ -407,14 +408,6 @@ public class Block {
 
     public static boolean isLeaveType(byte block) {
         return BLOCK_TYPE[Byte.toUnsignedInt(block)] == LEAVE_TYPE;
-    }
-
-    public static boolean isAirType(byte block) {
-        return BLOCK_TYPE[Byte.toUnsignedInt(block)] == AIR_TYPE;
-    }
-
-    public static boolean isWaterType(byte block) {
-        return BLOCK_TYPE[Byte.toUnsignedInt(block)] == WATER_TYPE;
     }
 
     public static void init() {

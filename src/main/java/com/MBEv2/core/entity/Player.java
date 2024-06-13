@@ -22,13 +22,13 @@ public class Player {
     private final Camera camera;
     private final MouseInput mouseInput;
 
-    private final Vector3f cameraInc;
+    private final Vector3f velocity;
 
     private final List<GUIElement> GUIElements = new ArrayList<>();
     private final List<GUIElement> hotBarElements = new ArrayList<>();
     private final Texture atlas;
 
-    private long rightButtonPressTime, leftButtonPressTime;
+    private long rightButtonPressTime, leftButtonPressTime, spaceButtonPressTime;
     private boolean rightButtonWasJustPressed, leftButtonWasJustPressed;
     private boolean UPArrowPressed, DOWNArrowPressed;
 
@@ -46,15 +46,17 @@ public class Player {
     private int selectedHotBarSlot = 0;
 
     private int movementState = WALKING;
+    private boolean isGrounded = false;
 
     public Player(Texture atlas) {
-        renderer = new RenderManager();
+        this.atlas = atlas;
         window = Launcher.getWindow();
+        renderer = new RenderManager();
         camera = new Camera(this);
         mouseInput = new MouseInput();
-        cameraInc = new Vector3f(0, 0, 0);
+
+        velocity = new Vector3f(0, 0, 0);
         camera.setPosition(0, 100, 0);
-        this.atlas = atlas;
         pos1 = new Vector3i();
         pos2 = new Vector3i();
     }
@@ -83,18 +85,14 @@ public class Player {
         mouseInput.init();
     }
 
-    public void loadUnloadChunks() {
-        GameLogic.loadUnloadChunks();
-    }
-
     public void update() {
-        camera.movePosition(cameraInc.x, cameraInc.y, cameraInc.z);
+        camera.movePosition(velocity.x, velocity.y, velocity.z);
 
         Vector2f rotVec = mouseInput.getDisplayVec();
         camera.moveRotation(rotVec.x * MOUSE_SENSITIVITY, rotVec.y * MOUSE_SENSITIVITY);
 
         Vector3f cP = camera.getPosition();
-        renderer.setHeadUnderWater(Chunk.getBlockInWorld((int) cP.x, (int) cP.y, (int) cP.z) == WATER);
+        renderer.setHeadUnderWater(Chunk.getBlockInWorld(Utils.floor(cP.x), Utils.floor(cP.y), Utils.floor(cP.z)) == WATER);
 
         long currentTime = System.nanoTime();
 
@@ -112,24 +110,40 @@ public class Player {
                 }
     }
 
-    public void input() {
+    public void input(float passedTime) {
         mouseInput.input();
         rightButtonPressTime = mouseInput.getRightButtonPressTime();
         leftButtonPressTime = mouseInput.getLeftButtonPressTime();
         rightButtonWasJustPressed = mouseInput.wasRightButtonJustPressed();
         leftButtonWasJustPressed = mouseInput.wasLeftButtonJustPressed();
 
-        float movementSpeedModifier = 1;
+        float movementSpeedModifier = 1.0f;
+        Vector3f position = camera.getPosition();
+        boolean isInWater = collidesWithBlock(position.x, position.y, position.z, movementState, WATER);
+        Vector2f rotation = camera.getRotation();
+        Vector3f velocity = new Vector3f(0.0f, 0.0f, 0.0f);
+        float accelerationModifier = isInWater ? SWIM_STRENGTH : isGrounded ? 1.0f : IN_AIR_SPEED;
+
+        if (movementState == CROUCHING)
+            movementSpeedModifier *= 0.5f;
+        else if (movementState == CRAWLING)
+            movementSpeedModifier *= 0.35f;
+        else if (window.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL))
+            movementSpeedModifier *= 1.5f;
 
         if (window.isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT)) {
-
             if (movementState == WALKING) {
                 camera.movePositionNoChecks(0.0f, -0.25f, 0.0f);
                 movementState = CROUCHING;
             }
+            if (isInWater) {
+                velocity.y -= SWIM_STRENGTH * passedTime * movementSpeedModifier * 7.5f;
+            }
+
         } else if (movementState == CROUCHING) {
-            Vector3f position = camera.getPosition();
-            if (!collidesWithBlock(position.x, position.y + 0.25f, position.z, WALKING)) {
+            if (!collidesWithBlock(position.x, position.y, position.z, WALKING))
+                movementState = WALKING;
+            else if (!collidesWithBlock(position.x, position.y + 0.25f, position.z, WALKING)) {
                 camera.movePositionNoChecks(0.0f, 0.25f, 0.0f);
                 movementState = WALKING;
             }
@@ -143,34 +157,73 @@ public class Player {
             movementState = CRAWLING;
 
         } else if (movementState == CRAWLING) {
-            Vector3f position = camera.getPosition();
-            if (!collidesWithBlock(position.x, position.y + 1.25f, position.z, WALKING)) {
+            if (!collidesWithBlock(position.x, position.y, position.z, WALKING))
+                movementState = WALKING;
+            else if (!collidesWithBlock(position.x, position.y, position.z, CROUCHING))
+                movementState = CROUCHING;
+            else if (!collidesWithBlock(position.x, position.y + 1.25f, position.z, WALKING)) {
                 camera.movePositionNoChecks(0.0f, 1.25f, 0.0f);
                 movementState = WALKING;
-
             } else if (!collidesWithBlock(position.x, position.y + 1.0f, position.z, CROUCHING)) {
                 camera.movePositionNoChecks(0.0f, 1.0f, 0.0f);
                 movementState = CROUCHING;
             }
         }
 
-        if (movementState == CROUCHING)
-            movementSpeedModifier *= 0.5f;
-        else if (movementState == CRAWLING)
-            movementSpeedModifier *= 0.35f;
+        if (isInWater) {
+            this.velocity.mul((float) Math.pow(WATER_FRICTION, passedTime));
+        } else {
+            float friction = isGrounded ? 0.0f : (float) Math.pow(AIR_FRICTION, passedTime);
+            this.velocity.mul(friction, (float) Math.pow(FALL_FRICTION, passedTime), friction);
+        }
 
-        if (window.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL)) movementSpeedModifier *= 2;
-        if (window.isKeyPressed(GLFW.GLFW_KEY_TAB)) movementSpeedModifier *= 20;
+        long currentTime = System.nanoTime();
+        if (window.isKeyPressed(GLFW.GLFW_KEY_SPACE))
+            if (isGrounded && currentTime - spaceButtonPressTime > 300_000_000) {
+                this.velocity.y = JUMP_STRENGTH;
+                isGrounded = false;
+                spaceButtonPressTime = currentTime;
+            } else if (isInWater) {
+                velocity.y += SWIM_STRENGTH * passedTime * movementSpeedModifier * 7.5f;
+                isGrounded = false;
+            }
 
-        cameraInc.set(0, 0, 0);
-        if (window.isKeyPressed(GLFW.GLFW_KEY_W)) cameraInc.z -= MOVEMENT_SPEED * movementSpeedModifier;
-        if (window.isKeyPressed(GLFW.GLFW_KEY_S)) cameraInc.z += MOVEMENT_SPEED * movementSpeedModifier;
+        if (window.isKeyPressed(GLFW.GLFW_KEY_W)) {
+            float acceleration = MOVEMENT_STATE_SPEED[movementState] * movementSpeedModifier * accelerationModifier * passedTime;
+            velocity.z -= acceleration;
+        }
+        movementSpeedModifier = Math.min(1.0f, movementSpeedModifier);
+        if (window.isKeyPressed(GLFW.GLFW_KEY_S)) {
+            float acceleration = MOVEMENT_STATE_SPEED[movementState] * movementSpeedModifier * accelerationModifier * passedTime;
+            velocity.z += acceleration;
+        }
 
-        if (window.isKeyPressed(GLFW.GLFW_KEY_A)) cameraInc.x -= MOVEMENT_SPEED * movementSpeedModifier;
-        if (window.isKeyPressed(GLFW.GLFW_KEY_D)) cameraInc.x += MOVEMENT_SPEED * movementSpeedModifier;
+        if (window.isKeyPressed(GLFW.GLFW_KEY_A)) {
+            float acceleration = MOVEMENT_STATE_SPEED[movementState] * movementSpeedModifier * accelerationModifier * passedTime;
+            velocity.x -= acceleration;
+        }
+        if (window.isKeyPressed(GLFW.GLFW_KEY_D)) {
+            float acceleration = MOVEMENT_STATE_SPEED[movementState] * movementSpeedModifier * accelerationModifier * passedTime;
+            velocity.x += acceleration;
+        }
 
-        if (window.isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT)) cameraInc.y -= MOVEMENT_SPEED;
-        if (window.isKeyPressed(GLFW.GLFW_KEY_SPACE)) cameraInc.y += MOVEMENT_SPEED;
+        float maxSpeed = Math.max(Math.abs(velocity.x), Math.abs(velocity.z));
+        float normalizer = maxSpeed / (float) Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
+        if (isGrounded && !Float.isNaN(normalizer) && Float.isFinite(normalizer)) {
+            velocity.x *= normalizer;
+            velocity.z *= normalizer;
+        }
+
+        if (velocity.z != 0) {
+            this.velocity.x -= (float) Math.sin(Math.toRadians(rotation.y)) * velocity.z;
+            this.velocity.z += (float) Math.cos(Math.toRadians(rotation.y)) * velocity.z;
+        }
+        if (velocity.x != 0) {
+            this.velocity.x -= (float) Math.sin(Math.toRadians(rotation.y - 90)) * velocity.x;
+            this.velocity.z += (float) Math.cos(Math.toRadians(rotation.y - 90)) * velocity.x;
+        }
+        this.velocity.y += velocity.y;
+        this.velocity.y = clampVelocity(this.velocity.y - GRAVITY_ACCELERATION * passedTime, MAX_FALL_SPEED);
 
         if (window.isKeyPressed(GLFW.GLFW_KEY_Q)) selectedHotBarSlot = 0;
         else if (window.isKeyPressed(GLFW.GLFW_KEY_2)) selectedHotBarSlot = 1;
@@ -322,18 +375,31 @@ public class Player {
         final float minZ = z - HALF_PLAYER_WIDTH;
         final float maxZ = z + HALF_PLAYER_WIDTH;
 
-        for (int blockX = Utils.floor(minX); blockX <= Utils.floor(maxX); blockX++)
-            for (int blockY = Utils.floor(minY); blockY <= Utils.floor(maxY); blockY++)
-                for (int blockZ = Utils.floor(minZ); blockZ <= Utils.floor(maxZ); blockZ++) {
+        for (int blockX = Utils.floor(minX), maxBlockX = Utils.floor(maxX); blockX <= maxBlockX; blockX++)
+            for (int blockY = Utils.floor(minY), maxBlockY = Utils.floor(maxY); blockY <= maxBlockY; blockY++)
+                for (int blockZ = Utils.floor(minZ), maxBlockZ = Utils.floor(maxZ); blockZ <= maxBlockZ; blockZ++) {
 
                     byte block = Chunk.getBlockInWorld(blockX, blockY, blockZ);
-                    if (Block.isAirType(block) || Block.isWaterType(block))
-                        continue;
 
                     if (Block.playerIntersectsBlock(minX, maxX, minY, maxY, minZ, maxZ, blockX, blockY, blockZ, block))
                         return true;
                 }
+        return false;
+    }
 
+    public boolean collidesWithBlock(float x, float y, float z, int movementState, byte block) {
+        final float minX = x - HALF_PLAYER_WIDTH;
+        final float maxX = x + HALF_PLAYER_WIDTH;
+        final float minY = y - PLAYER_FEET_OFFSETS[movementState];
+        final float maxY = y + PLAYER_HEAD_OFFSET;
+        final float minZ = z - HALF_PLAYER_WIDTH;
+        final float maxZ = z + HALF_PLAYER_WIDTH;
+
+        for (int blockX = Utils.floor(minX), maxBlockX = Utils.floor(maxX); blockX <= maxBlockX; blockX++)
+            for (int blockY = Utils.floor(minY), maxBlockY = Utils.floor(maxY); blockY <= maxBlockY; blockY++)
+                for (int blockZ = Utils.floor(minZ), maxBlockZ = Utils.floor(maxZ); blockZ <= maxBlockZ; blockZ++)
+                    if (Chunk.getBlockInWorld(blockX, blockY, blockZ) == block)
+                        return true;
         return false;
     }
 
@@ -389,5 +455,29 @@ public class Player {
 
     public int getMovementState() {
         return movementState;
+    }
+
+    public float clampVelocity(float velocity, float lowHigh) {
+        return Math.max(-lowHigh, Math.min(velocity, lowHigh));
+    }
+
+    public void setVelocityX(float x) {
+        velocity.x = x;
+    }
+
+    public void setVelocityY(float y) {
+        velocity.y = y;
+    }
+
+    public void setVelocityZ(float z) {
+        velocity.z = z;
+    }
+
+    public void setGrounded(boolean grounded) {
+        isGrounded = grounded;
+    }
+
+    public boolean isGrounded() {
+        return isGrounded;
     }
 }

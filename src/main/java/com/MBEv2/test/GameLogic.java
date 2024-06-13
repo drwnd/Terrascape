@@ -164,8 +164,8 @@ public class GameLogic {
         }
     }
 
-    public static void input() {
-        player.input();
+    public static void input(float passedTime) {
+        player.input(passedTime);
     }
 
     public static void render() {
