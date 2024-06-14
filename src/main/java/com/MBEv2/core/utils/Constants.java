@@ -7,7 +7,7 @@ public class Constants {
     public static final float FOV = (float) Math.toRadians(90);
     public static final float GUI_SIZE = 1.0f;
     public static final float MOUSE_SENSITIVITY = 0.040f;
-    public static final float MOVEMENT_SPEED = 4.32f;
+    public static final float MOVEMENT_SPEED = 0.5f;
     public static final float REACH = 5.0f;
     public static final byte OAK_TREE_VALUE = 1;
     public static final byte SPRUCE_TREE_VALUE = 2;
@@ -21,22 +21,29 @@ public class Constants {
 
     public static final float HALF_PLAYER_WIDTH = 0.23f;
     public static final float PLAYER_HEAD_OFFSET = 0.08f;
-    public static final float[] PLAYER_FEET_OFFSETS = new float[]{1.65f, 1.4f, 0.4f};
+    public static final float[] PLAYER_FEET_OFFSETS = new float[]{1.65f, 1.4f, 0.4f, 0.4f};
 
+    //Player movement
     public static final float AIR_FRICTION = 0.028944f;
-    public static final float IN_AIR_SPEED = 0.026f;
-    public static final float[] MOVEMENT_STATE_SPEED = new float[]{MOVEMENT_SPEED, MOVEMENT_SPEED * 0.75f, MOVEMENT_SPEED * 0.5f};
-    public static final float JUMP_STRENGTH = 0.019f * MOVEMENT_SPEED;
-    public static final float SWIM_STRENGTH = 0.015f * MOVEMENT_SPEED;
-    public static final float GRAVITY_ACCELERATION = 0.28f;
-    public static final float MAX_FALL_SPEED = 0.4f;
     public static final float FALL_FRICTION = 0.23521f;
     public static final float WATER_FRICTION = 0.000000008f;
+    public static final float GROUND_FRICTION = 0.000000257f;
+    public static final float FLY_FRICTION = 0.00062f;
+
+    public static final float IN_AIR_SPEED = 0.23f;
+    public static final float[] MOVEMENT_STATE_SPEED = new float[]{MOVEMENT_SPEED, MOVEMENT_SPEED * 0.375f, MOVEMENT_SPEED * 0.25f};
+    public static final float MAX_FALL_SPEED = 0.4f;
+    public static final float FLY_SPEED = 1.0f;
+
+    public static final float JUMP_STRENGTH = 0.08208f;
+    public static final float SWIM_STRENGTH = 0.486f;
+    public static final float GRAVITY_ACCELERATION = 0.28f;
 
     //Movement state indices
     public static final int WALKING = 0;
     public static final int CROUCHING = 1;
     public static final int CRAWLING = 2;
+    public static final int SWIMMING = 3;
 
     //DO NOT CHANGE THESE VALUES
     public static final int CHUNK_SIZE = 32;

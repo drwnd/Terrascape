@@ -34,6 +34,7 @@ public class Player {
 
     //Debug
     private boolean noClip, gKeyPressed;
+    private boolean isFling, fKeyPressed;
     private boolean tPressed = false, zPressed = false;
     private final Vector3i pos1, pos2;
 
@@ -52,7 +53,7 @@ public class Player {
         this.atlas = atlas;
         window = Launcher.getWindow();
         renderer = new RenderManager();
-        camera = new Camera(this);
+        camera = new Camera();
         mouseInput = new MouseInput();
 
         velocity = new Vector3f(0, 0, 0);
@@ -86,7 +87,7 @@ public class Player {
     }
 
     public void update() {
-        camera.movePosition(velocity.x, velocity.y, velocity.z);
+        moveCameraHandleCollisions(velocity.x, velocity.y, velocity.z);
 
         Vector2f rotVec = mouseInput.getDisplayVec();
         camera.moveRotation(rotVec.x * MOUSE_SENSITIVITY, rotVec.y * MOUSE_SENSITIVITY);
@@ -96,8 +97,10 @@ public class Player {
 
         long currentTime = System.nanoTime();
 
-        if (leftButtonPressTime != -1) if (currentTime - leftButtonPressTime > 300_000_000 || leftButtonWasJustPressed)
+        if (leftButtonPressTime != -1 && (currentTime - leftButtonPressTime > 300_000_000 || leftButtonWasJustPressed)) {
             GameLogic.placeBlock(AIR, getTarget(0, camera.getDirection()));
+            isGrounded = false;
+        }
 
         if (rightButtonPressTime != -1)
             if (currentTime - rightButtonPressTime > 300_000_000 || rightButtonWasJustPressed)
@@ -117,64 +120,99 @@ public class Player {
         rightButtonWasJustPressed = mouseInput.wasRightButtonJustPressed();
         leftButtonWasJustPressed = mouseInput.wasLeftButtonJustPressed();
 
-        float movementSpeedModifier = 1.0f;
         Vector3f position = camera.getPosition();
         boolean isInWater = collidesWithBlock(position.x, position.y, position.z, movementState, WATER);
-        Vector2f rotation = camera.getRotation();
         Vector3f velocity = new Vector3f(0.0f, 0.0f, 0.0f);
-        float accelerationModifier = isInWater ? SWIM_STRENGTH : isGrounded ? 1.0f : IN_AIR_SPEED;
 
-        if (movementState == CROUCHING)
-            movementSpeedModifier *= 0.5f;
-        else if (movementState == CRAWLING)
-            movementSpeedModifier *= 0.35f;
-        else if (window.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL))
+        handleInputMovementStateChange(position);
+
+        if (isFling)
+            handleInputFling(velocity, passedTime);
+        else if (isInWater)
+            handleInputSwimming(velocity, passedTime);
+        else
+            handleInputWalking(velocity, passedTime);
+
+        normalizeVelocity(velocity);
+        addVelocityChange(velocity);
+
+        handleInputHotkeys();
+        handleInputDebugHotkeys();
+    }
+
+    private void handleInputWalking(Vector3f velocity, float passedTime) {
+        float friction = (float) Math.pow(isGrounded ? GROUND_FRICTION : AIR_FRICTION, passedTime);
+        this.velocity.mul(friction, (float) Math.pow(FALL_FRICTION, passedTime), friction);
+
+        float movementSpeedModifier = 1.0f;
+        float accelerationModifier = isGrounded ? 1.0f : IN_AIR_SPEED;
+
+        if (movementState == WALKING && window.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL))
             movementSpeedModifier *= 1.5f;
 
-        if (window.isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT)) {
-            if (movementState == WALKING) {
-                camera.movePositionNoChecks(0.0f, -0.25f, 0.0f);
-                movementState = CROUCHING;
-            }
-            if (isInWater) {
-                velocity.y -= SWIM_STRENGTH * passedTime * movementSpeedModifier * 7.5f;
-            }
-
-        } else if (movementState == CROUCHING) {
-            if (!collidesWithBlock(position.x, position.y, position.z, WALKING))
-                movementState = WALKING;
-            else if (!collidesWithBlock(position.x, position.y + 0.25f, position.z, WALKING)) {
-                camera.movePositionNoChecks(0.0f, 0.25f, 0.0f);
-                movementState = WALKING;
-            }
+        if (window.isKeyPressed(GLFW.GLFW_KEY_W)) {
+            float acceleration = MOVEMENT_STATE_SPEED[movementState] * movementSpeedModifier * accelerationModifier * passedTime;
+            velocity.z -= acceleration;
+        }
+        if (window.isKeyPressed(GLFW.GLFW_KEY_S)) {
+            float acceleration = MOVEMENT_STATE_SPEED[movementState] * accelerationModifier * passedTime;
+            velocity.z += acceleration;
         }
 
-        if (window.isKeyPressed(GLFW.GLFW_KEY_CAPS_LOCK)) {
-            if (movementState == WALKING)
-                camera.movePositionNoChecks(0.0f, -1.25f, 0.0f);
-            else if (movementState == CROUCHING)
-                camera.movePositionNoChecks(0.0f, -1.0f, 0.0f);
-            movementState = CRAWLING;
-
-        } else if (movementState == CRAWLING) {
-            if (!collidesWithBlock(position.x, position.y, position.z, WALKING))
-                movementState = WALKING;
-            else if (!collidesWithBlock(position.x, position.y, position.z, CROUCHING))
-                movementState = CROUCHING;
-            else if (!collidesWithBlock(position.x, position.y + 1.25f, position.z, WALKING)) {
-                camera.movePositionNoChecks(0.0f, 1.25f, 0.0f);
-                movementState = WALKING;
-            } else if (!collidesWithBlock(position.x, position.y + 1.0f, position.z, CROUCHING)) {
-                camera.movePositionNoChecks(0.0f, 1.0f, 0.0f);
-                movementState = CROUCHING;
-            }
+        if (window.isKeyPressed(GLFW.GLFW_KEY_A)) {
+            float acceleration = MOVEMENT_STATE_SPEED[movementState] * accelerationModifier * passedTime;
+            velocity.x -= acceleration;
+        }
+        if (window.isKeyPressed(GLFW.GLFW_KEY_D)) {
+            float acceleration = MOVEMENT_STATE_SPEED[movementState] * accelerationModifier * passedTime;
+            velocity.x += acceleration;
         }
 
-        if (isInWater) {
-            this.velocity.mul((float) Math.pow(WATER_FRICTION, passedTime));
+        long currentTime = System.nanoTime();
+        if (window.isKeyPressed(GLFW.GLFW_KEY_SPACE) && isGrounded && currentTime - spaceButtonPressTime > 300_000_000) {
+            this.velocity.y = JUMP_STRENGTH;
+            isGrounded = false;
+            spaceButtonPressTime = currentTime;
+        }
+        applyGravity(passedTime);
+    }
+
+    private void handleInputSwimming(Vector3f velocity, float passedTime) {
+        this.velocity.mul((float) Math.pow(WATER_FRICTION, passedTime));
+
+        float accelerationModifier = SWIM_STRENGTH * (isGrounded ? 2.0f : 1.0f);
+
+        if (window.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL) && window.isKeyPressed(GLFW.GLFW_KEY_W)) {
+            Vector2f cameraRotation = camera.getRotation();
+            float acceleration = SWIM_STRENGTH * accelerationModifier * passedTime * 2.5f;
+            velocity.z -= (float) (acceleration * Math.cos(Math.toRadians(cameraRotation.x)));
+            velocity.y -= (float) (acceleration * Math.sin(Math.toRadians(cameraRotation.x)));
+            if (movementState != SWIMMING) {
+                if (movementState == WALKING)
+                    camera.movePosition(0.0f, -1.25f, 0.0f);
+                else if (movementState == CROUCHING)
+                    camera.movePosition(0.0f, -1.0f, 0.0f);
+                movementState = SWIMMING;
+            }
         } else {
-            float friction = isGrounded ? 0.0f : (float) Math.pow(AIR_FRICTION, passedTime);
-            this.velocity.mul(friction, (float) Math.pow(FALL_FRICTION, passedTime), friction);
+            if (window.isKeyPressed(GLFW.GLFW_KEY_W)) {
+                float acceleration = SWIM_STRENGTH * accelerationModifier * passedTime;
+                velocity.z -= acceleration;
+            }
+            if (window.isKeyPressed(GLFW.GLFW_KEY_S)) {
+                float acceleration = SWIM_STRENGTH * accelerationModifier * passedTime;
+                velocity.z += acceleration;
+            }
+
+            if (window.isKeyPressed(GLFW.GLFW_KEY_A)) {
+                float acceleration = SWIM_STRENGTH * accelerationModifier * passedTime;
+                velocity.x -= acceleration;
+            }
+            if (window.isKeyPressed(GLFW.GLFW_KEY_D)) {
+                float acceleration = SWIM_STRENGTH * accelerationModifier * passedTime;
+                velocity.x += acceleration;
+            }
+            applyGravity(passedTime);
         }
 
         long currentTime = System.nanoTime();
@@ -183,48 +221,52 @@ public class Player {
                 this.velocity.y = JUMP_STRENGTH;
                 isGrounded = false;
                 spaceButtonPressTime = currentTime;
-            } else if (isInWater) {
-                velocity.y += SWIM_STRENGTH * passedTime * movementSpeedModifier * 7.5f;
+            } else {
+                velocity.y += SWIM_STRENGTH * passedTime;
                 isGrounded = false;
             }
 
+        if (window.isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT))
+            velocity.y -= SWIM_STRENGTH * passedTime;
+
+    }
+
+    private void handleInputFling(Vector3f velocity, float passedTime) {
+        this.velocity.mul((float) Math.pow(FLY_FRICTION, passedTime));
+
+        float movementSpeedModifier = 1.0f;
+
+        if (window.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL))
+            movementSpeedModifier *= 2.5f;
+        if (window.isKeyPressed(GLFW.GLFW_KEY_TAB))
+            movementSpeedModifier *= 5.0f;
+
         if (window.isKeyPressed(GLFW.GLFW_KEY_W)) {
-            float acceleration = MOVEMENT_STATE_SPEED[movementState] * movementSpeedModifier * accelerationModifier * passedTime;
+            float acceleration = FLY_SPEED * MOVEMENT_STATE_SPEED[movementState] * movementSpeedModifier * passedTime;
             velocity.z -= acceleration;
         }
-        movementSpeedModifier = Math.min(1.0f, movementSpeedModifier);
         if (window.isKeyPressed(GLFW.GLFW_KEY_S)) {
-            float acceleration = MOVEMENT_STATE_SPEED[movementState] * movementSpeedModifier * accelerationModifier * passedTime;
+            float acceleration = FLY_SPEED * MOVEMENT_STATE_SPEED[movementState] * passedTime;
             velocity.z += acceleration;
         }
 
         if (window.isKeyPressed(GLFW.GLFW_KEY_A)) {
-            float acceleration = MOVEMENT_STATE_SPEED[movementState] * movementSpeedModifier * accelerationModifier * passedTime;
+            float acceleration = FLY_SPEED * MOVEMENT_STATE_SPEED[movementState] * passedTime;
             velocity.x -= acceleration;
         }
         if (window.isKeyPressed(GLFW.GLFW_KEY_D)) {
-            float acceleration = MOVEMENT_STATE_SPEED[movementState] * movementSpeedModifier * accelerationModifier * passedTime;
+            float acceleration = FLY_SPEED * MOVEMENT_STATE_SPEED[movementState] * passedTime;
             velocity.x += acceleration;
         }
 
-        float maxSpeed = Math.max(Math.abs(velocity.x), Math.abs(velocity.z));
-        float normalizer = maxSpeed / (float) Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
-        if (isGrounded && !Float.isNaN(normalizer) && Float.isFinite(normalizer)) {
-            velocity.x *= normalizer;
-            velocity.z *= normalizer;
-        }
+        if (window.isKeyPressed(GLFW.GLFW_KEY_SPACE))
+            velocity.y += FLY_SPEED * MOVEMENT_SPEED * passedTime;
 
-        if (velocity.z != 0) {
-            this.velocity.x -= (float) Math.sin(Math.toRadians(rotation.y)) * velocity.z;
-            this.velocity.z += (float) Math.cos(Math.toRadians(rotation.y)) * velocity.z;
-        }
-        if (velocity.x != 0) {
-            this.velocity.x -= (float) Math.sin(Math.toRadians(rotation.y - 90)) * velocity.x;
-            this.velocity.z += (float) Math.cos(Math.toRadians(rotation.y - 90)) * velocity.x;
-        }
-        this.velocity.y += velocity.y;
-        this.velocity.y = clampVelocity(this.velocity.y - GRAVITY_ACCELERATION * passedTime, MAX_FALL_SPEED);
+        if (window.isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT))
+            velocity.y -= FLY_SPEED * MOVEMENT_SPEED * passedTime;
+    }
 
+    private void handleInputHotkeys() {
         if (window.isKeyPressed(GLFW.GLFW_KEY_Q)) selectedHotBarSlot = 0;
         else if (window.isKeyPressed(GLFW.GLFW_KEY_2)) selectedHotBarSlot = 1;
         else if (window.isKeyPressed(GLFW.GLFW_KEY_3)) selectedHotBarSlot = 2;
@@ -234,29 +276,34 @@ public class Player {
         else if (window.isKeyPressed(GLFW.GLFW_KEY_F)) selectedHotBarSlot = 6;
         else if (mouseInput.isMouseButton5IsPressed()) selectedHotBarSlot = 7;
         else if (mouseInput.isMouseButton4IsPressed()) selectedHotBarSlot = 8;
-        else if
-        (window.isKeyPressed(GLFW.GLFW_KEY_UP) && !UPArrowPressed) {
+
+        if (window.isKeyPressed(GLFW.GLFW_KEY_UP) && !UPArrowPressed) {
             selectedHotBar = (selectedHotBar + 1) % hotBars.length;
             updateHotBarElements();
             UPArrowPressed = true;
-        } else if
-        (window.isKeyPressed(GLFW.GLFW_KEY_DOWN) && !DOWNArrowPressed) {
+        }
+        if (window.isKeyPressed(GLFW.GLFW_KEY_DOWN) && !DOWNArrowPressed) {
             selectedHotBar = (selectedHotBar - 1 + hotBars.length) % hotBars.length;
             updateHotBarElements();
             DOWNArrowPressed = true;
-        } else if
-        (window.isKeyPressed(GLFW.GLFW_KEY_G) && !gKeyPressed) {
+        }
+        if (UPArrowPressed && !window.isKeyPressed(GLFW.GLFW_KEY_UP)) UPArrowPressed = false;
+        if (DOWNArrowPressed && !window.isKeyPressed(GLFW.GLFW_KEY_DOWN)) DOWNArrowPressed = false;
+    }
+
+    private void handleInputDebugHotkeys() {
+        if (window.isKeyPressed(GLFW.GLFW_KEY_G) && !gKeyPressed) {
             noClip = !noClip;
             gKeyPressed = true;
-        } else if
-        (window.isKeyPressed(GLFW.GLFW_KEY_T) && !tPressed) {
+        }
+        if (window.isKeyPressed(GLFW.GLFW_KEY_T) && !tPressed) {
             Vector3f cameraPosition = camera.getPosition();
             pos1.x = (int) Math.floor(cameraPosition.x);
             pos1.y = (int) Math.floor(cameraPosition.y);
             pos1.z = (int) Math.floor(cameraPosition.z);
             tPressed = true;
-        } else if
-        (window.isKeyPressed(GLFW.GLFW_KEY_Y) && !zPressed) {
+        }
+        if (window.isKeyPressed(GLFW.GLFW_KEY_Y) && !zPressed) {
             Vector3f cameraPosition = camera.getPosition();
             pos2.x = (int) Math.floor(cameraPosition.x);
             pos2.y = (int) Math.floor(cameraPosition.y);
@@ -288,12 +335,160 @@ public class Player {
             }
             System.out.print("}");
         }
+        if (window.isKeyPressed(GLFW.GLFW_KEY_F) && !fKeyPressed) {
+            isFling = !isFling;
+            fKeyPressed = true;
+        }
 
-        if (UPArrowPressed && !window.isKeyPressed(GLFW.GLFW_KEY_UP)) UPArrowPressed = false;
-        if (DOWNArrowPressed && !window.isKeyPressed(GLFW.GLFW_KEY_DOWN)) DOWNArrowPressed = false;
         if (gKeyPressed && !window.isKeyPressed(GLFW.GLFW_KEY_G)) gKeyPressed = false;
         if (tPressed && !window.isKeyPressed(GLFW.GLFW_KEY_T)) tPressed = false;
         if (zPressed && !window.isKeyPressed(GLFW.GLFW_KEY_Y)) zPressed = false;
+        if (fKeyPressed && !window.isKeyPressed(GLFW.GLFW_KEY_F)) fKeyPressed = false;
+    }
+
+    private void handleInputMovementStateChange(Vector3f position) {
+        if (window.isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT)) {
+            if (movementState == WALKING) {
+                camera.movePosition(0.0f, -0.25f, 0.0f);
+                movementState = CROUCHING;
+            }
+
+        } else if (movementState == CROUCHING) {
+            if (!collidesWithBlock(position.x, position.y, position.z, WALKING))
+                movementState = WALKING;
+            else if (!collidesWithBlock(position.x, position.y + 0.25f, position.z, WALKING)) {
+                camera.movePosition(0.0f, 0.25f, 0.0f);
+                movementState = WALKING;
+            }
+        }
+
+        if (window.isKeyPressed(GLFW.GLFW_KEY_CAPS_LOCK)) {
+            if (movementState == WALKING)
+                camera.movePosition(0.0f, -1.25f, 0.0f);
+            else if (movementState == CROUCHING)
+                camera.movePosition(0.0f, -1.0f, 0.0f);
+            movementState = CRAWLING;
+
+        } else if (movementState == CRAWLING) {
+            if (!collidesWithBlock(position.x, position.y, position.z, WALKING))
+                movementState = WALKING;
+            else if (!collidesWithBlock(position.x, position.y, position.z, CROUCHING))
+                movementState = CROUCHING;
+            else if (!collidesWithBlock(position.x, position.y + 1.25f, position.z, WALKING)) {
+                camera.movePosition(0.0f, 1.25f, 0.0f);
+                movementState = WALKING;
+            } else if (!collidesWithBlock(position.x, position.y + 1.0f, position.z, CROUCHING)) {
+                camera.movePosition(0.0f, 1.0f, 0.0f);
+                movementState = CROUCHING;
+            }
+        }
+
+        if (movementState == SWIMMING && !window.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL))
+            movementState = CRAWLING;
+        else if (movementState == SWIMMING && !collidesWithBlock(position.x, position.y, position.z, SWIMMING, WATER))
+            movementState = CRAWLING;
+    }
+
+    private void normalizeVelocity(Vector3f velocity) {
+        float maxSpeed = Math.max(Math.abs(velocity.x), Math.abs(velocity.z));
+        float normalizer = maxSpeed / (float) Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
+        if (isGrounded && !Float.isNaN(normalizer) && Float.isFinite(normalizer)) {
+            velocity.x *= normalizer;
+            velocity.z *= normalizer;
+        }
+    }
+
+    private void addVelocityChange(Vector3f velocity) {
+        Vector2f rotation = camera.getRotation();
+
+        if (velocity.z != 0) {
+            this.velocity.x -= (float) Math.sin(Math.toRadians(rotation.y)) * velocity.z;
+            this.velocity.z += (float) Math.cos(Math.toRadians(rotation.y)) * velocity.z;
+        }
+        if (velocity.x != 0) {
+            this.velocity.x -= (float) Math.sin(Math.toRadians(rotation.y - 90)) * velocity.x;
+            this.velocity.z += (float) Math.cos(Math.toRadians(rotation.y - 90)) * velocity.x;
+        }
+        this.velocity.y += velocity.y;
+    }
+
+    private void applyGravity(float passedTime) {
+        this.velocity.y = clampVelocity(this.velocity.y - GRAVITY_ACCELERATION * passedTime, MAX_FALL_SPEED);
+    }
+
+    private void moveCameraHandleCollisions(float x, float y, float z) {
+        Vector3f position = new Vector3f(camera.getPosition());
+        Vector3f oldPosition = new Vector3f(position);
+        position.add(x, y, z);
+
+        int movementState = getMovementState();
+
+        boolean xFirst = collidesWithBlock(position.x, oldPosition.y, oldPosition.z, movementState);
+        boolean zFirst = collidesWithBlock(oldPosition.x, oldPosition.y, position.z, movementState);
+        boolean xAndZ = collidesWithBlock(position.x, oldPosition.y, position.z, movementState);
+
+        if ((xFirst || xAndZ) && (zFirst || xAndZ)) {
+            if (xFirst && xAndZ) {
+                position.x = oldPosition.x;
+                setVelocityX(0.0f);
+            } else {
+                position.z = oldPosition.z;
+                setVelocityZ(0.0f);
+            }
+
+            if (zFirst && xAndZ) {
+                position.z = oldPosition.z;
+                setVelocityZ(0.0f);
+            } else {
+                position.x = oldPosition.x;
+                setVelocityX(0.0f);
+            }
+
+            if (!(xFirst && xAndZ) && !(zFirst && xAndZ))
+                if (Math.abs(x) > Math.abs(z))
+                    position.x += x;
+                else
+                    position.z += z;
+        }
+
+        if (collidesWithBlock(position.x, position.y, position.z, movementState)) {
+            position.y = oldPosition.y;
+            setGrounded(y < 0.0f);
+            setVelocityY(0.0f);
+            if (y < 0.0f)
+                isFling = false;
+        } else if ((movementState == CROUCHING || movementState == CRAWLING) && isGrounded() && y < 0.0f) {
+            boolean onEdgeX = !collidesWithBlock(position.x, position.y - 0.0625f, oldPosition.z, movementState);
+            boolean onEdgeZ = !collidesWithBlock(oldPosition.x, position.y - 0.0625f, position.z, movementState);
+
+            if (onEdgeX) {
+                position.x = oldPosition.x;
+                position.y = oldPosition.y;
+                setVelocityX(0.0f);
+                setVelocityY(0.0f);
+            }
+            if (onEdgeZ) {
+                position.z = oldPosition.z;
+                position.y = oldPosition.y;
+                setVelocityZ(0.0f);
+                setVelocityY(0.0f);
+            }
+        }
+
+        if (position.y != oldPosition.y)
+            setGrounded(false);
+
+
+        if (Utils.floor(oldPosition.x) >> 5 != Utils.floor(position.x) >> 5)
+            GameLogic.loadUnloadChunks();
+
+        else if (Utils.floor(oldPosition.y) >> 5 != Utils.floor(position.y) >> 5)
+            GameLogic.loadUnloadChunks();
+
+        else if (Utils.floor(oldPosition.z) >> 5 != Utils.floor(position.z) >> 5)
+            GameLogic.loadUnloadChunks();
+
+        camera.setPosition(position.x, position.y, position.z);
     }
 
     private Vector3i getTarget(int action, Vector3f cD) {
@@ -368,6 +563,9 @@ public class Player {
     }
 
     public boolean collidesWithBlock(float x, float y, float z, int movementState) {
+        if (isNoClip())
+            return false;
+
         final float minX = x - HALF_PLAYER_WIDTH;
         final float maxX = x + HALF_PLAYER_WIDTH;
         final float minY = y - PLAYER_FEET_OFFSETS[movementState];
