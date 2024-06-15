@@ -9,8 +9,9 @@ import static com.MBEv2.core.utils.Constants.*;
 import com.MBEv2.core.utils.Transformation;
 import com.MBEv2.core.utils.Utils;
 import com.MBEv2.test.Launcher;
+import org.joml.FrustumIntersection;
+import org.joml.Matrix4f;
 import org.joml.Vector3f;
-import org.joml.Vector3i;
 import org.lwjgl.opengl.*;
 
 import java.nio.IntBuffer;
@@ -119,11 +120,8 @@ public class RenderManager {
         GL30.glBindVertexArray(0);
     }
 
-    public void prepareModel(Model model, Camera camera) {
-        blockShader.setUniform("textureSampler", 0);
-        blockShader.setUniform("viewMatrix", Transformation.getViewMatrix(camera));
+    public void prepareModel(Model model) {
         blockShader.setUniform("worldPos", model.getPosition());
-        blockShader.setUniform("time", time);
         GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, modelIndexBuffer);
     }
 
@@ -146,19 +144,31 @@ public class RenderManager {
         if (time > 1.0f)
             time = -1.0f;
 
+        Matrix4f projectionMatrix = window.updateProjectionMatrix();
+        Matrix4f viewMatrix = Transformation.getViewMatrix(camera);
+
         clear();
         blockShader.bind();
-        blockShader.setUniform("projectionMatrix", window.updateProjectionMatrix());
-        Vector3f cameraDirection = camera.getDirection();
+        blockShader.setUniform("projectionMatrix", projectionMatrix);
+        blockShader.setUniform("viewMatrix", viewMatrix);
+        blockShader.setUniform("textureSampler", 0);
+        blockShader.setUniform("time", time);
         GL11.glEnable(GL11.GL_DEPTH_TEST);
         GL11.glEnable(GL11.GL_CULL_FACE);
 
+        Matrix4f projectionViewMatrix = new Matrix4f();
+        projectionMatrix.mul(viewMatrix, projectionViewMatrix);
+        FrustumIntersection frustumIntersection = new FrustumIntersection(projectionViewMatrix);
+
         for (Model model : chunkModels) {
-            if (modelIsOutsideView(model, cameraDirection, camera))
+            Vector3f position = new Vector3f(model.getPosition());
+            int intersectionType = frustumIntersection.intersectAab(position, new Vector3f(position.x + CHUNK_SIZE, position.y + CHUNK_SIZE, position.z + CHUNK_SIZE));
+            if (intersectionType != FrustumIntersection.INTERSECT && intersectionType != FrustumIntersection.INSIDE)
                 continue;
+
             bindModel(model);
 
-            prepareModel(model, camera);
+            prepareModel(model);
             GL11.glDrawElements(GL11.GL_TRIANGLES, (int) (model.getVertexCount() * 0.75), GL11.GL_UNSIGNED_INT, 0);
 
             unbind();
@@ -168,12 +178,13 @@ public class RenderManager {
         GL11.glEnable(GL11.GL_BLEND);
         GL11.glDisable(GL11.GL_CULL_FACE);
         for (Model transparentModel : transparentChunkModels) {
-            if (modelIsOutsideView(transparentModel, cameraDirection, camera)) {
+            Vector3f position = new Vector3f(transparentModel.getPosition());
+            int intersectionType = frustumIntersection.intersectAab(position, new Vector3f(position.x + CHUNK_SIZE, position.y + CHUNK_SIZE, position.z + CHUNK_SIZE));
+            if (intersectionType != FrustumIntersection.INTERSECT && intersectionType != FrustumIntersection.INSIDE)
                 continue;
-            }
             bindModel(transparentModel);
 
-            prepareModel(transparentModel, camera);
+            prepareModel(transparentModel);
             GL11.glDrawElements(GL11.GL_TRIANGLES, (int) (transparentModel.getVertexCount() * 0.75), GL11.GL_UNSIGNED_INT, 0);
 
             unbind();
@@ -211,52 +222,6 @@ public class RenderManager {
         }
         GUIElements.clear();
         GUIShader.unBind();
-    }
-
-    private boolean modelIsOutsideView(Model model, Vector3f cameraDirection, Camera camera) {
-        float fov = FOV * 0.71f;
-        Vector3f cP = camera.getPosition();
-        Vector3i mP = model.getPosition();
-
-        if (angleToChunkCorner(camera.getPosition(), mP.x, mP.y, mP.z, cameraDirection) < fov)
-            return false;
-        if (angleToChunkCorner(camera.getPosition(), mP.x, mP.y, mP.z + CHUNK_SIZE, cameraDirection) < fov)
-            return false;
-        if (angleToChunkCorner(camera.getPosition(), mP.x, mP.y + CHUNK_SIZE, mP.z, cameraDirection) < fov)
-            return false;
-        if (angleToChunkCorner(camera.getPosition(), mP.x, mP.y + CHUNK_SIZE, mP.z + CHUNK_SIZE, cameraDirection) < fov)
-            return false;
-        if (angleToChunkCorner(camera.getPosition(), mP.x + CHUNK_SIZE, mP.y, mP.z, cameraDirection) < fov)
-            return false;
-        if (angleToChunkCorner(camera.getPosition(), mP.x + CHUNK_SIZE, mP.y, mP.z + CHUNK_SIZE, cameraDirection) < fov)
-            return false;
-        if (angleToChunkCorner(camera.getPosition(), mP.x + CHUNK_SIZE, mP.y + CHUNK_SIZE, mP.z, cameraDirection) < fov)
-            return false;
-        if (angleToChunkCorner(camera.getPosition(), mP.x + CHUNK_SIZE, mP.y + CHUNK_SIZE, mP.z + CHUNK_SIZE, cameraDirection) < fov)
-            return false;
-
-        int mPX = mP.x + CHUNK_SIZE / 2;
-        int mPY = mP.y + CHUNK_SIZE / 2;
-        int mPZ = mP.z + CHUNK_SIZE / 2;
-        float distance = (mPX - cP.x) * (mPX - cP.x) + (mPY - cP.y) * (mPY - cP.y) + (mPZ - cP.z) * (mPZ - cP.z);
-
-        return distance > 768;
-    }
-
-    private double angleToChunkCorner(Vector3f cameraPosition, int x, int y, int z, Vector3f cameraDirection) {
-        float deltaX = x - cameraPosition.x;
-        float deltaY = y - cameraPosition.y;
-        float deltaZ = z - cameraPosition.z;
-
-        if (dotProduct(cameraDirection, deltaX, deltaY, deltaZ) < 0)
-            return Math.PI;
-
-        float inverseLength = (float) (1.0 / Math.sqrt(deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ));
-        return Math.acos(dotProduct(cameraDirection, deltaX * inverseLength, deltaY * inverseLength, deltaZ * inverseLength));
-    }
-
-    private double dotProduct(Vector3f vector, float x, float y, float z) {
-        return vector.x * x + vector.y * y + vector.z * z;
     }
 
     public void processModel(Model model) {

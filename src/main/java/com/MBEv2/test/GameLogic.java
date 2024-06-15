@@ -28,21 +28,11 @@ public class GameLogic {
 
         atlas = new Texture(ObjectLoader.loadTexture("textures/atlas256.png"));
 
-        for (int x = -RENDER_DISTANCE_XZ; x < RENDER_DISTANCE_XZ; x++) {
-            for (int y = 0; y < RENDER_DISTANCE_Y * 2; y++) {
-                for (int z = -RENDER_DISTANCE_XZ; z < RENDER_DISTANCE_XZ; z++) {
-                    int index = GameLogic.getChunkIndex(x, y, z);
-                    Chunk chunk = Chunk.getChunk(index);
-                    chunk.generateMesh();
-                    bufferChunkMesh(chunk);
-                }
-            }
-        }
-
         player = new Player(atlas);
         player.init();
 
         player.getRenderer().init();
+        generator.continueRunning();
     }
 
     public static void loadUnloadChunks() {
@@ -52,6 +42,10 @@ public class GameLogic {
     public static void placeBlock(byte block, Vector3i position) {
         if (position == null)
             return;
+        if (Chunk.getBlockInWorld(position.x, position.y, position.z) == block)
+            return;
+        else
+            player.setGrounded(false);
 
         int chunkX = position.x >> 5;
         int chunkY = position.y >> 5;
@@ -64,37 +58,31 @@ public class GameLogic {
         Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
         chunk.storeSave(inChunkX, inChunkY, inChunkZ, block);
         chunk.setModified();
-        regenerateChunkMesh(chunk);
 
-        if (inChunkX == 0) {
-            Chunk neighbour = Chunk.getChunk(chunkX - 1, chunkY, chunkZ);
-            if (neighbour != null)
-                regenerateChunkMesh(neighbour);
-        } else if (inChunkX == CHUNK_SIZE - 1) {
-            Chunk neighbour = Chunk.getChunk(chunkX + 1, chunkY, chunkZ);
-            if (neighbour != null)
-                regenerateChunkMesh(neighbour);
-        }
+        int minX = chunkX, maxX = chunkX;
+        int minY = chunkY, maxY = chunkY;
+        int minZ = chunkZ, maxZ = chunkZ;
 
-        if (inChunkY == 0) {
-            Chunk neighbour = Chunk.getChunk(chunkX, chunkY - 1, chunkZ);
-            if (neighbour != null)
-                regenerateChunkMesh(neighbour);
-        } else if (inChunkY == CHUNK_SIZE - 1) {
-            Chunk neighbour = Chunk.getChunk(chunkX, chunkY + 1, chunkZ);
-            if (neighbour != null)
-                regenerateChunkMesh(neighbour);
-        }
+        if (inChunkX == 0)
+            minX--;
+        else if (inChunkX == CHUNK_SIZE - 1)
+            maxX++;
+        if (inChunkY == 0)
+            minY--;
+        else if (inChunkY == CHUNK_SIZE - 1)
+            maxY++;
+        if (inChunkZ == 0)
+            minZ--;
+        else if (inChunkZ == CHUNK_SIZE - 1)
+            maxZ++;
 
-        if (inChunkZ == 0) {
-            Chunk neighbour = Chunk.getChunk(chunkX, chunkY, chunkZ - 1);
-            if (neighbour != null)
-                regenerateChunkMesh(neighbour);
-        } else if (inChunkZ == CHUNK_SIZE - 1) {
-            Chunk neighbour = Chunk.getChunk(chunkX, chunkY, chunkZ + 1);
-            if (neighbour != null)
-                regenerateChunkMesh(neighbour);
-        }
+        for (int x = minX; x <= maxX; x++)
+            for (int y = minY; y <= maxY; y++)
+                for (int z = minZ; z <= maxZ; z++) {
+                    Chunk toMeshChunk = Chunk.getChunk(x, y, z);
+                    if (toMeshChunk != null)
+                        regenerateChunkMesh(toMeshChunk);
+                }
     }
 
     public static void regenerateChunkMesh(Chunk chunk) {

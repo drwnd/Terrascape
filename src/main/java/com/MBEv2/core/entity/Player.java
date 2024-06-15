@@ -97,10 +97,8 @@ public class Player {
 
         long currentTime = System.nanoTime();
 
-        if (leftButtonPressTime != -1 && (currentTime - leftButtonPressTime > 300_000_000 || leftButtonWasJustPressed)) {
+        if (leftButtonPressTime != -1 && (currentTime - leftButtonPressTime > 300_000_000 || leftButtonWasJustPressed))
             GameLogic.placeBlock(AIR, getTarget(0, camera.getDirection()));
-            isGrounded = false;
-        }
 
         if (rightButtonPressTime != -1)
             if (currentTime - rightButtonPressTime > 300_000_000 || rightButtonWasJustPressed)
@@ -228,7 +226,6 @@ public class Player {
 
         if (window.isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT))
             velocity.y -= SWIM_STRENGTH * passedTime;
-
     }
 
     private void handleInputFling(Vector3f velocity, float passedTime) {
@@ -537,7 +534,7 @@ public class Player {
 
         byte toPlaceBlock = Block.getToPlaceBlock(hotBars[selectedHotBar][selectedHotBarSlot], camera.getPrimaryDirection());
 
-        if (action == placing && Block.playerIntersectsBlock(minX, maxX, minY, maxY, minZ, maxZ, target.x, target.y, target.z, toPlaceBlock))
+        if (action == placing && Block.playerIntersectsBlock(minX, maxX, minY, maxY, minZ, maxZ, target.x, target.y, target.z, toPlaceBlock, this))
             return null;
 
         return target;
@@ -579,7 +576,7 @@ public class Player {
 
                     byte block = Chunk.getBlockInWorld(blockX, blockY, blockZ);
 
-                    if (Block.playerIntersectsBlock(minX, maxX, minY, maxY, minZ, maxZ, blockX, blockY, blockZ, block))
+                    if (Block.playerIntersectsBlock(minX, maxX, minY, maxY, minZ, maxZ, blockX, blockY, blockZ, block, this))
                         return true;
                 }
         return false;

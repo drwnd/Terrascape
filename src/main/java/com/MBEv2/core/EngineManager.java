@@ -27,7 +27,6 @@ public class EngineManager {
 
     public void start() throws Exception {
         Block.init();
-        Launcher.generateWorld();
         init();
         if (isRunning)
             return;

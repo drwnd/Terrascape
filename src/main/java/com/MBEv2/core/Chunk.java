@@ -441,7 +441,7 @@ public class Chunk {
 
     public static byte getBlockInWorld(int x, int y, int z) {
         Chunk chunk = world[GameLogic.getChunkIndex(x >> 5, y >> 5, z >> 5)];
-        if (chunk == null)
+        if (chunk == null || !chunk.isGenerated)
             return OUT_OF_WORLD;
         return chunk.getSaveBlock(x & 31, y & 31, z & 31);
     }

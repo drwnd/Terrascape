@@ -1,5 +1,7 @@
 package com.MBEv2.core;
 
+import com.MBEv2.core.entity.Player;
+
 import static com.MBEv2.core.utils.Constants.*;
 
 public class Block {
@@ -228,7 +230,10 @@ public class Block {
         return block;
     }
 
-    public static boolean playerIntersectsBlock(float minX, float maxX, float minY, float maxY, float minZ, float maxZ, int blockX, int blockY, int blockZ, byte block) {
+    public static boolean playerIntersectsBlock(float minX, float maxX, float minY, float maxY, float minZ, float maxZ, int blockX, int blockY, int blockZ, byte block, Player player) {
+        if (player.isNoClip())
+            return false;
+
         int blockType = BLOCK_TYPE[Byte.toUnsignedInt(block)];
         byte[] blockXYZSubData = BLOCK_XYZ_SUB_DATA[blockType];
         if (blockXYZSubData.length == 0)
@@ -412,7 +417,7 @@ public class Block {
 
     public static void init() {
         BLOCK_TYPE[AIR] = AIR_TYPE;
-        BLOCK_TYPE[Byte.toUnsignedInt(OUT_OF_WORLD)] = AIR_TYPE;
+        BLOCK_TYPE[Byte.toUnsignedInt(OUT_OF_WORLD)] = FULL_BLOCK;
 
         BLOCK_TYPE[GRASS] = FULL_BLOCK;
         BLOCK_TYPE[DIRT] = FULL_BLOCK;
