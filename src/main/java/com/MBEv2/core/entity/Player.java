@@ -34,7 +34,7 @@ public class Player {
 
     //Debug
     private boolean noClip, gKeyPressed;
-    private boolean isFling, fKeyPressed;
+    private boolean isFling, vKeyPressed;
     private boolean tPressed = false, zPressed = false;
     private final Vector3i pos1, pos2;
 
@@ -332,15 +332,17 @@ public class Player {
             }
             System.out.print("}");
         }
-        if (window.isKeyPressed(GLFW.GLFW_KEY_F) && !fKeyPressed) {
+        if (window.isKeyPressed(GLFW.GLFW_KEY_V) && !vKeyPressed) {
             isFling = !isFling;
-            fKeyPressed = true;
+            vKeyPressed = true;
+            if (movementState == SWIMMING)
+                movementState = CRAWLING;
         }
 
         if (gKeyPressed && !window.isKeyPressed(GLFW.GLFW_KEY_G)) gKeyPressed = false;
         if (tPressed && !window.isKeyPressed(GLFW.GLFW_KEY_T)) tPressed = false;
         if (zPressed && !window.isKeyPressed(GLFW.GLFW_KEY_Y)) zPressed = false;
-        if (fKeyPressed && !window.isKeyPressed(GLFW.GLFW_KEY_F)) fKeyPressed = false;
+        if (vKeyPressed && !window.isKeyPressed(GLFW.GLFW_KEY_V)) vKeyPressed = false;
     }
 
     private void handleInputMovementStateChange(Vector3f position) {
@@ -351,12 +353,11 @@ public class Player {
             }
 
         } else if (movementState == CROUCHING) {
-            if (!collidesWithBlock(position.x, position.y, position.z, WALKING))
-                movementState = WALKING;
-            else if (!collidesWithBlock(position.x, position.y + 0.25f, position.z, WALKING)) {
+            if (!collidesWithBlock(position.x, position.y + 0.25f, position.z, WALKING)) {
                 camera.movePosition(0.0f, 0.25f, 0.0f);
                 movementState = WALKING;
-            }
+            } else if (!collidesWithBlock(position.x, position.y, position.z, WALKING))
+                movementState = WALKING;
         }
 
         if (window.isKeyPressed(GLFW.GLFW_KEY_CAPS_LOCK)) {
@@ -367,17 +368,16 @@ public class Player {
             movementState = CRAWLING;
 
         } else if (movementState == CRAWLING) {
-            if (!collidesWithBlock(position.x, position.y, position.z, WALKING))
-                movementState = WALKING;
-            else if (!collidesWithBlock(position.x, position.y, position.z, CROUCHING))
-                movementState = CROUCHING;
-            else if (!collidesWithBlock(position.x, position.y + 1.25f, position.z, WALKING)) {
+            if (!collidesWithBlock(position.x, position.y + 1.25f, position.z, WALKING)) {
                 camera.movePosition(0.0f, 1.25f, 0.0f);
                 movementState = WALKING;
             } else if (!collidesWithBlock(position.x, position.y + 1.0f, position.z, CROUCHING)) {
                 camera.movePosition(0.0f, 1.0f, 0.0f);
                 movementState = CROUCHING;
-            }
+            } else if (!collidesWithBlock(position.x, position.y, position.z, WALKING))
+                movementState = WALKING;
+            else if (!collidesWithBlock(position.x, position.y, position.z, CROUCHING))
+                movementState = CROUCHING;
         }
 
         if (movementState == SWIMMING && !window.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL))
@@ -470,6 +470,10 @@ public class Player {
                 setVelocityZ(0.0f);
                 setVelocityY(0.0f);
             }
+        }
+        if (movementState == SWIMMING && y > 0.0f && !collidesWithBlock(position.x, position.y, position.z, SWIMMING, WATER)){
+            position.y = oldPosition.y;
+            setVelocityY(0.0f);
         }
 
         if (position.y != oldPosition.y)
@@ -583,6 +587,9 @@ public class Player {
     }
 
     public boolean collidesWithBlock(float x, float y, float z, int movementState, byte block) {
+        if (isNoClip())
+            return false;
+
         final float minX = x - HALF_PLAYER_WIDTH;
         final float maxX = x + HALF_PLAYER_WIDTH;
         final float minY = y - PLAYER_FEET_OFFSETS[movementState];

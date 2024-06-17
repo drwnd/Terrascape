@@ -19,7 +19,7 @@ void main(){
     float z = ((data.x & 1023) - 15) * 0.0625;
 
     //Maybe problem with inplicit type cast
-    gl_Position = projectionMatrix * viewMatrix *  vec4(vec3(x, y, z) + worldPos, 1.0);
+    gl_Position = projectionMatrix * viewMatrix * vec4(vec3(x, y, z) + worldPos, 1.0);
 
     float u = (((data.y >> 9) & 511) - 15) * 0.00390625;
     float v = ((data.y & 511) - 15) * 0.00390625;

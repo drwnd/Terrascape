@@ -49,13 +49,17 @@ public class Block {
         if (occludingBlock == WATER) {
             if (toTestBlock != WATER)
                 return false;
-
             if (side == TOP || side == BOTTOM)
                 return true;
+
             byte blockAboveToTestBlock = Chunk.getBlockInWorld(x, y + 1, z);
             int[] normal = NORMALS[side];
             byte blockAboveOccludingBlock = Chunk.getBlockInWorld(x + normal[0], y + 1, z + normal[2]);
-            if (blockAboveOccludingBlock == WATER && blockAboveToTestBlock == WATER || blockAboveOccludingBlock != WATER && blockAboveToTestBlock != WATER)
+            if (getOcclusionData(blockAboveToTestBlock, BOTTOM) != 0 && getOcclusionData(blockAboveOccludingBlock, BOTTOM) == 0)
+                return false;
+            if ((blockAboveOccludingBlock == WATER) == (blockAboveToTestBlock == WATER))
+                return true;
+            if (getOcclusionData(blockAboveOccludingBlock, BOTTOM) != 0 && blockAboveToTestBlock == WATER)
                 return true;
             return blockAboveToTestBlock != WATER;
         }
@@ -415,6 +419,14 @@ public class Block {
         return BLOCK_TYPE[Byte.toUnsignedInt(block)] == LEAVE_TYPE;
     }
 
+    public static byte getGeneratingStoneType(int x, int y, int z) {
+        return Math.abs(OpenSimplex2S.noise3_ImproveXY(SEED, x * STONE_TYPE_FREQUENCY, y * STONE_TYPE_FREQUENCY, z * STONE_TYPE_FREQUENCY)) < ANDESITE_THRESHOLD ? ANDESITE : STONE;
+    }
+
+    public static int getOcclusionData(byte block, int side) {
+        return OCCLUSION_DATA[BLOCK_TYPE[Byte.toUnsignedInt(block)]] & SIDE_MASKS[side];
+    }
+
     public static void init() {
         BLOCK_TYPE[AIR] = AIR_TYPE;
         BLOCK_TYPE[Byte.toUnsignedInt(OUT_OF_WORLD)] = FULL_BLOCK;
@@ -534,7 +546,7 @@ public class Block {
         BLOCK_DATA[GLASS_TYPE] = 0b00111111;
 
         OCCLUSION_DATA[WATER_TYPE] = (byte) 0b11111111;
-        BLOCK_DATA[WATER_TYPE] = (byte) 0b10111101;
+        BLOCK_DATA[WATER_TYPE] = (byte) 0b10111111;
 
         OCCLUSION_DATA[BOTTOM_SLAB] = (byte) 0b10010000;
         BLOCK_DATA[BOTTOM_SLAB] = 0b00111101;

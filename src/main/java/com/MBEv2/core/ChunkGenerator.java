@@ -3,8 +3,6 @@ package com.MBEv2.core;
 import com.MBEv2.test.GameLogic;
 import org.joml.Vector3f;
 
-import java.util.LinkedList;
-
 import static com.MBEv2.core.utils.Constants.*;
 
 public class ChunkGenerator {
@@ -39,13 +37,11 @@ public class ChunkGenerator {
             final int chunkZ = (int) Math.floor(cameraPosition.z) >> 5;
 
             unloadChunks(chunkX, chunkY, chunkZ);
-            LinkedList<Chunk> toMeshChunks = loadChunks(chunkX, chunkY, chunkZ);
-            meshChunks(toMeshChunks);
+            loadChunks(chunkX, chunkY, chunkZ);
         }
     }
 
     public static void unloadChunks(final int chunkX, final int chunkY, final int chunkZ) {
-
         for (Chunk chunk : Chunk.getWorld()) {
             if (chunk == null)
                 continue;
@@ -63,12 +59,16 @@ public class ChunkGenerator {
         }
     }
 
-    private LinkedList<Chunk> loadChunks(final int chunkX, final int chunkY, final int chunkZ) {
-        LinkedList<Chunk> toMeshChunks = new LinkedList<>();
-
+    private void loadChunks(final int chunkX, final int chunkY, final int chunkZ) {
         for (int x = -RENDER_DISTANCE_XZ + chunkX; x <= RENDER_DISTANCE_XZ + chunkX; x++)
-            for (int y = -RENDER_DISTANCE_Y + chunkY; y <= RENDER_DISTANCE_Y + chunkY; y++)
-                for (int z = -RENDER_DISTANCE_XZ + chunkZ; z <= RENDER_DISTANCE_XZ + chunkZ; z++) {
+            for (int z = -RENDER_DISTANCE_XZ + chunkZ; z <= RENDER_DISTANCE_XZ + chunkZ; z++) {
+
+                double[][] heightMap = GameLogic.heightMap(x, z);
+                int[][] stoneMap = GameLogic.stoneMap(x, z, heightMap);
+                double[][] featureMap = GameLogic.featureMap(x, z);
+                byte[][] treeMap = GameLogic.treeMap(x, z, heightMap, stoneMap, featureMap);
+
+                for (int y = -RENDER_DISTANCE_Y + chunkY; y <= RENDER_DISTANCE_Y + chunkY; y++) {
 
                     final long expectedId = GameLogic.getChunkId(x, y, z);
                     final int index = GameLogic.getChunkIndex(x, y, z);
@@ -81,7 +81,9 @@ public class ChunkGenerator {
                             chunk = new Chunk(x, y, z);
 
                         Chunk.storeChunk(chunk);
-                        toMeshChunks.add(chunk);
+                        meshChunk(chunk);
+                        if (!chunk.isGenerated())
+                            chunk.generate(heightMap, stoneMap, featureMap, treeMap);
 
                     } else if (chunk.getId() != expectedId) {
                         GameLogic.addToUnloadChunk(chunk);
@@ -95,23 +97,23 @@ public class ChunkGenerator {
                             chunk = new Chunk(x, y, z);
 
                         Chunk.storeChunk(chunk);
-                        toMeshChunks.add(chunk);
+                        meshChunk(chunk);
+                        if (!chunk.isGenerated())
+                            chunk.generate(heightMap, stoneMap, featureMap, treeMap);
 
-                    } else if (!chunk.isMeshed())
-                        toMeshChunks.add(chunk);
+                    } else if (!chunk.isMeshed()) {
+                        meshChunk(chunk);
+                        if (!chunk.isGenerated())
+                            chunk.generate(heightMap, stoneMap, featureMap, treeMap);
+                    }
                 }
-
-        return toMeshChunks;
+            }
     }
 
-    private void meshChunks(LinkedList<Chunk> toMeshChunks) {
-        for (Chunk chunk : toMeshChunks) {
-            if (!chunk.isGenerated())
-                Chunk.generateChunk(chunk);
-            chunk.generateMesh();
-            if (chunk.getVertices().length != 0 || chunk.getTransparentVertices().length != 0)
-                GameLogic.addToBufferChunk(chunk);
-        }
+    private void meshChunk(Chunk chunk) {
+        chunk.generateMesh();
+        if (chunk.getVertices().length != 0 || chunk.getTransparentVertices().length != 0)
+            GameLogic.addToBufferChunk(chunk);
     }
 
     public void continueRunning() {

@@ -46,19 +46,46 @@ public class Chunk {
             return;
         isGenerated = true;
         for (int x = 0; x < CHUNK_SIZE; x++) {
+            int totalX = x + (X << 5);
             for (int z = 0; z < CHUNK_SIZE; z++) {
+                int totalZ = z + (Z << 5);
 
                 int height = (int) heightMap[x][z];
                 int stoneHeight = stoneMap[x][z];
                 int snowHeight = (int) (featureMap[x][z] * 8) + SNOW_LEVEL;
-                int sandHeight = (int) (Math.abs(featureMap[x][z] * 4)) + WATER_LEVEL;
-                int tree = treeMap[x][z];
-                boolean oakTree = tree == OAK_TREE_VALUE;
-                boolean spruceTree = tree == SPRUCE_TREE_VALUE;
-                boolean darkOakTree = tree == DARK_OAK_TREE_VALUE;
+                int sandHeight = (int) (Math.abs(featureMap[x][z] * 4)) + WATER_LEVEL - 1;
+                int treeValue = treeMap[x][z];
+
+                boolean oakTree = treeValue == OAK_TREE_VALUE;
+                if (oakTree)
+                    oakTree = GameLogic.isOutsideCave(totalX, height, totalZ);
+                boolean spruceTree = treeValue == SPRUCE_TREE_VALUE;
+                if (spruceTree)
+                    spruceTree = GameLogic.isOutsideCave(totalX, height, totalZ);
+                boolean darkOakTree = treeValue == DARK_OAK_TREE_VALUE;
+                if (darkOakTree)
+                    darkOakTree = GameLogic.isOutsideCave(totalX, height, totalZ);
 
                 for (int y = 0; y < CHUNK_SIZE; y++) {
                     int totalY = y + (Y << 5);
+
+                    if (GameLogic.isOutsideCave(totalX, totalY, totalZ)) {
+                        if (totalY >= snowHeight && (totalY == stoneHeight || totalY == stoneHeight - 1))
+                            storeSave(x, y, z, SNOW);
+                        else if (totalY <= stoneHeight)
+                            storeSave(x, y, z, Block.getGeneratingStoneType(totalX, totalY, totalZ));
+                        else if (totalY < height - 5)
+                            storeSave(x, y, z, Block.getGeneratingStoneType(totalX, totalY, totalZ));
+                        else if (totalY <= height && height <= sandHeight + 2 && totalY <= sandHeight + 2 && totalY >= sandHeight - 2)
+                            storeSave(x, y, z, SAND);
+                        else if (totalY == height && totalY > WATER_LEVEL)
+                            storeSave(x, y, z, GRASS);
+                        else if (totalY <= height)
+                            storeSave(x, y, z, height <= WATER_LEVEL ? MUD : DIRT);
+                        else if (totalY <= WATER_LEVEL)
+                            storeSave(x, y, z, WATER);
+                    } else if (totalY <= WATER_LEVEL)
+                        storeSave(x, y, z, WATER);
 
                     if (oakTree && totalY < height + OAK_TREE.length && totalY >= height)
                         for (int i = 0; i < 5; i++)
@@ -74,21 +101,6 @@ public class Chunk {
                         for (int i = 0; i < 7; i++)
                             for (int j = 0; j < 7; j++)
                                 storeTreeBlock(x + i - 3, y, z + j - 3, DARK_OAK_TREE[totalY - height][i][j]);
-
-                    else if (totalY >= snowHeight && (totalY == stoneHeight || totalY == stoneHeight - 1))
-                        storeSave(x, y, z, SNOW);
-                    else if (totalY <= stoneHeight)
-                        storeSave(x, y, z, STONE);
-                    else if (totalY < height - 5)
-                        storeSave(x, y, z, STONE);
-                    else if (totalY <= height && height <= sandHeight + 2 && totalY <= sandHeight + 2 && totalY >= sandHeight - 2)
-                        storeSave(x, y, z, SAND);
-                    else if (totalY == height && totalY > WATER_LEVEL)
-                        storeSave(x, y, z, GRASS);
-                    else if (totalY <= height)
-                        storeSave(x, y, z, height <= WATER_LEVEL ? MUD : DIRT);
-                    else if (totalY <= WATER_LEVEL)
-                        storeSave(x, y, z, WATER);
                 }
             }
         }
@@ -283,18 +295,17 @@ public class Chunk {
             switch (side) {
                 case TOP: {
                     subY = -2;
-                    subV = 2;
                     break;
                 }
                 case FRONT, RIGHT, BACK, LEFT: {
                     byte blockAbove = getBlock(blockX, blockY + 1, blockZ);
-                    if ((corner == 0 || corner == 1) && blockAbove != WATER) {
+                    if ((corner == 0 || corner == 1) && blockAbove != WATER && Block.getOcclusionData(blockAbove, BOTTOM) == 0) {
                         subY = -2;
                         subV = 2;
                     } else if (corner == 2 || corner == 3) {
                         int[] normal = Block.NORMALS[side];
                         byte adjacentBlock = getBlock(blockX + normal[0], blockY, blockZ + normal[2]);
-                        if (adjacentBlock == WATER && blockAbove == WATER) {
+                        if (adjacentBlock == WATER && (blockAbove == WATER || Block.getOcclusionData(blockAbove, BOTTOM) != 0)) {
                             subY = 14;
                             subV = -14;
                         }

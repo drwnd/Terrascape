@@ -7,6 +7,7 @@ import org.lwjgl.opengl.GL11;
 
 import java.util.LinkedList;
 import java.util.NoSuchElementException;
+import java.util.Random;
 
 import static com.MBEv2.core.utils.Constants.*;
 
@@ -238,7 +239,6 @@ public class GameLogic {
     }
 
     public static double[][] heightMap(int x, int z) {
-        final double FREQUENCY = 1 / 100d;
         double[][] heightMap = new double[CHUNK_SIZE][CHUNK_SIZE];
 
         for (int mapX = 0; mapX < CHUNK_SIZE; mapX++) {
@@ -246,11 +246,11 @@ public class GameLogic {
                 int currentX = (x << 5) + mapX;
                 int currentZ = (z << 5) + mapZ;
                 double value = WATER_LEVEL;
-                value += OpenSimplex2S.noise3_ImproveXY(SEED, currentX * FREQUENCY / 4, currentZ * FREQUENCY / 4, 0.0) * 50;
-                value += OpenSimplex2S.noise3_ImproveXY(SEED + 1, currentX * FREQUENCY, currentZ * FREQUENCY, 0.0) * 25;
-                value += OpenSimplex2S.noise3_ImproveXY(SEED + 2, currentX * FREQUENCY * 2, currentZ * FREQUENCY * 2, 0.0) * 12;
-                value += OpenSimplex2S.noise3_ImproveXY(SEED + 3, currentX * FREQUENCY * 4, currentZ * FREQUENCY * 4, 0.0) * 6;
-                value += OpenSimplex2S.noise3_ImproveXY(SEED + 4, currentX * FREQUENCY * 8, currentZ * FREQUENCY * 8, 0.0) * 3;
+                value += OpenSimplex2S.noise3_ImproveXY(SEED, currentX * HEIGHT_MAP_FREQUENCY / 4, currentZ * HEIGHT_MAP_FREQUENCY / 4, 0.0) * 50;
+                value += OpenSimplex2S.noise3_ImproveXY(SEED + 1, currentX * HEIGHT_MAP_FREQUENCY, currentZ * HEIGHT_MAP_FREQUENCY, 0.0) * 25;
+                value += OpenSimplex2S.noise3_ImproveXY(SEED + 2, currentX * HEIGHT_MAP_FREQUENCY * 2, currentZ * HEIGHT_MAP_FREQUENCY * 2, 0.0) * 12;
+                value += OpenSimplex2S.noise3_ImproveXY(SEED + 3, currentX * HEIGHT_MAP_FREQUENCY * 4, currentZ * HEIGHT_MAP_FREQUENCY * 4, 0.0) * 6;
+                value += OpenSimplex2S.noise3_ImproveXY(SEED + 4, currentX * HEIGHT_MAP_FREQUENCY * 8, currentZ * HEIGHT_MAP_FREQUENCY * 8, 0.0) * 3;
                 heightMap[mapX][mapZ] = value;
             }
         }
@@ -265,7 +265,7 @@ public class GameLogic {
                 int currentX = (x << 5) + mapX;
                 int currentZ = (z << 5) + mapZ;
 
-                double biomes = OpenSimplex2S.noise3_ImproveXY(SEED + 1 << 16, currentX / 200d, currentZ / 200d, 0.0);
+                double biomes = OpenSimplex2S.noise3_ImproveXY(SEED + 1 << 16, currentX * STONE_MAP_FREQUENCY, currentZ * STONE_MAP_FREQUENCY, 0.0);
                 biomes = Math.max(0, biomes);
                 stoneMap[mapX][mapZ] = (int) (heightMap[mapX][mapZ] * (biomes + 1)) * (biomes != 0 ? 1 : 0);
 
@@ -276,16 +276,11 @@ public class GameLogic {
 
     public static double[][] featureMap(int x, int z) {
         double[][] featureMap = new double[CHUNK_SIZE][CHUNK_SIZE];
+        Random random = new Random(getChunkId(x, 0, z));
 
-        for (int mapX = 0; mapX < CHUNK_SIZE; mapX++) {
-            for (int mapZ = 0; mapZ < CHUNK_SIZE; mapZ++) {
-                int currentX = (x << 5) + mapX;
-                int currentZ = (z << 5) + mapZ;
-
-                double value = OpenSimplex2S.noise3_ImproveXY(SEED + 1 << 48, currentX, currentZ, 0.0);
-                featureMap[mapX][mapZ] = value;
-            }
-        }
+        for (int mapX = 0; mapX < CHUNK_SIZE; mapX++)
+            for (int mapZ = 0; mapZ < CHUNK_SIZE; mapZ++)
+                featureMap[mapX][mapZ] = random.nextDouble();
         return featureMap;
     }
 
@@ -334,6 +329,17 @@ public class GameLogic {
             }
         }
         return treeMap;
+    }
+
+    public static boolean isOutsideCave(int x, int y, int z) {
+        if (y < BLOB_CAVE_MIN_Y || y > BLOB_CAVE_MAX_Y)
+            return true;
+        y -= CAVE_HEIGHT;
+        double modifier = (y * y * CAVE_HEIGHT_BIAS);
+
+        double blobCaveValue = OpenSimplex2S.noise3_ImproveXY(SEED, x * BLOB_CAVE_FREQUENCY, y * BLOB_CAVE_FREQUENCY, z * BLOB_CAVE_FREQUENCY) / modifier;
+
+        return blobCaveValue < BLOB_CAVE_THRESHOLD;
     }
 
     public static long getChunkId(int x, int y, int z) {

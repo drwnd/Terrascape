@@ -9,15 +9,11 @@ public class Constants {
     public static final float MOUSE_SENSITIVITY = 0.040f;
     public static final float MOVEMENT_SPEED = 0.5f;
     public static final float REACH = 5.0f;
-    public static final byte OAK_TREE_VALUE = 1;
-    public static final byte SPRUCE_TREE_VALUE = 2;
-    public static final byte DARK_OAK_TREE_VALUE = 3;
 
     //Recommended to not change, but I can't stop you
     public static final String TITLE = "Minecräft Bad Edition v2";
     public static final float Z_NEAR = 0.01f;
     public static final float Z_FAR = -1.0f;
-    public static final double TREE_THRESHOLD = 0.73;
 
     public static final float HALF_PLAYER_WIDTH = 0.23f;
     public static final float PLAYER_HEAD_OFFSET = 0.08f;
@@ -64,6 +60,23 @@ public class Constants {
     public static final long SEED = 0;
     public static final int WATER_LEVEL = 96;
     public static final int SNOW_LEVEL = 160;
+    public static final double TREE_THRESHOLD = 0.73;
+    public static final byte OAK_TREE_VALUE = 1;
+    public static final byte SPRUCE_TREE_VALUE = 2;
+    public static final byte DARK_OAK_TREE_VALUE = 3;
+    public static final double HEIGHT_MAP_FREQUENCY = 0.01;
+    public static final double STONE_MAP_FREQUENCY = 0.005;
+
+    public static final int CAVE_HEIGHT = 10;
+    public static final double CAVE_HEIGHT_BIAS = 0.0002;
+
+    public static final double BLOB_CAVE_FREQUENCY = 0.05;
+    public static final double BLOB_CAVE_THRESHOLD = 0.9;
+    public static final double BLOB_CAVE_MAX_Y = CAVE_HEIGHT + 1.0 / Math.sqrt(BLOB_CAVE_THRESHOLD * CAVE_HEIGHT_BIAS);
+    public static final double BLOB_CAVE_MIN_Y = CAVE_HEIGHT - 1.0 / Math.sqrt(BLOB_CAVE_THRESHOLD * CAVE_HEIGHT_BIAS);
+
+    public static final double STONE_TYPE_FREQUENCY = 0.02;
+    public static final double ANDESITE_THRESHOLD = 0.1;
 
     public static final byte OUT_OF_WORLD = -128;
 
