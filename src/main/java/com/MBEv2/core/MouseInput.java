@@ -1,13 +1,12 @@
 package com.MBEv2.core;
 
 import com.MBEv2.test.Launcher;
-import org.joml.Vector2d;
 import org.joml.Vector2f;
 import org.lwjgl.glfw.GLFW;
 
 public class MouseInput {
 
-    private final Vector2d previousPos, currentPos;
+    private final Vector2f previousPos, currentPos;
     private final Vector2f displayVec;
 
     private long rightButtonPressTime = -1, leftButtonPressTime = -1;
@@ -15,15 +14,15 @@ public class MouseInput {
     private boolean mouseButton4IsPressed, mouseButton5IsPressed;
 
     public MouseInput() {
-        previousPos = new Vector2d(0, 0);
-        currentPos = new Vector2d(0, 0);
+        previousPos = new Vector2f(0, 0);
+        currentPos = new Vector2f(0, 0);
         displayVec = new Vector2f();
     }
 
     public void init() {
         GLFW.glfwSetCursorPosCallback(Launcher.getWindow().getWindow(), (window, xPos, yPos) -> {
-            currentPos.x = xPos;
-            currentPos.y = yPos;
+            currentPos.x = (float) xPos;
+            currentPos.y = (float) yPos;
         });
 
         GLFW.glfwSetMouseButtonCallback(Launcher.getWindow().getWindow(), (window, button, action, mods) -> {
@@ -56,15 +55,11 @@ public class MouseInput {
 
     public void input() {
 
-        displayVec.x = 0;
-        displayVec.y = 0;
-        double x = currentPos.x - previousPos.x;
-        double y = currentPos.y - previousPos.y;
+        float x = currentPos.x - previousPos.x;
+        float y = currentPos.y - previousPos.y;
 
-        if (x != 0)
-            displayVec.y = (float) x;
-        if (y != 0)
-            displayVec.x = (float) y;
+        displayVec.y = x;
+        displayVec.x = y;
 
         previousPos.x = currentPos.x;
         previousPos.y = currentPos.y;

@@ -1,5 +1,6 @@
 package com.MBEv2.core;
 
+import com.MBEv2.core.utils.Utils;
 import com.MBEv2.test.GameLogic;
 import org.joml.Vector3f;
 
@@ -10,6 +11,7 @@ public class ChunkGenerator {
     private final Thread thread;
 
     private boolean shouldExecute = false;
+    private boolean shouldFinish = true;
 
     public ChunkGenerator() {
         thread = new Thread(this::run);
@@ -29,12 +31,13 @@ public class ChunkGenerator {
             if (!shouldExecute)
                 break;
             shouldExecute = false;
+            shouldFinish = true;
 
             Vector3f cameraPosition = GameLogic.getPlayer().getCamera().getPosition();
 
-            final int chunkX = (int) Math.floor(cameraPosition.x) >> 5;
-            final int chunkY = (int) Math.floor(cameraPosition.y) >> 5;
-            final int chunkZ = (int) Math.floor(cameraPosition.z) >> 5;
+            final int chunkX = Utils.floor(cameraPosition.x) >> CHUNK_SIZE_BITS;
+            final int chunkY = Utils.floor(cameraPosition.y) >> CHUNK_SIZE_BITS;
+            final int chunkZ = Utils.floor(cameraPosition.z) >> CHUNK_SIZE_BITS;
 
             unloadChunks(chunkX, chunkY, chunkZ);
             loadChunks(chunkX, chunkY, chunkZ);
@@ -60,54 +63,60 @@ public class ChunkGenerator {
     }
 
     private void loadChunks(final int chunkX, final int chunkY, final int chunkZ) {
-        for (int x = -RENDER_DISTANCE_XZ + chunkX; x <= RENDER_DISTANCE_XZ + chunkX; x++)
-            for (int z = -RENDER_DISTANCE_XZ + chunkZ; z <= RENDER_DISTANCE_XZ + chunkZ; z++) {
+        loadChunkColumn(chunkX, chunkY, chunkZ);
+        for (int ring = 1; ring <= RENDER_DISTANCE_XZ && shouldFinish; ring++) {
+            for (int x = -ring; x < ring && shouldFinish; x++) loadChunkColumn(x + chunkX, chunkY, ring + chunkZ);
+            for (int z = ring; z > -ring && shouldFinish; z--) loadChunkColumn(ring + chunkX, chunkY, z + chunkZ);
+            for (int x = ring; x > -ring && shouldFinish; x--) loadChunkColumn(x + chunkX, chunkY, -ring + chunkZ);
+            for (int z = -ring; z < ring && shouldFinish; z++) loadChunkColumn(-ring + chunkX, chunkY, z + chunkZ);
+        }
+    }
 
-                double[][] heightMap = GameLogic.heightMap(x, z);
-                int[][] stoneMap = GameLogic.stoneMap(x, z, heightMap);
-                double[][] featureMap = GameLogic.featureMap(x, z);
-                byte[][] treeMap = GameLogic.treeMap(x, z, heightMap, stoneMap, featureMap);
+    private void loadChunkColumn(int x, int chunkY, int z) {
+        double[][] heightMap = GameLogic.heightMap(x, z);
+        int[][] stoneMap = GameLogic.stoneMap(x, z, heightMap);
+        double[][] featureMap = GameLogic.featureMap(x, z);
+        byte[][] treeMap = GameLogic.treeMap(x, z, heightMap, stoneMap, featureMap);
 
-                for (int y = -RENDER_DISTANCE_Y + chunkY; y <= RENDER_DISTANCE_Y + chunkY; y++) {
+        for (int y = -RENDER_DISTANCE_Y + chunkY; y <= RENDER_DISTANCE_Y + chunkY && shouldFinish; y++) {
 
-                    final long expectedId = GameLogic.getChunkId(x, y, z);
-                    final int index = GameLogic.getChunkIndex(x, y, z);
-                    Chunk chunk = Chunk.getChunk(index);
+            final long expectedId = GameLogic.getChunkId(x, y, z);
+            final int index = GameLogic.getChunkIndex(x, y, z);
+            Chunk chunk = Chunk.getChunk(index);
 
-                    if (chunk == null) {
-                        if (Chunk.containsSavedChunk(expectedId))
-                            chunk = Chunk.removeSavedChunk(expectedId);
-                        else
-                            chunk = new Chunk(x, y, z);
+            if (chunk == null) {
+                if (Chunk.containsSavedChunk(expectedId))
+                    chunk = Chunk.removeSavedChunk(expectedId);
+                else
+                    chunk = new Chunk(x, y, z);
 
-                        Chunk.storeChunk(chunk);
-                        meshChunk(chunk);
-                        if (!chunk.isGenerated())
-                            chunk.generate(heightMap, stoneMap, featureMap, treeMap);
+                Chunk.storeChunk(chunk);
+                meshChunk(chunk);
+                if (chunk.notGenerated())
+                    chunk.generate(heightMap, stoneMap, featureMap, treeMap);
 
-                    } else if (chunk.getId() != expectedId) {
-                        GameLogic.addToUnloadChunk(chunk);
+            } else if (chunk.getId() != expectedId) {
+                GameLogic.addToUnloadChunk(chunk);
 
-                        if (chunk.isModified())
-                            Chunk.putSavedChunk(chunk);
+                if (chunk.isModified())
+                    Chunk.putSavedChunk(chunk);
 
-                        if (Chunk.containsSavedChunk(expectedId))
-                            chunk = Chunk.removeSavedChunk(expectedId);
-                        else
-                            chunk = new Chunk(x, y, z);
+                if (Chunk.containsSavedChunk(expectedId))
+                    chunk = Chunk.removeSavedChunk(expectedId);
+                else
+                    chunk = new Chunk(x, y, z);
 
-                        Chunk.storeChunk(chunk);
-                        meshChunk(chunk);
-                        if (!chunk.isGenerated())
-                            chunk.generate(heightMap, stoneMap, featureMap, treeMap);
+                Chunk.storeChunk(chunk);
+                meshChunk(chunk);
+                if (chunk.notGenerated())
+                    chunk.generate(heightMap, stoneMap, featureMap, treeMap);
 
-                    } else if (!chunk.isMeshed()) {
-                        meshChunk(chunk);
-                        if (!chunk.isGenerated())
-                            chunk.generate(heightMap, stoneMap, featureMap, treeMap);
-                    }
-                }
+            } else if (!chunk.isMeshed()) {
+                meshChunk(chunk);
+                if (chunk.notGenerated())
+                    chunk.generate(heightMap, stoneMap, featureMap, treeMap);
             }
+        }
     }
 
     private void meshChunk(Chunk chunk) {
@@ -118,6 +127,7 @@ public class ChunkGenerator {
 
     public void continueRunning() {
         shouldExecute = true;
+        shouldFinish = false;
         synchronized (thread) {
             thread.notify();
         }
@@ -129,6 +139,7 @@ public class ChunkGenerator {
 
     public void cleanUp() {
         shouldExecute = false;
+        shouldFinish = false;
         synchronized (thread) {
             thread.notify();
         }

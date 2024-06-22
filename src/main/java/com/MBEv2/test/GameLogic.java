@@ -45,16 +45,14 @@ public class GameLogic {
             return;
         if (Chunk.getBlockInWorld(position.x, position.y, position.z) == block)
             return;
-        else
-            player.setGrounded(false);
 
-        int chunkX = position.x >> 5;
-        int chunkY = position.y >> 5;
-        int chunkZ = position.z >> 5;
+        int chunkX = position.x >> CHUNK_SIZE_BITS;
+        int chunkY = position.y >> CHUNK_SIZE_BITS;
+        int chunkZ = position.z >> CHUNK_SIZE_BITS;
 
-        int inChunkX = position.x & 31;
-        int inChunkY = position.y & 31;
-        int inChunkZ = position.z & 31;
+        int inChunkX = position.x & CHUNK_SIZE - 1;
+        int inChunkY = position.y & CHUNK_SIZE - 1;
+        int inChunkZ = position.z & CHUNK_SIZE - 1;
 
         Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
         chunk.storeSave(inChunkX, inChunkY, inChunkZ, block);
@@ -82,14 +80,9 @@ public class GameLogic {
                 for (int z = minZ; z <= maxZ; z++) {
                     Chunk toMeshChunk = Chunk.getChunk(x, y, z);
                     if (toMeshChunk != null)
-                        regenerateChunkMesh(toMeshChunk);
+                        toMeshChunk.setMeshed(false);
                 }
-    }
-
-    public static void regenerateChunkMesh(Chunk chunk) {
-        chunk.generateMesh();
-        deleteChunkMeshBuffers(chunk);
-        bufferChunkMesh(chunk);
+        generator.continueRunning();
     }
 
     public static void bufferChunkMesh(Chunk chunk) {
@@ -243,8 +236,8 @@ public class GameLogic {
 
         for (int mapX = 0; mapX < CHUNK_SIZE; mapX++) {
             for (int mapZ = 0; mapZ < CHUNK_SIZE; mapZ++) {
-                int currentX = (x << 5) + mapX;
-                int currentZ = (z << 5) + mapZ;
+                int currentX = (x << CHUNK_SIZE_BITS) + mapX;
+                int currentZ = (z << CHUNK_SIZE_BITS) + mapZ;
                 double value = WATER_LEVEL;
                 value += OpenSimplex2S.noise3_ImproveXY(SEED, currentX * HEIGHT_MAP_FREQUENCY / 4, currentZ * HEIGHT_MAP_FREQUENCY / 4, 0.0) * 50;
                 value += OpenSimplex2S.noise3_ImproveXY(SEED + 1, currentX * HEIGHT_MAP_FREQUENCY, currentZ * HEIGHT_MAP_FREQUENCY, 0.0) * 25;
@@ -262,8 +255,8 @@ public class GameLogic {
 
         for (int mapX = 0; mapX < CHUNK_SIZE; mapX++) {
             for (int mapZ = 0; mapZ < CHUNK_SIZE; mapZ++) {
-                int currentX = (x << 5) + mapX;
-                int currentZ = (z << 5) + mapZ;
+                int currentX = (x << CHUNK_SIZE_BITS) + mapX;
+                int currentZ = (z << CHUNK_SIZE_BITS) + mapZ;
 
                 double biomes = OpenSimplex2S.noise3_ImproveXY(SEED + 1 << 16, currentX * STONE_MAP_FREQUENCY, currentZ * STONE_MAP_FREQUENCY, 0.0);
                 biomes = Math.max(0, biomes);
@@ -299,8 +292,8 @@ public class GameLogic {
                 if (heightMap[mapX][mapZ] <= sandHeight + 2)
                     continue;
 
-                int currentX = (x << 5) + mapX;
-                int currentZ = (z << 5) + mapZ;
+                int currentX = (x << CHUNK_SIZE_BITS) + mapX;
+                int currentZ = (z << CHUNK_SIZE_BITS) + mapZ;
 
                 double value = OpenSimplex2S.noise3_ImproveXY(SEED + 1 << 32, currentX, currentZ, 0.0);
                 if (value > TREE_THRESHOLD) {
@@ -349,13 +342,13 @@ public class GameLogic {
     public static int getChunkIndex(int x, int y, int z) {
 
         x = (x % RENDERED_WORLD_WIDTH);
-        x += x < 0 ? RENDERED_WORLD_WIDTH : 0;
+        if (x < 0) x += RENDERED_WORLD_WIDTH;
 
         y = (y % RENDERED_WORLD_HEIGHT);
-        y += y < 0 ? RENDERED_WORLD_HEIGHT : 0;
+        if (y < 0) y += RENDERED_WORLD_HEIGHT;
 
         z = (z % RENDERED_WORLD_WIDTH);
-        z += z < 0 ? RENDERED_WORLD_WIDTH : 0;
+        if (z < 0) z += RENDERED_WORLD_WIDTH;
 
         return (x * RENDERED_WORLD_HEIGHT + y) * RENDERED_WORLD_WIDTH + z;
     }

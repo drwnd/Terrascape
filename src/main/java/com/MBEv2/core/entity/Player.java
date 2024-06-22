@@ -100,15 +100,13 @@ public class Player {
         if (leftButtonPressTime != -1 && (currentTime - leftButtonPressTime > 300_000_000 || leftButtonWasJustPressed))
             GameLogic.placeBlock(AIR, getTarget(0, camera.getDirection()));
 
-        if (rightButtonPressTime != -1)
-            if (currentTime - rightButtonPressTime > 300_000_000 || rightButtonWasJustPressed)
-                if (hotBars[selectedHotBar][selectedHotBarSlot] != AIR) {
+        if (rightButtonPressTime != -1 && (currentTime - rightButtonPressTime > 300_000_000 || rightButtonWasJustPressed) && hotBars[selectedHotBar][selectedHotBarSlot] != AIR) {
 
-                    Vector3f cD = camera.getDirection();
-                    byte toPlaceBlock = hotBars[selectedHotBar][selectedHotBarSlot];
+            Vector3f cD = camera.getDirection();
+            byte toPlaceBlock = hotBars[selectedHotBar][selectedHotBarSlot];
 
-                    GameLogic.placeBlock(Block.getToPlaceBlock(toPlaceBlock, camera.getPrimaryDirection(cD)), getTarget(1, cD));
-                }
+            GameLogic.placeBlock(Block.getToPlaceBlock(toPlaceBlock, camera.getPrimaryDirection(cD)), getTarget(1, cD));
+        }
     }
 
     public void input(float passedTime) {
@@ -168,7 +166,7 @@ public class Player {
 
         long currentTime = System.nanoTime();
         if (window.isKeyPressed(GLFW.GLFW_KEY_SPACE) && isGrounded && currentTime - spaceButtonPressTime > 300_000_000) {
-            this.velocity.y = JUMP_STRENGTH;
+            this.velocity.y = JUMP_STRENGTH * passedTime;
             isGrounded = false;
             spaceButtonPressTime = currentTime;
         }
@@ -216,7 +214,7 @@ public class Player {
         long currentTime = System.nanoTime();
         if (window.isKeyPressed(GLFW.GLFW_KEY_SPACE))
             if (isGrounded && currentTime - spaceButtonPressTime > 300_000_000) {
-                this.velocity.y = JUMP_STRENGTH;
+                this.velocity.y = JUMP_STRENGTH * passedTime;
                 isGrounded = false;
                 spaceButtonPressTime = currentTime;
             } else {
@@ -423,8 +421,13 @@ public class Player {
         boolean xFirst = collidesWithBlock(position.x, oldPosition.y, oldPosition.z, movementState);
         boolean zFirst = collidesWithBlock(oldPosition.x, oldPosition.y, position.z, movementState);
         boolean xAndZ = collidesWithBlock(position.x, oldPosition.y, position.z, movementState);
+        float requiredStepHeight = getRequiredStepHeight(position.x, position.y, position.z, movementState);
+        boolean canAutoStep = isGrounded && !isFling && movementState != SWIMMING && requiredStepHeight <= MAX_STEP_HEIGHT;
 
-        if ((xFirst || xAndZ) && (zFirst || xAndZ)) {
+        if ((xFirst || xAndZ) && (zFirst || xAndZ) && canAutoStep && !collidesWithBlock(position.x, oldPosition.y + requiredStepHeight, position.z, movementState)) {
+            position.y += requiredStepHeight;
+            oldPosition.y += requiredStepHeight;
+        } else if ((xFirst || xAndZ) && (zFirst || xAndZ)) {
             if (xFirst && xAndZ) {
                 position.x = oldPosition.x;
                 setVelocityX(0.0f);
@@ -454,7 +457,7 @@ public class Player {
             setVelocityY(0.0f);
             if (y < 0.0f)
                 isFling = false;
-        } else if ((movementState == CROUCHING || movementState == CRAWLING) && isGrounded() && y < 0.0f) {
+        } else if ((movementState == CROUCHING || movementState == CRAWLING) && isGrounded() && y < 0.0f && collidesWithBlock(oldPosition.x, position.y, oldPosition.z, movementState)) {
             boolean onEdgeX = !collidesWithBlock(position.x, position.y - 0.0625f, oldPosition.z, movementState);
             boolean onEdgeZ = !collidesWithBlock(oldPosition.x, position.y - 0.0625f, position.z, movementState);
 
@@ -471,7 +474,7 @@ public class Player {
                 setVelocityY(0.0f);
             }
         }
-        if (movementState == SWIMMING && y > 0.0f && !collidesWithBlock(position.x, position.y, position.z, SWIMMING, WATER)){
+        if (movementState == SWIMMING && y > 0.0f && !collidesWithBlock(position.x, position.y, position.z, SWIMMING, WATER)) {
             position.y = oldPosition.y;
             setVelocityY(0.0f);
         }
@@ -480,13 +483,13 @@ public class Player {
             setGrounded(false);
 
 
-        if (Utils.floor(oldPosition.x) >> 5 != Utils.floor(position.x) >> 5)
+        if (Utils.floor(oldPosition.x) >> CHUNK_SIZE_BITS != Utils.floor(position.x) >> CHUNK_SIZE_BITS)
             GameLogic.loadUnloadChunks();
 
-        else if (Utils.floor(oldPosition.y) >> 5 != Utils.floor(position.y) >> 5)
+        else if (Utils.floor(oldPosition.y) >> CHUNK_SIZE_BITS != Utils.floor(position.y) >> CHUNK_SIZE_BITS)
             GameLogic.loadUnloadChunks();
 
-        else if (Utils.floor(oldPosition.z) >> 5 != Utils.floor(position.z) >> 5)
+        else if (Utils.floor(oldPosition.z) >> CHUNK_SIZE_BITS != Utils.floor(position.z) >> CHUNK_SIZE_BITS)
             GameLogic.loadUnloadChunks();
 
         camera.setPosition(position.x, position.y, position.z);
@@ -545,15 +548,17 @@ public class Player {
     }
 
     public void render() {
-        for (Chunk chunk : Chunk.getWorld()) {
-            if (chunk == null)
-                continue;
+        Vector3f cameraPosition = camera.getPosition();
+        final int chunkX = Utils.floor(cameraPosition.x) >> CHUNK_SIZE_BITS;
+        final int chunkY = Utils.floor(cameraPosition.y) >> CHUNK_SIZE_BITS;
+        final int chunkZ = Utils.floor(cameraPosition.z) >> CHUNK_SIZE_BITS;
 
-            if (chunk.getModel() != null)
-                renderer.processModel(chunk.getModel());
-
-            if (chunk.getTransparentModel() != null)
-                renderer.processTransparentModel(chunk.getTransparentModel());
+        renderChunkColumn(chunkX, chunkY, chunkZ);
+        for (int ring = 1; ring <= RENDER_DISTANCE_XZ + 2; ring++) {
+            for (int x = -ring; x < ring; x++) renderChunkColumn(x + chunkX, chunkY, ring + chunkZ);
+            for (int z = ring; z > -ring; z--) renderChunkColumn(ring + chunkX, chunkY, z + chunkZ);
+            for (int x = ring; x > -ring; x--) renderChunkColumn(x + chunkX, chunkY, -ring + chunkZ);
+            for (int z = -ring; z < ring; z++) renderChunkColumn(-ring + chunkX, chunkY, z + chunkZ);
         }
 
         for (GUIElement GUIElement : GUIElements)
@@ -561,6 +566,18 @@ public class Player {
 
         for (GUIElement GUIElement : hotBarElements)
             renderer.processGUIElement(GUIElement);
+    }
+
+    private void renderChunkColumn(int x, int cameraY, int z) {
+        for (int y = RENDER_DISTANCE_Y + 2; y >= -RENDER_DISTANCE_Y - 2; y--) {
+            Chunk chunk = Chunk.getChunk(x, y + cameraY, z);
+            if (chunk == null)
+                continue;
+            if (chunk.getModel() != null)
+                renderer.processModel(chunk.getModel());
+            if (chunk.getTransparentModel() != null)
+                renderer.processTransparentModel(chunk.getTransparentModel());
+        }
     }
 
     public boolean collidesWithBlock(float x, float y, float z, int movementState) {
@@ -603,6 +620,32 @@ public class Player {
                     if (Chunk.getBlockInWorld(blockX, blockY, blockZ) == block)
                         return true;
         return false;
+    }
+
+    public float getRequiredStepHeight(float x, float y, float z, int movementState) {
+        final float minX = x - HALF_PLAYER_WIDTH;
+        final float maxX = x + HALF_PLAYER_WIDTH;
+        final float minY = y - PLAYER_FEET_OFFSETS[movementState];
+        final float maxY = y + PLAYER_HEAD_OFFSET;
+        final float minZ = z - HALF_PLAYER_WIDTH;
+        final float maxZ = z + HALF_PLAYER_WIDTH;
+
+        float requiredStepHeight = 0.0f;
+
+        for (int blockX = Utils.floor(minX), maxBlockX = Utils.floor(maxX); blockX <= maxBlockX; blockX++)
+            for (int blockY = Utils.floor(minY), maxBlockY = Utils.floor(maxY); blockY <= maxBlockY; blockY++)
+                for (int blockZ = Utils.floor(minZ), maxBlockZ = Utils.floor(maxZ); blockZ <= maxBlockZ; blockZ++) {
+
+                    float thisBlockStepHeight = 0.0f;
+                    byte block = Chunk.getBlockInWorld(blockX, blockY, blockZ);
+
+                    if (Block.playerIntersectsBlock(minX, maxX, minY, maxY, minZ, maxZ, blockX, blockY, blockZ, block, this))
+                        thisBlockStepHeight = Block.getSubY(block, TOP, 0) * 0.0625f + blockY + 1 - minY;
+
+                    requiredStepHeight = Math.max(requiredStepHeight, thisBlockStepHeight);
+                }
+
+        return requiredStepHeight;
     }
 
     private void updateHotBarElements() {

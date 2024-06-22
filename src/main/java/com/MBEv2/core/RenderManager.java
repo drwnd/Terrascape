@@ -69,7 +69,7 @@ public class RenderManager {
         GUIShader.link();
         GUIShader.createUniform("textureSampler");
 
-        int[] indices = new int[98304];
+        int[] indices = new int[786432];
         int index = 0;
         for (int i = 0; i < indices.length; i += 6) {
             indices[i] = index;
@@ -165,7 +165,6 @@ public class RenderManager {
             int intersectionType = frustumIntersection.intersectAab(position, new Vector3f(position.x + CHUNK_SIZE, position.y + CHUNK_SIZE, position.z + CHUNK_SIZE));
             if (intersectionType != FrustumIntersection.INTERSECT && intersectionType != FrustumIntersection.INSIDE)
                 continue;
-
             bindModel(model);
 
             prepareModel(model);

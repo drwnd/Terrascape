@@ -35,7 +35,7 @@ public class Chunk {
         this.X = x;
         this.Y = y;
         this.Z = z;
-        worldCoordinate = new Vector3i(X << 5, Y << 5, Z << 5);
+        worldCoordinate = new Vector3i(X << CHUNK_SIZE_BITS, Y << CHUNK_SIZE_BITS, Z << CHUNK_SIZE_BITS);
         blocks = new byte[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
         id = GameLogic.getChunkId(X, Y, Z);
         index = GameLogic.getChunkIndex(X, Y, Z);
@@ -46,9 +46,9 @@ public class Chunk {
             return;
         isGenerated = true;
         for (int x = 0; x < CHUNK_SIZE; x++) {
-            int totalX = x + (X << 5);
+            int totalX = x + (X << CHUNK_SIZE_BITS);
             for (int z = 0; z < CHUNK_SIZE; z++) {
-                int totalZ = z + (Z << 5);
+                int totalZ = z + (Z << CHUNK_SIZE_BITS);
 
                 int height = (int) heightMap[x][z];
                 int stoneHeight = stoneMap[x][z];
@@ -67,14 +67,14 @@ public class Chunk {
                     darkOakTree = GameLogic.isOutsideCave(totalX, height, totalZ);
 
                 for (int y = 0; y < CHUNK_SIZE; y++) {
-                    int totalY = y + (Y << 5);
+                    int totalY = y + (Y << CHUNK_SIZE_BITS);
 
                     if (GameLogic.isOutsideCave(totalX, totalY, totalZ)) {
                         if (totalY >= snowHeight && (totalY == stoneHeight || totalY == stoneHeight - 1))
                             storeSave(x, y, z, SNOW);
                         else if (totalY <= stoneHeight)
                             storeSave(x, y, z, Block.getGeneratingStoneType(totalX, totalY, totalZ));
-                        else if (totalY < height - 5)
+                        else if (totalY < height - CHUNK_SIZE_BITS)
                             storeSave(x, y, z, Block.getGeneratingStoneType(totalX, totalY, totalZ));
                         else if (totalY <= height && height <= sandHeight + 2 && totalY <= sandHeight + 2 && totalY >= sandHeight - 2)
                             storeSave(x, y, z, SAND);
@@ -280,8 +280,8 @@ public class Chunk {
         int subU = Block.getSubU(block, side, corner);
         int subV = Block.getSubV(block, side, corner);
 
-        list.add(packData((x << 4) + subX + 15, (y << 4) + subY + 15, (z << 4) + subZ + 15, getAmbientOcclusionLevel(x, y, z, side, subX, subY, subZ)));
-        list.add(packData(side, skyLight, blockLight, (u << 4) + subU + 15, (v << 4) + subV + 15));
+        list.add(packData(getAmbientOcclusionLevel(x, y, z, side, subX, subY, subZ), skyLight, blockLight, (x << 4) + subX + 15, (y << 4) + subY) + 15);
+        list.add(packData(side, (u << 4) + subU + 15, (v << 4) + subV + 15, (z << 4) + subZ + 15));
     }
 
     public void addVertexToListDynamic(ArrayList<Integer> list, int x, int y, int z, int u, int v, int side, int skyLight, int blockLight, byte block, int corner, int blockX, int blockY, int blockZ) {
@@ -315,16 +315,16 @@ public class Chunk {
             }
         }
 
-        list.add(packData((x << 4) + subX + 15, (y << 4) + subY + 15, (z << 4) + subZ + 15, getAmbientOcclusionLevel(x, y, z, side, subX, subY, subZ)));
-        list.add(packData(side, skyLight, blockLight, (u << 4) + subU + 15, (v << 4) + subV + 15));
+        list.add(packData(getAmbientOcclusionLevel(x, y, z, side, subX, subY, subZ), skyLight, blockLight, (x << 4) + subX + 15, (y << 4) + subY) + 15);
+        list.add(packData(side, (u << 4) + subU + 15, (v << 4) + subV + 15, (z << 4) + subZ + 15));
     }
 
-    public int packData(int x, int y, int z, int ambientOcclusionLevel) {
-        return ambientOcclusionLevel << 30 | x << 20 | y << 10 | z;
+    public int packData(int ambientOcclusionLevel, int skyLight, int blockLight, int x, int y){
+        return ambientOcclusionLevel << 30 | skyLight << 26 | blockLight << 22 | x << 11 | y;
     }
 
-    public int packData(int side, int skyLight, int blockLight, int u, int v) {
-        return side << 26 | skyLight << 22 | blockLight << 18 | u << 9 | v;
+    public int packData(int side, int u, int v, int z){
+        return side << 29 | u << 20 | v << 11 | z;
     }
 
     public int getAmbientOcclusionLevel(int x, int y, int z, int side, int subX, int subY, int subZ) {
@@ -447,24 +447,24 @@ public class Chunk {
     }
 
     public byte getSaveBlock(int x, int y, int z) {
-        return blocks[x << 10 | y << 5 | z];
+        return blocks[x << CHUNK_SIZE_BITS * 2 | y << CHUNK_SIZE_BITS | z];
     }
 
     public static byte getBlockInWorld(int x, int y, int z) {
-        Chunk chunk = world[GameLogic.getChunkIndex(x >> 5, y >> 5, z >> 5)];
+        Chunk chunk = world[GameLogic.getChunkIndex(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS)];
         if (chunk == null || !chunk.isGenerated)
             return OUT_OF_WORLD;
-        return chunk.getSaveBlock(x & 31, y & 31, z & 31);
+        return chunk.getSaveBlock(x & CHUNK_SIZE - 1, y & CHUNK_SIZE - 1, z & CHUNK_SIZE - 1);
     }
 
     public void storeSave(int x, int y, int z, byte block) {
-        blocks[x << 10 | y << 5 | z] = block;
+        blocks[x << CHUNK_SIZE_BITS * 2 | y << CHUNK_SIZE_BITS | z] = block;
     }
 
     private void storeTreeBlock(int x, int y, int z, byte block) {
-        if (block == AIR || blocks[x << 10 | y << 5 | z] != AIR && Block.isLeaveType(block))
+        if (block == AIR || blocks[x << CHUNK_SIZE_BITS * 2 | y << CHUNK_SIZE_BITS | z] != AIR && Block.isLeaveType(block))
             return;
-        blocks[x << 10 | y << 5 | z] = block;
+        blocks[x << CHUNK_SIZE_BITS * 2 | y << CHUNK_SIZE_BITS | z] = block;
     }
 
     public static Chunk getChunk(int x, int y, int z) {
@@ -532,8 +532,8 @@ public class Chunk {
         isMeshed = meshed;
     }
 
-    public boolean isGenerated() {
-        return isGenerated;
+    public boolean notGenerated() {
+        return !isGenerated;
     }
 
     public boolean isModified() {

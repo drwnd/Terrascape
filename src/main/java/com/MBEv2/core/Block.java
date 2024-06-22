@@ -250,12 +250,12 @@ public class Block {
         float minBlockZ = blockZ + blockXYZSubData[4] * 0.0625f;
         float maxBlockZ = 1 + blockZ + blockXYZSubData[5] * 0.0625f;
 
-        return minX <= maxBlockX &&
-                maxX >= minBlockX &&
-                minY <= maxBlockY &&
-                maxY >= minBlockY &&
-                minZ <= maxBlockZ &&
-                maxZ >= minBlockZ;
+        return minX < maxBlockX &&
+                maxX > minBlockX &&
+                minY < maxBlockY &&
+                maxY > minBlockY &&
+                minZ < maxBlockZ &&
+                maxZ > minBlockZ;
     }
 
     public static boolean intersectsBlock(double x, double y, double z, byte block) {

@@ -31,9 +31,10 @@ public class Constants {
     public static final float MAX_FALL_SPEED = 0.4f;
     public static final float FLY_SPEED = 1.0f;
 
-    public static final float JUMP_STRENGTH = 0.08208f;
+    public static final float JUMP_STRENGTH = 11.81952f;
     public static final float SWIM_STRENGTH = 0.486f;
     public static final float GRAVITY_ACCELERATION = 0.28f;
+    public static final float MAX_STEP_HEIGHT = 0.6f;
 
     //Movement state indices
     public static final int WALKING = 0;
@@ -43,6 +44,7 @@ public class Constants {
 
     //DO NOT CHANGE THESE VALUES
     public static final int CHUNK_SIZE = 32;
+    public static final int CHUNK_SIZE_BITS = 5;
     public static final int MAX_XZ = 0x7FFFFFF;
     public static final int MAX_Y = 0x3FF;
 
@@ -50,7 +52,7 @@ public class Constants {
     public static final int REACH_ACCURACY = 100;
     public static final int MAX_CHUNKS_TO_BUFFER_PER_FRAME = 10;
 
-    public static final int RENDER_DISTANCE_XZ = 8;
+    public static final int RENDER_DISTANCE_XZ = 12;
     public static final int RENDER_DISTANCE_Y = 5;
 
     public static final int RENDERED_WORLD_WIDTH = RENDER_DISTANCE_XZ * 2 + 5;
