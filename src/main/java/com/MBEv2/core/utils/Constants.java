@@ -171,18 +171,18 @@ public class Constants {
     public static final byte STONE_BRICK_LEFT_RIGHT_POST = 60;
     public static final byte[] STONE_BRICK_POSTS = new byte[]{STONE_BRICK_FRONT_BACK_POST, STONE_BRICK_UP_DOWN_POST, STONE_BRICK_LEFT_RIGHT_POST};
 
-    public static final byte GLASS_UP_DOWN_WALL = 88;
-    public static final byte GLASS_FRONT_BACK_WALL = 89;
+    public static final byte GLASS_FRONT_BACK_WALL = 88;
+    public static final byte GLASS_UP_DOWN_WALL = 89;
     public static final byte GLASS_LEFT_RIGHT_WALL = 90;
     public static final byte[] GLASS_WALLS = new byte[]{GLASS_FRONT_BACK_WALL, GLASS_UP_DOWN_WALL, GLASS_LEFT_RIGHT_WALL};
 
-    public static final byte COBBLESTONE_UP_DOWN_WALL = 29;
-    public static final byte COBBLESTONE_FRONT_BACK_WALL = 30;
+    public static final byte COBBLESTONE_FRONT_BACK_WALL = 29;
+    public static final byte COBBLESTONE_UP_DOWN_WALL = 30;
     public static final byte COBBLESTONE_LEFT_RIGHT_WALL = 31;
     public static final byte[] COBBLESTONE_WALLS = new byte[]{COBBLESTONE_FRONT_BACK_WALL, COBBLESTONE_UP_DOWN_WALL, COBBLESTONE_LEFT_RIGHT_WALL};
 
-    public static final byte STONE_BRICK_UP_DOWN_WALL = 61;
-    public static final byte STONE_BRICK_FRONT_BACK_WALL = 62;
+    public static final byte STONE_BRICK_FRONT_BACK_WALL = 61;
+    public static final byte STONE_BRICK_UP_DOWN_WALL = 62;
     public static final byte STONE_BRICK_LEFT_RIGHT_WALL = 63;
     public static final byte[] STONE_BRICK_WALLS = new byte[]{STONE_BRICK_FRONT_BACK_WALL, STONE_BRICK_UP_DOWN_WALL, STONE_BRICK_LEFT_RIGHT_WALL};
 

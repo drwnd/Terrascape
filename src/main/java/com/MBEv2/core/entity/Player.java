@@ -42,7 +42,7 @@ public class Player {
             {GRASS, DIRT, STONE, MUD, SNOW, SAND, STONE_BRICKS, COBBLESTONE, GLASS},
             {OAK_LOG, SPRUCE_LOG, DARK_OAK_LOG, STRIPPED_OAK_LOG, STRIPPED_SPRUCE_LOG, STRIPPED_DARK_OAK_LOG, AIR, AIR, AIR},
             {OAK_PLANKS, SPRUCE_PLANKS, DARK_OAK_PLANKS, OAK_LEAVES, SPRUCE_LEAVES, DARK_OAK_LEAVES, OAK_PLANKS_SLAB, SPRUCE_PLANKS_SLAB, DARK_OAK_PLANKS_SLAB},
-            {ANDESITE, WATER, COBBLESTONE_SLAB, STONE_BRICK_SLAB, COBBLESTONE_POST, STONE_BRICK_POST, COBBLESTONE_WALL, STONE_BRICK_WALL, AIR}};
+            {ANDESITE, WATER, COBBLESTONE_SLAB, STONE_BRICK_SLAB, COBBLESTONE_POST, STONE_BRICK_POST, COBBLESTONE_WALL, STONE_BRICK_WALL, GLASS_WALL}};
     private int selectedHotBar = 0;
     private int selectedHotBarSlot = 0;
 
@@ -495,6 +495,74 @@ public class Player {
         camera.setPosition(position.x, position.y, position.z);
     }
 
+    public boolean collidesWithBlock(float x, float y, float z, int movementState) {
+        if (isNoClip())
+            return false;
+
+        final float minX = x - HALF_PLAYER_WIDTH;
+        final float maxX = x + HALF_PLAYER_WIDTH;
+        final float minY = y - PLAYER_FEET_OFFSETS[movementState];
+        final float maxY = y + PLAYER_HEAD_OFFSET;
+        final float minZ = z - HALF_PLAYER_WIDTH;
+        final float maxZ = z + HALF_PLAYER_WIDTH;
+
+        for (int blockX = Utils.floor(minX), maxBlockX = Utils.floor(maxX); blockX <= maxBlockX; blockX++)
+            for (int blockY = Utils.floor(minY), maxBlockY = Utils.floor(maxY); blockY <= maxBlockY; blockY++)
+                for (int blockZ = Utils.floor(minZ), maxBlockZ = Utils.floor(maxZ); blockZ <= maxBlockZ; blockZ++) {
+
+                    byte block = Chunk.getBlockInWorld(blockX, blockY, blockZ);
+
+                    if (Block.playerIntersectsBlock(minX, maxX, minY, maxY, minZ, maxZ, blockX, blockY, blockZ, block, this))
+                        return true;
+                }
+        return false;
+    }
+
+    public boolean collidesWithBlock(float x, float y, float z, int movementState, byte block) {
+        if (isNoClip())
+            return false;
+
+        final float minX = x - HALF_PLAYER_WIDTH;
+        final float maxX = x + HALF_PLAYER_WIDTH;
+        final float minY = y - PLAYER_FEET_OFFSETS[movementState];
+        final float maxY = y + PLAYER_HEAD_OFFSET;
+        final float minZ = z - HALF_PLAYER_WIDTH;
+        final float maxZ = z + HALF_PLAYER_WIDTH;
+
+        for (int blockX = Utils.floor(minX), maxBlockX = Utils.floor(maxX); blockX <= maxBlockX; blockX++)
+            for (int blockY = Utils.floor(minY), maxBlockY = Utils.floor(maxY); blockY <= maxBlockY; blockY++)
+                for (int blockZ = Utils.floor(minZ), maxBlockZ = Utils.floor(maxZ); blockZ <= maxBlockZ; blockZ++)
+                    if (Chunk.getBlockInWorld(blockX, blockY, blockZ) == block)
+                        return true;
+        return false;
+    }
+
+    public float getRequiredStepHeight(float x, float y, float z, int movementState) {
+        final float minX = x - HALF_PLAYER_WIDTH;
+        final float maxX = x + HALF_PLAYER_WIDTH;
+        final float minY = y - PLAYER_FEET_OFFSETS[movementState];
+        final float maxY = y + PLAYER_HEAD_OFFSET;
+        final float minZ = z - HALF_PLAYER_WIDTH;
+        final float maxZ = z + HALF_PLAYER_WIDTH;
+
+        float requiredStepHeight = 0.0f;
+
+        for (int blockX = Utils.floor(minX), maxBlockX = Utils.floor(maxX); blockX <= maxBlockX; blockX++)
+            for (int blockY = Utils.floor(minY), maxBlockY = Utils.floor(maxY); blockY <= maxBlockY; blockY++)
+                for (int blockZ = Utils.floor(minZ), maxBlockZ = Utils.floor(maxZ); blockZ <= maxBlockZ; blockZ++) {
+
+                    float thisBlockStepHeight = 0.0f;
+                    byte block = Chunk.getBlockInWorld(blockX, blockY, blockZ);
+
+                    if (Block.playerIntersectsBlock(minX, maxX, minY, maxY, minZ, maxZ, blockX, blockY, blockZ, block, this))
+                        thisBlockStepHeight = Block.getSubY(block, TOP, 0) * 0.0625f + blockY + 1 - minY;
+
+                    requiredStepHeight = Math.max(requiredStepHeight, thisBlockStepHeight);
+                }
+
+        return requiredStepHeight;
+    }
+
     private Vector3i getTarget(int action, Vector3f cD) {
         final int placing = 1;
 
@@ -580,74 +648,6 @@ public class Player {
         }
     }
 
-    public boolean collidesWithBlock(float x, float y, float z, int movementState) {
-        if (isNoClip())
-            return false;
-
-        final float minX = x - HALF_PLAYER_WIDTH;
-        final float maxX = x + HALF_PLAYER_WIDTH;
-        final float minY = y - PLAYER_FEET_OFFSETS[movementState];
-        final float maxY = y + PLAYER_HEAD_OFFSET;
-        final float minZ = z - HALF_PLAYER_WIDTH;
-        final float maxZ = z + HALF_PLAYER_WIDTH;
-
-        for (int blockX = Utils.floor(minX), maxBlockX = Utils.floor(maxX); blockX <= maxBlockX; blockX++)
-            for (int blockY = Utils.floor(minY), maxBlockY = Utils.floor(maxY); blockY <= maxBlockY; blockY++)
-                for (int blockZ = Utils.floor(minZ), maxBlockZ = Utils.floor(maxZ); blockZ <= maxBlockZ; blockZ++) {
-
-                    byte block = Chunk.getBlockInWorld(blockX, blockY, blockZ);
-
-                    if (Block.playerIntersectsBlock(minX, maxX, minY, maxY, minZ, maxZ, blockX, blockY, blockZ, block, this))
-                        return true;
-                }
-        return false;
-    }
-
-    public boolean collidesWithBlock(float x, float y, float z, int movementState, byte block) {
-        if (isNoClip())
-            return false;
-
-        final float minX = x - HALF_PLAYER_WIDTH;
-        final float maxX = x + HALF_PLAYER_WIDTH;
-        final float minY = y - PLAYER_FEET_OFFSETS[movementState];
-        final float maxY = y + PLAYER_HEAD_OFFSET;
-        final float minZ = z - HALF_PLAYER_WIDTH;
-        final float maxZ = z + HALF_PLAYER_WIDTH;
-
-        for (int blockX = Utils.floor(minX), maxBlockX = Utils.floor(maxX); blockX <= maxBlockX; blockX++)
-            for (int blockY = Utils.floor(minY), maxBlockY = Utils.floor(maxY); blockY <= maxBlockY; blockY++)
-                for (int blockZ = Utils.floor(minZ), maxBlockZ = Utils.floor(maxZ); blockZ <= maxBlockZ; blockZ++)
-                    if (Chunk.getBlockInWorld(blockX, blockY, blockZ) == block)
-                        return true;
-        return false;
-    }
-
-    public float getRequiredStepHeight(float x, float y, float z, int movementState) {
-        final float minX = x - HALF_PLAYER_WIDTH;
-        final float maxX = x + HALF_PLAYER_WIDTH;
-        final float minY = y - PLAYER_FEET_OFFSETS[movementState];
-        final float maxY = y + PLAYER_HEAD_OFFSET;
-        final float minZ = z - HALF_PLAYER_WIDTH;
-        final float maxZ = z + HALF_PLAYER_WIDTH;
-
-        float requiredStepHeight = 0.0f;
-
-        for (int blockX = Utils.floor(minX), maxBlockX = Utils.floor(maxX); blockX <= maxBlockX; blockX++)
-            for (int blockY = Utils.floor(minY), maxBlockY = Utils.floor(maxY); blockY <= maxBlockY; blockY++)
-                for (int blockZ = Utils.floor(minZ), maxBlockZ = Utils.floor(maxZ); blockZ <= maxBlockZ; blockZ++) {
-
-                    float thisBlockStepHeight = 0.0f;
-                    byte block = Chunk.getBlockInWorld(blockX, blockY, blockZ);
-
-                    if (Block.playerIntersectsBlock(minX, maxX, minY, maxY, minZ, maxZ, blockX, blockY, blockZ, block, this))
-                        thisBlockStepHeight = Block.getSubY(block, TOP, 0) * 0.0625f + blockY + 1 - minY;
-
-                    requiredStepHeight = Math.max(requiredStepHeight, thisBlockStepHeight);
-                }
-
-        return requiredStepHeight;
-    }
-
     private void updateHotBarElements() {
         for (GUIElement element : hotBarElements) {
             if (element == null)
@@ -659,31 +659,66 @@ public class Player {
         hotBarElements.clear();
 
         for (int i = 0; i < hotBars[selectedHotBar].length; i++) {
-            final int textureIndex = Block.getTextureIndex(hotBars[selectedHotBar][i], 0) - 1;
-            final float[] textureCoordinates = getTextureCoordinates(textureIndex);
-            GUIElement element = ObjectLoader.loadGUIElement(GameLogic.getHotBarElementVertices(i), textureCoordinates);
+            byte block = hotBars[selectedHotBar][i];
+            int textureIndexFront = Block.getTextureIndex(block, FRONT) - 1;
+            int textureIndexTop = Block.getTextureIndex(block, TOP) - 1;
+            int textureIndexRight = Block.getTextureIndex(block, RIGHT) - 1;
+            float[] textureCoordinates = getTextureCoordinates(textureIndexFront, textureIndexTop, textureIndexRight, block);
+            GUIElement element = ObjectLoader.loadGUIElement(GameLogic.getHotBarElementVertices(i, block), textureCoordinates);
             element.setTexture(atlas);
             hotBarElements.add(element);
         }
     }
 
-    private static float[] getTextureCoordinates(int textureIndex) {
-        final int textureX = textureIndex & 15;
-        final int textureY = (textureIndex >> 4) & 15;
+    private static float[] getTextureCoordinates(int textureIndexFront, int textureIndexTop, int textureIndexRight, byte block) {
+        if (block == AIR)
+            return new float[]{};
 
-        final float upperX = textureX * 0.0625f;
-        final float lowerX = (textureX + 1) * 0.0625f;
-        final float upperY = textureY * 0.0625f;
-        final float lowerY = (textureY + 1) * 0.0625f;
+        final int textureFrontX = textureIndexFront & 15;
+        final int textureFrontY = (textureIndexFront >> 4) & 15;
+        final float upperFrontX = (textureFrontX + Block.getSubU(block, FRONT, 0) * 0.0625f) * 0.0625f;
+        final float lowerFrontX = (textureFrontX + 1 + Block.getSubU(block, FRONT, 1) * 0.0625f) * 0.0625f;
+        final float upperFrontY = (textureFrontY + Block.getSubV(block, FRONT, 1) * 0.0625f) * 0.0625f;
+        final float lowerFrontY = (textureFrontY + 1 + Block.getSubV(block, FRONT, 2) * 0.0625f) * 0.0625f;
+
+        final int textureTopX = textureIndexTop & 15;
+        final int textureTopY = (textureIndexTop >> 4) & 15;
+        final float upperTopX = (textureTopX + Block.getSubU(block, TOP, 0) * 0.0625f) * 0.0625f;
+        final float lowerTopX = (textureTopX + 1 + Block.getSubU(block, TOP, 1) * 0.0625f) * 0.0625f;
+        final float upperTopY = (textureTopY + Block.getSubV(block, TOP, 1) * 0.0625f) * 0.0625f;
+        final float lowerTopY = (textureTopY + 1 + Block.getSubV(block, TOP, 2) * 0.0625f) * 0.0625f;
+
+        final int textureRightX = textureIndexRight & 15;
+        final int textureRightY = (textureIndexRight >> 4) & 15;
+        final float upperRightX = (textureRightX + Block.getSubU(block, RIGHT, 0) * 0.0625f) * 0.0625f;
+        final float lowerRightX = (textureRightX + 1 + Block.getSubU(block, RIGHT, 1) * 0.0625f) * 0.0625f;
+        final float upperRightY = (textureRightY + Block.getSubV(block, RIGHT, 1) * 0.0625f) * 0.0625f;
+        final float lowerRightY = (textureRightY + 1 + Block.getSubV(block, RIGHT, 2) * 0.0625f) * 0.0625f;
 
         return new float[]{
-                lowerX, lowerY,
-                lowerX, upperY,
-                upperX, lowerY,
+                lowerFrontX, lowerFrontY,
+                lowerFrontX, upperFrontY,
+                upperFrontX, lowerFrontY,
 
-                lowerX, upperY,
-                upperX, upperY,
-                upperX, lowerY};
+                lowerFrontX, upperFrontY,
+                upperFrontX, upperFrontY,
+                upperFrontX, lowerFrontY,
+
+                lowerTopX, lowerTopY,
+                lowerTopX, upperTopY,
+                upperTopX, lowerTopY,
+
+                lowerTopX, upperTopY,
+                upperTopX, upperTopY,
+                upperTopX, lowerTopY,
+
+                lowerRightX, lowerRightY,
+                lowerRightX, upperRightY,
+                upperRightX, lowerRightY,
+
+                lowerRightX, upperRightY,
+                upperRightX, upperRightY,
+                upperRightX, lowerRightY};
     }
 
     public RenderManager getRenderer() {

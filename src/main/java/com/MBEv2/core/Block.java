@@ -427,6 +427,10 @@ public class Block {
         return OCCLUSION_DATA[BLOCK_TYPE[Byte.toUnsignedInt(block)]] & SIDE_MASKS[side];
     }
 
+    public static byte[] getXYZSubData(byte block){
+        return BLOCK_XYZ_SUB_DATA[BLOCK_TYPE[Byte.toUnsignedInt(block)]];
+    }
+
     public static void init() {
         BLOCK_TYPE[AIR] = AIR_TYPE;
         BLOCK_TYPE[Byte.toUnsignedInt(OUT_OF_WORLD)] = FULL_BLOCK;
@@ -710,5 +714,6 @@ public class Block {
         BLOCK_XYZ_SUB_DATA[FULL_BLOCK] = new byte[]{0, 0, 0, 0, 0, 0};
         BLOCK_XYZ_SUB_DATA[LEAVE_TYPE] = new byte[]{0, 0, 0, 0, 0, 0};
         BLOCK_XYZ_SUB_DATA[GLASS_TYPE] = new byte[]{0, 0, 0, 0, 0, 0};
+        BLOCK_XYZ_SUB_DATA[WATER_TYPE] = new byte[]{0, 0, 0, -2, 0, 0};
     }
 }

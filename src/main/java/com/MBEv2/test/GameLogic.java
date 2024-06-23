@@ -187,27 +187,56 @@ public class GameLogic {
         };
     }
 
-    public static float[] getHotBarElementVertices(int index) {
+    public static float[] getHotBarElementVertices(int index, byte block) {
+        if (block == AIR)
+            return new float[]{};
         WindowManager window = Launcher.getWindow();
 
-        int width = window.getWidth();
-        int height = window.getHeight();
+        final int width = window.getWidth();
+        final int height = window.getHeight();
 
-        float sizeX = 180;
-        float sizeY = 40;
+        final float xOffset = (40.0f * index - 165 + 4) * GUI_SIZE / width;
+        final float yOffset = -0.5f + 4.0f * GUI_SIZE / height;
 
-        float lowerX = (-sizeX * GUI_SIZE + 4 + 40 * index) / width;
-        float upperX = (-sizeX * GUI_SIZE + 36 + 40 * index) / width;
-        float lowerY = -0.5f + 4.0f / height;
-        float upperY = (sizeY * GUI_SIZE - 4.0f) / height - 0.5f;
+        final float sin30 = (float) Math.sin(Math.toRadians(30)) * GUI_SIZE;
+        final float cos30 = (float) Math.cos(Math.toRadians(30)) * GUI_SIZE;
+
+        byte[] XYZSubData = Block.getXYZSubData(block);
+
+        float widthX = XYZSubData[1] - XYZSubData[0] + 16;
+        float widthY = (XYZSubData[3] - XYZSubData[2] + 16) * GUI_SIZE;
+        float widthZ = XYZSubData[5] - XYZSubData[4] + 16;
+
+        float value1 = yOffset + widthY / height + sin30 * widthX / height;
+        float value2 = yOffset + widthY / height + sin30 * widthZ / height;
+        float value7 = xOffset - cos30 * widthZ / width;
+        float value3 = value7 + cos30 * widthX / width;
+        float value4 = yOffset + widthY / height + sin30 * widthZ / height + sin30 * widthX / height;
+        float value5 = xOffset + cos30 * widthX / width;
+        float value6 = yOffset + sin30 * widthX / height;
+        float value8 = yOffset + sin30 * widthZ / height;
+        float value9 = yOffset + widthY / height;
         return new float[]{
-                lowerX, lowerY,
-                lowerX, upperY,
-                upperX, lowerY,
+                xOffset, yOffset,
+                xOffset, value9,
+                value5, value6,
+                xOffset, value9,
+                value5, value1,
+                value5, value6,
 
-                lowerX, upperY,
-                upperX, upperY,
-                upperX, lowerY
+                value7, value2,
+                value3, value4,
+                xOffset, value9,
+                value3, value4,
+                value5, value1,
+                xOffset, value9,
+
+                xOffset, yOffset,
+                xOffset, value9,
+                value7, value8,
+                xOffset, value9,
+                value7, value2,
+                value7, value8,
         };
     }
 
