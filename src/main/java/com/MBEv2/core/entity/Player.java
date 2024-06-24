@@ -40,9 +40,9 @@ public class Player {
 
     private final byte[][] hotBars = {
             {GRASS, DIRT, STONE, MUD, SNOW, SAND, STONE_BRICKS, COBBLESTONE, GLASS},
-            {OAK_LOG, SPRUCE_LOG, DARK_OAK_LOG, STRIPPED_OAK_LOG, STRIPPED_SPRUCE_LOG, STRIPPED_DARK_OAK_LOG, AIR, AIR, AIR},
+            {OAK_LOG, SPRUCE_LOG, DARK_OAK_LOG, STRIPPED_OAK_LOG, STRIPPED_SPRUCE_LOG, STRIPPED_DARK_OAK_LOG, AIR, ANDESITE, WATER},
             {OAK_PLANKS, SPRUCE_PLANKS, DARK_OAK_PLANKS, OAK_LEAVES, SPRUCE_LEAVES, DARK_OAK_LEAVES, OAK_PLANKS_SLAB, SPRUCE_PLANKS_SLAB, DARK_OAK_PLANKS_SLAB},
-            {ANDESITE, WATER, COBBLESTONE_SLAB, STONE_BRICK_SLAB, COBBLESTONE_POST, STONE_BRICK_POST, COBBLESTONE_WALL, STONE_BRICK_WALL, GLASS_WALL}};
+            {COBBLESTONE_PLATE, STONE_BRICK_PLATE, COBBLESTONE_SLAB, STONE_BRICK_SLAB, COBBLESTONE_POST, STONE_BRICK_POST, COBBLESTONE_WALL, STONE_BRICK_WALL, GLASS_WALL}};
     private int selectedHotBar = 0;
     private int selectedHotBarSlot = 0;
 
@@ -585,7 +585,7 @@ public class Player {
 
         if (action == placing) {
             i--;
-            if (previousBlock == block) while (previousBlock == block) {
+            if (previousBlock == block) while (previousBlock == block && i >= 0) {
                 double x = cP.x + i * interval * cD.x;
                 double y = cP.y + i * interval * cD.y;
                 double z = cP.z + i * interval * cD.z;

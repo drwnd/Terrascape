@@ -45,8 +45,8 @@ public class Constants {
     //DO NOT CHANGE THESE VALUES
     public static final int CHUNK_SIZE = 32;
     public static final int CHUNK_SIZE_BITS = 5;
-    public static final int MAX_XZ = 0x7FFFFFF;
-    public static final int MAX_Y = 0x3FF;
+    public static final int MAX_CHUNKS_XZ = 0x7FFFFFF;
+    public static final int MAX_CHUNKS_Y = 0x3FF;
 
     //Change based on computing power
     public static final int REACH_ACCURACY = 100;
@@ -119,6 +119,8 @@ public class Constants {
     public static final byte OAK_PLANKS_SLAB = -108;
     public static final byte SPRUCE_PLANKS_SLAB = -107;
     public static final byte DARK_OAK_PLANKS_SLAB = -106;
+    public static final byte COBBLESTONE_PLATE = -48;
+    public static final byte STONE_BRICK_PLATE = -64;
 
     //Only in world
     public static final byte COBBLESTONE_BOTTOM_SLAB = 20;
@@ -216,6 +218,23 @@ public class Constants {
     public static final byte LEFT_RIGHT_STRIPPED_DARK_OAK_LOG = -122;
     public static final byte[] STRIPPED_DARK_OAK_LOGS = new byte[]{FRONT_BACK_STRIPPED_DARK_OAK_LOG, UP_DOWN_STRIPPED_DARK_OAK_LOG, LEFT_RIGHT_STRIPPED_DARK_OAK_LOG};
 
+    public static final byte COBBLESTONE_BOTTOM_PLATE = -48;
+    public static final byte COBBLESTONE_TOP_PLATE = -49;
+    public static final byte COBBLESTONE_FRONT_PLATE = -50;
+    public static final byte COBBLESTONE_BACK_PLATE = -51;
+    public static final byte COBBLESTONE_RIGHT_PLATE = -52;
+    public static final byte COBBLESTONE_LEFT_PLATE = -53;
+    public static final byte[] COBBLESTONE_PLATES = new byte[]{COBBLESTONE_FRONT_PLATE, COBBLESTONE_TOP_PLATE, COBBLESTONE_RIGHT_PLATE, COBBLESTONE_BACK_PLATE, COBBLESTONE_BOTTOM_PLATE, COBBLESTONE_LEFT_PLATE};
+
+    public static final byte STONE_BRICK_BOTTOM_PLATE = -64;
+    public static final byte STONE_BRICK_TOP_PLATE = -65;
+    public static final byte STONE_BRICK_FRONT_PLATE = -66;
+    public static final byte STONE_BRICK_BACK_PLATE = -67;
+    public static final byte STONE_BRICK_RIGHT_PLATE = -68;
+    public static final byte STONE_BRICK_LEFT_PLATE = -69;
+    public static final byte[] STONE_BRICKS_PLATES = new byte[]{STONE_BRICK_FRONT_PLATE, STONE_BRICK_TOP_PLATE, STONE_BRICK_RIGHT_PLATE, STONE_BRICK_BACK_PLATE, STONE_BRICK_BOTTOM_PLATE, STONE_BRICK_LEFT_PLATE};
+
+
     //Texture indices for multi textured blocks
     public static final byte GRASS_SIDE = 17;
     public static final byte OAK_LOG_TOP = 20;
@@ -257,8 +276,14 @@ public class Constants {
     public static final int UP_DOWN_WALL = 14;
     public static final int FRONT_BACK_WALL = 15;
     public static final int LEFT_RIGHT_WALL = 16;
+    public static final int FRONT_PLATE = 17;
+    public static final int TOP_PLATE = 18;
+    public static final int RIGHT_PLATE = 19;
+    public static final int BACK_PLATE = 20;
+    public static final int BOTTOM_PLATE = 21;
+    public static final int LEFT_PLATE = 22;
 
-    public static final int AMOUNT_OF_BLOCK_TYPES = 17;
+    public static final int AMOUNT_OF_BLOCK_TYPES = 23;
 
     //Other information on stuff
     public static final int[] SIDE_MASKS;
@@ -268,6 +293,12 @@ public class Constants {
     public static final int OCCLUDES_DYNAMIC_SELF = 3;
     public static final int SOLID_MASK = 64;
     public static final int DYNAMIC_SHAPE_MASK = 128;
+    public static final int MIN_X = 0;
+    public static final int MAX_X = 1;
+    public static final int MIN_Y = 2;
+    public static final int MAX_Y = 3;
+    public static final int MIN_Z = 4;
+    public static final int MAX_Z = 5;
 
     //Not currently in use
     //public static final float[] LIGHT = {1.0f, 1.2f, 0.9f, 0.8f, 0.6f, 1.1f};

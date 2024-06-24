@@ -203,10 +203,11 @@ public class GameLogic {
 
         byte[] XYZSubData = Block.getXYZSubData(block);
 
-        float widthX = XYZSubData[1] - XYZSubData[0] + 16;
-        float widthY = (XYZSubData[3] - XYZSubData[2] + 16) * GUI_SIZE;
-        float widthZ = XYZSubData[5] - XYZSubData[4] + 16;
+        float widthX = XYZSubData[MAX_X] - XYZSubData[MIN_X] + 16;
+        float widthY = (XYZSubData[MAX_Y] - XYZSubData[MIN_Y] + 16) * GUI_SIZE;
+        float widthZ = XYZSubData[MAX_Z] - XYZSubData[MIN_Z] + 16;
 
+        //Ignorance is bliss, so be ignorant
         float value1 = yOffset + widthY / height + sin30 * widthX / height;
         float value2 = yOffset + widthY / height + sin30 * widthZ / height;
         float value7 = xOffset - cos30 * widthZ / width;
@@ -365,7 +366,7 @@ public class GameLogic {
     }
 
     public static long getChunkId(int x, int y, int z) {
-        return (long) (x & MAX_XZ) << 37 | (long) (y & MAX_Y) << 27 | (z & MAX_XZ);
+        return (long) (x & MAX_CHUNKS_XZ) << 37 | (long) (y & MAX_CHUNKS_Y) << 27 | (z & MAX_CHUNKS_XZ);
     }
 
     public static int getChunkIndex(int x, int y, int z) {
