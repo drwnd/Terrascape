@@ -97,15 +97,22 @@ public class Player {
 
         long currentTime = System.nanoTime();
 
-        if (leftButtonPressTime != -1 && (currentTime - leftButtonPressTime > 300_000_000 || leftButtonWasJustPressed))
-            GameLogic.placeBlock(AIR, getTarget(0, camera.getDirection()));
+        if (leftButtonPressTime != -1 && (currentTime - leftButtonPressTime > 300_000_000 || leftButtonWasJustPressed)) {
+            Vector3f target = getTarget(0, camera.getDirection());
+            if (target != null)
+                GameLogic.placeBlock(AIR, new Vector3i(Utils.floor(target.x), Utils.floor(target.y), Utils.floor(target.z)));
+        }
 
         if (rightButtonPressTime != -1 && (currentTime - rightButtonPressTime > 300_000_000 || rightButtonWasJustPressed) && hotBars[selectedHotBar][selectedHotBarSlot] != AIR) {
 
-            Vector3f cD = camera.getDirection();
-            byte toPlaceBlock = hotBars[selectedHotBar][selectedHotBarSlot];
+            Vector3f cameraDirection = camera.getDirection();
+            Vector3f target = getTarget(1, cameraDirection);
+            if (target != null) {
+                byte selectedBlock = hotBars[selectedHotBar][selectedHotBarSlot];
+                byte toPlaceBlock = Block.getToPlaceBlock(selectedBlock, camera.getPrimaryDirection(cameraDirection), target);
 
-            GameLogic.placeBlock(Block.getToPlaceBlock(toPlaceBlock, camera.getPrimaryDirection(cD)), getTarget(1, cD));
+                GameLogic.placeBlock(toPlaceBlock, new Vector3i(Utils.floor(target.x), Utils.floor(target.y), Utils.floor(target.z)));
+            }
         }
     }
 
@@ -563,10 +570,10 @@ public class Player {
         return requiredStepHeight;
     }
 
-    private Vector3i getTarget(int action, Vector3f cD) {
+    private Vector3f getTarget(int action, Vector3f cameraDirection) {
         final int placing = 1;
 
-        Vector3f cP = camera.getPosition();     //cameraPosition
+        Vector3f cameraPosition = camera.getPosition();     //cameraPosition
         float interval = REACH / REACH_ACCURACY;
         int i = 0;
         byte block = OUT_OF_WORLD, previousBlock = OUT_OF_WORLD;
@@ -574,11 +581,11 @@ public class Player {
         for (; i < REACH_ACCURACY; i++) {
             previousBlock = block;
 
-            double x = cP.x + i * interval * cD.x;
-            double y = cP.y + i * interval * cD.y;
-            double z = cP.z + i * interval * cD.z;
+            float x = cameraPosition.x + i * interval * cameraDirection.x;
+            float y = cameraPosition.y + i * interval * cameraDirection.y;
+            float z = cameraPosition.z + i * interval * cameraDirection.z;
 
-            block = Chunk.getBlockInWorld((int) Math.floor(x), (int) Math.floor(y), (int) Math.floor(z));
+            block = Chunk.getBlockInWorld(Utils.floor(x), Utils.floor(y), Utils.floor(z));
             if (Block.intersectsBlock(x, y, z, block)) break;
         }
         if (block == AIR || block == OUT_OF_WORLD || block == WATER) return null;
@@ -586,30 +593,30 @@ public class Player {
         if (action == placing) {
             i--;
             if (previousBlock == block) while (previousBlock == block && i >= 0) {
-                double x = cP.x + i * interval * cD.x;
-                double y = cP.y + i * interval * cD.y;
-                double z = cP.z + i * interval * cD.z;
+                float x = cameraPosition.x + i * interval * cameraDirection.x;
+                float y = cameraPosition.y + i * interval * cameraDirection.y;
+                float z = cameraPosition.z + i * interval * cameraDirection.z;
 
                 block = Chunk.getBlockInWorld((int) Math.floor(x), (int) Math.floor(y), (int) Math.floor(z));
                 i--;
             }
             else if (previousBlock != AIR && previousBlock != WATER) return null;
         }
-        double x = Math.floor(cP.x + i * interval * cD.x);
-        double y = Math.floor(cP.y + i * interval * cD.y);
-        double z = Math.floor(cP.z + i * interval * cD.z);
-        Vector3i target = new Vector3i((int) x, (int) y, (int) z);
+        float x = cameraPosition.x + i * interval * cameraDirection.x;
+        float y = cameraPosition.y + i * interval * cameraDirection.y;
+        float z = cameraPosition.z + i * interval * cameraDirection.z;
+        Vector3f target = new Vector3f(x, y, z);
 
-        final float minX = cP.x - HALF_PLAYER_WIDTH;
-        final float maxX = cP.x + HALF_PLAYER_WIDTH;
-        final float minY = cP.y - PLAYER_FEET_OFFSETS[movementState];
-        final float maxY = cP.y + PLAYER_HEAD_OFFSET;
-        final float minZ = cP.z - HALF_PLAYER_WIDTH;
-        final float maxZ = cP.z + HALF_PLAYER_WIDTH;
+        final float minX = cameraPosition.x - HALF_PLAYER_WIDTH;
+        final float maxX = cameraPosition.x + HALF_PLAYER_WIDTH;
+        final float minY = cameraPosition.y - PLAYER_FEET_OFFSETS[movementState];
+        final float maxY = cameraPosition.y + PLAYER_HEAD_OFFSET;
+        final float minZ = cameraPosition.z - HALF_PLAYER_WIDTH;
+        final float maxZ = cameraPosition.z + HALF_PLAYER_WIDTH;
 
-        byte toPlaceBlock = Block.getToPlaceBlock(hotBars[selectedHotBar][selectedHotBarSlot], camera.getPrimaryDirection());
+        byte toPlaceBlock = Block.getToPlaceBlock(hotBars[selectedHotBar][selectedHotBarSlot], camera.getPrimaryDirection(), target);
 
-        if (action == placing && Block.playerIntersectsBlock(minX, maxX, minY, maxY, minZ, maxZ, target.x, target.y, target.z, toPlaceBlock, this))
+        if (action == placing && Block.playerIntersectsBlock(minX, maxX, minY, maxY, minZ, maxZ, Utils.floor(target.x), Utils.floor(target.y), Utils.floor(target.z), toPlaceBlock, this))
             return null;
 
         return target;

@@ -1,6 +1,7 @@
 package com.MBEv2.core;
 
 import com.MBEv2.core.entity.Player;
+import org.joml.Vector3f;
 
 import static com.MBEv2.core.utils.Constants.*;
 
@@ -116,54 +117,68 @@ public class Block {
         return x > XYZSubData[MIN_X] && x < XYZSubData[MAX_X] + 16 && y > XYZSubData[MIN_Y] && y < XYZSubData[MAX_Y] + 16 && z > XYZSubData[MIN_Z] && z < XYZSubData[MAX_Z] + 16;
     }
 
-    public static byte getToPlaceBlock(byte toPlaceBlock, int primaryCameraDirection) {
+    public static byte getToPlaceBlock(byte toPlaceBlock, int primaryCameraDirection, Vector3f target) {
+        primaryCameraDirection %= 3;
+
         if (isSlabType(toPlaceBlock)) {
+            int addend = getToPlaceBlockAddend(primaryCameraDirection, target);
+
             if (toPlaceBlock == COBBLESTONE_SLAB)
-                return COBBLESTONE_SLABS[primaryCameraDirection];
+                return COBBLESTONE_SLABS[primaryCameraDirection + addend];
             if (toPlaceBlock == STONE_BRICK_SLAB)
-                return STONE_BRICKS_SLABS[primaryCameraDirection];
+                return STONE_BRICKS_SLABS[primaryCameraDirection + addend];
             if (toPlaceBlock == OAK_PLANKS_SLAB)
-                return OAK_PLANKS_SLABS[primaryCameraDirection];
+                return OAK_PLANKS_SLABS[primaryCameraDirection + addend];
             if (toPlaceBlock == SPRUCE_PLANKS_SLAB)
-                return SPRUCE_PLANKS_SLABS[primaryCameraDirection];
+                return SPRUCE_PLANKS_SLABS[primaryCameraDirection + addend];
             if (toPlaceBlock == DARK_OAK_PLANKS_SLAB)
-                return DARK_OAK_PLANKS_SLABS[primaryCameraDirection];
+                return DARK_OAK_PLANKS_SLABS[primaryCameraDirection + addend];
         }
         if (isPostType(toPlaceBlock)) {
             if (toPlaceBlock == COBBLESTONE_POST)
-                return COBBLESTONE_POSTS[primaryCameraDirection % 3];
+                return COBBLESTONE_POSTS[primaryCameraDirection];
             if (toPlaceBlock == STONE_BRICK_POST)
-                return STONE_BRICK_POSTS[primaryCameraDirection % 3];
+                return STONE_BRICK_POSTS[primaryCameraDirection];
         }
         if (isWoodType(toPlaceBlock)) {
             if (toPlaceBlock == OAK_LOG)
-                return OAK_LOGS[primaryCameraDirection % 3];
+                return OAK_LOGS[primaryCameraDirection];
             if (toPlaceBlock == STRIPPED_OAK_LOG)
-                return STRIPPED_OAK_LOGS[primaryCameraDirection % 3];
+                return STRIPPED_OAK_LOGS[primaryCameraDirection];
             if (toPlaceBlock == SPRUCE_LOG)
-                return SPRUCE_LOGS[primaryCameraDirection % 3];
+                return SPRUCE_LOGS[primaryCameraDirection];
             if (toPlaceBlock == STRIPPED_SPRUCE_LOG)
-                return STRIPPED_SPRUCE_LOGS[primaryCameraDirection % 3];
+                return STRIPPED_SPRUCE_LOGS[primaryCameraDirection];
             if (toPlaceBlock == DARK_OAK_LOG)
-                return DARK_OAK_LOGS[primaryCameraDirection % 3];
+                return DARK_OAK_LOGS[primaryCameraDirection];
             if (toPlaceBlock == STRIPPED_DARK_OAK_LOG)
-                return STRIPPED_DARK_OAK_LOGS[primaryCameraDirection % 3];
+                return STRIPPED_DARK_OAK_LOGS[primaryCameraDirection];
         }
         if (isWallType(toPlaceBlock)) {
             if (toPlaceBlock == GLASS_WALL)
-                return GLASS_WALLS[primaryCameraDirection % 3];
+                return GLASS_WALLS[primaryCameraDirection];
             if (toPlaceBlock == COBBLESTONE_WALL)
-                return COBBLESTONE_WALLS[primaryCameraDirection % 3];
+                return COBBLESTONE_WALLS[primaryCameraDirection];
             if (toPlaceBlock == STONE_BRICK_WALL)
-                return STONE_BRICK_WALLS[primaryCameraDirection % 3];
+                return STONE_BRICK_WALLS[primaryCameraDirection];
         }
         if (isPlateType(toPlaceBlock)) {
+            int addend = getToPlaceBlockAddend(primaryCameraDirection, target);
             if (toPlaceBlock == COBBLESTONE_PLATE)
-                return COBBLESTONE_PLATES[primaryCameraDirection];
+                return COBBLESTONE_PLATES[primaryCameraDirection + addend];
             if (toPlaceBlock == STONE_BRICK_PLATE)
-                return STONE_BRICKS_PLATES[primaryCameraDirection];
+                return STONE_BRICKS_PLATES[primaryCameraDirection + addend];
         }
         return toPlaceBlock;
+    }
+
+    public static int getToPlaceBlockAddend(int primaryCameraDirection, Vector3f target) {
+        if (primaryCameraDirection == FRONT)
+            return fraction(target.z) > 0.5f ? 0 : 3;
+        if (primaryCameraDirection == TOP)
+            return fraction(target.y) > 0.5f ? 0 : 3;
+//        if (primaryCameraDirection == RIGHT)
+        return fraction(target.x) > 0.5f ? 0 : 3;
     }
 
     public static double fraction(double number) {
