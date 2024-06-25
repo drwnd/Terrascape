@@ -119,55 +119,119 @@ public class Block {
 
     public static byte getToPlaceBlock(byte toPlaceBlock, int primaryCameraDirection, Vector3f target) {
         primaryCameraDirection %= 3;
+        int addend = getToPlaceBlockAddend(primaryCameraDirection, target);
+        switch (toPlaceBlock) {
+            case STONE_SLAB -> {
+                return STONE_SLABS[primaryCameraDirection + addend];
+            }
+            case STONE_PLATE -> {
+                return STONE_PLATES[primaryCameraDirection + addend];
+            }
+            case STONE_WALL -> {
+                return STONE_WALLS[primaryCameraDirection];
+            }
+            case STONE_POST -> {
+                return STONE_POSTS[primaryCameraDirection];
+            }
 
-        if (isSlabType(toPlaceBlock)) {
-            int addend = getToPlaceBlockAddend(primaryCameraDirection, target);
-
-            if (toPlaceBlock == COBBLESTONE_SLAB)
+            case COBBLESTONE_SLAB -> {
                 return COBBLESTONE_SLABS[primaryCameraDirection + addend];
-            if (toPlaceBlock == STONE_BRICK_SLAB)
-                return STONE_BRICKS_SLABS[primaryCameraDirection + addend];
-            if (toPlaceBlock == OAK_PLANKS_SLAB)
-                return OAK_PLANKS_SLABS[primaryCameraDirection + addend];
-            if (toPlaceBlock == SPRUCE_PLANKS_SLAB)
-                return SPRUCE_PLANKS_SLABS[primaryCameraDirection + addend];
-            if (toPlaceBlock == DARK_OAK_PLANKS_SLAB)
-                return DARK_OAK_PLANKS_SLABS[primaryCameraDirection + addend];
-        }
-        if (isPostType(toPlaceBlock)) {
-            if (toPlaceBlock == COBBLESTONE_POST)
-                return COBBLESTONE_POSTS[primaryCameraDirection];
-            if (toPlaceBlock == STONE_BRICK_POST)
-                return STONE_BRICK_POSTS[primaryCameraDirection];
-        }
-        if (isWoodType(toPlaceBlock)) {
-            if (toPlaceBlock == OAK_LOG)
-                return OAK_LOGS[primaryCameraDirection];
-            if (toPlaceBlock == STRIPPED_OAK_LOG)
-                return STRIPPED_OAK_LOGS[primaryCameraDirection];
-            if (toPlaceBlock == SPRUCE_LOG)
-                return SPRUCE_LOGS[primaryCameraDirection];
-            if (toPlaceBlock == STRIPPED_SPRUCE_LOG)
-                return STRIPPED_SPRUCE_LOGS[primaryCameraDirection];
-            if (toPlaceBlock == DARK_OAK_LOG)
-                return DARK_OAK_LOGS[primaryCameraDirection];
-            if (toPlaceBlock == STRIPPED_DARK_OAK_LOG)
-                return STRIPPED_DARK_OAK_LOGS[primaryCameraDirection];
-        }
-        if (isWallType(toPlaceBlock)) {
-            if (toPlaceBlock == GLASS_WALL)
-                return GLASS_WALLS[primaryCameraDirection];
-            if (toPlaceBlock == COBBLESTONE_WALL)
-                return COBBLESTONE_WALLS[primaryCameraDirection];
-            if (toPlaceBlock == STONE_BRICK_WALL)
-                return STONE_BRICK_WALLS[primaryCameraDirection];
-        }
-        if (isPlateType(toPlaceBlock)) {
-            int addend = getToPlaceBlockAddend(primaryCameraDirection, target);
-            if (toPlaceBlock == COBBLESTONE_PLATE)
+            }
+            case COBBLESTONE_PLATE -> {
                 return COBBLESTONE_PLATES[primaryCameraDirection + addend];
-            if (toPlaceBlock == STONE_BRICK_PLATE)
-                return STONE_BRICKS_PLATES[primaryCameraDirection + addend];
+            }
+            case COBBLESTONE_WALL -> {
+                return COBBLESTONE_WALLS[primaryCameraDirection];
+            }
+            case COBBLESTONE_POST -> {
+                return COBBLESTONE_POSTS[primaryCameraDirection];
+            }
+
+            case POLISHED_STONE_SLAB -> {
+                return POLISHED_STONE_SLABS[primaryCameraDirection + addend];
+            }
+            case POLISHED_STONE_PLATE -> {
+                return POLISHED_STONE_PLATES[primaryCameraDirection + addend];
+            }
+            case POLISHED_STONE_WALL -> {
+                return POLISHED_STONE_WALLS[primaryCameraDirection];
+            }
+            case POLISHED_STONE_POST -> {
+                return POLISHED_STONE_POSTS[primaryCameraDirection];
+            }
+
+            case STONE_BRICK_SLAB -> {
+                return STONE_BRICK_SLABS[primaryCameraDirection + addend];
+            }
+            case STONE_BRICK_PLATE -> {
+                return STONE_BRICK_PLATES[primaryCameraDirection + addend];
+            }
+            case STONE_BRICK_WALL -> {
+                return STONE_BRICK_WALLS[primaryCameraDirection];
+            }
+            case STONE_BRICK_POST -> {
+                return STONE_BRICK_POSTS[primaryCameraDirection];
+            }
+
+            case SLATE_SLAB -> {
+                return SLATE_SLABS[primaryCameraDirection + addend];
+            }
+            case SLATE_PLATE -> {
+                return SLATE_PLATES[primaryCameraDirection + addend];
+            }
+            case SLATE_WALL -> {
+                return SLATE_WALLS[primaryCameraDirection];
+            }
+            case SLATE_POST -> {
+                return SLATE_POSTS[primaryCameraDirection];
+            }
+
+            case ANDESITE_SLAB -> {
+                return ANDESITE_SLABS[primaryCameraDirection + addend];
+            }
+            case ANDESITE_PLATE -> {
+                return ANDESITE_PLATES[primaryCameraDirection + addend];
+            }
+            case ANDESITE_WALL -> {
+                return ANDESITE_WALLS[primaryCameraDirection];
+            }
+            case ANDESITE_POST -> {
+                return ANDESITE_POSTS[primaryCameraDirection];
+            }
+
+            case OAK_LOG -> {
+                return OAK_LOGS[primaryCameraDirection];
+            }
+            case STRIPPED_OAK_LOG -> {
+                return STRIPPED_OAK_LOGS[primaryCameraDirection];
+            }
+            case OAK_PLANKS_SLAB -> {
+                return OAK_PLANKS_SLABS[primaryCameraDirection + addend];
+            }
+
+            case SPRUCE_LOG -> {
+                return SPRUCE_LOGS[primaryCameraDirection];
+            }
+            case STRIPPED_SPRUCE_LOG -> {
+                return STRIPPED_SPRUCE_LOGS[primaryCameraDirection];
+            }
+            case SPRUCE_PLANKS_SLAB -> {
+                return SPRUCE_PLANKS_SLABS[primaryCameraDirection + addend];
+            }
+
+            case DARK_OAK_LOG -> {
+                return DARK_OAK_LOGS[primaryCameraDirection];
+            }
+            case STRIPPED_DARK_OAK_LOG -> {
+                return STRIPPED_DARK_OAK_LOGS[primaryCameraDirection];
+            }
+            case DARK_OAK_PLANKS_SLAB -> {
+                return DARK_OAK_PLANKS_SLABS[primaryCameraDirection + addend];
+            }
+
+            case GLASS_WALL -> {
+                return GLASS_WALLS[primaryCameraDirection];
+            }
         }
         return toPlaceBlock;
     }
@@ -220,32 +284,17 @@ public class Block {
         return BLOCK_UV_SUB_DATA[BLOCK_TYPE[Byte.toUnsignedInt(block)]][(side << 3) + (corner << 1) + 1];
     }
 
-    public static boolean isPlateType(byte block) {
-        return block == COBBLESTONE_PLATE || block == STONE_BRICK_PLATE;
-    }
-
-    public static boolean isSlabType(byte block) {
-        return block == COBBLESTONE_SLAB || block == STONE_BRICK_SLAB || block == OAK_PLANKS_SLAB || block == SPRUCE_PLANKS_SLAB || block == DARK_OAK_PLANKS_SLAB;
-    }
-
-    public static boolean isPostType(byte block) {
-        return block == COBBLESTONE_POST || block == STONE_BRICK_POST;
-    }
-
-    public static boolean isWoodType(byte block) {
-        return block == OAK_LOG || block == STRIPPED_OAK_LOG || block == SPRUCE_LOG || block == STRIPPED_SPRUCE_LOG || block == DARK_OAK_LOG || block == STRIPPED_DARK_OAK_LOG;
-    }
-
-    public static boolean isWallType(byte block) {
-        return block == GLASS_WALL || block == COBBLESTONE_WALL || block == STONE_BRICK_WALL;
-    }
-
     public static boolean isLeaveType(byte block) {
         return BLOCK_TYPE[Byte.toUnsignedInt(block)] == LEAVE_TYPE;
     }
 
     public static byte getGeneratingStoneType(int x, int y, int z) {
-        return Math.abs(OpenSimplex2S.noise3_ImproveXY(SEED, x * STONE_TYPE_FREQUENCY, y * STONE_TYPE_FREQUENCY, z * STONE_TYPE_FREQUENCY)) < ANDESITE_THRESHOLD ? ANDESITE : STONE;
+        double noise = OpenSimplex2S.noise3_ImproveXY(SEED, x * STONE_TYPE_FREQUENCY, y * STONE_TYPE_FREQUENCY, z * STONE_TYPE_FREQUENCY);
+        if (Math.abs(noise) < ANDESITE_THRESHOLD)
+            return ANDESITE;
+        if (noise > SLATE_THRESHOLD)
+            return SLATE;
+        return STONE;
     }
 
     public static int getOcclusionData(byte block, int side) {
@@ -287,6 +336,10 @@ public class Block {
         TEXTURE_INDICES[SPRUCE_PLANKS] = new int[]{SPRUCE_PLANKS};
         BLOCK_TYPE[DARK_OAK_PLANKS] = FULL_BLOCK;
         TEXTURE_INDICES[DARK_OAK_PLANKS] = new int[]{DARK_OAK_PLANKS};
+        BLOCK_TYPE[SLATE] = FULL_BLOCK;
+        TEXTURE_INDICES[SLATE] = new int[]{SLATE};
+        BLOCK_TYPE[POLISHED_STONE] = FULL_BLOCK;
+        TEXTURE_INDICES[POLISHED_STONE] = new int[]{POLISHED_STONE};
 
         BLOCK_TYPE[GLASS] = GLASS_TYPE;
         TEXTURE_INDICES[GLASS] = new int[]{GLASS};
@@ -313,6 +366,193 @@ public class Block {
         TEXTURE_INDICES[Byte.toUnsignedInt(COBBLESTONE_BACK_SLAB)] = new int[]{COBBLESTONE};
         TEXTURE_INDICES[Byte.toUnsignedInt(COBBLESTONE_LEFT_SLAB)] = new int[]{COBBLESTONE};
         TEXTURE_INDICES[Byte.toUnsignedInt(COBBLESTONE_RIGHT_SLAB)] = new int[]{COBBLESTONE};
+
+        BLOCK_TYPE[COBBLESTONE_UP_DOWN_POST] = UP_DOWN_POST;
+        BLOCK_TYPE[COBBLESTONE_FRONT_BACK_POST] = FRONT_BACK_POST;
+        BLOCK_TYPE[COBBLESTONE_LEFT_RIGHT_POST] = LEFT_RIGHT_POST;
+        TEXTURE_INDICES[Byte.toUnsignedInt(COBBLESTONE_UP_DOWN_POST)] = new int[]{COBBLESTONE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(COBBLESTONE_FRONT_BACK_POST)] = new int[]{COBBLESTONE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(COBBLESTONE_LEFT_RIGHT_POST)] = new int[]{COBBLESTONE};
+
+        BLOCK_TYPE[COBBLESTONE_UP_DOWN_WALL] = UP_DOWN_WALL;
+        BLOCK_TYPE[COBBLESTONE_FRONT_BACK_WALL] = FRONT_BACK_WALL;
+        BLOCK_TYPE[COBBLESTONE_LEFT_RIGHT_WALL] = LEFT_RIGHT_WALL;
+        TEXTURE_INDICES[Byte.toUnsignedInt(COBBLESTONE_UP_DOWN_WALL)] = new int[]{COBBLESTONE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(COBBLESTONE_FRONT_BACK_WALL)] = new int[]{COBBLESTONE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(COBBLESTONE_LEFT_RIGHT_WALL)] = new int[]{COBBLESTONE};
+
+        BLOCK_TYPE[Byte.toUnsignedInt(COBBLESTONE_BOTTOM_PLATE)] = BOTTOM_PLATE;
+        BLOCK_TYPE[Byte.toUnsignedInt(COBBLESTONE_TOP_PLATE)] = TOP_PLATE;
+        BLOCK_TYPE[Byte.toUnsignedInt(COBBLESTONE_FRONT_PLATE)] = FRONT_PLATE;
+        BLOCK_TYPE[Byte.toUnsignedInt(COBBLESTONE_BACK_PLATE)] = BACK_PLATE;
+        BLOCK_TYPE[Byte.toUnsignedInt(COBBLESTONE_LEFT_PLATE)] = LEFT_PLATE;
+        BLOCK_TYPE[Byte.toUnsignedInt(COBBLESTONE_RIGHT_PLATE)] = RIGHT_PLATE;
+        TEXTURE_INDICES[Byte.toUnsignedInt(COBBLESTONE_BOTTOM_PLATE)] = new int[]{COBBLESTONE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(COBBLESTONE_TOP_PLATE)] = new int[]{COBBLESTONE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(COBBLESTONE_FRONT_PLATE)] = new int[]{COBBLESTONE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(COBBLESTONE_BACK_PLATE)] = new int[]{COBBLESTONE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(COBBLESTONE_LEFT_PLATE)] = new int[]{COBBLESTONE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(COBBLESTONE_RIGHT_PLATE)] = new int[]{COBBLESTONE};
+
+        BLOCK_TYPE[Byte.toUnsignedInt(STONE_BOTTOM_SLAB)] = BOTTOM_SLAB;
+        BLOCK_TYPE[Byte.toUnsignedInt(STONE_TOP_SLAB)] = TOP_SLAB;
+        BLOCK_TYPE[Byte.toUnsignedInt(STONE_FRONT_SLAB)] = FRONT_SLAB;
+        BLOCK_TYPE[Byte.toUnsignedInt(STONE_BACK_SLAB)] = BACK_SLAB;
+        BLOCK_TYPE[Byte.toUnsignedInt(STONE_LEFT_SLAB)] = LEFT_SLAB;
+        BLOCK_TYPE[Byte.toUnsignedInt(STONE_RIGHT_SLAB)] = RIGHT_SLAB;
+        TEXTURE_INDICES[Byte.toUnsignedInt(STONE_BOTTOM_SLAB)] = new int[]{STONE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(STONE_TOP_SLAB)] = new int[]{STONE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(STONE_FRONT_SLAB)] = new int[]{STONE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(STONE_BACK_SLAB)] = new int[]{STONE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(STONE_LEFT_SLAB)] = new int[]{STONE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(STONE_RIGHT_SLAB)] = new int[]{STONE};
+
+        BLOCK_TYPE[Byte.toUnsignedInt(STONE_UP_DOWN_POST)] = UP_DOWN_POST;
+        BLOCK_TYPE[Byte.toUnsignedInt(STONE_FRONT_BACK_POST)] = FRONT_BACK_POST;
+        BLOCK_TYPE[Byte.toUnsignedInt(STONE_LEFT_RIGHT_POST)] = LEFT_RIGHT_POST;
+        TEXTURE_INDICES[Byte.toUnsignedInt(STONE_UP_DOWN_POST)] = new int[]{STONE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(STONE_FRONT_BACK_POST)] = new int[]{STONE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(STONE_LEFT_RIGHT_POST)] = new int[]{STONE};
+
+        BLOCK_TYPE[Byte.toUnsignedInt(STONE_UP_DOWN_WALL)] = UP_DOWN_WALL;
+        BLOCK_TYPE[Byte.toUnsignedInt(STONE_FRONT_BACK_WALL)] = FRONT_BACK_WALL;
+        BLOCK_TYPE[Byte.toUnsignedInt(STONE_LEFT_RIGHT_WALL)] = LEFT_RIGHT_WALL;
+        TEXTURE_INDICES[Byte.toUnsignedInt(STONE_UP_DOWN_WALL)] = new int[]{STONE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(STONE_FRONT_BACK_WALL)] = new int[]{STONE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(STONE_LEFT_RIGHT_WALL)] = new int[]{STONE};
+
+        BLOCK_TYPE[Byte.toUnsignedInt(STONE_BOTTOM_PLATE)] = BOTTOM_PLATE;
+        BLOCK_TYPE[Byte.toUnsignedInt(STONE_TOP_PLATE)] = TOP_PLATE;
+        BLOCK_TYPE[Byte.toUnsignedInt(STONE_FRONT_PLATE)] = FRONT_PLATE;
+        BLOCK_TYPE[Byte.toUnsignedInt(STONE_BACK_PLATE)] = BACK_PLATE;
+        BLOCK_TYPE[Byte.toUnsignedInt(STONE_LEFT_PLATE)] = LEFT_PLATE;
+        BLOCK_TYPE[Byte.toUnsignedInt(STONE_RIGHT_PLATE)] = RIGHT_PLATE;
+        TEXTURE_INDICES[Byte.toUnsignedInt(STONE_BOTTOM_PLATE)] = new int[]{STONE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(STONE_TOP_PLATE)] = new int[]{STONE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(STONE_FRONT_PLATE)] = new int[]{STONE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(STONE_BACK_PLATE)] = new int[]{STONE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(STONE_LEFT_PLATE)] = new int[]{STONE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(STONE_RIGHT_PLATE)] = new int[]{STONE};
+
+        BLOCK_TYPE[Byte.toUnsignedInt(POLISHED_STONE_BOTTOM_SLAB)] = BOTTOM_SLAB;
+        BLOCK_TYPE[Byte.toUnsignedInt(POLISHED_STONE_TOP_SLAB)] = TOP_SLAB;
+        BLOCK_TYPE[Byte.toUnsignedInt(POLISHED_STONE_FRONT_SLAB)] = FRONT_SLAB;
+        BLOCK_TYPE[Byte.toUnsignedInt(POLISHED_STONE_BACK_SLAB)] = BACK_SLAB;
+        BLOCK_TYPE[Byte.toUnsignedInt(POLISHED_STONE_LEFT_SLAB)] = LEFT_SLAB;
+        BLOCK_TYPE[Byte.toUnsignedInt(POLISHED_STONE_RIGHT_SLAB)] = RIGHT_SLAB;
+        TEXTURE_INDICES[Byte.toUnsignedInt(POLISHED_STONE_BOTTOM_SLAB)] = new int[]{POLISHED_STONE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(POLISHED_STONE_TOP_SLAB)] = new int[]{POLISHED_STONE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(POLISHED_STONE_FRONT_SLAB)] = new int[]{POLISHED_STONE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(POLISHED_STONE_BACK_SLAB)] = new int[]{POLISHED_STONE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(POLISHED_STONE_LEFT_SLAB)] = new int[]{POLISHED_STONE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(POLISHED_STONE_RIGHT_SLAB)] = new int[]{POLISHED_STONE};
+
+        BLOCK_TYPE[Byte.toUnsignedInt(POLISHED_STONE_UP_DOWN_POST)] = UP_DOWN_POST;
+        BLOCK_TYPE[Byte.toUnsignedInt(POLISHED_STONE_FRONT_BACK_POST)] = FRONT_BACK_POST;
+        BLOCK_TYPE[Byte.toUnsignedInt(POLISHED_STONE_LEFT_RIGHT_POST)] = LEFT_RIGHT_POST;
+        TEXTURE_INDICES[Byte.toUnsignedInt(POLISHED_STONE_UP_DOWN_POST)] = new int[]{POLISHED_STONE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(POLISHED_STONE_FRONT_BACK_POST)] = new int[]{POLISHED_STONE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(POLISHED_STONE_LEFT_RIGHT_POST)] = new int[]{POLISHED_STONE};
+
+        BLOCK_TYPE[Byte.toUnsignedInt(POLISHED_STONE_UP_DOWN_WALL)] = UP_DOWN_WALL;
+        BLOCK_TYPE[Byte.toUnsignedInt(POLISHED_STONE_FRONT_BACK_WALL)] = FRONT_BACK_WALL;
+        BLOCK_TYPE[Byte.toUnsignedInt(POLISHED_STONE_LEFT_RIGHT_WALL)] = LEFT_RIGHT_WALL;
+        TEXTURE_INDICES[Byte.toUnsignedInt(POLISHED_STONE_UP_DOWN_WALL)] = new int[]{POLISHED_STONE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(POLISHED_STONE_FRONT_BACK_WALL)] = new int[]{POLISHED_STONE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(POLISHED_STONE_LEFT_RIGHT_WALL)] = new int[]{POLISHED_STONE};
+
+        BLOCK_TYPE[Byte.toUnsignedInt(POLISHED_STONE_BOTTOM_PLATE)] = BOTTOM_PLATE;
+        BLOCK_TYPE[Byte.toUnsignedInt(POLISHED_STONE_TOP_PLATE)] = TOP_PLATE;
+        BLOCK_TYPE[Byte.toUnsignedInt(POLISHED_STONE_FRONT_PLATE)] = FRONT_PLATE;
+        BLOCK_TYPE[Byte.toUnsignedInt(POLISHED_STONE_BACK_PLATE)] = BACK_PLATE;
+        BLOCK_TYPE[Byte.toUnsignedInt(POLISHED_STONE_LEFT_PLATE)] = LEFT_PLATE;
+        BLOCK_TYPE[Byte.toUnsignedInt(POLISHED_STONE_RIGHT_PLATE)] = RIGHT_PLATE;
+        TEXTURE_INDICES[Byte.toUnsignedInt(POLISHED_STONE_BOTTOM_PLATE)] = new int[]{POLISHED_STONE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(POLISHED_STONE_TOP_PLATE)] = new int[]{POLISHED_STONE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(POLISHED_STONE_FRONT_PLATE)] = new int[]{POLISHED_STONE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(POLISHED_STONE_BACK_PLATE)] = new int[]{POLISHED_STONE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(POLISHED_STONE_LEFT_PLATE)] = new int[]{POLISHED_STONE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(POLISHED_STONE_RIGHT_PLATE)] = new int[]{POLISHED_STONE};
+
+        BLOCK_TYPE[Byte.toUnsignedInt(SLATE_BOTTOM_SLAB)] = BOTTOM_SLAB;
+        BLOCK_TYPE[Byte.toUnsignedInt(SLATE_TOP_SLAB)] = TOP_SLAB;
+        BLOCK_TYPE[Byte.toUnsignedInt(SLATE_FRONT_SLAB)] = FRONT_SLAB;
+        BLOCK_TYPE[Byte.toUnsignedInt(SLATE_BACK_SLAB)] = BACK_SLAB;
+        BLOCK_TYPE[Byte.toUnsignedInt(SLATE_LEFT_SLAB)] = LEFT_SLAB;
+        BLOCK_TYPE[Byte.toUnsignedInt(SLATE_RIGHT_SLAB)] = RIGHT_SLAB;
+        TEXTURE_INDICES[Byte.toUnsignedInt(SLATE_BOTTOM_SLAB)] = new int[]{SLATE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(SLATE_TOP_SLAB)] = new int[]{SLATE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(SLATE_FRONT_SLAB)] = new int[]{SLATE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(SLATE_BACK_SLAB)] = new int[]{SLATE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(SLATE_LEFT_SLAB)] = new int[]{SLATE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(SLATE_RIGHT_SLAB)] = new int[]{SLATE};
+
+        BLOCK_TYPE[Byte.toUnsignedInt(SLATE_UP_DOWN_POST)] = UP_DOWN_POST;
+        BLOCK_TYPE[Byte.toUnsignedInt(SLATE_FRONT_BACK_POST)] = FRONT_BACK_POST;
+        BLOCK_TYPE[Byte.toUnsignedInt(SLATE_LEFT_RIGHT_POST)] = LEFT_RIGHT_POST;
+        TEXTURE_INDICES[Byte.toUnsignedInt(SLATE_UP_DOWN_POST)] = new int[]{SLATE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(SLATE_FRONT_BACK_POST)] = new int[]{SLATE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(SLATE_LEFT_RIGHT_POST)] = new int[]{SLATE};
+
+        BLOCK_TYPE[Byte.toUnsignedInt(SLATE_UP_DOWN_WALL)] = UP_DOWN_WALL;
+        BLOCK_TYPE[Byte.toUnsignedInt(SLATE_FRONT_BACK_WALL)] = FRONT_BACK_WALL;
+        BLOCK_TYPE[Byte.toUnsignedInt(SLATE_LEFT_RIGHT_WALL)] = LEFT_RIGHT_WALL;
+        TEXTURE_INDICES[Byte.toUnsignedInt(SLATE_UP_DOWN_WALL)] = new int[]{SLATE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(SLATE_FRONT_BACK_WALL)] = new int[]{SLATE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(SLATE_LEFT_RIGHT_WALL)] = new int[]{SLATE};
+
+        BLOCK_TYPE[Byte.toUnsignedInt(SLATE_BOTTOM_PLATE)] = BOTTOM_PLATE;
+        BLOCK_TYPE[Byte.toUnsignedInt(SLATE_TOP_PLATE)] = TOP_PLATE;
+        BLOCK_TYPE[Byte.toUnsignedInt(SLATE_FRONT_PLATE)] = FRONT_PLATE;
+        BLOCK_TYPE[Byte.toUnsignedInt(SLATE_BACK_PLATE)] = BACK_PLATE;
+        BLOCK_TYPE[Byte.toUnsignedInt(SLATE_LEFT_PLATE)] = LEFT_PLATE;
+        BLOCK_TYPE[Byte.toUnsignedInt(SLATE_RIGHT_PLATE)] = RIGHT_PLATE;
+        TEXTURE_INDICES[Byte.toUnsignedInt(SLATE_BOTTOM_PLATE)] = new int[]{SLATE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(SLATE_TOP_PLATE)] = new int[]{SLATE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(SLATE_FRONT_PLATE)] = new int[]{SLATE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(SLATE_BACK_PLATE)] = new int[]{SLATE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(SLATE_LEFT_PLATE)] = new int[]{SLATE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(SLATE_RIGHT_PLATE)] = new int[]{SLATE};
+
+        BLOCK_TYPE[Byte.toUnsignedInt(ANDESITE_BOTTOM_SLAB)] = BOTTOM_SLAB;
+        BLOCK_TYPE[Byte.toUnsignedInt(ANDESITE_TOP_SLAB)] = TOP_SLAB;
+        BLOCK_TYPE[Byte.toUnsignedInt(ANDESITE_FRONT_SLAB)] = FRONT_SLAB;
+        BLOCK_TYPE[Byte.toUnsignedInt(ANDESITE_BACK_SLAB)] = BACK_SLAB;
+        BLOCK_TYPE[Byte.toUnsignedInt(ANDESITE_LEFT_SLAB)] = LEFT_SLAB;
+        BLOCK_TYPE[Byte.toUnsignedInt(ANDESITE_RIGHT_SLAB)] = RIGHT_SLAB;
+        TEXTURE_INDICES[Byte.toUnsignedInt(ANDESITE_BOTTOM_SLAB)] = new int[]{ANDESITE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(ANDESITE_TOP_SLAB)] = new int[]{ANDESITE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(ANDESITE_FRONT_SLAB)] = new int[]{ANDESITE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(ANDESITE_BACK_SLAB)] = new int[]{ANDESITE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(ANDESITE_LEFT_SLAB)] = new int[]{ANDESITE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(ANDESITE_RIGHT_SLAB)] = new int[]{ANDESITE};
+
+        BLOCK_TYPE[Byte.toUnsignedInt(ANDESITE_UP_DOWN_POST)] = UP_DOWN_POST;
+        BLOCK_TYPE[Byte.toUnsignedInt(ANDESITE_FRONT_BACK_POST)] = FRONT_BACK_POST;
+        BLOCK_TYPE[Byte.toUnsignedInt(ANDESITE_LEFT_RIGHT_POST)] = LEFT_RIGHT_POST;
+        TEXTURE_INDICES[Byte.toUnsignedInt(ANDESITE_UP_DOWN_POST)] = new int[]{ANDESITE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(ANDESITE_FRONT_BACK_POST)] = new int[]{ANDESITE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(ANDESITE_LEFT_RIGHT_POST)] = new int[]{ANDESITE};
+
+        BLOCK_TYPE[Byte.toUnsignedInt(ANDESITE_UP_DOWN_WALL)] = UP_DOWN_WALL;
+        BLOCK_TYPE[Byte.toUnsignedInt(ANDESITE_FRONT_BACK_WALL)] = FRONT_BACK_WALL;
+        BLOCK_TYPE[Byte.toUnsignedInt(ANDESITE_LEFT_RIGHT_WALL)] = LEFT_RIGHT_WALL;
+        TEXTURE_INDICES[Byte.toUnsignedInt(ANDESITE_UP_DOWN_WALL)] = new int[]{ANDESITE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(ANDESITE_FRONT_BACK_WALL)] = new int[]{ANDESITE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(ANDESITE_LEFT_RIGHT_WALL)] = new int[]{ANDESITE};
+
+        BLOCK_TYPE[Byte.toUnsignedInt(ANDESITE_BOTTOM_PLATE)] = BOTTOM_PLATE;
+        BLOCK_TYPE[Byte.toUnsignedInt(ANDESITE_TOP_PLATE)] = TOP_PLATE;
+        BLOCK_TYPE[Byte.toUnsignedInt(ANDESITE_FRONT_PLATE)] = FRONT_PLATE;
+        BLOCK_TYPE[Byte.toUnsignedInt(ANDESITE_BACK_PLATE)] = BACK_PLATE;
+        BLOCK_TYPE[Byte.toUnsignedInt(ANDESITE_LEFT_PLATE)] = LEFT_PLATE;
+        BLOCK_TYPE[Byte.toUnsignedInt(ANDESITE_RIGHT_PLATE)] = RIGHT_PLATE;
+        TEXTURE_INDICES[Byte.toUnsignedInt(ANDESITE_BOTTOM_PLATE)] = new int[]{ANDESITE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(ANDESITE_TOP_PLATE)] = new int[]{ANDESITE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(ANDESITE_FRONT_PLATE)] = new int[]{ANDESITE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(ANDESITE_BACK_PLATE)] = new int[]{ANDESITE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(ANDESITE_LEFT_PLATE)] = new int[]{ANDESITE};
+        TEXTURE_INDICES[Byte.toUnsignedInt(ANDESITE_RIGHT_PLATE)] = new int[]{ANDESITE};
 
         BLOCK_TYPE[STONE_BRICK_BOTTOM_SLAB] = BOTTOM_SLAB;
         BLOCK_TYPE[STONE_BRICK_TOP_SLAB] = TOP_SLAB;
@@ -366,13 +606,6 @@ public class Block {
         TEXTURE_INDICES[Byte.toUnsignedInt(DARK_OAK_PLANKS_LEFT_SLAB)] = new int[]{DARK_OAK_PLANKS};
         TEXTURE_INDICES[Byte.toUnsignedInt(DARK_OAK_PLANKS_RIGHT_SLAB)] = new int[]{DARK_OAK_PLANKS};
 
-        BLOCK_TYPE[COBBLESTONE_UP_DOWN_POST] = UP_DOWN_POST;
-        BLOCK_TYPE[COBBLESTONE_FRONT_BACK_POST] = FRONT_BACK_POST;
-        BLOCK_TYPE[COBBLESTONE_LEFT_RIGHT_POST] = LEFT_RIGHT_POST;
-        TEXTURE_INDICES[Byte.toUnsignedInt(COBBLESTONE_UP_DOWN_POST)] = new int[]{COBBLESTONE};
-        TEXTURE_INDICES[Byte.toUnsignedInt(COBBLESTONE_FRONT_BACK_POST)] = new int[]{COBBLESTONE};
-        TEXTURE_INDICES[Byte.toUnsignedInt(COBBLESTONE_LEFT_RIGHT_POST)] = new int[]{COBBLESTONE};
-
         BLOCK_TYPE[STONE_BRICK_UP_DOWN_POST] = UP_DOWN_POST;
         BLOCK_TYPE[STONE_BRICK_FRONT_BACK_POST] = FRONT_BACK_POST;
         BLOCK_TYPE[STONE_BRICK_LEFT_RIGHT_POST] = LEFT_RIGHT_POST;
@@ -386,13 +619,6 @@ public class Block {
         TEXTURE_INDICES[Byte.toUnsignedInt(GLASS_UP_DOWN_WALL)] = new int[]{GLASS};
         TEXTURE_INDICES[Byte.toUnsignedInt(GLASS_FRONT_BACK_WALL)] = new int[]{GLASS};
         TEXTURE_INDICES[Byte.toUnsignedInt(GLASS_LEFT_RIGHT_WALL)] = new int[]{GLASS};
-
-        BLOCK_TYPE[COBBLESTONE_UP_DOWN_WALL] = UP_DOWN_WALL;
-        BLOCK_TYPE[COBBLESTONE_FRONT_BACK_WALL] = FRONT_BACK_WALL;
-        BLOCK_TYPE[COBBLESTONE_LEFT_RIGHT_WALL] = LEFT_RIGHT_WALL;
-        TEXTURE_INDICES[Byte.toUnsignedInt(COBBLESTONE_UP_DOWN_WALL)] = new int[]{COBBLESTONE};
-        TEXTURE_INDICES[Byte.toUnsignedInt(COBBLESTONE_FRONT_BACK_WALL)] = new int[]{COBBLESTONE};
-        TEXTURE_INDICES[Byte.toUnsignedInt(COBBLESTONE_LEFT_RIGHT_WALL)] = new int[]{COBBLESTONE};
 
         BLOCK_TYPE[STONE_BRICK_UP_DOWN_WALL] = UP_DOWN_WALL;
         BLOCK_TYPE[STONE_BRICK_FRONT_BACK_WALL] = FRONT_BACK_WALL;
@@ -442,19 +668,6 @@ public class Block {
         TEXTURE_INDICES[Byte.toUnsignedInt(UP_DOWN_STRIPPED_DARK_OAK_LOG)] = new int[]{STRIPPED_DARK_OAK_LOG, STRIPPED_DARK_OAK_LOG_TOP, STRIPPED_DARK_OAK_LOG, STRIPPED_DARK_OAK_LOG, STRIPPED_DARK_OAK_LOG_TOP, STRIPPED_DARK_OAK_LOG};
         TEXTURE_INDICES[Byte.toUnsignedInt(FRONT_BACK_STRIPPED_DARK_OAK_LOG)] = new int[]{STRIPPED_DARK_OAK_LOG_TOP, ROTATED_STRIPPED_DARK_OAK_LOG, ROTATED_STRIPPED_DARK_OAK_LOG, STRIPPED_DARK_OAK_LOG_TOP, STRIPPED_DARK_OAK_LOG, ROTATED_STRIPPED_DARK_OAK_LOG};
         TEXTURE_INDICES[Byte.toUnsignedInt(LEFT_RIGHT_STRIPPED_DARK_OAK_LOG)] = new int[]{ROTATED_STRIPPED_DARK_OAK_LOG, STRIPPED_DARK_OAK_LOG, STRIPPED_DARK_OAK_LOG_TOP, ROTATED_STRIPPED_DARK_OAK_LOG, ROTATED_STRIPPED_DARK_OAK_LOG, STRIPPED_DARK_OAK_LOG_TOP};
-
-        BLOCK_TYPE[Byte.toUnsignedInt(COBBLESTONE_BOTTOM_PLATE)] = BOTTOM_PLATE;
-        BLOCK_TYPE[Byte.toUnsignedInt(COBBLESTONE_TOP_PLATE)] = TOP_PLATE;
-        BLOCK_TYPE[Byte.toUnsignedInt(COBBLESTONE_FRONT_PLATE)] = FRONT_PLATE;
-        BLOCK_TYPE[Byte.toUnsignedInt(COBBLESTONE_BACK_PLATE)] = BACK_PLATE;
-        BLOCK_TYPE[Byte.toUnsignedInt(COBBLESTONE_LEFT_PLATE)] = LEFT_PLATE;
-        BLOCK_TYPE[Byte.toUnsignedInt(COBBLESTONE_RIGHT_PLATE)] = RIGHT_PLATE;
-        TEXTURE_INDICES[Byte.toUnsignedInt(COBBLESTONE_BOTTOM_PLATE)] = new int[]{COBBLESTONE};
-        TEXTURE_INDICES[Byte.toUnsignedInt(COBBLESTONE_TOP_PLATE)] = new int[]{COBBLESTONE};
-        TEXTURE_INDICES[Byte.toUnsignedInt(COBBLESTONE_FRONT_PLATE)] = new int[]{COBBLESTONE};
-        TEXTURE_INDICES[Byte.toUnsignedInt(COBBLESTONE_BACK_PLATE)] = new int[]{COBBLESTONE};
-        TEXTURE_INDICES[Byte.toUnsignedInt(COBBLESTONE_LEFT_PLATE)] = new int[]{COBBLESTONE};
-        TEXTURE_INDICES[Byte.toUnsignedInt(COBBLESTONE_RIGHT_PLATE)] = new int[]{COBBLESTONE};
 
         BLOCK_TYPE[Byte.toUnsignedInt(STONE_BRICK_BOTTOM_PLATE)] = BOTTOM_PLATE;
         BLOCK_TYPE[Byte.toUnsignedInt(STONE_BRICK_TOP_PLATE)] = TOP_PLATE;

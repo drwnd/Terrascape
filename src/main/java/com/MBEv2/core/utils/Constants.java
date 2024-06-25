@@ -79,8 +79,9 @@ public class Constants {
 
     public static final double STONE_TYPE_FREQUENCY = 0.02;
     public static final double ANDESITE_THRESHOLD = 0.1;
+    public static final double SLATE_THRESHOLD = 0.7;
 
-    public static final byte OUT_OF_WORLD = -128;
+    public static final byte OUT_OF_WORLD = -1;
 
     //In world and in inventory
     public static final byte AIR = 0;
@@ -100,29 +101,157 @@ public class Constants {
     public static final byte OAK_LEAVES = 84;
     public static final byte SPRUCE_LEAVES = 85;
     public static final byte DARK_OAK_LEAVES = 92;
-    public static final byte WATER = -33;
+    public static final byte WATER = 65;
+    public static final byte SLATE = 49;
+    public static final byte POLISHED_STONE = 67;
 
     //Only in inventory
     public static final byte COBBLESTONE_SLAB = 20;
     public static final byte COBBLESTONE_POST = 26;
+    public static final byte COBBLESTONE_PLATE = -48;
+    public static final byte COBBLESTONE_WALL = 29;
+
+    public static final byte STONE_BRICK_SLAB = 52;
+    public static final byte STONE_BRICK_POST = 58;
+    public static final byte STONE_BRICK_WALL = 61;
+    public static final byte STONE_BRICK_PLATE = -64;
+
+    public static final byte STONE_SLAB = -32;
+    public static final byte STONE_POST = -38;
+    public static final byte STONE_WALL = -22;
+    public static final byte STONE_PLATE = -16;
+
+    public static final byte POLISHED_STONE_SLAB = -96;
+    public static final byte POLISHED_STONE_POST = -102;
+    public static final byte POLISHED_STONE_WALL = -86;
+    public static final byte POLISHED_STONE_PLATE = -80;
+
+    public static final byte SLATE_SLAB = -128;
+    public static final byte SLATE_POST = 122;
+    public static final byte SLATE_WALL = -118;
+    public static final byte SLATE_PLATE = -112;
+
+    public static final byte ANDESITE_SLAB = 112;
+    public static final byte ANDESITE_WALL = 106;
+    public static final byte ANDESITE_POST = 74;
+    public static final byte ANDESITE_PLATE = 80;
+
+    public static final byte OAK_PLANKS_SLAB = -108;
+    public static final byte SPRUCE_PLANKS_SLAB = -107;
+    public static final byte DARK_OAK_PLANKS_SLAB = -106;
     public static final byte OAK_LOG = 4;
     public static final byte SPRUCE_LOG = 5;
     public static final byte DARK_OAK_LOG = 6;
     public static final byte STRIPPED_OAK_LOG = 36;
     public static final byte STRIPPED_SPRUCE_LOG = 37;
     public static final byte STRIPPED_DARK_OAK_LOG = 38;
-    public static final byte STONE_BRICK_SLAB = 52;
-    public static final byte STONE_BRICK_POST = 58;
     public static final byte GLASS_WALL = 88;
-    public static final byte COBBLESTONE_WALL = 29;
-    public static final byte STONE_BRICK_WALL = 61;
-    public static final byte OAK_PLANKS_SLAB = -108;
-    public static final byte SPRUCE_PLANKS_SLAB = -107;
-    public static final byte DARK_OAK_PLANKS_SLAB = -106;
-    public static final byte COBBLESTONE_PLATE = -48;
-    public static final byte STONE_BRICK_PLATE = -64;
 
     //Only in world
+    public static final byte ANDESITE_BOTTOM_SLAB = 112;
+    public static final byte ANDESITE_TOP_SLAB = 111;
+    public static final byte ANDESITE_FRONT_SLAB = 110;
+    public static final byte ANDESITE_BACK_SLAB = 109;
+    public static final byte ANDESITE_RIGHT_SLAB = 108;
+    public static final byte ANDESITE_LEFT_SLAB = 107;
+    public static final byte[] ANDESITE_SLABS = new byte[]{ANDESITE_FRONT_SLAB, ANDESITE_TOP_SLAB, ANDESITE_RIGHT_SLAB, ANDESITE_BACK_SLAB, ANDESITE_BOTTOM_SLAB, ANDESITE_LEFT_SLAB};
+
+    public static final byte ANDESITE_BOTTOM_PLATE = 80;
+    public static final byte ANDESITE_TOP_PLATE = 79;
+    public static final byte ANDESITE_FRONT_PLATE = 78;
+    public static final byte ANDESITE_BACK_PLATE = 77;
+    public static final byte ANDESITE_RIGHT_PLATE = 76;
+    public static final byte ANDESITE_LEFT_PLATE = 75;
+    public static final byte[] ANDESITE_PLATES = new byte[]{ANDESITE_FRONT_PLATE, ANDESITE_TOP_PLATE, ANDESITE_RIGHT_PLATE, ANDESITE_BACK_PLATE, ANDESITE_BOTTOM_PLATE, ANDESITE_LEFT_PLATE};
+
+    public static final byte ANDESITE_FRONT_BACK_WALL = 106;
+    public static final byte ANDESITE_UP_DOWN_WALL = 105;
+    public static final byte ANDESITE_LEFT_RIGHT_WALL = 104;
+    public static final byte[] ANDESITE_WALLS = new byte[]{ANDESITE_FRONT_BACK_WALL, ANDESITE_UP_DOWN_WALL, ANDESITE_LEFT_RIGHT_WALL};
+
+    public static final byte ANDESITE_UP_DOWN_POST = 74;
+    public static final byte ANDESITE_FRONT_BACK_POST = 73;
+    public static final byte ANDESITE_LEFT_RIGHT_POST = 72;
+    public static final byte[] ANDESITE_POSTS = new byte[]{ANDESITE_FRONT_BACK_POST, ANDESITE_UP_DOWN_POST, ANDESITE_LEFT_RIGHT_POST};
+
+    public static final byte SLATE_BOTTOM_SLAB = -128;
+    public static final byte SLATE_TOP_SLAB = 127;
+    public static final byte SLATE_FRONT_SLAB = 126;
+    public static final byte SLATE_BACK_SLAB = 125;
+    public static final byte SLATE_RIGHT_SLAB = 124;
+    public static final byte SLATE_LEFT_SLAB = 123;
+    public static final byte[] SLATE_SLABS = new byte[]{SLATE_FRONT_SLAB, SLATE_TOP_SLAB, SLATE_RIGHT_SLAB, SLATE_BACK_SLAB, SLATE_BOTTOM_SLAB, SLATE_LEFT_SLAB};
+
+    public static final byte SLATE_BOTTOM_PLATE = -112;
+    public static final byte SLATE_TOP_PLATE = -113;
+    public static final byte SLATE_FRONT_PLATE = -114;
+    public static final byte SLATE_BACK_PLATE = -115;
+    public static final byte SLATE_RIGHT_PLATE = -116;
+    public static final byte SLATE_LEFT_PLATE = -117;
+    public static final byte[] SLATE_PLATES = new byte[]{SLATE_FRONT_PLATE, SLATE_TOP_PLATE, SLATE_RIGHT_PLATE, SLATE_BACK_PLATE, SLATE_BOTTOM_PLATE, SLATE_LEFT_PLATE};
+
+    public static final byte SLATE_FRONT_BACK_WALL = -118;
+    public static final byte SLATE_UP_DOWN_WALL = -119;
+    public static final byte SLATE_LEFT_RIGHT_WALL = -120;
+    public static final byte[] SLATE_WALLS = new byte[]{SLATE_FRONT_BACK_WALL, SLATE_UP_DOWN_WALL, SLATE_LEFT_RIGHT_WALL};
+
+    public static final byte SLATE_UP_DOWN_POST = 122;
+    public static final byte SLATE_FRONT_BACK_POST = 121;
+    public static final byte SLATE_LEFT_RIGHT_POST = 120;
+    public static final byte[] SLATE_POSTS = new byte[]{SLATE_FRONT_BACK_POST, SLATE_UP_DOWN_POST, SLATE_LEFT_RIGHT_POST};
+
+    public static final byte POLISHED_STONE_BOTTOM_SLAB = -96;
+    public static final byte POLISHED_STONE_TOP_SLAB = -97;
+    public static final byte POLISHED_STONE_FRONT_SLAB = -98;
+    public static final byte POLISHED_STONE_BACK_SLAB = -99;
+    public static final byte POLISHED_STONE_RIGHT_SLAB = -100;
+    public static final byte POLISHED_STONE_LEFT_SLAB = -101;
+    public static final byte[] POLISHED_STONE_SLABS = new byte[]{POLISHED_STONE_FRONT_SLAB, POLISHED_STONE_TOP_SLAB, POLISHED_STONE_RIGHT_SLAB, POLISHED_STONE_BACK_SLAB, POLISHED_STONE_BOTTOM_SLAB, POLISHED_STONE_LEFT_SLAB};
+
+    public static final byte POLISHED_STONE_BOTTOM_PLATE = -80;
+    public static final byte POLISHED_STONE_TOP_PLATE = -81;
+    public static final byte POLISHED_STONE_FRONT_PLATE = -82;
+    public static final byte POLISHED_STONE_BACK_PLATE = -83;
+    public static final byte POLISHED_STONE_RIGHT_PLATE = -84;
+    public static final byte POLISHED_STONE_LEFT_PLATE = -84;
+    public static final byte[] POLISHED_STONE_PLATES = new byte[]{POLISHED_STONE_FRONT_PLATE, POLISHED_STONE_TOP_PLATE, POLISHED_STONE_RIGHT_PLATE, POLISHED_STONE_BACK_PLATE, POLISHED_STONE_BOTTOM_PLATE, POLISHED_STONE_LEFT_PLATE};
+
+    public static final byte POLISHED_STONE_FRONT_BACK_WALL = -86;
+    public static final byte POLISHED_STONE_UP_DOWN_WALL = -87;
+    public static final byte POLISHED_STONE_LEFT_RIGHT_WALL = -88;
+    public static final byte[] POLISHED_STONE_WALLS = new byte[]{POLISHED_STONE_FRONT_BACK_WALL, POLISHED_STONE_UP_DOWN_WALL, POLISHED_STONE_LEFT_RIGHT_WALL};
+
+    public static final byte POLISHED_STONE_UP_DOWN_POST = -102;
+    public static final byte POLISHED_STONE_FRONT_BACK_POST = -103;
+    public static final byte POLISHED_STONE_LEFT_RIGHT_POST = -104;
+    public static final byte[] POLISHED_STONE_POSTS = new byte[]{POLISHED_STONE_FRONT_BACK_POST, POLISHED_STONE_UP_DOWN_POST, POLISHED_STONE_LEFT_RIGHT_POST};
+
+    public static final byte STONE_BOTTOM_SLAB = -32;
+    public static final byte STONE_TOP_SLAB = -33;
+    public static final byte STONE_FRONT_SLAB = -34;
+    public static final byte STONE_BACK_SLAB = -35;
+    public static final byte STONE_RIGHT_SLAB = -36;
+    public static final byte STONE_LEFT_SLAB = -37;
+    public static final byte[] STONE_SLABS = new byte[]{STONE_FRONT_SLAB, STONE_TOP_SLAB, STONE_RIGHT_SLAB, STONE_BACK_SLAB, STONE_BOTTOM_SLAB, STONE_LEFT_SLAB};
+
+    public static final byte STONE_BOTTOM_PLATE = -16;
+    public static final byte STONE_TOP_PLATE = -17;
+    public static final byte STONE_FRONT_PLATE = -18;
+    public static final byte STONE_BACK_PLATE = -19;
+    public static final byte STONE_RIGHT_PLATE = -20;
+    public static final byte STONE_LEFT_PLATE = -21;
+    public static final byte[] STONE_PLATES = new byte[]{STONE_FRONT_PLATE, STONE_TOP_PLATE, STONE_RIGHT_PLATE, STONE_BACK_PLATE, STONE_BOTTOM_PLATE, STONE_LEFT_PLATE};
+
+    public static final byte STONE_FRONT_BACK_WALL = -22;
+    public static final byte STONE_UP_DOWN_WALL = -23;
+    public static final byte STONE_LEFT_RIGHT_WALL = -24;
+    public static final byte[] STONE_WALLS = new byte[]{STONE_FRONT_BACK_WALL, STONE_UP_DOWN_WALL, STONE_LEFT_RIGHT_WALL};
+
+    public static final byte STONE_UP_DOWN_POST = -38;
+    public static final byte STONE_FRONT_BACK_POST = -39;
+    public static final byte STONE_LEFT_RIGHT_POST = -40;
+    public static final byte[] STONE_POSTS = new byte[]{STONE_FRONT_BACK_POST, STONE_UP_DOWN_POST, STONE_LEFT_RIGHT_POST};
+
     public static final byte COBBLESTONE_BOTTOM_SLAB = 20;
     public static final byte COBBLESTONE_TOP_SLAB = 21;
     public static final byte COBBLESTONE_FRONT_SLAB = 22;
@@ -137,7 +266,7 @@ public class Constants {
     public static final byte STONE_BRICK_BACK_SLAB = 55;
     public static final byte STONE_BRICK_RIGHT_SLAB = 56;
     public static final byte STONE_BRICK_LEFT_SLAB = 57;
-    public static final byte[] STONE_BRICKS_SLABS = new byte[]{STONE_BRICK_FRONT_SLAB, STONE_BRICK_TOP_SLAB, STONE_BRICK_RIGHT_SLAB, STONE_BRICK_BACK_SLAB, STONE_BRICK_BOTTOM_SLAB, STONE_BRICK_LEFT_SLAB};
+    public static final byte[] STONE_BRICK_SLABS = new byte[]{STONE_BRICK_FRONT_SLAB, STONE_BRICK_TOP_SLAB, STONE_BRICK_RIGHT_SLAB, STONE_BRICK_BACK_SLAB, STONE_BRICK_BOTTOM_SLAB, STONE_BRICK_LEFT_SLAB};
 
     public static final byte OAK_PLANKS_BOTTOM_SLAB = -108;
     public static final byte OAK_PLANKS_TOP_SLAB = -92;
@@ -232,7 +361,7 @@ public class Constants {
     public static final byte STONE_BRICK_BACK_PLATE = -67;
     public static final byte STONE_BRICK_RIGHT_PLATE = -68;
     public static final byte STONE_BRICK_LEFT_PLATE = -69;
-    public static final byte[] STONE_BRICKS_PLATES = new byte[]{STONE_BRICK_FRONT_PLATE, STONE_BRICK_TOP_PLATE, STONE_BRICK_RIGHT_PLATE, STONE_BRICK_BACK_PLATE, STONE_BRICK_BOTTOM_PLATE, STONE_BRICK_LEFT_PLATE};
+    public static final byte[] STONE_BRICK_PLATES = new byte[]{STONE_BRICK_FRONT_PLATE, STONE_BRICK_TOP_PLATE, STONE_BRICK_RIGHT_PLATE, STONE_BRICK_BACK_PLATE, STONE_BRICK_BOTTOM_PLATE, STONE_BRICK_LEFT_PLATE};
 
 
     //Texture indices for multi textured blocks
