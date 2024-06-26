@@ -51,9 +51,8 @@ public class EngineManager {
                 stop();
 
             while (System.nanoTime() < startTime + frameTime) {
-
+                //Waiting until it's time for the next frame
             }
-
         }
         cleanUp();
     }

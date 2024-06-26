@@ -39,16 +39,16 @@ public class Player {
     private final Vector3i pos1, pos2;
 
     private final byte[][] hotBars = {
-            {GRASS, DIRT, STONE, MUD, SNOW, SAND, WATER, AIR, GLASS},
-            {OAK_LOG, STRIPPED_OAK_LOG, OAK_LEAVES, OAK_PLANKS, OAK_PLANKS_SLAB, AIR, AIR, AIR, AIR},
-            {SPRUCE_LOG, STRIPPED_SPRUCE_LOG, SPRUCE_LEAVES, SPRUCE_PLANKS, SPRUCE_PLANKS_SLAB, AIR, AIR, AIR, AIR},
-            {DARK_OAK_LOG, STRIPPED_DARK_OAK_LOG, DARK_OAK_LEAVES, DARK_OAK_PLANKS, DARK_OAK_PLANKS_SLAB, AIR, AIR, AIR, AIR},
+            {GRASS, DIRT, STONE, MUD, SNOW, SAND, WATER, GLASS_WALL, GLASS},
+            {OAK_LOG, STRIPPED_OAK_LOG, OAK_LEAVES, OAK_PLANKS, OAK_PLANKS_SLAB, OAK_PLANKS_WALL, OAK_PLANKS_POST, OAK_PLANKS_PLATE, AIR},
+            {SPRUCE_LOG, STRIPPED_SPRUCE_LOG, SPRUCE_LEAVES, SPRUCE_PLANKS, SPRUCE_PLANKS_SLAB, SPRUCE_PLANKS_WALL, SPRUCE_PLANKS_POST, SPRUCE_PLANKS_PLATE, AIR},
+            {DARK_OAK_LOG, STRIPPED_DARK_OAK_LOG, DARK_OAK_LEAVES, DARK_OAK_PLANKS, DARK_OAK_PLANKS_SLAB, DARK_OAK_PLANKS_WALL, DARK_OAK_PLANKS_POST, DARK_OAK_PLANKS_PLATE, AIR},
             {COBBLESTONE, COBBLESTONE_SLAB, COBBLESTONE_PLATE, COBBLESTONE_POST, COBBLESTONE_WALL, AIR, AIR, AIR, AIR},
             {STONE, STONE_SLAB, STONE_PLATE, STONE_POST, STONE_WALL, AIR, AIR, AIR, AIR},
             {STONE_BRICKS, STONE_BRICK_SLAB, STONE_BRICK_PLATE, STONE_BRICK_POST, STONE_BRICK_WALL, AIR, AIR, AIR, AIR},
             {POLISHED_STONE, POLISHED_STONE_SLAB, POLISHED_STONE_PLATE, POLISHED_STONE_POST, POLISHED_STONE_WALL, AIR, AIR, AIR, AIR},
             {SLATE, SLATE_SLAB, SLATE_PLATE, SLATE_POST, SLATE_WALL, AIR, AIR, AIR, AIR},
-            {ANDESITE, ANDESITE_SLAB, ANDESITE_PLATE, ANDESITE_POST, ANDESITE_WALL, AIR, AIR, AIR, AIR},
+            {ANDESITE, ANDESITE_SLAB, ANDESITE_PLATE, ANDESITE_POST, ANDESITE_WALL, AIR, AIR, AIR, AIR}
     };
     private int selectedHotBar = 0;
     private int selectedHotBarSlot = 0;
@@ -493,9 +493,17 @@ public class Player {
             setVelocityY(0.0f);
         }
 
+        if (collidesWithBlock(position.x, position.y, position.z, movementState)) {
+            position.x = oldPosition.x;
+            position.y = oldPosition.y;
+            position.z = oldPosition.z;
+            setVelocityX(0.0f);
+            setVelocityY(0.0f);
+            setVelocityZ(0.0f);
+        }
+
         if (position.y != oldPosition.y)
             setGrounded(false);
-
 
         if (Utils.floor(oldPosition.x) >> CHUNK_SIZE_BITS != Utils.floor(position.x) >> CHUNK_SIZE_BITS)
             GameLogic.loadUnloadChunks();

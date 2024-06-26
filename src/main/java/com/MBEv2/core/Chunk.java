@@ -190,7 +190,7 @@ public class Chunk {
         generateIfNecessary(X + 1, Y + 1, Z + 1);
     }
 
-    public void generateIfNecessary(int x, int y, int z) {
+    public static void generateIfNecessary(int x, int y, int z) {
         long expectedId = GameLogic.getChunkId(x, y, z);
         int index = GameLogic.getChunkIndex(x, y, z);
         Chunk chunk = getChunk(index);
@@ -319,11 +319,11 @@ public class Chunk {
         list.add(packData(side, (u << 4) + subU + 15, (v << 4) + subV + 15, (z << 4) + subZ + 15));
     }
 
-    public int packData(int ambientOcclusionLevel, int skyLight, int blockLight, int x, int y){
+    public int packData(int ambientOcclusionLevel, int skyLight, int blockLight, int x, int y) {
         return ambientOcclusionLevel << 30 | skyLight << 26 | blockLight << 22 | x << 11 | y;
     }
 
-    public int packData(int side, int u, int v, int z){
+    public int packData(int side, int u, int v, int z) {
         return side << 29 | u << 20 | v << 11 | z;
     }
 
@@ -333,7 +333,7 @@ public class Chunk {
         switch (side) {
             case FRONT:
                 if (subZ != 0)
-                    return 0;
+                    z--;
                 if ((Block.getBlockData(getBlockInWorld(worldCoordinate.x + x, worldCoordinate.y + y, worldCoordinate.z + z)) & SOLID_MASK) != 0)
                     level++;
                 if ((Block.getBlockData(getBlockInWorld(worldCoordinate.x + x - 1, worldCoordinate.y + y, worldCoordinate.z + z)) & SOLID_MASK) != 0)
@@ -345,7 +345,7 @@ public class Chunk {
                 break;
             case TOP:
                 if (subY != 0)
-                    return 0;
+                    y--;
                 if ((Block.getBlockData(getBlockInWorld(worldCoordinate.x + x, worldCoordinate.y + y, worldCoordinate.z + z)) & SOLID_MASK) != 0)
                     level++;
                 if ((Block.getBlockData(getBlockInWorld(worldCoordinate.x + x - 1, worldCoordinate.y + y, worldCoordinate.z + z)) & SOLID_MASK) != 0)
@@ -357,7 +357,7 @@ public class Chunk {
                 break;
             case RIGHT:
                 if (subX != 0)
-                    return 0;
+                    x--;
                 if ((Block.getBlockData(getBlockInWorld(worldCoordinate.x + x, worldCoordinate.y + y, worldCoordinate.z + z)) & SOLID_MASK) != 0)
                     level++;
                 if ((Block.getBlockData(getBlockInWorld(worldCoordinate.x + x, worldCoordinate.y + y - 1, worldCoordinate.z + z)) & SOLID_MASK) != 0)
@@ -369,7 +369,7 @@ public class Chunk {
                 break;
             case BACK:
                 if (subZ != 0)
-                    return 0;
+                    z++;
                 if ((Block.getBlockData(getBlockInWorld(worldCoordinate.x + x, worldCoordinate.y + y, worldCoordinate.z + z - 1)) & SOLID_MASK) != 0)
                     level++;
                 if ((Block.getBlockData(getBlockInWorld(worldCoordinate.x + x - 1, worldCoordinate.y + y, worldCoordinate.z + z - 1)) & SOLID_MASK) != 0)
@@ -381,7 +381,7 @@ public class Chunk {
                 break;
             case BOTTOM:
                 if (subY != 0)
-                    return 0;
+                    y++;
                 if ((Block.getBlockData(getBlockInWorld(worldCoordinate.x + x, worldCoordinate.y + y - 1, worldCoordinate.z + z)) & SOLID_MASK) != 0)
                     level++;
                 if ((Block.getBlockData(getBlockInWorld(worldCoordinate.x + x - 1, worldCoordinate.y + y - 1, worldCoordinate.z + z)) & SOLID_MASK) != 0)
@@ -393,7 +393,7 @@ public class Chunk {
                 break;
             case LEFT:
                 if (subX != 0)
-                    return 0;
+                    x++;
                 if ((Block.getBlockData(getBlockInWorld(worldCoordinate.x + x - 1, worldCoordinate.y + y, worldCoordinate.z + z)) & SOLID_MASK) != 0)
                     level++;
                 if ((Block.getBlockData(getBlockInWorld(worldCoordinate.x + x - 1, worldCoordinate.y + y - 1, worldCoordinate.z + z)) & SOLID_MASK) != 0)
@@ -496,8 +496,8 @@ public class Chunk {
     }
 
     public void clearMesh() {
-        vertices = null;
-        transparentVertices = null;
+        vertices = new int[0];
+        transparentVertices = new int[0];
     }
 
     public Model getModel() {

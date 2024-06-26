@@ -52,7 +52,7 @@ public class Constants {
     public static final int REACH_ACCURACY = 100;
     public static final int MAX_CHUNKS_TO_BUFFER_PER_FRAME = 10;
 
-    public static final int RENDER_DISTANCE_XZ = 12;
+    public static final int RENDER_DISTANCE_XZ = 15;
     public static final int RENDER_DISTANCE_Y = 5;
 
     public static final int RENDERED_WORLD_WIDTH = RENDER_DISTANCE_XZ * 2 + 5;
@@ -137,8 +137,20 @@ public class Constants {
     public static final byte ANDESITE_PLATE = 80;
 
     public static final byte OAK_PLANKS_SLAB = -108;
+    public static final byte OAK_PLANKS_WALL = 7;
+    public static final byte OAK_PLANKS_POST = 10;
+    public static final byte OAK_PLANKS_PLATE = 71;
+
     public static final byte SPRUCE_PLANKS_SLAB = -107;
+    public static final byte SPRUCE_PLANKS_WALL = 13;
+    public static final byte SPRUCE_PLANKS_POST = 39;
+    public static final byte SPRUCE_PLANKS_PLATE = -72;
+
     public static final byte DARK_OAK_PLANKS_SLAB = -106;
+    public static final byte DARK_OAK_PLANKS_WALL = 42;
+    public static final byte DARK_OAK_PLANKS_POST = 45;
+    public static final byte DARK_OAK_PLANKS_PLATE = -73;
+
     public static final byte OAK_LOG = 4;
     public static final byte SPRUCE_LOG = 5;
     public static final byte DARK_OAK_LOG = 6;
@@ -148,6 +160,60 @@ public class Constants {
     public static final byte GLASS_WALL = 88;
 
     //Only in world
+    public static final byte OAK_PLANKS_FRONT_BACK_WALL = 7;
+    public static final byte OAK_PLANKS_UP_DOWN_WALL = 8;
+    public static final byte OAK_PLANKS_LEFT_RIGHT_WALL = 9;
+    public static final byte[] OAK_PLANKS_WALLS = new byte[]{OAK_PLANKS_FRONT_BACK_WALL, OAK_PLANKS_UP_DOWN_WALL, OAK_PLANKS_LEFT_RIGHT_WALL};
+
+    public static final byte OAK_PLANKS_UP_DOWN_POST = 10;
+    public static final byte OAK_PLANKS_FRONT_BACK_POST = 11;
+    public static final byte OAK_PLANKS_LEFT_RIGHT_POST = 12;
+    public static final byte[] OAK_PLANKS_POSTS = new byte[]{OAK_PLANKS_FRONT_BACK_POST, OAK_PLANKS_UP_DOWN_POST, OAK_PLANKS_LEFT_RIGHT_POST};
+
+    public static final byte OAK_PLANKS_BOTTOM_PLATE = 71;
+    public static final byte OAK_PLANKS_TOP_PLATE = 103;
+    public static final byte OAK_PLANKS_FRONT_PLATE = 119;
+    public static final byte OAK_PLANKS_BACK_PLATE = -121;
+    public static final byte OAK_PLANKS_RIGHT_PLATE = -105;
+    public static final byte OAK_PLANKS_LEFT_PLATE = -89;
+    public static final byte[] OAK_PLANKS_PLATES = new byte[]{OAK_PLANKS_FRONT_PLATE, OAK_PLANKS_TOP_PLATE, OAK_PLANKS_RIGHT_PLATE, OAK_PLANKS_BACK_PLATE, OAK_PLANKS_BOTTOM_PLATE, OAK_PLANKS_LEFT_PLATE};
+
+    public static final byte SPRUCE_PLANKS_FRONT_BACK_WALL = 13;
+    public static final byte SPRUCE_PLANKS_UP_DOWN_WALL = 14;
+    public static final byte SPRUCE_PLANKS_LEFT_RIGHT_WALL = 15;
+    public static final byte[] SPRUCE_PLANKS_WALLS = new byte[]{SPRUCE_PLANKS_FRONT_BACK_WALL, SPRUCE_PLANKS_UP_DOWN_WALL, SPRUCE_PLANKS_LEFT_RIGHT_WALL};
+
+    public static final byte SPRUCE_PLANKS_UP_DOWN_POST = 39;
+    public static final byte SPRUCE_PLANKS_FRONT_BACK_POST = 40;
+    public static final byte SPRUCE_PLANKS_LEFT_RIGHT_POST = 41;
+    public static final byte[] SPRUCE_PLANKS_POSTS = new byte[]{SPRUCE_PLANKS_FRONT_BACK_POST, SPRUCE_PLANKS_UP_DOWN_POST, SPRUCE_PLANKS_LEFT_RIGHT_POST};
+
+    public static final byte SPRUCE_PLANKS_BOTTOM_PLATE = -72;
+    public static final byte SPRUCE_PLANKS_TOP_PLATE = -71;
+    public static final byte SPRUCE_PLANKS_FRONT_PLATE = -70;
+    public static final byte SPRUCE_PLANKS_BACK_PLATE = -54;
+    public static final byte SPRUCE_PLANKS_RIGHT_PLATE = -55;
+    public static final byte SPRUCE_PLANKS_LEFT_PLATE = -56;
+    public static final byte[] SPRUCE_PLANKS_PLATES = new byte[]{SPRUCE_PLANKS_FRONT_PLATE, SPRUCE_PLANKS_TOP_PLATE, SPRUCE_PLANKS_RIGHT_PLATE, SPRUCE_PLANKS_BACK_PLATE, SPRUCE_PLANKS_BOTTOM_PLATE, SPRUCE_PLANKS_LEFT_PLATE};
+
+    public static final byte DARK_OAK_PLANKS_FRONT_BACK_WALL = 42;
+    public static final byte DARK_OAK_PLANKS_UP_DOWN_WALL = 43;
+    public static final byte DARK_OAK_PLANKS_LEFT_RIGHT_WALL = 44;
+    public static final byte[] DARK_OAK_PLANKS_WALLS = new byte[]{DARK_OAK_PLANKS_FRONT_BACK_WALL, DARK_OAK_PLANKS_UP_DOWN_WALL, DARK_OAK_PLANKS_LEFT_RIGHT_WALL};
+
+    public static final byte DARK_OAK_PLANKS_UP_DOWN_POST = 45;
+    public static final byte DARK_OAK_PLANKS_FRONT_BACK_POST = 46;
+    public static final byte DARK_OAK_PLANKS_LEFT_RIGHT_POST = 47;
+    public static final byte[] DARK_OAK_PLANKS_POSTS = new byte[]{DARK_OAK_PLANKS_FRONT_BACK_POST, DARK_OAK_PLANKS_UP_DOWN_POST, DARK_OAK_PLANKS_LEFT_RIGHT_POST};
+
+    public static final byte DARK_OAK_PLANKS_BOTTOM_PLATE = -73;
+    public static final byte DARK_OAK_PLANKS_TOP_PLATE = -57;
+    public static final byte DARK_OAK_PLANKS_FRONT_PLATE = -41;
+    public static final byte DARK_OAK_PLANKS_BACK_PLATE = -25;
+    public static final byte DARK_OAK_PLANKS_RIGHT_PLATE = -9;
+    public static final byte DARK_OAK_PLANKS_LEFT_PLATE = -10;
+    public static final byte[] DARK_OAK_PLANKS_PLATES = new byte[]{DARK_OAK_PLANKS_FRONT_PLATE, DARK_OAK_PLANKS_TOP_PLATE, DARK_OAK_PLANKS_RIGHT_PLATE, DARK_OAK_PLANKS_BACK_PLATE, DARK_OAK_PLANKS_BOTTOM_PLATE, DARK_OAK_PLANKS_LEFT_PLATE};
+
     public static final byte ANDESITE_BOTTOM_SLAB = 112;
     public static final byte ANDESITE_TOP_SLAB = 111;
     public static final byte ANDESITE_FRONT_SLAB = 110;

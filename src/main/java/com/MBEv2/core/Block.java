@@ -208,6 +208,15 @@ public class Block {
             case OAK_PLANKS_SLAB -> {
                 return OAK_PLANKS_SLABS[primaryCameraDirection + addend];
             }
+            case OAK_PLANKS_WALL -> {
+                return OAK_PLANKS_WALLS[primaryCameraDirection];
+            }
+            case OAK_PLANKS_POST -> {
+                return OAK_PLANKS_POSTS[primaryCameraDirection];
+            }
+            case OAK_PLANKS_PLATE -> {
+                return OAK_PLANKS_PLATES[primaryCameraDirection + addend];
+            }
 
             case SPRUCE_LOG -> {
                 return SPRUCE_LOGS[primaryCameraDirection];
@@ -218,6 +227,15 @@ public class Block {
             case SPRUCE_PLANKS_SLAB -> {
                 return SPRUCE_PLANKS_SLABS[primaryCameraDirection + addend];
             }
+            case SPRUCE_PLANKS_WALL -> {
+                return SPRUCE_PLANKS_WALLS[primaryCameraDirection];
+            }
+            case SPRUCE_PLANKS_POST -> {
+                return SPRUCE_PLANKS_POSTS[primaryCameraDirection];
+            }
+            case SPRUCE_PLANKS_PLATE -> {
+                return SPRUCE_PLANKS_PLATES[primaryCameraDirection + addend];
+            }
 
             case DARK_OAK_LOG -> {
                 return DARK_OAK_LOGS[primaryCameraDirection];
@@ -227,6 +245,15 @@ public class Block {
             }
             case DARK_OAK_PLANKS_SLAB -> {
                 return DARK_OAK_PLANKS_SLABS[primaryCameraDirection + addend];
+            }
+            case DARK_OAK_PLANKS_WALL -> {
+                return DARK_OAK_PLANKS_WALLS[primaryCameraDirection];
+            }
+            case DARK_OAK_PLANKS_POST -> {
+                return DARK_OAK_PLANKS_POSTS[primaryCameraDirection];
+            }
+            case DARK_OAK_PLANKS_PLATE -> {
+                return DARK_OAK_PLANKS_PLATES[primaryCameraDirection + addend];
             }
 
             case GLASS_WALL -> {
@@ -580,6 +607,33 @@ public class Block {
         TEXTURE_INDICES[Byte.toUnsignedInt(OAK_PLANKS_LEFT_SLAB)] = new int[]{OAK_PLANKS};
         TEXTURE_INDICES[Byte.toUnsignedInt(OAK_PLANKS_RIGHT_SLAB)] = new int[]{OAK_PLANKS};
 
+        BLOCK_TYPE[OAK_PLANKS_UP_DOWN_POST] = UP_DOWN_POST;
+        BLOCK_TYPE[OAK_PLANKS_FRONT_BACK_POST] = FRONT_BACK_POST;
+        BLOCK_TYPE[OAK_PLANKS_LEFT_RIGHT_POST] = LEFT_RIGHT_POST;
+        TEXTURE_INDICES[Byte.toUnsignedInt(OAK_PLANKS_UP_DOWN_POST)] = new int[]{OAK_PLANKS};
+        TEXTURE_INDICES[Byte.toUnsignedInt(OAK_PLANKS_FRONT_BACK_POST)] = new int[]{OAK_PLANKS};
+        TEXTURE_INDICES[Byte.toUnsignedInt(OAK_PLANKS_LEFT_RIGHT_POST)] = new int[]{OAK_PLANKS};
+
+        BLOCK_TYPE[OAK_PLANKS_UP_DOWN_WALL] = UP_DOWN_WALL;
+        BLOCK_TYPE[OAK_PLANKS_FRONT_BACK_WALL] = FRONT_BACK_WALL;
+        BLOCK_TYPE[OAK_PLANKS_LEFT_RIGHT_WALL] = LEFT_RIGHT_WALL;
+        TEXTURE_INDICES[Byte.toUnsignedInt(OAK_PLANKS_UP_DOWN_WALL)] = new int[]{OAK_PLANKS};
+        TEXTURE_INDICES[Byte.toUnsignedInt(OAK_PLANKS_FRONT_BACK_WALL)] = new int[]{OAK_PLANKS};
+        TEXTURE_INDICES[Byte.toUnsignedInt(OAK_PLANKS_LEFT_RIGHT_WALL)] = new int[]{OAK_PLANKS};
+
+        BLOCK_TYPE[Byte.toUnsignedInt(OAK_PLANKS_BOTTOM_PLATE)] = BOTTOM_PLATE;
+        BLOCK_TYPE[Byte.toUnsignedInt(OAK_PLANKS_TOP_PLATE)] = TOP_PLATE;
+        BLOCK_TYPE[Byte.toUnsignedInt(OAK_PLANKS_FRONT_PLATE)] = FRONT_PLATE;
+        BLOCK_TYPE[Byte.toUnsignedInt(OAK_PLANKS_BACK_PLATE)] = BACK_PLATE;
+        BLOCK_TYPE[Byte.toUnsignedInt(OAK_PLANKS_LEFT_PLATE)] = LEFT_PLATE;
+        BLOCK_TYPE[Byte.toUnsignedInt(OAK_PLANKS_RIGHT_PLATE)] = RIGHT_PLATE;
+        TEXTURE_INDICES[Byte.toUnsignedInt(OAK_PLANKS_BOTTOM_PLATE)] = new int[]{OAK_PLANKS};
+        TEXTURE_INDICES[Byte.toUnsignedInt(OAK_PLANKS_TOP_PLATE)] = new int[]{OAK_PLANKS};
+        TEXTURE_INDICES[Byte.toUnsignedInt(OAK_PLANKS_FRONT_PLATE)] = new int[]{OAK_PLANKS};
+        TEXTURE_INDICES[Byte.toUnsignedInt(OAK_PLANKS_BACK_PLATE)] = new int[]{OAK_PLANKS};
+        TEXTURE_INDICES[Byte.toUnsignedInt(OAK_PLANKS_LEFT_PLATE)] = new int[]{OAK_PLANKS};
+        TEXTURE_INDICES[Byte.toUnsignedInt(OAK_PLANKS_RIGHT_PLATE)] = new int[]{OAK_PLANKS};
+
         BLOCK_TYPE[Byte.toUnsignedInt(SPRUCE_PLANKS_BOTTOM_SLAB)] = BOTTOM_SLAB;
         BLOCK_TYPE[Byte.toUnsignedInt(SPRUCE_PLANKS_TOP_SLAB)] = TOP_SLAB;
         BLOCK_TYPE[Byte.toUnsignedInt(SPRUCE_PLANKS_FRONT_SLAB)] = FRONT_SLAB;
@@ -593,6 +647,33 @@ public class Block {
         TEXTURE_INDICES[Byte.toUnsignedInt(SPRUCE_PLANKS_LEFT_SLAB)] = new int[]{SPRUCE_PLANKS};
         TEXTURE_INDICES[Byte.toUnsignedInt(SPRUCE_PLANKS_RIGHT_SLAB)] = new int[]{SPRUCE_PLANKS};
 
+        BLOCK_TYPE[SPRUCE_PLANKS_UP_DOWN_POST] = UP_DOWN_POST;
+        BLOCK_TYPE[SPRUCE_PLANKS_FRONT_BACK_POST] = FRONT_BACK_POST;
+        BLOCK_TYPE[SPRUCE_PLANKS_LEFT_RIGHT_POST] = LEFT_RIGHT_POST;
+        TEXTURE_INDICES[Byte.toUnsignedInt(SPRUCE_PLANKS_UP_DOWN_POST)] = new int[]{SPRUCE_PLANKS};
+        TEXTURE_INDICES[Byte.toUnsignedInt(SPRUCE_PLANKS_FRONT_BACK_POST)] = new int[]{SPRUCE_PLANKS};
+        TEXTURE_INDICES[Byte.toUnsignedInt(SPRUCE_PLANKS_LEFT_RIGHT_POST)] = new int[]{SPRUCE_PLANKS};
+
+        BLOCK_TYPE[SPRUCE_PLANKS_UP_DOWN_WALL] = UP_DOWN_WALL;
+        BLOCK_TYPE[SPRUCE_PLANKS_FRONT_BACK_WALL] = FRONT_BACK_WALL;
+        BLOCK_TYPE[SPRUCE_PLANKS_LEFT_RIGHT_WALL] = LEFT_RIGHT_WALL;
+        TEXTURE_INDICES[Byte.toUnsignedInt(SPRUCE_PLANKS_UP_DOWN_WALL)] = new int[]{SPRUCE_PLANKS};
+        TEXTURE_INDICES[Byte.toUnsignedInt(SPRUCE_PLANKS_FRONT_BACK_WALL)] = new int[]{SPRUCE_PLANKS};
+        TEXTURE_INDICES[Byte.toUnsignedInt(SPRUCE_PLANKS_LEFT_RIGHT_WALL)] = new int[]{SPRUCE_PLANKS};
+
+        BLOCK_TYPE[Byte.toUnsignedInt(SPRUCE_PLANKS_BOTTOM_PLATE)] = BOTTOM_PLATE;
+        BLOCK_TYPE[Byte.toUnsignedInt(SPRUCE_PLANKS_TOP_PLATE)] = TOP_PLATE;
+        BLOCK_TYPE[Byte.toUnsignedInt(SPRUCE_PLANKS_FRONT_PLATE)] = FRONT_PLATE;
+        BLOCK_TYPE[Byte.toUnsignedInt(SPRUCE_PLANKS_BACK_PLATE)] = BACK_PLATE;
+        BLOCK_TYPE[Byte.toUnsignedInt(SPRUCE_PLANKS_LEFT_PLATE)] = LEFT_PLATE;
+        BLOCK_TYPE[Byte.toUnsignedInt(SPRUCE_PLANKS_RIGHT_PLATE)] = RIGHT_PLATE;
+        TEXTURE_INDICES[Byte.toUnsignedInt(SPRUCE_PLANKS_BOTTOM_PLATE)] = new int[]{SPRUCE_PLANKS};
+        TEXTURE_INDICES[Byte.toUnsignedInt(SPRUCE_PLANKS_TOP_PLATE)] = new int[]{SPRUCE_PLANKS};
+        TEXTURE_INDICES[Byte.toUnsignedInt(SPRUCE_PLANKS_FRONT_PLATE)] = new int[]{SPRUCE_PLANKS};
+        TEXTURE_INDICES[Byte.toUnsignedInt(SPRUCE_PLANKS_BACK_PLATE)] = new int[]{SPRUCE_PLANKS};
+        TEXTURE_INDICES[Byte.toUnsignedInt(SPRUCE_PLANKS_LEFT_PLATE)] = new int[]{SPRUCE_PLANKS};
+        TEXTURE_INDICES[Byte.toUnsignedInt(SPRUCE_PLANKS_RIGHT_PLATE)] = new int[]{SPRUCE_PLANKS};
+
         BLOCK_TYPE[Byte.toUnsignedInt(DARK_OAK_PLANKS_BOTTOM_SLAB)] = BOTTOM_SLAB;
         BLOCK_TYPE[Byte.toUnsignedInt(DARK_OAK_PLANKS_TOP_SLAB)] = TOP_SLAB;
         BLOCK_TYPE[Byte.toUnsignedInt(DARK_OAK_PLANKS_FRONT_SLAB)] = FRONT_SLAB;
@@ -605,6 +686,33 @@ public class Block {
         TEXTURE_INDICES[Byte.toUnsignedInt(DARK_OAK_PLANKS_BACK_SLAB)] = new int[]{DARK_OAK_PLANKS};
         TEXTURE_INDICES[Byte.toUnsignedInt(DARK_OAK_PLANKS_LEFT_SLAB)] = new int[]{DARK_OAK_PLANKS};
         TEXTURE_INDICES[Byte.toUnsignedInt(DARK_OAK_PLANKS_RIGHT_SLAB)] = new int[]{DARK_OAK_PLANKS};
+
+        BLOCK_TYPE[DARK_OAK_PLANKS_UP_DOWN_POST] = UP_DOWN_POST;
+        BLOCK_TYPE[DARK_OAK_PLANKS_FRONT_BACK_POST] = FRONT_BACK_POST;
+        BLOCK_TYPE[DARK_OAK_PLANKS_LEFT_RIGHT_POST] = LEFT_RIGHT_POST;
+        TEXTURE_INDICES[Byte.toUnsignedInt(DARK_OAK_PLANKS_UP_DOWN_POST)] = new int[]{DARK_OAK_PLANKS};
+        TEXTURE_INDICES[Byte.toUnsignedInt(DARK_OAK_PLANKS_FRONT_BACK_POST)] = new int[]{DARK_OAK_PLANKS};
+        TEXTURE_INDICES[Byte.toUnsignedInt(DARK_OAK_PLANKS_LEFT_RIGHT_POST)] = new int[]{DARK_OAK_PLANKS};
+
+        BLOCK_TYPE[DARK_OAK_PLANKS_UP_DOWN_WALL] = UP_DOWN_WALL;
+        BLOCK_TYPE[DARK_OAK_PLANKS_FRONT_BACK_WALL] = FRONT_BACK_WALL;
+        BLOCK_TYPE[DARK_OAK_PLANKS_LEFT_RIGHT_WALL] = LEFT_RIGHT_WALL;
+        TEXTURE_INDICES[Byte.toUnsignedInt(DARK_OAK_PLANKS_UP_DOWN_WALL)] = new int[]{DARK_OAK_PLANKS};
+        TEXTURE_INDICES[Byte.toUnsignedInt(DARK_OAK_PLANKS_FRONT_BACK_WALL)] = new int[]{DARK_OAK_PLANKS};
+        TEXTURE_INDICES[Byte.toUnsignedInt(DARK_OAK_PLANKS_LEFT_RIGHT_WALL)] = new int[]{DARK_OAK_PLANKS};
+
+        BLOCK_TYPE[Byte.toUnsignedInt(DARK_OAK_PLANKS_BOTTOM_PLATE)] = BOTTOM_PLATE;
+        BLOCK_TYPE[Byte.toUnsignedInt(DARK_OAK_PLANKS_TOP_PLATE)] = TOP_PLATE;
+        BLOCK_TYPE[Byte.toUnsignedInt(DARK_OAK_PLANKS_FRONT_PLATE)] = FRONT_PLATE;
+        BLOCK_TYPE[Byte.toUnsignedInt(DARK_OAK_PLANKS_BACK_PLATE)] = BACK_PLATE;
+        BLOCK_TYPE[Byte.toUnsignedInt(DARK_OAK_PLANKS_LEFT_PLATE)] = LEFT_PLATE;
+        BLOCK_TYPE[Byte.toUnsignedInt(DARK_OAK_PLANKS_RIGHT_PLATE)] = RIGHT_PLATE;
+        TEXTURE_INDICES[Byte.toUnsignedInt(DARK_OAK_PLANKS_BOTTOM_PLATE)] = new int[]{DARK_OAK_PLANKS};
+        TEXTURE_INDICES[Byte.toUnsignedInt(DARK_OAK_PLANKS_TOP_PLATE)] = new int[]{DARK_OAK_PLANKS};
+        TEXTURE_INDICES[Byte.toUnsignedInt(DARK_OAK_PLANKS_FRONT_PLATE)] = new int[]{DARK_OAK_PLANKS};
+        TEXTURE_INDICES[Byte.toUnsignedInt(DARK_OAK_PLANKS_BACK_PLATE)] = new int[]{DARK_OAK_PLANKS};
+        TEXTURE_INDICES[Byte.toUnsignedInt(DARK_OAK_PLANKS_LEFT_PLATE)] = new int[]{DARK_OAK_PLANKS};
+        TEXTURE_INDICES[Byte.toUnsignedInt(DARK_OAK_PLANKS_RIGHT_PLATE)] = new int[]{DARK_OAK_PLANKS};
 
         BLOCK_TYPE[STONE_BRICK_UP_DOWN_POST] = UP_DOWN_POST;
         BLOCK_TYPE[STONE_BRICK_FRONT_BACK_POST] = FRONT_BACK_POST;

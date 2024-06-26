@@ -6,7 +6,6 @@ import org.joml.Vector3i;
 import org.lwjgl.opengl.GL11;
 
 import java.util.LinkedList;
-import java.util.NoSuchElementException;
 import java.util.Random;
 
 import static com.MBEv2.core.utils.Constants.*;
@@ -14,17 +13,14 @@ import static com.MBEv2.core.utils.Constants.*;
 public class GameLogic {
 
     private static Texture atlas;
-    private static LinkedList<Chunk> toBufferChunks;
-    private static LinkedList<Chunk> toUnloadChunks;
+    private static final LinkedList<Chunk> toBufferChunks = new LinkedList<>();
+    private static final LinkedList<Chunk> toUnloadChunks = new LinkedList<>();
     private static ChunkGenerator generator;
 
     private static Player player;
 
-
     public static void init() throws Exception {
 
-        toBufferChunks = new LinkedList<>();
-        toUnloadChunks = new LinkedList<>();
         generator = new ChunkGenerator();
 
         atlas = new Texture(ObjectLoader.loadTexture("textures/atlas256.png"));
@@ -104,32 +100,21 @@ public class GameLogic {
     }
 
     public static void update() {
-        for (int i = 0; i < MAX_CHUNKS_TO_BUFFER_PER_FRAME && !toBufferChunks.isEmpty(); i++) {
-            Chunk chunk;
-            try {
-                chunk = toBufferChunks.removeFirst();
-            } catch (NoSuchElementException e) {
-                System.out.println("buffer chunks " + toBufferChunks.size());
-                toBufferChunks.clear();
-                break;
-            }
-            deleteChunkMeshBuffers(chunk);
-            bufferChunkMesh(chunk);
-        }
-
-        while (!toUnloadChunks.isEmpty()) {
-            Chunk chunk;
-            try {
-                chunk = toUnloadChunks.removeFirst();
-            } catch (NoSuchElementException e) {
-                System.out.println("unload models " + toUnloadChunks.size());
-                toUnloadChunks.clear();
-                break;
-            }
-            if (chunk != null)
+        synchronized (toBufferChunks) {
+            for (int i = 0; i < MAX_CHUNKS_TO_BUFFER_PER_FRAME && !toBufferChunks.isEmpty(); i++) {
+                Chunk chunk = toBufferChunks.removeFirst();
                 deleteChunkMeshBuffers(chunk);
+                bufferChunkMesh(chunk);
+            }
         }
 
+        synchronized (toUnloadChunks) {
+            while (!toUnloadChunks.isEmpty()) {
+                Chunk chunk = toUnloadChunks.removeFirst();
+                if (chunk != null)
+                    deleteChunkMeshBuffers(chunk);
+            }
+        }
         player.update();
     }
 
@@ -162,11 +147,16 @@ public class GameLogic {
     }
 
     public static void addToBufferChunk(Chunk chunk) {
-        toBufferChunks.add(chunk);
+        synchronized (toBufferChunks) {
+            if (!toBufferChunks.contains(chunk))
+                toBufferChunks.add(chunk);
+        }
     }
 
     public static void addToUnloadChunk(Chunk chunk) {
-        toUnloadChunks.add(chunk);
+        synchronized (toUnloadChunks) {
+            toUnloadChunks.add(chunk);
+        }
     }
 
     public static float[] getCrossHairVertices() {
