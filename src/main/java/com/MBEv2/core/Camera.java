@@ -39,6 +39,19 @@ public class Camera {
         return getPrimaryDirection(getDirection());
     }
 
+    public int getPrimaryXZDirection(){
+        return getPrimaryXZDirection(getDirection());
+    }
+
+    public int getPrimaryXZDirection(Vector3f cameraDirection){
+        float x = Math.abs(cameraDirection.x);
+        float z = Math.abs(cameraDirection.z);
+        if (x > z)
+            return cameraDirection.x > 0 ? 2 : 5;
+        else
+            return cameraDirection.z > 0 ? 0 : 3;
+    }
+
     public int getPrimaryDirection(Vector3f cameraDirection) {
         float x = Math.abs(cameraDirection.x);
         float y = Math.abs(cameraDirection.y);

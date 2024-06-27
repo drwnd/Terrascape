@@ -104,6 +104,24 @@ public class Constants {
     public static final byte WATER = 65;
     public static final byte SLATE = 49;
     public static final byte POLISHED_STONE = 67;
+    public static final byte GRAVEL = 66;
+    public static final byte COURSE_DIRT = 81;
+    public static final byte CHISELED_STONE = 82;
+    public static final byte CHISELED_POLISHED_STONE = 83;
+    public static final byte CHISELED_SLATE = -127;
+    public static final byte LAVA = -126;
+    public static final byte COAL_ORE = -111;
+    public static final byte IRON_ORE = -110;
+    public static final byte DIAMOND_ORE = -109;
+    public static final byte RED = -2;
+    public static final byte GREEN = -3;
+    public static final byte BLUE = -4;
+    public static final byte YELLOW = -5;
+    public static final byte MAGENTA = -6;
+    public static final byte CYAN = -7;
+    public static final byte WHITE = -8;
+    public static final byte BLACK = -9;
+    public static final byte BARRIER = 17;
 
     //Only in inventory
     public static final byte COBBLESTONE_SLAB = 20;
@@ -158,8 +176,15 @@ public class Constants {
     public static final byte STRIPPED_SPRUCE_LOG = 37;
     public static final byte STRIPPED_DARK_OAK_LOG = 38;
     public static final byte GLASS_WALL = 88;
+    public static final byte CREATOR_HEAD = 16;
 
     //Only in world
+    public static final byte FRONT_CREATOR_HEAD = 16;
+    public static final byte RIGHT_CREATOR_HEAD = 32;
+    public static final byte BACK_CREATOR_HEAD = 48;
+    public static final byte LEFT_CREATOR_HEAD = 64;
+    public static final byte[] CREATOR_HEADS = new byte[]{FRONT_CREATOR_HEAD, AIR, RIGHT_CREATOR_HEAD, BACK_CREATOR_HEAD, AIR, LEFT_CREATOR_HEAD};
+
     public static final byte OAK_PLANKS_FRONT_BACK_WALL = 7;
     public static final byte OAK_PLANKS_UP_DOWN_WALL = 8;
     public static final byte OAK_PLANKS_LEFT_RIGHT_WALL = 9;
@@ -210,8 +235,8 @@ public class Constants {
     public static final byte DARK_OAK_PLANKS_TOP_PLATE = -57;
     public static final byte DARK_OAK_PLANKS_FRONT_PLATE = -41;
     public static final byte DARK_OAK_PLANKS_BACK_PLATE = -25;
-    public static final byte DARK_OAK_PLANKS_RIGHT_PLATE = -9;
-    public static final byte DARK_OAK_PLANKS_LEFT_PLATE = -10;
+    public static final byte DARK_OAK_PLANKS_RIGHT_PLATE = -10;
+    public static final byte DARK_OAK_PLANKS_LEFT_PLATE = -11;
     public static final byte[] DARK_OAK_PLANKS_PLATES = new byte[]{DARK_OAK_PLANKS_FRONT_PLATE, DARK_OAK_PLANKS_TOP_PLATE, DARK_OAK_PLANKS_RIGHT_PLATE, DARK_OAK_PLANKS_BACK_PLATE, DARK_OAK_PLANKS_BOTTOM_PLATE, DARK_OAK_PLANKS_LEFT_PLATE};
 
     public static final byte ANDESITE_BOTTOM_SLAB = 112;
@@ -444,6 +469,13 @@ public class Constants {
     public static final byte ROTATED_STRIPPED_OAK_LOG = 116;
     public static final byte ROTATED_STRIPPED_SPRUCE_LOG = 117;
     public static final byte ROTATED_STRIPPED_DARK_OAK_LOG = 118;
+    public static final byte CREATOR_HEAD_FRONT = 98;
+    public static final byte CREATOR_HEAD_TOP = 113;
+    public static final byte CREATOR_HEAD_RIGHT = 97;
+    public static final byte CREATOR_HEAD_BACK = 114;
+    public static final byte CREATOR_HEAD_BOTTOM = 115;
+    public static final byte CREATOR_HEAD_LEFT = 99;
+    public static final byte ROTATED_CREATOR_HEAD_BOTTOM = - 125;
 
     //Indices for the sides of blocks
     public static final int FRONT = 0;
@@ -477,8 +509,9 @@ public class Constants {
     public static final int BACK_PLATE = 20;
     public static final int BOTTOM_PLATE = 21;
     public static final int LEFT_PLATE = 22;
+    public static final int PLAYER_HEAD = 23;
 
-    public static final int AMOUNT_OF_BLOCK_TYPES = 23;
+    public static final int AMOUNT_OF_BLOCK_TYPES = 24;
 
     //Other information on stuff
     public static final int[] SIDE_MASKS;

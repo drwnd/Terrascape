@@ -291,7 +291,7 @@ public class Chunk {
         int subU = 0;
         int subV = 0;
 
-        if (block == WATER) {
+        if (Block.getBlockType(block) == WATER_TYPE) {
             switch (side) {
                 case TOP: {
                     subY = -2;
@@ -299,13 +299,15 @@ public class Chunk {
                 }
                 case FRONT, RIGHT, BACK, LEFT: {
                     byte blockAbove = getBlock(blockX, blockY + 1, blockZ);
-                    if ((corner == 0 || corner == 1) && blockAbove != WATER && Block.getOcclusionData(blockAbove, BOTTOM) == 0) {
+                    int blockAboveType = Block.getBlockType(blockAbove);
+                    if ((corner == 0 || corner == 1) && blockAboveType != WATER_TYPE && Block.getOcclusionData(blockAbove, BOTTOM) == 0) {
                         subY = -2;
                         subV = 2;
                     } else if (corner == 2 || corner == 3) {
                         int[] normal = Block.NORMALS[side];
                         byte adjacentBlock = getBlock(blockX + normal[0], blockY, blockZ + normal[2]);
-                        if (adjacentBlock == WATER && (blockAbove == WATER || Block.getOcclusionData(blockAbove, BOTTOM) != 0)) {
+                        int adjacentBlockType = Block.getBlockType(adjacentBlock);
+                        if (adjacentBlockType == WATER_TYPE && (blockAboveType == WATER_TYPE || Block.getOcclusionData(blockAbove, BOTTOM) != 0)) {
                             subY = 14;
                             subV = -14;
                         }

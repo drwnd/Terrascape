@@ -39,16 +39,18 @@ public class Player {
     private final Vector3i pos1, pos2;
 
     private final byte[][] hotBars = {
-            {GRASS, DIRT, STONE, MUD, SNOW, SAND, WATER, GLASS_WALL, GLASS},
+            {GRASS, DIRT, SAND, MUD, SNOW, LAVA, WATER, GRAVEL, COURSE_DIRT},
+            {CREATOR_HEAD, COAL_ORE, IRON_ORE, DIAMOND_ORE, GLASS, GLASS_WALL, AIR, AIR, AIR},
             {OAK_LOG, STRIPPED_OAK_LOG, OAK_LEAVES, OAK_PLANKS, OAK_PLANKS_SLAB, OAK_PLANKS_WALL, OAK_PLANKS_POST, OAK_PLANKS_PLATE, AIR},
             {SPRUCE_LOG, STRIPPED_SPRUCE_LOG, SPRUCE_LEAVES, SPRUCE_PLANKS, SPRUCE_PLANKS_SLAB, SPRUCE_PLANKS_WALL, SPRUCE_PLANKS_POST, SPRUCE_PLANKS_PLATE, AIR},
             {DARK_OAK_LOG, STRIPPED_DARK_OAK_LOG, DARK_OAK_LEAVES, DARK_OAK_PLANKS, DARK_OAK_PLANKS_SLAB, DARK_OAK_PLANKS_WALL, DARK_OAK_PLANKS_POST, DARK_OAK_PLANKS_PLATE, AIR},
             {COBBLESTONE, COBBLESTONE_SLAB, COBBLESTONE_PLATE, COBBLESTONE_POST, COBBLESTONE_WALL, AIR, AIR, AIR, AIR},
-            {STONE, STONE_SLAB, STONE_PLATE, STONE_POST, STONE_WALL, AIR, AIR, AIR, AIR},
+            {STONE, STONE_SLAB, STONE_PLATE, STONE_POST, STONE_WALL, CHISELED_STONE, AIR, AIR, AIR},
             {STONE_BRICKS, STONE_BRICK_SLAB, STONE_BRICK_PLATE, STONE_BRICK_POST, STONE_BRICK_WALL, AIR, AIR, AIR, AIR},
-            {POLISHED_STONE, POLISHED_STONE_SLAB, POLISHED_STONE_PLATE, POLISHED_STONE_POST, POLISHED_STONE_WALL, AIR, AIR, AIR, AIR},
-            {SLATE, SLATE_SLAB, SLATE_PLATE, SLATE_POST, SLATE_WALL, AIR, AIR, AIR, AIR},
-            {ANDESITE, ANDESITE_SLAB, ANDESITE_PLATE, ANDESITE_POST, ANDESITE_WALL, AIR, AIR, AIR, AIR}
+            {POLISHED_STONE, POLISHED_STONE_SLAB, POLISHED_STONE_PLATE, POLISHED_STONE_POST, POLISHED_STONE_WALL, CHISELED_POLISHED_STONE, AIR, AIR, AIR},
+            {SLATE, SLATE_SLAB, SLATE_PLATE, SLATE_POST, SLATE_WALL, CHISELED_SLATE, AIR, AIR, AIR},
+            {ANDESITE, ANDESITE_SLAB, ANDESITE_PLATE, ANDESITE_POST, ANDESITE_WALL, AIR, AIR, AIR, AIR},
+            {RED, GREEN, BLUE, YELLOW, MAGENTA, CYAN, WHITE, BLACK, BARRIER}
     };
     private int selectedHotBar = 0;
     private int selectedHotBarSlot = 0;
@@ -116,7 +118,7 @@ public class Player {
             Vector3f target = getTarget(1, cameraDirection);
             if (target != null) {
                 byte selectedBlock = hotBars[selectedHotBar][selectedHotBarSlot];
-                byte toPlaceBlock = Block.getToPlaceBlock(selectedBlock, camera.getPrimaryDirection(cameraDirection), target);
+                byte toPlaceBlock = Block.getToPlaceBlock(selectedBlock, camera.getPrimaryDirection(cameraDirection), camera.getPrimaryXZDirection(cameraDirection), target);
 
                 GameLogic.placeBlock(toPlaceBlock, new Vector3i(Utils.floor(target.x), Utils.floor(target.y), Utils.floor(target.z)));
             }
@@ -603,19 +605,23 @@ public class Player {
             block = Chunk.getBlockInWorld(Utils.floor(x), Utils.floor(y), Utils.floor(z));
             if (Block.intersectsBlock(x, y, z, block)) break;
         }
-        if (block == AIR || block == OUT_OF_WORLD || block == WATER) return null;
+        if (Block.getBlockType(block) == AIR_TYPE || block == OUT_OF_WORLD || Block.getBlockType(block) == WATER_TYPE) return null;
 
         if (action == placing) {
             i--;
-            if (previousBlock == block) while (previousBlock == block && i >= 0) {
-                float x = cameraPosition.x + i * interval * cameraDirection.x;
-                float y = cameraPosition.y + i * interval * cameraDirection.y;
-                float z = cameraPosition.z + i * interval * cameraDirection.z;
+            if (previousBlock == block) {
+                while (previousBlock == block && i >= 0) {
+                    float x = cameraPosition.x + i * interval * cameraDirection.x;
+                    float y = cameraPosition.y + i * interval * cameraDirection.y;
+                    float z = cameraPosition.z + i * interval * cameraDirection.z;
 
-                block = Chunk.getBlockInWorld((int) Math.floor(x), (int) Math.floor(y), (int) Math.floor(z));
-                i--;
-            }
-            else if (previousBlock != AIR && previousBlock != WATER) return null;
+                    block = Chunk.getBlockInWorld((int) Math.floor(x), (int) Math.floor(y), (int) Math.floor(z));
+                    i--;
+                }
+                int blockType = Block.getBlockType(block);
+                if (blockType != AIR_TYPE && blockType != WATER_TYPE)
+                    return null;
+            } else if (Block.getBlockType(previousBlock) != AIR_TYPE && Block.getBlockType(previousBlock) != WATER_TYPE) return null;
         }
         float x = cameraPosition.x + i * interval * cameraDirection.x;
         float y = cameraPosition.y + i * interval * cameraDirection.y;
@@ -629,7 +635,7 @@ public class Player {
         final float minZ = cameraPosition.z - HALF_PLAYER_WIDTH;
         final float maxZ = cameraPosition.z + HALF_PLAYER_WIDTH;
 
-        byte toPlaceBlock = Block.getToPlaceBlock(hotBars[selectedHotBar][selectedHotBarSlot], camera.getPrimaryDirection(), target);
+        byte toPlaceBlock = Block.getToPlaceBlock(hotBars[selectedHotBar][selectedHotBarSlot], camera.getPrimaryDirection(), camera.getPrimaryXZDirection(), target);
 
         if (action == placing && Block.playerIntersectsBlock(minX, maxX, minY, maxY, minZ, maxZ, Utils.floor(target.x), Utils.floor(target.y), Utils.floor(target.z), toPlaceBlock, this))
             return null;

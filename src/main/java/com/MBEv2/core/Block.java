@@ -48,22 +48,26 @@ public class Block {
     }
 
     public static boolean dynamicOcclusion(byte toTestBlock, byte occludingBlock, int side, int x, int y, int z, int blockSideType, int occludingSideType) {
-        if (occludingBlock == WATER) {
-            if (toTestBlock != WATER)
+        if (getBlockType(occludingBlock) == WATER_TYPE) {
+            if (toTestBlock != occludingBlock)
                 return false;
             if (side == TOP || side == BOTTOM)
                 return true;
 
-            byte blockAboveToTestBlock = Chunk.getBlockInWorld(x, y + 1, z);
             int[] normal = NORMALS[side];
+            byte blockAboveToTestBlock = Chunk.getBlockInWorld(x, y + 1, z);
             byte blockAboveOccludingBlock = Chunk.getBlockInWorld(x + normal[0], y + 1, z + normal[2]);
+
+            int blockAboveToTestBlockType = getBlockType(blockAboveToTestBlock);
+            int blockAboveOccludingBlockType = getBlockType(blockAboveOccludingBlock);
+
             if (getOcclusionData(blockAboveToTestBlock, BOTTOM) != 0 && getOcclusionData(blockAboveOccludingBlock, BOTTOM) == 0)
                 return false;
-            if ((blockAboveOccludingBlock == WATER) == (blockAboveToTestBlock == WATER))
+            if ((blockAboveOccludingBlockType == WATER_TYPE) == (blockAboveToTestBlockType == WATER_TYPE))
                 return true;
-            if (getOcclusionData(blockAboveOccludingBlock, BOTTOM) != 0 && blockAboveToTestBlock == WATER)
+            if (getOcclusionData(blockAboveOccludingBlock, BOTTOM) != 0 && blockAboveToTestBlockType == WATER_TYPE)
                 return true;
-            return blockAboveToTestBlock != WATER;
+            return blockAboveToTestBlockType != WATER_TYPE;
         }
 
         if (blockSideType != 0 && occludingSideType != 0)
@@ -117,7 +121,7 @@ public class Block {
         return x > XYZSubData[MIN_X] && x < XYZSubData[MAX_X] + 16 && y > XYZSubData[MIN_Y] && y < XYZSubData[MAX_Y] + 16 && z > XYZSubData[MIN_Z] && z < XYZSubData[MAX_Z] + 16;
     }
 
-    public static byte getToPlaceBlock(byte toPlaceBlock, int primaryCameraDirection, Vector3f target) {
+    public static byte getToPlaceBlock(byte toPlaceBlock, int primaryCameraDirection, int primaryXZDirection, Vector3f target) {
         primaryCameraDirection %= 3;
         int addend = getToPlaceBlockAddend(primaryCameraDirection, target);
         switch (toPlaceBlock) {
@@ -259,6 +263,10 @@ public class Block {
             case GLASS_WALL -> {
                 return GLASS_WALLS[primaryCameraDirection];
             }
+
+            case CREATOR_HEAD -> {
+                return CREATOR_HEADS[(primaryXZDirection + 3) % 6];
+            }
         }
         return toPlaceBlock;
     }
@@ -332,12 +340,18 @@ public class Block {
         return BLOCK_XYZ_SUB_DATA[BLOCK_TYPE[Byte.toUnsignedInt(block)]];
     }
 
+    public static int getBlockType(byte block){
+        return BLOCK_TYPE[Byte.toUnsignedInt(block)];
+    }
+
     //I don't know how to use JSON-Files, so just ignore it
     public static void init() {
         BLOCK_TYPE[AIR] = AIR_TYPE;
         TEXTURE_INDICES[AIR] = new int[]{AIR};
         BLOCK_TYPE[Byte.toUnsignedInt(OUT_OF_WORLD)] = FULL_BLOCK;
         TEXTURE_INDICES[Byte.toUnsignedInt(OUT_OF_WORLD)] = new int[]{OUT_OF_WORLD};
+        BLOCK_TYPE[BARRIER] = GLASS_TYPE;
+        TEXTURE_INDICES[BARRIER] = new int[]{AIR};
 
         BLOCK_TYPE[GRASS] = FULL_BLOCK;
         TEXTURE_INDICES[GRASS] = new int[]{GRASS_SIDE, GRASS, GRASS_SIDE, GRASS_SIDE, DIRT, GRASS_SIDE};
@@ -367,6 +381,38 @@ public class Block {
         TEXTURE_INDICES[SLATE] = new int[]{SLATE};
         BLOCK_TYPE[POLISHED_STONE] = FULL_BLOCK;
         TEXTURE_INDICES[POLISHED_STONE] = new int[]{POLISHED_STONE};
+        BLOCK_TYPE[GRAVEL] = FULL_BLOCK;
+        TEXTURE_INDICES[GRAVEL] = new int[]{GRAVEL};
+        BLOCK_TYPE[COURSE_DIRT] = FULL_BLOCK;
+        TEXTURE_INDICES[COURSE_DIRT] = new int[]{COURSE_DIRT};
+        BLOCK_TYPE[CHISELED_STONE] = FULL_BLOCK;
+        TEXTURE_INDICES[CHISELED_STONE] = new int[]{CHISELED_STONE};
+        BLOCK_TYPE[CHISELED_POLISHED_STONE] = FULL_BLOCK;
+        TEXTURE_INDICES[CHISELED_POLISHED_STONE] = new int[]{CHISELED_POLISHED_STONE};
+        BLOCK_TYPE[Byte.toUnsignedInt(CHISELED_SLATE)] = FULL_BLOCK;
+        TEXTURE_INDICES[Byte.toUnsignedInt(CHISELED_SLATE)] = new int[]{CHISELED_SLATE};
+        BLOCK_TYPE[Byte.toUnsignedInt(COAL_ORE)] = FULL_BLOCK;
+        TEXTURE_INDICES[Byte.toUnsignedInt(COAL_ORE)] = new int[]{COAL_ORE};
+        BLOCK_TYPE[Byte.toUnsignedInt(IRON_ORE)] = FULL_BLOCK;
+        TEXTURE_INDICES[Byte.toUnsignedInt(IRON_ORE)] = new int[]{IRON_ORE};
+        BLOCK_TYPE[Byte.toUnsignedInt(DIAMOND_ORE)] = FULL_BLOCK;
+        TEXTURE_INDICES[Byte.toUnsignedInt(DIAMOND_ORE)] = new int[]{DIAMOND_ORE};
+        BLOCK_TYPE[Byte.toUnsignedInt(RED)] = FULL_BLOCK;
+        TEXTURE_INDICES[Byte.toUnsignedInt(RED)] = new int[]{RED};
+        BLOCK_TYPE[Byte.toUnsignedInt(GREEN)] = FULL_BLOCK;
+        TEXTURE_INDICES[Byte.toUnsignedInt(GREEN)] = new int[]{GREEN};
+        BLOCK_TYPE[Byte.toUnsignedInt(BLUE)] = FULL_BLOCK;
+        TEXTURE_INDICES[Byte.toUnsignedInt(BLUE)] = new int[]{BLUE};
+        BLOCK_TYPE[Byte.toUnsignedInt(YELLOW)] = FULL_BLOCK;
+        TEXTURE_INDICES[Byte.toUnsignedInt(YELLOW)] = new int[]{YELLOW};
+        BLOCK_TYPE[Byte.toUnsignedInt(MAGENTA)] = FULL_BLOCK;
+        TEXTURE_INDICES[Byte.toUnsignedInt(MAGENTA)] = new int[]{MAGENTA};
+        BLOCK_TYPE[Byte.toUnsignedInt(CYAN)] = FULL_BLOCK;
+        TEXTURE_INDICES[Byte.toUnsignedInt(CYAN)] = new int[]{CYAN};
+        BLOCK_TYPE[Byte.toUnsignedInt(WHITE)] = FULL_BLOCK;
+        TEXTURE_INDICES[Byte.toUnsignedInt(WHITE)] = new int[]{WHITE};
+        BLOCK_TYPE[Byte.toUnsignedInt(BLACK)] = FULL_BLOCK;
+        TEXTURE_INDICES[Byte.toUnsignedInt(BLACK)] = new int[]{BLACK};
 
         BLOCK_TYPE[GLASS] = GLASS_TYPE;
         TEXTURE_INDICES[GLASS] = new int[]{GLASS};
@@ -380,6 +426,17 @@ public class Block {
 
         BLOCK_TYPE[Byte.toUnsignedInt(WATER)] = WATER_TYPE;
         TEXTURE_INDICES[Byte.toUnsignedInt(WATER)] = new int[]{WATER};
+        BLOCK_TYPE[Byte.toUnsignedInt(LAVA)] = WATER_TYPE;
+        TEXTURE_INDICES[Byte.toUnsignedInt(LAVA)] = new int[]{LAVA};
+
+        BLOCK_TYPE[FRONT_CREATOR_HEAD] = PLAYER_HEAD;
+        TEXTURE_INDICES[FRONT_CREATOR_HEAD] = new int[]{CREATOR_HEAD_FRONT, CREATOR_HEAD_TOP, CREATOR_HEAD_RIGHT, CREATOR_HEAD_BACK, CREATOR_HEAD_BOTTOM, CREATOR_HEAD_LEFT};
+        BLOCK_TYPE[RIGHT_CREATOR_HEAD] = PLAYER_HEAD;
+        TEXTURE_INDICES[RIGHT_CREATOR_HEAD] = new int[]{CREATOR_HEAD_LEFT, CREATOR_HEAD_TOP, CREATOR_HEAD_FRONT, CREATOR_HEAD_RIGHT, ROTATED_CREATOR_HEAD_BOTTOM, CREATOR_HEAD_BACK};
+        BLOCK_TYPE[BACK_CREATOR_HEAD] = PLAYER_HEAD;
+        TEXTURE_INDICES[BACK_CREATOR_HEAD] = new int[]{CREATOR_HEAD_BACK, CREATOR_HEAD_TOP, CREATOR_HEAD_LEFT, CREATOR_HEAD_FRONT, CREATOR_HEAD_BOTTOM, CREATOR_HEAD_RIGHT};
+        BLOCK_TYPE[LEFT_CREATOR_HEAD] = PLAYER_HEAD;
+        TEXTURE_INDICES[LEFT_CREATOR_HEAD] = new int[]{CREATOR_HEAD_RIGHT, CREATOR_HEAD_TOP, CREATOR_HEAD_BACK, CREATOR_HEAD_LEFT, ROTATED_CREATOR_HEAD_BOTTOM, CREATOR_HEAD_FRONT};
 
         BLOCK_TYPE[COBBLESTONE_BOTTOM_SLAB] = BOTTOM_SLAB;
         BLOCK_TYPE[COBBLESTONE_TOP_SLAB] = TOP_SLAB;
@@ -860,6 +917,20 @@ public class Block {
         OCCLUSION_DATA[RIGHT_PLATE] = (byte) 0b10000100;
         BLOCK_DATA[RIGHT_PLATE] = 0b00011111;
 
+        OCCLUSION_DATA[PLAYER_HEAD] = (byte) 0b00000000;
+        BLOCK_DATA[PLAYER_HEAD] = 0b00010000;
+
+
+        BLOCK_XYZ_SUB_DATA[PLAYER_HEAD] = new byte[]{4, -4, 0, -8, 4, -4};
+
+        BLOCK_UV_SUB_DATA[PLAYER_HEAD] = new byte[]{
+                4, 4, -4, 4, 4, -4, -4, -4,
+                4, 4, -4, 4, 4, -4, -4, -4,
+                4, 4, -4, 4, 4, -4, -4, -4,
+                4, 4, -4, 4, 4, -4, -4, -4,
+                -4, -4, -4, 4, 4, -4, 4, 4,
+                -4, 4, 4, 4, -4, -4, 4, -4
+        };
 
         BLOCK_XYZ_SUB_DATA[UP_DOWN_WALL] = new byte[]{0, 0, 4, -4, 0, 0};
 
