@@ -3,8 +3,10 @@ package com.MBEv2.test;
 import com.MBEv2.core.*;
 import com.MBEv2.core.entity.*;
 import org.joml.Vector3i;
+import org.joml.Vector4i;
 import org.lwjgl.opengl.GL11;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Random;
 
@@ -51,8 +53,33 @@ public class GameLogic {
         int inChunkZ = position.z & CHUNK_SIZE - 1;
 
         Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
+        byte previousBlock = chunk.getSaveBlock(inChunkX, inChunkY, inChunkZ);
+
+        if (block == LAVA && previousBlock != LAVA) {
+            Chunk.setBlockLight(position.x, position.y, position.z, (byte) 15);
+        }
         chunk.storeSave(inChunkX, inChunkY, inChunkZ, block);
         chunk.setModified();
+
+        if (previousBlock == LAVA && block != LAVA) {
+            ArrayList<Vector3i> toRePropagate = new ArrayList<>();
+            LinkedList<Vector4i> toDePropagate = new LinkedList<>();
+            toDePropagate.add(new Vector4i(position.x, position.y, position.z, 16));
+
+            Chunk.dePropagateBlockLight(toRePropagate, toDePropagate);
+            for (Vector3i vec : toRePropagate)
+                Chunk.setBlockLight(vec.x, vec.y, vec.z, Chunk.getBlockLightInWorld(vec.x, vec.y, vec.z));
+        } else if (block == AIR) {
+            Chunk.setBlockLight(position.x, position.y, position.z, (byte) (Chunk.getMaxSurroundingBlockLight(position.x, position.y, position.z) - 1));
+        } else if (block != LAVA) {
+            ArrayList<Vector3i> toRePropagate = new ArrayList<>();
+            LinkedList<Vector4i> toDePropagate = new LinkedList<>();
+            toDePropagate.add(new Vector4i(position.x, position.y, position.z, (byte) (Chunk.getBlockLightInWorld(position.x, position.y, position.z) + 1)));
+
+            Chunk.dePropagateBlockLight(toRePropagate, toDePropagate);
+            for (Vector3i vec : toRePropagate)
+                Chunk.setBlockLight(vec.x, vec.y, vec.z, Chunk.getBlockLightInWorld(vec.x, vec.y, vec.z));
+        }
 
         int minX = chunkX, maxX = chunkX;
         int minY = chunkY, maxY = chunkY;
