@@ -66,7 +66,7 @@ public class GameLogic {
             if (previousBlockEmitsLight)
                 Chunk.dePropagateBlockLight(position.x, position.y, position.z);
             else
-                Chunk.setBlockLight(position.x, position.y, position.z, Chunk.getMaxSurroundingBlockLight(position.x, position.y, position.z - 1));
+                Chunk.setBlockLight(position.x, position.y, position.z, Chunk.getMaxSurroundingBlockLight(position.x, position.y, position.z) - 1);
         else if (!blockEmitsLight)
             Chunk.dePropagateBlockLight(position.x, position.y, position.z);
 

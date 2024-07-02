@@ -603,9 +603,10 @@ public class Chunk {
     }
 
     public static byte getMaxSurroundingBlockLight(int x, int y, int z) {
-        byte max = 0, toTest, currentBlock = getBlockInWorld(x, y, z), nextBlock;
-        toTest = getBlockLightInWorld(x + 1, y, z);
-        nextBlock = getBlockInWorld(x + 1, y, z);
+        byte max = 0, currentBlock = getBlockInWorld(x, y, z);
+
+        byte toTest = getBlockLightInWorld(x + 1, y, z);
+        byte nextBlock = getBlockInWorld(x + 1, y, z);
         if (max < toTest && Block.canLightTravel(nextBlock, LEFT, currentBlock, RIGHT)) max = toTest;
         toTest = getBlockLightInWorld(x - 1, y, z);
         nextBlock = getBlockInWorld(x - 1, y, z);
