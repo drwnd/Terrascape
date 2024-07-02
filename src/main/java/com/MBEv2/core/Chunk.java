@@ -211,41 +211,46 @@ public class Chunk {
 
     public void addSideToList(int x, int y, int z, int u, int v, int side, ArrayList<Integer> verticesList, byte block) {
         int skyLight = 0;
-        int[] normal = Block.NORMALS[side];
-        int blockLight = getBlockLightInWorld((worldCoordinate.x | x) + normal[0], (worldCoordinate.y | y) + normal[1], (worldCoordinate.z | z) + normal[2]);
+        int blockLight;
 
         switch (side) {
             case FRONT:
+                blockLight = getBlockLightInWorld(worldCoordinate.x | x, worldCoordinate.y | y, (worldCoordinate.z | z) + (Block.getXYZSubData(block)[MAX_Z] == 0 ? 1 : 0));
                 addVertexToList(verticesList, x + 1, y + 1, z + 1, u, v, side, skyLight, blockLight, block, 0, x, y, z);
                 addVertexToList(verticesList, x, y + 1, z + 1, u + 1, v, side, skyLight, blockLight, block, 1, x, y, z);
                 addVertexToList(verticesList, x + 1, y, z + 1, u, v + 1, side, skyLight, blockLight, block, 2, x, y, z);
                 addVertexToList(verticesList, x, y, z + 1, u + 1, v + 1, side, skyLight, blockLight, block, 3, x, y, z);
                 break;
             case TOP:
+                blockLight = getBlockLightInWorld(worldCoordinate.x | x, (worldCoordinate.y | y) + (Block.getXYZSubData(block)[MAX_Y] == 0 ? 1 : 0), worldCoordinate.z | z);
                 addVertexToList(verticesList, x, y + 1, z, u, v, side, skyLight, blockLight, block, 0, x, y, z);
                 addVertexToList(verticesList, x, y + 1, z + 1, u + 1, v, side, skyLight, blockLight, block, 1, x, y, z);
                 addVertexToList(verticesList, x + 1, y + 1, z, u, v + 1, side, skyLight, blockLight, block, 2, x, y, z);
                 addVertexToList(verticesList, x + 1, y + 1, z + 1, u + 1, v + 1, side, skyLight, blockLight, block, 3, x, y, z);
                 break;
             case RIGHT:
+                blockLight = getBlockLightInWorld((worldCoordinate.x | x) + (Block.getXYZSubData(block)[MAX_X] == 0 ? 1 : 0), worldCoordinate.y | y, worldCoordinate.z | z);
                 addVertexToList(verticesList, x + 1, y + 1, z, u, v, side, skyLight, blockLight, block, 0, x, y, z);
                 addVertexToList(verticesList, x + 1, y + 1, z + 1, u + 1, v, side, skyLight, blockLight, block, 1, x, y, z);
                 addVertexToList(verticesList, x + 1, y, z, u, v + 1, side, skyLight, blockLight, block, 2, x, y, z);
                 addVertexToList(verticesList, x + 1, y, z + 1, u + 1, v + 1, side, skyLight, blockLight, block, 3, x, y, z);
                 break;
             case BACK:
+                blockLight = getBlockLightInWorld(worldCoordinate.x | x, worldCoordinate.y | y, (worldCoordinate.z | z) - (Block.getXYZSubData(block)[MIN_Z] == 0 ? 1 : 0));
                 addVertexToList(verticesList, x, y + 1, z, u, v, side, skyLight, blockLight, block, 0, x, y, z);
                 addVertexToList(verticesList, x + 1, y + 1, z, u + 1, v, side, skyLight, blockLight, block, 1, x, y, z);
                 addVertexToList(verticesList, x, y, z, u, v + 1, side, skyLight, blockLight, block, 2, x, y, z);
                 addVertexToList(verticesList, x + 1, y, z, u + 1, v + 1, side, skyLight, blockLight, block, 3, x, y, z);
                 break;
             case BOTTOM:
+                blockLight = getBlockLightInWorld(worldCoordinate.x | x, (worldCoordinate.y | y) - (Block.getXYZSubData(block)[MIN_Y] == 0 ? 1 : 0), worldCoordinate.z | z);
                 addVertexToList(verticesList, x + 1, y, z + 1, u, v, side, skyLight, blockLight, block, 3, x, y, z);
                 addVertexToList(verticesList, x, y, z + 1, u + 1, v, side, skyLight, blockLight, block, 1, x, y, z);
                 addVertexToList(verticesList, x + 1, y, z, u, v + 1, side, skyLight, blockLight, block, 2, x, y, z);
                 addVertexToList(verticesList, x, y, z, u + 1, v + 1, side, skyLight, blockLight, block, 0, x, y, z);
                 break;
             case LEFT:
+                blockLight = getBlockLightInWorld((worldCoordinate.x | x) - (Block.getXYZSubData(block)[MIN_X] == 0 ? 1 : 0), worldCoordinate.y | y, worldCoordinate.z | z);
                 addVertexToList(verticesList, x, y + 1, z + 1, u, v, side, skyLight, blockLight, block, 1, x, y, z);
                 addVertexToList(verticesList, x, y + 1, z, u + 1, v, side, skyLight, blockLight, block, 0, x, y, z);
                 addVertexToList(verticesList, x, y, z + 1, u, v + 1, side, skyLight, blockLight, block, 3, x, y, z);
@@ -255,7 +260,7 @@ public class Chunk {
     }
 
     public void addVertexToList(ArrayList<Integer> list, int x, int y, int z, int u, int v, int side, int skyLight, int blockLight, byte block, int corner, int blockX, int blockY, int blockZ) {
-        if ((Block.getBlockData(block) & DYNAMIC_SHAPE_MASK) != 0) {
+        if ((Block.getBlockTypeData(block) & DYNAMIC_SHAPE_MASK) != 0) {
             addVertexToListDynamic(list, x, y, z, u, v, side, skyLight, blockLight, block, corner, blockX, blockY, blockZ);
             return;
         }
@@ -285,13 +290,13 @@ public class Chunk {
                 }
                 case FRONT, RIGHT, BACK, LEFT: {
                     byte blockAbove = getBlock(blockX, blockY + 1, blockZ);
-                    if ((corner == 0 || corner == 1) && blockAbove != block && Block.getOcclusionData(blockAbove, BOTTOM) == 0) {
+                    if ((corner == 0 || corner == 1) && blockAbove != block && Block.getBlockTypeOcclusionData(blockAbove, BOTTOM) == 0) {
                         subY = -2;
                         subV = 2;
                     } else if (corner == 2 || corner == 3) {
                         int[] normal = Block.NORMALS[side];
                         byte adjacentBlock = getBlock(blockX + normal[0], blockY, blockZ + normal[2]);
-                        if (adjacentBlock == block && (blockAbove == block || Block.getOcclusionData(blockAbove, BOTTOM) != 0)) {
+                        if (adjacentBlock == block && (blockAbove == block || Block.getBlockTypeOcclusionData(blockAbove, BOTTOM) != 0)) {
                             subY = 14;
                             subV = -14;
                         }
@@ -319,68 +324,68 @@ public class Chunk {
         switch (side) {
             case FRONT:
                 if (subZ != 0) z--;
-                if ((Block.getBlockData(getBlockInWorld(worldCoordinate.x + x, worldCoordinate.y + y, worldCoordinate.z + z)) & SOLID_MASK) != 0)
+                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x, worldCoordinate.y + y, worldCoordinate.z + z)) & SOLID_MASK) != 0)
                     level++;
-                if ((Block.getBlockData(getBlockInWorld(worldCoordinate.x + x - 1, worldCoordinate.y + y, worldCoordinate.z + z)) & SOLID_MASK) != 0)
+                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x - 1, worldCoordinate.y + y, worldCoordinate.z + z)) & SOLID_MASK) != 0)
                     level++;
-                if ((Block.getBlockData(getBlockInWorld(worldCoordinate.x + x, worldCoordinate.y + y - 1, worldCoordinate.z + z)) & SOLID_MASK) != 0)
+                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x, worldCoordinate.y + y - 1, worldCoordinate.z + z)) & SOLID_MASK) != 0)
                     level++;
-                if ((Block.getBlockData(getBlockInWorld(worldCoordinate.x + x - 1, worldCoordinate.y + y - 1, worldCoordinate.z + z)) & SOLID_MASK) != 0)
+                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x - 1, worldCoordinate.y + y - 1, worldCoordinate.z + z)) & SOLID_MASK) != 0)
                     level++;
                 break;
             case TOP:
                 if (subY != 0) y--;
-                if ((Block.getBlockData(getBlockInWorld(worldCoordinate.x + x, worldCoordinate.y + y, worldCoordinate.z + z)) & SOLID_MASK) != 0)
+                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x, worldCoordinate.y + y, worldCoordinate.z + z)) & SOLID_MASK) != 0)
                     level++;
-                if ((Block.getBlockData(getBlockInWorld(worldCoordinate.x + x - 1, worldCoordinate.y + y, worldCoordinate.z + z)) & SOLID_MASK) != 0)
+                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x - 1, worldCoordinate.y + y, worldCoordinate.z + z)) & SOLID_MASK) != 0)
                     level++;
-                if ((Block.getBlockData(getBlockInWorld(worldCoordinate.x + x, worldCoordinate.y + y, worldCoordinate.z + z - 1)) & SOLID_MASK) != 0)
+                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x, worldCoordinate.y + y, worldCoordinate.z + z - 1)) & SOLID_MASK) != 0)
                     level++;
-                if ((Block.getBlockData(getBlockInWorld(worldCoordinate.x + x - 1, worldCoordinate.y + y, worldCoordinate.z + z - 1)) & SOLID_MASK) != 0)
+                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x - 1, worldCoordinate.y + y, worldCoordinate.z + z - 1)) & SOLID_MASK) != 0)
                     level++;
                 break;
             case RIGHT:
                 if (subX != 0) x--;
-                if ((Block.getBlockData(getBlockInWorld(worldCoordinate.x + x, worldCoordinate.y + y, worldCoordinate.z + z)) & SOLID_MASK) != 0)
+                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x, worldCoordinate.y + y, worldCoordinate.z + z)) & SOLID_MASK) != 0)
                     level++;
-                if ((Block.getBlockData(getBlockInWorld(worldCoordinate.x + x, worldCoordinate.y + y - 1, worldCoordinate.z + z)) & SOLID_MASK) != 0)
+                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x, worldCoordinate.y + y - 1, worldCoordinate.z + z)) & SOLID_MASK) != 0)
                     level++;
-                if ((Block.getBlockData(getBlockInWorld(worldCoordinate.x + x, worldCoordinate.y + y, worldCoordinate.z + z - 1)) & SOLID_MASK) != 0)
+                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x, worldCoordinate.y + y, worldCoordinate.z + z - 1)) & SOLID_MASK) != 0)
                     level++;
-                if ((Block.getBlockData(getBlockInWorld(worldCoordinate.x + x, worldCoordinate.y + y - 1, worldCoordinate.z + z - 1)) & SOLID_MASK) != 0)
+                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x, worldCoordinate.y + y - 1, worldCoordinate.z + z - 1)) & SOLID_MASK) != 0)
                     level++;
                 break;
             case BACK:
                 if (subZ != 0) z++;
-                if ((Block.getBlockData(getBlockInWorld(worldCoordinate.x + x, worldCoordinate.y + y, worldCoordinate.z + z - 1)) & SOLID_MASK) != 0)
+                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x, worldCoordinate.y + y, worldCoordinate.z + z - 1)) & SOLID_MASK) != 0)
                     level++;
-                if ((Block.getBlockData(getBlockInWorld(worldCoordinate.x + x - 1, worldCoordinate.y + y, worldCoordinate.z + z - 1)) & SOLID_MASK) != 0)
+                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x - 1, worldCoordinate.y + y, worldCoordinate.z + z - 1)) & SOLID_MASK) != 0)
                     level++;
-                if ((Block.getBlockData(getBlockInWorld(worldCoordinate.x + x, worldCoordinate.y + y - 1, worldCoordinate.z + z - 1)) & SOLID_MASK) != 0)
+                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x, worldCoordinate.y + y - 1, worldCoordinate.z + z - 1)) & SOLID_MASK) != 0)
                     level++;
-                if ((Block.getBlockData(getBlockInWorld(worldCoordinate.x + x - 1, worldCoordinate.y + y - 1, worldCoordinate.z + z - 1)) & SOLID_MASK) != 0)
+                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x - 1, worldCoordinate.y + y - 1, worldCoordinate.z + z - 1)) & SOLID_MASK) != 0)
                     level++;
                 break;
             case BOTTOM:
                 if (subY != 0) y++;
-                if ((Block.getBlockData(getBlockInWorld(worldCoordinate.x + x, worldCoordinate.y + y - 1, worldCoordinate.z + z)) & SOLID_MASK) != 0)
+                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x, worldCoordinate.y + y - 1, worldCoordinate.z + z)) & SOLID_MASK) != 0)
                     level++;
-                if ((Block.getBlockData(getBlockInWorld(worldCoordinate.x + x - 1, worldCoordinate.y + y - 1, worldCoordinate.z + z)) & SOLID_MASK) != 0)
+                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x - 1, worldCoordinate.y + y - 1, worldCoordinate.z + z)) & SOLID_MASK) != 0)
                     level++;
-                if ((Block.getBlockData(getBlockInWorld(worldCoordinate.x + x, worldCoordinate.y + y - 1, worldCoordinate.z + z - 1)) & SOLID_MASK) != 0)
+                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x, worldCoordinate.y + y - 1, worldCoordinate.z + z - 1)) & SOLID_MASK) != 0)
                     level++;
-                if ((Block.getBlockData(getBlockInWorld(worldCoordinate.x + x - 1, worldCoordinate.y + y - 1, worldCoordinate.z + z - 1)) & SOLID_MASK) != 0)
+                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x - 1, worldCoordinate.y + y - 1, worldCoordinate.z + z - 1)) & SOLID_MASK) != 0)
                     level++;
                 break;
             case LEFT:
                 if (subX != 0) x++;
-                if ((Block.getBlockData(getBlockInWorld(worldCoordinate.x + x - 1, worldCoordinate.y + y, worldCoordinate.z + z)) & SOLID_MASK) != 0)
+                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x - 1, worldCoordinate.y + y, worldCoordinate.z + z)) & SOLID_MASK) != 0)
                     level++;
-                if ((Block.getBlockData(getBlockInWorld(worldCoordinate.x + x - 1, worldCoordinate.y + y - 1, worldCoordinate.z + z)) & SOLID_MASK) != 0)
+                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x - 1, worldCoordinate.y + y - 1, worldCoordinate.z + z)) & SOLID_MASK) != 0)
                     level++;
-                if ((Block.getBlockData(getBlockInWorld(worldCoordinate.x + x - 1, worldCoordinate.y + y, worldCoordinate.z + z - 1)) & SOLID_MASK) != 0)
+                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x - 1, worldCoordinate.y + y, worldCoordinate.z + z - 1)) & SOLID_MASK) != 0)
                     level++;
-                if ((Block.getBlockData(getBlockInWorld(worldCoordinate.x + x - 1, worldCoordinate.y + y - 1, worldCoordinate.z + z - 1)) & SOLID_MASK) != 0)
+                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x - 1, worldCoordinate.y + y - 1, worldCoordinate.z + z - 1)) & SOLID_MASK) != 0)
                     level++;
                 break;
         }
@@ -448,118 +453,183 @@ public class Chunk {
     }
 
     public byte getSaveBlockLight(int x, int y, int z) {
-        return light[x << CHUNK_SIZE_BITS * 2 | y << CHUNK_SIZE_BITS | z];
+        return (byte) (light[x << CHUNK_SIZE_BITS * 2 | y << CHUNK_SIZE_BITS | z] & 15);
     }
 
-    public static void setBlockLight(int x, int y, int z, byte blockLight) {
-        if (blockLight <= 0) return;
-
-        Chunk chunk = getChunk(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS);
-        if (chunk == null) return;
-
-        chunk.light[(x & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS * 2 | (y & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS | (z & CHUNK_SIZE - 1)] = blockLight;
-        chunk.setMeshed(false);
-        byte nextBlockLight = (byte) (blockLight - 1);
-
-        if (getBlockLightInWorld(x + 1, y, z) < nextBlockLight && getBlockInWorld(x + 1, y, z) == AIR)
-            setBlockLight(x + 1, y, z, nextBlockLight);
-        if (getBlockLightInWorld(x - 1, y, z) < nextBlockLight && getBlockInWorld(x - 1, y, z) == AIR)
-            setBlockLight(x - 1, y, z, nextBlockLight);
-        if (getBlockLightInWorld(x, y + 1, z) < nextBlockLight && getBlockInWorld(x, y + 1, z) == AIR)
-            setBlockLight(x, y + 1, z, nextBlockLight);
-        if (getBlockLightInWorld(x, y - 1, z) < nextBlockLight && getBlockInWorld(x, y - 1, z) == AIR)
-            setBlockLight(x, y - 1, z, nextBlockLight);
-        if (getBlockLightInWorld(x, y, z + 1) < nextBlockLight && getBlockInWorld(x, y, z + 1) == AIR)
-            setBlockLight(x, y, z + 1, nextBlockLight);
-        if (getBlockLightInWorld(x, y, z - 1) < nextBlockLight && getBlockInWorld(x, y, z - 1) == AIR)
-            setBlockLight(x, y, z - 1, nextBlockLight);
+    public byte getSaveBlockLight(int index) {
+        return (byte) (light[index] & 15);
     }
 
-//    public static void dePropagateBlockLight(int x, int y, int z, ArrayList<Vector3i> toRePropagate, byte lastBlockLight) {
-//        Chunk chunk = getChunk(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS);
-//        if (chunk == null) return;
+    public void storeSaveBlockLight(int index, int blockLight) {
+        byte oldLight = light[index];
+        light[index] = (byte) (oldLight & 240 | blockLight);
+    }
+
+//    public static byte getSkyLightInWorld(int x, int y, int z) {
+//        Chunk chunk = world[GameLogic.getChunkIndex(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS)];
+//        if (chunk == null || !chunk.isGenerated) return 0;
+//        return chunk.getSaveSkyLight(x & CHUNK_SIZE - 1, y & CHUNK_SIZE - 1, z & CHUNK_SIZE - 1);
+//    }
 //
-//        byte currentBlockLight = chunk.getSaveBlockLight(x & CHUNK_SIZE - 1, y & CHUNK_SIZE - 1, z & CHUNK_SIZE - 1);
-//        if (currentBlockLight == 0) return;
+//    public byte getSaveSkyLight(int x, int y, int z) {
+//        return (byte) (light[x << CHUNK_SIZE_BITS * 2 | y << CHUNK_SIZE_BITS | z] >> 4 & 15);
+//    }
 //
-//        if (currentBlockLight > lastBlockLight) {
-//            Vector3i position = new Vector3i(x, y, z);
-//            if (!containsToRePropagatePosition(toRePropagate, position))
-//                toRePropagate.add(position);
-//            return;
-//        }
+//    public byte getSaveSkyLight(int index) {
+//        return (byte) (light[index] >> 4 & 15);
+//    }
 //
-//        chunk.light[(x & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS * 2 | (y & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS | (z & CHUNK_SIZE - 1)] = 0;
-//        chunk.setMeshed(false);
-//
-//        if (getBlockInWorld(x + 1, y, z) == AIR) dePropagateBlockLight(x + 1, y, z, toRePropagate, currentBlockLight);
-//        if (getBlockInWorld(x - 1, y, z) == AIR) dePropagateBlockLight(x - 1, y, z, toRePropagate, currentBlockLight);
-//        if (getBlockInWorld(x, y + 1, z) == AIR) dePropagateBlockLight(x, y + 1, z, toRePropagate, currentBlockLight);
-//        if (getBlockInWorld(x, y - 1, z) == AIR) dePropagateBlockLight(x, y - 1, z, toRePropagate, currentBlockLight);
-//        if (getBlockInWorld(x, y, z + 1) == AIR) dePropagateBlockLight(x, y, z + 1, toRePropagate, currentBlockLight);
-//        if (getBlockInWorld(x, y, z - 1) == AIR) dePropagateBlockLight(x, y, z - 1, toRePropagate, currentBlockLight);
+//    public void storeSaveSkyLight(int index, int skyLight) {
+//        byte oldLight = light[index];
+//        light[index] = (byte) (skyLight << 4 | oldLight & 15);
 //    }
 
-    public static void dePropagateBlockLight(ArrayList<Vector3i> toRePropagate, LinkedList<Vector4i> toDePropagate) {
-        while (!toDePropagate.isEmpty()) {
-            Vector4i position = toDePropagate.removeFirst();
+    public static void setBlockLight(int x, int y, int z, int blockLight) {
+        if (blockLight <= 0)
+            return;
+        LinkedList<Vector4i> toPlaceLights = new LinkedList<>();
+        toPlaceLights.add(new Vector4i(x, y, z, blockLight));
+        setBlockLight(toPlaceLights);
+    }
 
-            Chunk chunk = getChunk(position.x >> CHUNK_SIZE_BITS, position.y >> CHUNK_SIZE_BITS, position.z >> CHUNK_SIZE_BITS);
+    public static void setBlockLight(LinkedList<Vector4i> toPlaceLights) {
+        while (!toPlaceLights.isEmpty()) {
+            Vector4i toPlaceLight = toPlaceLights.removeFirst();
+            int x = toPlaceLight.x;
+            int y = toPlaceLight.y;
+            int z = toPlaceLight.z;
+            int currentBlockLight = toPlaceLight.w;
+
+            Chunk chunk = getChunk(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS);
             if (chunk == null) continue;
 
-            byte currentBlockLight = chunk.getSaveBlockLight(position.x & CHUNK_SIZE - 1, position.y & CHUNK_SIZE - 1, position.z & CHUNK_SIZE - 1);
+            int index = (x & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS * 2 | (y & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS | (z & CHUNK_SIZE - 1);
+
+            if (chunk.getSaveBlockLight(index) >= currentBlockLight && !toPlaceLights.isEmpty()) continue;
+
+            chunk.storeSaveBlockLight(index, currentBlockLight);
+            chunk.setMeshed(false);
+            chunk.setModified();
+
+            byte nextBlockLight = (byte) (currentBlockLight - 1);
+            if (nextBlockLight <= 0) continue;
+            byte currentBlock = chunk.blocks[index];
+
+            byte nextBlock = getBlockInWorld(x + 1, y, z);
+            if (getBlockLightInWorld(x + 1, y, z) < nextBlockLight && Block.canLightTravel(nextBlock, LEFT, currentBlock, RIGHT))
+                toPlaceLights.add(new Vector4i(x + 1, y, z, nextBlockLight));
+            nextBlock = getBlockInWorld(x - 1, y, z);
+            if (getBlockLightInWorld(x - 1, y, z) < nextBlockLight && Block.canLightTravel(nextBlock, RIGHT, currentBlock, LEFT))
+                toPlaceLights.add(new Vector4i(x - 1, y, z, nextBlockLight));
+
+            nextBlock = getBlockInWorld(x, y + 1, z);
+            if (getBlockLightInWorld(x, y + 1, z) < nextBlockLight && Block.canLightTravel(nextBlock, BOTTOM, currentBlock, TOP))
+                toPlaceLights.add(new Vector4i(x, y + 1, z, nextBlockLight));
+            nextBlock = getBlockInWorld(x, y - 1, z);
+            if (getBlockLightInWorld(x, y - 1, z) < nextBlockLight && Block.canLightTravel(nextBlock, TOP, currentBlock, BOTTOM))
+                toPlaceLights.add(new Vector4i(x, y - 1, z, nextBlockLight));
+
+            nextBlock = getBlockInWorld(x, y, z + 1);
+            if (getBlockLightInWorld(x, y, z + 1) < nextBlockLight && Block.canLightTravel(nextBlock, BACK, currentBlock, FRONT))
+                toPlaceLights.add(new Vector4i(x, y, z + 1, nextBlockLight));
+            nextBlock = getBlockInWorld(x, y, z - 1);
+            if (getBlockLightInWorld(x, y, z - 1) < nextBlockLight && Block.canLightTravel(nextBlock, FRONT, currentBlock, BACK))
+                toPlaceLights.add(new Vector4i(x, y, z - 1, nextBlockLight));
+        }
+    }
+
+    public static void dePropagateBlockLight(int x, int y, int z) {
+        ArrayList<Vector4i> toRePropagate = new ArrayList<>();
+        LinkedList<Vector4i> toDePropagate = new LinkedList<>();
+        toDePropagate.add(new Vector4i(x, y, z, getBlockLightInWorld(x, y, z) + 1));
+
+        dePropagateBlockLight(toRePropagate, toDePropagate);
+
+        for (Vector4i vec : toRePropagate)
+            setBlockLight(vec.x, vec.y, vec.z, vec.w);
+    }
+
+    public static void dePropagateBlockLight(ArrayList<Vector4i> toRePropagate, LinkedList<Vector4i> toDePropagate) {
+        boolean justStarted = true;
+        while (!toDePropagate.isEmpty()) {
+            Vector4i position = toDePropagate.removeFirst();
+            int x = position.x;
+            int y = position.y;
+            int z = position.z;
+            int lastBlockLight = position.w;
+
+            Chunk chunk = getChunk(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS);
+            if (chunk == null) continue;
+
+            byte currentBlockLight = chunk.getSaveBlockLight(x & CHUNK_SIZE - 1, y & CHUNK_SIZE - 1, z & CHUNK_SIZE - 1);
             if (currentBlockLight == 0) continue;
 
-            if (currentBlockLight >= position.w) {
-                Vector3i nextPosition = new Vector3i(position.x, position.y, position.z);
+            if (currentBlockLight >= lastBlockLight) {
+                Vector4i nextPosition = new Vector4i(x, y, z, currentBlockLight);
                 if (!containsToRePropagatePosition(toRePropagate, nextPosition))
                     toRePropagate.add(nextPosition);
                 continue;
             }
 
-            chunk.light[(position.x & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS * 2 | (position.y & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS | (position.z & CHUNK_SIZE - 1)] = 0;
+            int index = (x & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS * 2 | (y & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS | (z & CHUNK_SIZE - 1);
+            chunk.storeSaveBlockLight(index, 0);
             chunk.setMeshed(false);
+            chunk.setModified();
+            byte currentBlock = justStarted ? AIR : chunk.blocks[index];
 
-            if (getBlockInWorld(position.x + 1, position.y, position.z) == AIR)
-                toDePropagate.add(new Vector4i(position.x + 1, position.y, position.z, currentBlockLight));
+            byte nextBlock = getBlockInWorld(x + 1, y, z);
+            if (Block.canLightTravel(nextBlock, LEFT, currentBlock, RIGHT))
+                toDePropagate.add(new Vector4i(x + 1, y, z, currentBlockLight));
+            nextBlock = getBlockInWorld(x - 1, y, z);
+            if (Block.canLightTravel(nextBlock, RIGHT, currentBlock, LEFT))
+                toDePropagate.add(new Vector4i(x - 1, y, z, currentBlockLight));
 
-            if (getBlockInWorld(position.x - 1, position.y, position.z) == AIR)
-                toDePropagate.add(new Vector4i(position.x - 1, position.y, position.z, currentBlockLight));
+            nextBlock = getBlockInWorld(x, y + 1, z);
+            if (Block.canLightTravel(nextBlock, BOTTOM, currentBlock, TOP))
+                toDePropagate.add(new Vector4i(x, y + 1, z, currentBlockLight));
+            nextBlock = getBlockInWorld(x, y - 1, z);
+            if (Block.canLightTravel(nextBlock, TOP, currentBlock, BOTTOM))
+                toDePropagate.add(new Vector4i(x, y - 1, z, currentBlockLight));
 
-            if (getBlockInWorld(position.x, position.y + 1, position.z) == AIR)
-                toDePropagate.add(new Vector4i(position.x, position.y + 1, position.z, currentBlockLight));
+            nextBlock = getBlockInWorld(x, y, z + 1);
+            if (Block.canLightTravel(nextBlock, BACK, currentBlock, FRONT))
+                toDePropagate.add(new Vector4i(x, y, z + 1, currentBlockLight));
+            nextBlock = getBlockInWorld(x, y, z - 1);
+            if (Block.canLightTravel(nextBlock, FRONT, currentBlock, BACK))
+                toDePropagate.add(new Vector4i(x, y, z - 1, currentBlockLight));
 
-            if (getBlockInWorld(position.x, position.y - 1, position.z) == AIR)
-                toDePropagate.add(new Vector4i(position.x, position.y - 1, position.z, currentBlockLight));
-
-            if (getBlockInWorld(position.x, position.y, position.z + 1) == AIR)
-                toDePropagate.add(new Vector4i(position.x, position.y, position.z + 1, currentBlockLight));
-
-            if (getBlockInWorld(position.x, position.y, position.z - 1) == AIR)
-                toDePropagate.add(new Vector4i(position.x, position.y, position.z - 1, currentBlockLight));
+            justStarted = false;
         }
     }
 
-    public static byte getMaxSurroundingBlockLight(int x, int y, int z){
-        byte max = 0, toTest;
+    public static byte getMaxSurroundingBlockLight(int x, int y, int z) {
+        byte max = 0, toTest, currentBlock = getBlockInWorld(x, y, z), nextBlock;
         toTest = getBlockLightInWorld(x + 1, y, z);
-        if (max < toTest) max = toTest;
+        nextBlock = getBlockInWorld(x + 1, y, z);
+        if (max < toTest && Block.canLightTravel(nextBlock, LEFT, currentBlock, RIGHT)) max = toTest;
         toTest = getBlockLightInWorld(x - 1, y, z);
-        if (max < toTest) max = toTest;
+        nextBlock = getBlockInWorld(x - 1, y, z);
+        if (max < toTest && Block.canLightTravel(nextBlock, RIGHT, currentBlock, LEFT)) max = toTest;
+
         toTest = getBlockLightInWorld(x, y + 1, z);
-        if (max < toTest) max = toTest;
+        nextBlock = getBlockInWorld(x, y + 1, z);
+        if (max < toTest && Block.canLightTravel(nextBlock, BOTTOM, currentBlock, TOP)) max = toTest;
         toTest = getBlockLightInWorld(x, y - 1, z);
-        if (max < toTest) max = toTest;
+        nextBlock = getBlockInWorld(x, y - 1, z);
+        if (max < toTest && Block.canLightTravel(nextBlock, TOP, currentBlock, BOTTOM)) max = toTest;
+
         toTest = getBlockLightInWorld(x, y, z + 1);
-        if (max < toTest) max = toTest;
+        nextBlock = getBlockInWorld(x, y, z + 1);
+        if (max < toTest && Block.canLightTravel(nextBlock, BACK, currentBlock, FRONT)) max = toTest;
         toTest = getBlockLightInWorld(x, y, z - 1);
-        if (max < toTest) max = toTest;
+        nextBlock = getBlockInWorld(x, y, z - 1);
+        if (max < toTest && Block.canLightTravel(nextBlock, FRONT, currentBlock, BACK)) max = toTest;
         return max;
     }
 
-    private static boolean containsToRePropagatePosition(ArrayList<Vector3i> toRePropagate, Vector3i position) {
-        for (Vector3i vec2 : toRePropagate)
-            if (position.equals(vec2.x, vec2.y, vec2.z))
+    private static boolean containsToRePropagatePosition(ArrayList<Vector4i> toRePropagate, Vector4i position) {
+        for (Vector4i vec2 : toRePropagate)
+            if (position.equals(vec2.x, vec2.y, vec2.z, vec2.w))
                 return true;
         return false;
     }

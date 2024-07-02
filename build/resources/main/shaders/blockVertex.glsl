@@ -26,15 +26,17 @@ void main(){
 
     textureCoordinates = vec2(u, v);
 
-    float blockLight = ((data.x >> 22) & 15) * 0.0625;
+    float blockLight = ((data.x >> 22) & 15) * 0.0425;
     float skyLight = ((data.x >> 26) & 15) * 0.0625;
     float ambientOcclusionLevel = 1 - ((data.x >> 30) & 3) * 0.22;
     int side = (data.y >> 29) & 7;
 
     float alpha = time * 3.1415926536;
-    vec3 sunDirection = vec3(cos(alpha) - sin(alpha), -0.3, cos(alpha) + sin(alpha));
+    float sinAlpha = sin(alpha);
+    float cosAlpha = cos(alpha);
+    vec3 sunDirection = vec3(cosAlpha - sinAlpha, -0.3, cosAlpha + sinAlpha);
     float absTime = abs(time);
     float sunIllumination = dot(normals[side], sunDirection) * 0.2 * skyLight * absTime;
 
-    fragLight = max(blockLight, max(0.3, skyLight) * (absTime * 0.75 + 0.25) + sunIllumination) * ambientOcclusionLevel;
+    fragLight = max(blockLight + 0.3, max(0.3, skyLight) * (absTime * 0.75 + 0.25) + sunIllumination) * ambientOcclusionLevel;
 }

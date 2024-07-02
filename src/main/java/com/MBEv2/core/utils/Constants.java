@@ -47,6 +47,8 @@ public class Constants {
     public static final int CHUNK_SIZE_BITS = 5;
     public static final int MAX_CHUNKS_XZ = 0x7FFFFFF;
     public static final int MAX_CHUNKS_Y = 0x3FF;
+    public static final int MAX_BLOCK_LIGHT_VALUE = 15;
+    public static final int MAX_SKY_LIGHT_VALUE = 15;
 
     //Change based on computing power
     public static final int REACH_ACCURACY = 100;
@@ -82,6 +84,66 @@ public class Constants {
     public static final double SLATE_THRESHOLD = 0.7;
 
     public static final byte OUT_OF_WORLD = -1;
+
+    //Indices for the sides of blocks
+    public static final int FRONT = 0;
+    public static final int TOP = 1;
+    public static final int RIGHT = 2;
+    public static final int BACK = 3;
+    public static final int BOTTOM = 4;
+    public static final int LEFT = 5;
+
+    //Indices for information on block types
+    public static final int FULL_BLOCK = 0;
+    public static final int BOTTOM_SLAB = 1;
+    public static final int TOP_SLAB = 2;
+    public static final int FRONT_SLAB = 3;
+    public static final int BACK_SLAB = 4;
+    public static final int RIGHT_SLAB = 5;
+    public static final int LEFT_SLAB = 6;
+    public static final int UP_DOWN_POST = 7;
+    public static final int FRONT_BACK_POST = 8;
+    public static final int LEFT_RIGHT_POST = 9;
+    public static final int WATER_TYPE = 10;
+    public static final int LEAVE_TYPE = 11;
+    public static final int GLASS_TYPE = 12;
+    public static final int AIR_TYPE = 13;
+    public static final int UP_DOWN_WALL = 14;
+    public static final int FRONT_BACK_WALL = 15;
+    public static final int LEFT_RIGHT_WALL = 16;
+    public static final int FRONT_PLATE = 17;
+    public static final int TOP_PLATE = 18;
+    public static final int RIGHT_PLATE = 19;
+    public static final int BACK_PLATE = 20;
+    public static final int BOTTOM_PLATE = 21;
+    public static final int LEFT_PLATE = 22;
+    public static final int PLAYER_HEAD = 23;
+
+    public static final int AMOUNT_OF_BLOCK_TYPES = 24;
+
+    //Other information on stuff
+    public static final int[] SIDE_MASKS;
+
+    //OCCLUSION_DATA
+    public static final int OCCLUDES_ALL = 0;
+    public static final int OCCLUDES_SELF = 1;
+    public static final int OCCLUDES_DYNAMIC_ALL = 2;
+    public static final int OCCLUDES_DYNAMIC_SELF = 3;
+
+    //BLOCK_DATA
+    public static final int SOLID_MASK = 64;
+    public static final int DYNAMIC_SHAPE_MASK = 128;
+
+    //BLOCK_XYZ_SUB_DATA
+    public static final int MIN_X = 0;
+    public static final int MAX_X = 1;
+    public static final int MIN_Y = 2;
+    public static final int MAX_Y = 3;
+    public static final int MIN_Z = 4;
+    public static final int MAX_Z = 5;
+
+    //BLOCK_PROPERTIES
+    public static final int LIGHT_EMITTING_MASK = 1;
 
     //In world and in inventory
     public static final byte AIR = 0;
@@ -476,57 +538,6 @@ public class Constants {
     public static final byte CREATOR_HEAD_BOTTOM = 115;
     public static final byte CREATOR_HEAD_LEFT = 99;
     public static final byte ROTATED_CREATOR_HEAD_BOTTOM = - 125;
-
-    //Indices for the sides of blocks
-    public static final int FRONT = 0;
-    public static final int TOP = 1;
-    public static final int RIGHT = 2;
-    public static final int BACK = 3;
-    public static final int BOTTOM = 4;
-    public static final int LEFT = 5;
-
-    //Indices for information on block types
-    public static final int FULL_BLOCK = 0;
-    public static final int BOTTOM_SLAB = 1;
-    public static final int TOP_SLAB = 2;
-    public static final int FRONT_SLAB = 3;
-    public static final int BACK_SLAB = 4;
-    public static final int RIGHT_SLAB = 5;
-    public static final int LEFT_SLAB = 6;
-    public static final int UP_DOWN_POST = 7;
-    public static final int FRONT_BACK_POST = 8;
-    public static final int LEFT_RIGHT_POST = 9;
-    public static final int WATER_TYPE = 10;
-    public static final int LEAVE_TYPE = 11;
-    public static final int GLASS_TYPE = 12;
-    public static final int AIR_TYPE = 13;
-    public static final int UP_DOWN_WALL = 14;
-    public static final int FRONT_BACK_WALL = 15;
-    public static final int LEFT_RIGHT_WALL = 16;
-    public static final int FRONT_PLATE = 17;
-    public static final int TOP_PLATE = 18;
-    public static final int RIGHT_PLATE = 19;
-    public static final int BACK_PLATE = 20;
-    public static final int BOTTOM_PLATE = 21;
-    public static final int LEFT_PLATE = 22;
-    public static final int PLAYER_HEAD = 23;
-
-    public static final int AMOUNT_OF_BLOCK_TYPES = 24;
-
-    //Other information on stuff
-    public static final int[] SIDE_MASKS;
-    public static final int OCCLUDES_ALL = 0;
-    public static final int OCCLUDES_SELF = 1;
-    public static final int OCCLUDES_DYNAMIC_ALL = 2;
-    public static final int OCCLUDES_DYNAMIC_SELF = 3;
-    public static final int SOLID_MASK = 64;
-    public static final int DYNAMIC_SHAPE_MASK = 128;
-    public static final int MIN_X = 0;
-    public static final int MAX_X = 1;
-    public static final int MIN_Y = 2;
-    public static final int MAX_Y = 3;
-    public static final int MIN_Z = 4;
-    public static final int MAX_Z = 5;
 
     //Not currently in use
     //public static final float[] LIGHT = {1.0f, 1.2f, 0.9f, 0.8f, 0.6f, 1.1f};
