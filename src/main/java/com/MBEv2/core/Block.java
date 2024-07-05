@@ -260,17 +260,6 @@ public class Block {
         return (number - (int) number) + addend;
     }
 
-    public static boolean canLightTravel(byte destinationBlock, int enterSide, byte originBlock, int exitSide) {
-        int originBlockType = getBlockType(originBlock);
-        int originBlockProperties = getBlockProperties(originBlock);
-        boolean canExit = getBlockTypeOcclusionData(originBlock, exitSide) == 0 || (originBlockProperties & LIGHT_EMITTING_MASK) != 0 || originBlockType == WATER_TYPE || originBlockType == GLASS_TYPE;
-        if (!canExit) return false;
-
-        int destinationBlockType = getBlockType(destinationBlock);
-        int destinationBlockProperties = getBlockProperties(destinationBlock);
-        return getBlockTypeOcclusionData(destinationBlock, enterSide) == 0 || (destinationBlockProperties & LIGHT_EMITTING_MASK) != 0 || destinationBlockType == WATER_TYPE || destinationBlockType == GLASS_TYPE;
-    }
-
     public static byte getBlockTypeData(byte block) {
         return BLOCK_TYPE_DATA[BLOCK_TYPE[Byte.toUnsignedInt(block)]];
     }
@@ -313,6 +302,14 @@ public class Block {
         if (Math.abs(noise) < ANDESITE_THRESHOLD) return ANDESITE;
         if (noise > SLATE_THRESHOLD) return SLATE;
         return STONE;
+    }
+
+    public static byte getGeneratingMudType(int x, int y, int z) {
+        double noise = OpenSimplex2S.noise3_ImproveXY(SEED, x * MUD_TYPE_FREQUENCY, y * MUD_TYPE_FREQUENCY, z * MUD_TYPE_FREQUENCY);
+        if (Math.abs(noise) < GRAVEL_THRESHOLD) return GRAVEL;
+        if (noise > CLAY_THRESHOLD) return CLAY;
+        if (noise < SAND_THRESHOLD) return SAND;
+        return MUD;
     }
 
     public static int getBlockTypeOcclusionData(byte block, int side) {
@@ -397,6 +394,10 @@ public class Block {
         BLOCK_PROPERTIES[Byte.toUnsignedInt(WHITE)] = LIGHT_EMITTING_MASK;
         BLOCK_TYPE[Byte.toUnsignedInt(BLACK)] = FULL_BLOCK;
         TEXTURE_INDICES[Byte.toUnsignedInt(BLACK)] = new int[]{BLACK};
+        BLOCK_TYPE[CLAY] = FULL_BLOCK;
+        TEXTURE_INDICES[CLAY] = new int[]{CLAY};
+        BLOCK_TYPE[MOSS] = FULL_BLOCK;
+        TEXTURE_INDICES[MOSS] = new int[]{MOSS};
 
         BLOCK_TYPE[GLASS] = GLASS_TYPE;
         TEXTURE_INDICES[GLASS] = new int[]{GLASS};

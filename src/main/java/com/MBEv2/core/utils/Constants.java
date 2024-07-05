@@ -83,6 +83,11 @@ public class Constants {
     public static final double ANDESITE_THRESHOLD = 0.1;
     public static final double SLATE_THRESHOLD = 0.7;
 
+    public static final double MUD_TYPE_FREQUENCY = 0.08;
+    public static final double GRAVEL_THRESHOLD = 0.1;
+    public static final double CLAY_THRESHOLD = 0.5;
+    public static final double SAND_THRESHOLD = -0.5;
+
     public static final byte OUT_OF_WORLD = -1;
 
     //Indices for the sides of blocks
@@ -184,6 +189,8 @@ public class Constants {
     public static final byte WHITE = -8;
     public static final byte BLACK = -9;
     public static final byte BARRIER = 17;
+    public static final byte MOSS = 99;
+    public static final byte CLAY = 98;
 
     //Only in inventory
     public static final byte COBBLESTONE_SLAB = 20;
@@ -531,13 +538,13 @@ public class Constants {
     public static final byte ROTATED_STRIPPED_OAK_LOG = 116;
     public static final byte ROTATED_STRIPPED_SPRUCE_LOG = 117;
     public static final byte ROTATED_STRIPPED_DARK_OAK_LOG = 118;
-    public static final byte CREATOR_HEAD_FRONT = 98;
-    public static final byte CREATOR_HEAD_TOP = 113;
-    public static final byte CREATOR_HEAD_RIGHT = 97;
-    public static final byte CREATOR_HEAD_BACK = 114;
-    public static final byte CREATOR_HEAD_BOTTOM = 115;
-    public static final byte CREATOR_HEAD_LEFT = 99;
-    public static final byte ROTATED_CREATOR_HEAD_BOTTOM = - 125;
+    public static final byte CREATOR_HEAD_FRONT = -123;
+    public static final byte CREATOR_HEAD_LEFT = -122;
+    public static final byte CREATOR_HEAD_RIGHT = -124;
+    public static final byte CREATOR_HEAD_TOP = -108;
+    public static final byte CREATOR_HEAD_BACK = -107;
+    public static final byte CREATOR_HEAD_BOTTOM = -106;
+    public static final byte ROTATED_CREATOR_HEAD_BOTTOM = -90;
 
     //Not currently in use
     //public static final float[] LIGHT = {1.0f, 1.2f, 0.9f, 0.8f, 0.6f, 1.1f};

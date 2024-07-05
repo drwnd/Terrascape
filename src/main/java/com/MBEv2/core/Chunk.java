@@ -3,11 +3,9 @@ package com.MBEv2.core;
 import com.MBEv2.core.entity.Model;
 import com.MBEv2.test.GameLogic;
 import org.joml.Vector3i;
-import org.joml.Vector4i;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 
 import static com.MBEv2.core.utils.Constants.*;
 
@@ -30,6 +28,7 @@ public class Chunk {
     private boolean isMeshed = false;
     private boolean isGenerated = false;
     private boolean isModified = false;
+    private boolean hasPropagatedBlockLight = false;
 
     private Model model;
     private Model transparentModel;
@@ -74,12 +73,13 @@ public class Chunk {
                             storeSave(x, y, z, SNOW);
                         else if (totalY <= stoneHeight)
                             storeSave(x, y, z, Block.getGeneratingStoneType(totalX, totalY, totalZ));
-                        else if (totalY < height - CHUNK_SIZE_BITS)
+                        else if (totalY < height - 5)
                             storeSave(x, y, z, Block.getGeneratingStoneType(totalX, totalY, totalZ));
                         else if (totalY <= height && height <= sandHeight + 2 && totalY <= sandHeight + 2 && totalY >= sandHeight - 2)
                             storeSave(x, y, z, SAND);
                         else if (totalY == height && totalY > WATER_LEVEL) storeSave(x, y, z, GRASS);
-                        else if (totalY <= height) storeSave(x, y, z, height <= WATER_LEVEL ? MUD : DIRT);
+                        else if (totalY <= height)
+                            storeSave(x, y, z, height <= WATER_LEVEL ? Block.getGeneratingMudType(totalX, totalY, totalZ) : DIRT);
                         else if (totalY <= WATER_LEVEL) storeSave(x, y, z, WATER);
                     } else if (totalY <= WATER_LEVEL) storeSave(x, y, z, WATER);
 
@@ -117,13 +117,13 @@ public class Chunk {
 
         generateSurroundingChunks();
 
-        for (int x = 0; x < CHUNK_SIZE; x++) {
-            for (int y = 0; y < CHUNK_SIZE; y++) {
+        for (int x = 0; x < CHUNK_SIZE; x++)
+            for (int y = 0; y < CHUNK_SIZE; y++)
                 for (int z = 0; z < CHUNK_SIZE; z++) {
 
                     byte block = getSaveBlock(x, y, z);
 
-                    if (block == AIR) continue;
+                    if (Block.getBlockType(block) == AIR_TYPE) continue;
 
                     for (int side = 0; side < 6; side++) {
 
@@ -143,8 +143,7 @@ public class Chunk {
                         addSideToList(x, y, z, u, v, side, transparentVerticesList, block);
                     }
                 }
-            }
-        }
+
         vertices = new int[verticesList.size()];
         for (int i = 0, size = verticesList.size(); i < size; i++)
             vertices[i] = verticesList.get(i);
@@ -183,6 +182,14 @@ public class Chunk {
         generateIfNecessary(X + 1, Y + 1, Z + 1);
     }
 
+    public void propagateBlockLight() {
+        for (int x = 0; x < CHUNK_SIZE; x++)
+            for (int y = 0; y < CHUNK_SIZE; y++)
+                for (int z = 0; z < CHUNK_SIZE; z++)
+                    if ((Block.getBlockProperties(getSaveBlock(x, y, z)) & LIGHT_EMITTING_MASK) != 0)
+                        LightLogic.setBlockLight(worldCoordinate.x | x, worldCoordinate.y | y, worldCoordinate.z | z, MAX_BLOCK_LIGHT_VALUE);
+    }
+
     public static void generateIfNecessary(int x, int y, int z) {
         long expectedId = GameLogic.getChunkId(x, y, z);
         int index = GameLogic.getChunkIndex(x, y, z);
@@ -210,11 +217,12 @@ public class Chunk {
     }
 
     public void addSideToList(int x, int y, int z, int u, int v, int side, ArrayList<Integer> verticesList, byte block) {
-        int skyLight = 0;
+        int skyLight;
         int blockLight;
 
         switch (side) {
             case FRONT:
+                skyLight = getSkyLightInWorld(worldCoordinate.x | x, worldCoordinate.y | y, (worldCoordinate.z | z) + (Block.getXYZSubData(block)[MAX_Z] == 0 ? 1 : 0));
                 blockLight = getBlockLightInWorld(worldCoordinate.x | x, worldCoordinate.y | y, (worldCoordinate.z | z) + (Block.getXYZSubData(block)[MAX_Z] == 0 ? 1 : 0));
                 addVertexToList(verticesList, x + 1, y + 1, z + 1, u, v, side, skyLight, blockLight, block, 0, x, y, z);
                 addVertexToList(verticesList, x, y + 1, z + 1, u + 1, v, side, skyLight, blockLight, block, 1, x, y, z);
@@ -222,6 +230,7 @@ public class Chunk {
                 addVertexToList(verticesList, x, y, z + 1, u + 1, v + 1, side, skyLight, blockLight, block, 3, x, y, z);
                 break;
             case TOP:
+                skyLight = getSkyLightInWorld(worldCoordinate.x | x, (worldCoordinate.y | y) + (Block.getXYZSubData(block)[MAX_Y] == 0 ? 1 : 0), worldCoordinate.z | z);
                 blockLight = getBlockLightInWorld(worldCoordinate.x | x, (worldCoordinate.y | y) + (Block.getXYZSubData(block)[MAX_Y] == 0 ? 1 : 0), worldCoordinate.z | z);
                 addVertexToList(verticesList, x, y + 1, z, u, v, side, skyLight, blockLight, block, 0, x, y, z);
                 addVertexToList(verticesList, x, y + 1, z + 1, u + 1, v, side, skyLight, blockLight, block, 1, x, y, z);
@@ -229,6 +238,7 @@ public class Chunk {
                 addVertexToList(verticesList, x + 1, y + 1, z + 1, u + 1, v + 1, side, skyLight, blockLight, block, 3, x, y, z);
                 break;
             case RIGHT:
+                skyLight = getSkyLightInWorld((worldCoordinate.x | x) + (Block.getXYZSubData(block)[MAX_X] == 0 ? 1 : 0), worldCoordinate.y | y, worldCoordinate.z | z);
                 blockLight = getBlockLightInWorld((worldCoordinate.x | x) + (Block.getXYZSubData(block)[MAX_X] == 0 ? 1 : 0), worldCoordinate.y | y, worldCoordinate.z | z);
                 addVertexToList(verticesList, x + 1, y + 1, z, u, v, side, skyLight, blockLight, block, 0, x, y, z);
                 addVertexToList(verticesList, x + 1, y + 1, z + 1, u + 1, v, side, skyLight, blockLight, block, 1, x, y, z);
@@ -236,6 +246,7 @@ public class Chunk {
                 addVertexToList(verticesList, x + 1, y, z + 1, u + 1, v + 1, side, skyLight, blockLight, block, 3, x, y, z);
                 break;
             case BACK:
+                skyLight = getSkyLightInWorld(worldCoordinate.x | x, worldCoordinate.y | y, (worldCoordinate.z | z) - (Block.getXYZSubData(block)[MIN_Z] == 0 ? 1 : 0));
                 blockLight = getBlockLightInWorld(worldCoordinate.x | x, worldCoordinate.y | y, (worldCoordinate.z | z) - (Block.getXYZSubData(block)[MIN_Z] == 0 ? 1 : 0));
                 addVertexToList(verticesList, x, y + 1, z, u, v, side, skyLight, blockLight, block, 0, x, y, z);
                 addVertexToList(verticesList, x + 1, y + 1, z, u + 1, v, side, skyLight, blockLight, block, 1, x, y, z);
@@ -243,6 +254,7 @@ public class Chunk {
                 addVertexToList(verticesList, x + 1, y, z, u + 1, v + 1, side, skyLight, blockLight, block, 3, x, y, z);
                 break;
             case BOTTOM:
+                skyLight = getSkyLightInWorld(worldCoordinate.x | x, (worldCoordinate.y | y) - (Block.getXYZSubData(block)[MIN_Y] == 0 ? 1 : 0), worldCoordinate.z | z);
                 blockLight = getBlockLightInWorld(worldCoordinate.x | x, (worldCoordinate.y | y) - (Block.getXYZSubData(block)[MIN_Y] == 0 ? 1 : 0), worldCoordinate.z | z);
                 addVertexToList(verticesList, x + 1, y, z + 1, u, v, side, skyLight, blockLight, block, 3, x, y, z);
                 addVertexToList(verticesList, x, y, z + 1, u + 1, v, side, skyLight, blockLight, block, 1, x, y, z);
@@ -250,6 +262,7 @@ public class Chunk {
                 addVertexToList(verticesList, x, y, z, u + 1, v + 1, side, skyLight, blockLight, block, 0, x, y, z);
                 break;
             case LEFT:
+                skyLight = getSkyLightInWorld((worldCoordinate.x | x) - (Block.getXYZSubData(block)[MIN_X] == 0 ? 1 : 0), worldCoordinate.y | y, worldCoordinate.z | z);
                 blockLight = getBlockLightInWorld((worldCoordinate.x | x) - (Block.getXYZSubData(block)[MIN_X] == 0 ? 1 : 0), worldCoordinate.y | y, worldCoordinate.z | z);
                 addVertexToList(verticesList, x, y + 1, z + 1, u, v, side, skyLight, blockLight, block, 1, x, y, z);
                 addVertexToList(verticesList, x, y + 1, z, u + 1, v, side, skyLight, blockLight, block, 0, x, y, z);
@@ -430,6 +443,10 @@ public class Chunk {
         return blocks[x << CHUNK_SIZE_BITS * 2 | y << CHUNK_SIZE_BITS | z];
     }
 
+    public byte getSaveBlock(int index) {
+        return blocks[index];
+    }
+
     public static byte getBlockInWorld(int x, int y, int z) {
         Chunk chunk = world[GameLogic.getChunkIndex(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS)];
         if (chunk == null || !chunk.isGenerated) return OUT_OF_WORLD;
@@ -465,174 +482,23 @@ public class Chunk {
         light[index] = (byte) (oldLight & 240 | blockLight);
     }
 
-//    public static byte getSkyLightInWorld(int x, int y, int z) {
-//        Chunk chunk = world[GameLogic.getChunkIndex(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS)];
-//        if (chunk == null || !chunk.isGenerated) return 0;
-//        return chunk.getSaveSkyLight(x & CHUNK_SIZE - 1, y & CHUNK_SIZE - 1, z & CHUNK_SIZE - 1);
-//    }
-//
-//    public byte getSaveSkyLight(int x, int y, int z) {
-//        return (byte) (light[x << CHUNK_SIZE_BITS * 2 | y << CHUNK_SIZE_BITS | z] >> 4 & 15);
-//    }
-//
-//    public byte getSaveSkyLight(int index) {
-//        return (byte) (light[index] >> 4 & 15);
-//    }
-//
-//    public void storeSaveSkyLight(int index, int skyLight) {
-//        byte oldLight = light[index];
-//        light[index] = (byte) (skyLight << 4 | oldLight & 15);
-//    }
-
-    public static void setBlockLight(int x, int y, int z, int blockLight) {
-        if (blockLight <= 0)
-            return;
-        LinkedList<Vector4i> toPlaceLights = new LinkedList<>();
-        toPlaceLights.add(new Vector4i(x, y, z, blockLight));
-        setBlockLight(toPlaceLights);
+    public static byte getSkyLightInWorld(int x, int y, int z) {
+        Chunk chunk = world[GameLogic.getChunkIndex(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS)];
+        if (chunk == null || !chunk.isGenerated) return 0;
+        return chunk.getSaveSkyLight(x & CHUNK_SIZE - 1, y & CHUNK_SIZE - 1, z & CHUNK_SIZE - 1);
     }
 
-    public static void setBlockLight(LinkedList<Vector4i> toPlaceLights) {
-        while (!toPlaceLights.isEmpty()) {
-            Vector4i toPlaceLight = toPlaceLights.removeFirst();
-            int x = toPlaceLight.x;
-            int y = toPlaceLight.y;
-            int z = toPlaceLight.z;
-            int currentBlockLight = toPlaceLight.w;
-
-            Chunk chunk = getChunk(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS);
-            if (chunk == null) continue;
-
-            int index = (x & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS * 2 | (y & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS | (z & CHUNK_SIZE - 1);
-
-            if (chunk.getSaveBlockLight(index) >= currentBlockLight && !toPlaceLights.isEmpty()) continue;
-
-            chunk.storeSaveBlockLight(index, currentBlockLight);
-            chunk.setMeshed(false);
-            chunk.setModified();
-
-            byte nextBlockLight = (byte) (currentBlockLight - 1);
-            if (nextBlockLight <= 0) continue;
-            byte currentBlock = chunk.blocks[index];
-
-            byte nextBlock = getBlockInWorld(x + 1, y, z);
-            if (getBlockLightInWorld(x + 1, y, z) < nextBlockLight && Block.canLightTravel(nextBlock, LEFT, currentBlock, RIGHT))
-                toPlaceLights.add(new Vector4i(x + 1, y, z, nextBlockLight));
-            nextBlock = getBlockInWorld(x - 1, y, z);
-            if (getBlockLightInWorld(x - 1, y, z) < nextBlockLight && Block.canLightTravel(nextBlock, RIGHT, currentBlock, LEFT))
-                toPlaceLights.add(new Vector4i(x - 1, y, z, nextBlockLight));
-
-            nextBlock = getBlockInWorld(x, y + 1, z);
-            if (getBlockLightInWorld(x, y + 1, z) < nextBlockLight && Block.canLightTravel(nextBlock, BOTTOM, currentBlock, TOP))
-                toPlaceLights.add(new Vector4i(x, y + 1, z, nextBlockLight));
-            nextBlock = getBlockInWorld(x, y - 1, z);
-            if (getBlockLightInWorld(x, y - 1, z) < nextBlockLight && Block.canLightTravel(nextBlock, TOP, currentBlock, BOTTOM))
-                toPlaceLights.add(new Vector4i(x, y - 1, z, nextBlockLight));
-
-            nextBlock = getBlockInWorld(x, y, z + 1);
-            if (getBlockLightInWorld(x, y, z + 1) < nextBlockLight && Block.canLightTravel(nextBlock, BACK, currentBlock, FRONT))
-                toPlaceLights.add(new Vector4i(x, y, z + 1, nextBlockLight));
-            nextBlock = getBlockInWorld(x, y, z - 1);
-            if (getBlockLightInWorld(x, y, z - 1) < nextBlockLight && Block.canLightTravel(nextBlock, FRONT, currentBlock, BACK))
-                toPlaceLights.add(new Vector4i(x, y, z - 1, nextBlockLight));
-        }
+    public byte getSaveSkyLight(int x, int y, int z) {
+        return (byte) (light[x << CHUNK_SIZE_BITS * 2 | y << CHUNK_SIZE_BITS | z] >> 4 & 15);
     }
 
-    public static void dePropagateBlockLight(int x, int y, int z) {
-        ArrayList<Vector4i> toRePropagate = new ArrayList<>();
-        LinkedList<Vector4i> toDePropagate = new LinkedList<>();
-        toDePropagate.add(new Vector4i(x, y, z, getBlockLightInWorld(x, y, z) + 1));
-
-        dePropagateBlockLight(toRePropagate, toDePropagate);
-
-        for (Vector4i vec : toRePropagate)
-            setBlockLight(vec.x, vec.y, vec.z, vec.w);
+    public byte getSaveSkyLight(int index) {
+        return (byte) (light[index] >> 4 & 15);
     }
 
-    public static void dePropagateBlockLight(ArrayList<Vector4i> toRePropagate, LinkedList<Vector4i> toDePropagate) {
-        boolean justStarted = true;
-        while (!toDePropagate.isEmpty()) {
-            Vector4i position = toDePropagate.removeFirst();
-            int x = position.x;
-            int y = position.y;
-            int z = position.z;
-            int lastBlockLight = position.w;
-
-            Chunk chunk = getChunk(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS);
-            if (chunk == null) continue;
-
-            byte currentBlockLight = chunk.getSaveBlockLight(x & CHUNK_SIZE - 1, y & CHUNK_SIZE - 1, z & CHUNK_SIZE - 1);
-            if (currentBlockLight == 0) continue;
-
-            if (currentBlockLight >= lastBlockLight) {
-                Vector4i nextPosition = new Vector4i(x, y, z, currentBlockLight);
-                if (!containsToRePropagatePosition(toRePropagate, nextPosition))
-                    toRePropagate.add(nextPosition);
-                continue;
-            }
-
-            int index = (x & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS * 2 | (y & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS | (z & CHUNK_SIZE - 1);
-            chunk.storeSaveBlockLight(index, 0);
-            chunk.setMeshed(false);
-            chunk.setModified();
-            byte currentBlock = justStarted ? AIR : chunk.blocks[index];
-
-            byte nextBlock = getBlockInWorld(x + 1, y, z);
-            if (Block.canLightTravel(nextBlock, LEFT, currentBlock, RIGHT))
-                toDePropagate.add(new Vector4i(x + 1, y, z, currentBlockLight));
-            nextBlock = getBlockInWorld(x - 1, y, z);
-            if (Block.canLightTravel(nextBlock, RIGHT, currentBlock, LEFT))
-                toDePropagate.add(new Vector4i(x - 1, y, z, currentBlockLight));
-
-            nextBlock = getBlockInWorld(x, y + 1, z);
-            if (Block.canLightTravel(nextBlock, BOTTOM, currentBlock, TOP))
-                toDePropagate.add(new Vector4i(x, y + 1, z, currentBlockLight));
-            nextBlock = getBlockInWorld(x, y - 1, z);
-            if (Block.canLightTravel(nextBlock, TOP, currentBlock, BOTTOM))
-                toDePropagate.add(new Vector4i(x, y - 1, z, currentBlockLight));
-
-            nextBlock = getBlockInWorld(x, y, z + 1);
-            if (Block.canLightTravel(nextBlock, BACK, currentBlock, FRONT))
-                toDePropagate.add(new Vector4i(x, y, z + 1, currentBlockLight));
-            nextBlock = getBlockInWorld(x, y, z - 1);
-            if (Block.canLightTravel(nextBlock, FRONT, currentBlock, BACK))
-                toDePropagate.add(new Vector4i(x, y, z - 1, currentBlockLight));
-
-            justStarted = false;
-        }
-    }
-
-    public static byte getMaxSurroundingBlockLight(int x, int y, int z) {
-        byte max = 0, currentBlock = getBlockInWorld(x, y, z);
-
-        byte toTest = getBlockLightInWorld(x + 1, y, z);
-        byte nextBlock = getBlockInWorld(x + 1, y, z);
-        if (max < toTest && Block.canLightTravel(nextBlock, LEFT, currentBlock, RIGHT)) max = toTest;
-        toTest = getBlockLightInWorld(x - 1, y, z);
-        nextBlock = getBlockInWorld(x - 1, y, z);
-        if (max < toTest && Block.canLightTravel(nextBlock, RIGHT, currentBlock, LEFT)) max = toTest;
-
-        toTest = getBlockLightInWorld(x, y + 1, z);
-        nextBlock = getBlockInWorld(x, y + 1, z);
-        if (max < toTest && Block.canLightTravel(nextBlock, BOTTOM, currentBlock, TOP)) max = toTest;
-        toTest = getBlockLightInWorld(x, y - 1, z);
-        nextBlock = getBlockInWorld(x, y - 1, z);
-        if (max < toTest && Block.canLightTravel(nextBlock, TOP, currentBlock, BOTTOM)) max = toTest;
-
-        toTest = getBlockLightInWorld(x, y, z + 1);
-        nextBlock = getBlockInWorld(x, y, z + 1);
-        if (max < toTest && Block.canLightTravel(nextBlock, BACK, currentBlock, FRONT)) max = toTest;
-        toTest = getBlockLightInWorld(x, y, z - 1);
-        nextBlock = getBlockInWorld(x, y, z - 1);
-        if (max < toTest && Block.canLightTravel(nextBlock, FRONT, currentBlock, BACK)) max = toTest;
-        return max;
-    }
-
-    private static boolean containsToRePropagatePosition(ArrayList<Vector4i> toRePropagate, Vector4i position) {
-        for (Vector4i vec2 : toRePropagate)
-            if (position.equals(vec2.x, vec2.y, vec2.z, vec2.w))
-                return true;
-        return false;
+    public void storeSaveSkyLight(int index, int skyLight) {
+        byte oldLight = light[index];
+        light[index] = (byte) (skyLight << 4 | oldLight & 15);
     }
 
     public static Chunk getChunk(int x, int y, int z) {
@@ -739,5 +605,13 @@ public class Chunk {
 
     public int getZ() {
         return Z;
+    }
+
+    public boolean hasPropagatedBlockLight() {
+        return hasPropagatedBlockLight;
+    }
+
+    public void setHasPropagatedBlockLight() {
+        hasPropagatedBlockLight = true;
     }
 }

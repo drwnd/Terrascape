@@ -3,6 +3,7 @@ package com.MBEv2.test;
 import com.MBEv2.core.*;
 import com.MBEv2.core.entity.*;
 import org.joml.Vector3i;
+import org.joml.Vector4i;
 import org.lwjgl.opengl.GL11;
 
 import java.util.LinkedList;
@@ -56,19 +57,9 @@ public class GameLogic {
         chunk.storeSave(inChunkX, inChunkY, inChunkZ, block);
         chunk.setModified();
 
-        boolean blockEmitsLight = (Block.getBlockProperties(block) & LIGHT_EMITTING_MASK) != 0;
-        boolean previousBlockEmitsLight = (Block.getBlockProperties(previousBlock) & LIGHT_EMITTING_MASK) != 0;
-
-        if (blockEmitsLight && !previousBlockEmitsLight)
-            Chunk.setBlockLight(position.x, position.y, position.z, MAX_BLOCK_LIGHT_VALUE);
-
-        else if (block == AIR)
-            if (previousBlockEmitsLight)
-                Chunk.dePropagateBlockLight(position.x, position.y, position.z);
-            else
-                Chunk.setBlockLight(position.x, position.y, position.z, Chunk.getMaxSurroundingBlockLight(position.x, position.y, position.z) - 1);
-        else if (!blockEmitsLight)
-            Chunk.dePropagateBlockLight(position.x, position.y, position.z);
+        synchronized (generator.getChanges()){
+            generator.addChange(new Vector4i(position.x, position.y, position.z, previousBlock));
+        }
 
         int minX = chunkX, maxX = chunkX;
         int minY = chunkY, maxY = chunkY;
