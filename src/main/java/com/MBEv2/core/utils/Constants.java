@@ -123,8 +123,9 @@ public class Constants {
     public static final int BOTTOM_PLATE = 21;
     public static final int LEFT_PLATE = 22;
     public static final int PLAYER_HEAD = 23;
+    public static final int CACTUS_TYPE = 24;
 
-    public static final int AMOUNT_OF_BLOCK_TYPES = 24;
+    public static final int AMOUNT_OF_BLOCK_TYPES = 25;
 
     //Other information on stuff
     public static final int[] SIDE_MASKS;
@@ -191,6 +192,9 @@ public class Constants {
     public static final byte BARRIER = 17;
     public static final byte MOSS = 99;
     public static final byte CLAY = 98;
+    public static final byte ICE = 113;
+    public static final byte HEAVY_ICE = 97;
+    public static final byte CACTUS = 114;
 
     //Only in inventory
     public static final byte COBBLESTONE_SLAB = 20;
@@ -545,6 +549,8 @@ public class Constants {
     public static final byte CREATOR_HEAD_BACK = -107;
     public static final byte CREATOR_HEAD_BOTTOM = -106;
     public static final byte ROTATED_CREATOR_HEAD_BOTTOM = -90;
+    public static final byte CACTUS_SIDE = 114;
+    public static final byte CACTUS_TOP = -91;
 
     //Not currently in use
     //public static final float[] LIGHT = {1.0f, 1.2f, 0.9f, 0.8f, 0.6f, 1.1f};

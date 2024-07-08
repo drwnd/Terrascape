@@ -7,7 +7,7 @@ import org.joml.Vector4i;
 import org.lwjgl.opengl.GL11;
 
 import java.util.LinkedList;
-import java.util.Random;
+
 
 import static com.MBEv2.core.utils.Constants.*;
 
@@ -256,110 +256,6 @@ public class GameLogic {
                 sizeX * GUI_SIZE / width, sizeY * GUI_SIZE / height - 0.5f,
                 sizeX * GUI_SIZE / width, -0.5f
         };
-    }
-
-    public static double[][] heightMap(int x, int z) {
-        double[][] heightMap = new double[CHUNK_SIZE][CHUNK_SIZE];
-
-        for (int mapX = 0; mapX < CHUNK_SIZE; mapX++) {
-            for (int mapZ = 0; mapZ < CHUNK_SIZE; mapZ++) {
-                int currentX = (x << CHUNK_SIZE_BITS) + mapX;
-                int currentZ = (z << CHUNK_SIZE_BITS) + mapZ;
-                double value = WATER_LEVEL;
-                value += OpenSimplex2S.noise3_ImproveXY(SEED, currentX * HEIGHT_MAP_FREQUENCY / 4, currentZ * HEIGHT_MAP_FREQUENCY / 4, 0.0) * 50;
-                value += OpenSimplex2S.noise3_ImproveXY(SEED + 1, currentX * HEIGHT_MAP_FREQUENCY, currentZ * HEIGHT_MAP_FREQUENCY, 0.0) * 25;
-                value += OpenSimplex2S.noise3_ImproveXY(SEED + 2, currentX * HEIGHT_MAP_FREQUENCY * 2, currentZ * HEIGHT_MAP_FREQUENCY * 2, 0.0) * 12;
-                value += OpenSimplex2S.noise3_ImproveXY(SEED + 3, currentX * HEIGHT_MAP_FREQUENCY * 4, currentZ * HEIGHT_MAP_FREQUENCY * 4, 0.0) * 6;
-                value += OpenSimplex2S.noise3_ImproveXY(SEED + 4, currentX * HEIGHT_MAP_FREQUENCY * 8, currentZ * HEIGHT_MAP_FREQUENCY * 8, 0.0) * 3;
-                heightMap[mapX][mapZ] = value;
-            }
-        }
-        return heightMap;
-    }
-
-    public static int[][] stoneMap(int x, int z, double[][] heightMap) {
-        int[][] stoneMap = new int[CHUNK_SIZE][CHUNK_SIZE];
-
-        for (int mapX = 0; mapX < CHUNK_SIZE; mapX++) {
-            for (int mapZ = 0; mapZ < CHUNK_SIZE; mapZ++) {
-                int currentX = (x << CHUNK_SIZE_BITS) + mapX;
-                int currentZ = (z << CHUNK_SIZE_BITS) + mapZ;
-
-                double biomes = OpenSimplex2S.noise3_ImproveXY(SEED + 1 << 16, currentX * STONE_MAP_FREQUENCY, currentZ * STONE_MAP_FREQUENCY, 0.0);
-                biomes = Math.max(0, biomes);
-                stoneMap[mapX][mapZ] = (int) (heightMap[mapX][mapZ] * (biomes + 1)) * (biomes != 0 ? 1 : 0);
-
-            }
-        }
-        return stoneMap;
-    }
-
-    public static double[][] featureMap(int x, int z) {
-        double[][] featureMap = new double[CHUNK_SIZE][CHUNK_SIZE];
-        Random random = new Random(getChunkId(x, 0, z));
-
-        for (int mapX = 0; mapX < CHUNK_SIZE; mapX++)
-            for (int mapZ = 0; mapZ < CHUNK_SIZE; mapZ++)
-                featureMap[mapX][mapZ] = random.nextDouble();
-        return featureMap;
-    }
-
-    public static byte[][] treeMap(int x, int z, double[][] heightMap, int[][] stoneMap, double[][] featureMap) {
-        byte[][] treeMap = new byte[CHUNK_SIZE][CHUNK_SIZE];
-        for (int mapX = 2; mapX < CHUNK_SIZE - 2; mapX++) {
-            for (int mapZ = 2; mapZ < CHUNK_SIZE - 2; mapZ++) {
-
-                if (treeMap[mapX][mapZ] != 0)
-                    continue;
-                if (stoneMap[mapX][mapZ] != 0)
-                    continue;
-                if (heightMap[mapX][mapZ] <= WATER_LEVEL)
-                    continue;
-                int sandHeight = (int) (Math.abs(featureMap[mapX][mapZ] * 4)) + WATER_LEVEL;
-                if (heightMap[mapX][mapZ] <= sandHeight + 2)
-                    continue;
-
-                int currentX = (x << CHUNK_SIZE_BITS) + mapX;
-                int currentZ = (z << CHUNK_SIZE_BITS) + mapZ;
-
-                double value = OpenSimplex2S.noise3_ImproveXY(SEED + 1 << 32, currentX, currentZ, 0.0);
-                if (value > TREE_THRESHOLD) {
-                    for (int i = -1; i <= 1; i++)
-                        for (int j = -1; j <= 1; j++)
-                            treeMap[mapX + i][mapZ + j] = -1;
-                    treeMap[mapX][mapZ] = OAK_TREE_VALUE;
-                } else {
-                    boolean toCloseToChunkEdge = mapX == 2 || mapX == CHUNK_SIZE - 3 || mapZ == 2 || mapZ == CHUNK_SIZE - 3;
-                    if (value < -TREE_THRESHOLD) {
-                        if (toCloseToChunkEdge)
-                            continue;
-                        for (int i = -1; i <= 1; i++)
-                            for (int j = -1; j <= 1; j++)
-                                treeMap[mapX + i][mapZ + j] = -1;
-                        treeMap[mapX][mapZ] = SPRUCE_TREE_VALUE;
-                    } else if (value < 0.005 && value > -0.005) {
-                        if (toCloseToChunkEdge)
-                            continue;
-                        for (int i = -1; i <= 2; i++)
-                            for (int j = -1; j <= 2; j++)
-                                treeMap[mapX + i][mapZ + j] = -1;
-                        treeMap[mapX][mapZ] = DARK_OAK_TREE_VALUE;
-                    }
-                }
-            }
-        }
-        return treeMap;
-    }
-
-    public static boolean isOutsideCave(int x, int y, int z) {
-        if (y < BLOB_CAVE_MIN_Y || y > BLOB_CAVE_MAX_Y)
-            return true;
-        y -= CAVE_HEIGHT;
-        double modifier = (y * y * CAVE_HEIGHT_BIAS);
-
-        double blobCaveValue = OpenSimplex2S.noise3_ImproveXY(SEED, x * BLOB_CAVE_FREQUENCY, y * BLOB_CAVE_FREQUENCY, z * BLOB_CAVE_FREQUENCY) / modifier;
-
-        return blobCaveValue < BLOB_CAVE_THRESHOLD;
     }
 
     public static long getChunkId(int x, int y, int z) {

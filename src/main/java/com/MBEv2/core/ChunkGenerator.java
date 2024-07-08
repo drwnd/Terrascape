@@ -129,10 +129,10 @@ public class ChunkGenerator {
     }
 
     private void generateChunkColumn(int x, int playerY, int z) {
-        double[][] heightMap = GameLogic.heightMap(x, z);
-        int[][] stoneMap = GameLogic.stoneMap(x, z, heightMap);
-        double[][] featureMap = GameLogic.featureMap(x, z);
-        byte[][] treeMap = GameLogic.treeMap(x, z, heightMap, stoneMap, featureMap);
+        double[][] heightMap = WorldGeneration.heightMap(x, z);
+        int[][] stoneMap = WorldGeneration.stoneMap(x, z, heightMap);
+        double[][] featureMap = WorldGeneration.featureMap(x, z);
+        byte[][] treeMap = WorldGeneration.treeMap(x, z, heightMap, stoneMap, featureMap);
 
         for (int y = RENDER_DISTANCE_Y + playerY; y >= -RENDER_DISTANCE_Y + playerY && shouldFinish; y--) {
             final long expectedId = GameLogic.getChunkId(x, y, z);
@@ -145,8 +145,8 @@ public class ChunkGenerator {
                     chunk = new Chunk(x, y, z);
 
                 Chunk.storeChunk(chunk);
-                if (chunk.notGenerated())
-                    chunk.generate(heightMap, stoneMap, featureMap, treeMap);
+                if (!chunk.isGenerated())
+                    WorldGeneration.generate(heightMap, stoneMap, featureMap, treeMap, chunk);
 
             } else if (chunk.getId() != expectedId) {
                 GameLogic.addToUnloadChunk(chunk);
@@ -160,8 +160,8 @@ public class ChunkGenerator {
                     chunk = new Chunk(x, y, z);
 
                 Chunk.storeChunk(chunk);
-                if (chunk.notGenerated())
-                    chunk.generate(heightMap, stoneMap, featureMap, treeMap);
+                if (!chunk.isGenerated())
+                    WorldGeneration.generate(heightMap, stoneMap, featureMap, treeMap, chunk);
             }
         }
     }

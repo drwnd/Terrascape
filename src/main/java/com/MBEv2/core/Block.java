@@ -297,21 +297,6 @@ public class Block {
         return BLOCK_TYPE[Byte.toUnsignedInt(block)] == LEAVE_TYPE;
     }
 
-    public static byte getGeneratingStoneType(int x, int y, int z) {
-        double noise = OpenSimplex2S.noise3_ImproveXY(SEED, x * STONE_TYPE_FREQUENCY, y * STONE_TYPE_FREQUENCY, z * STONE_TYPE_FREQUENCY);
-        if (Math.abs(noise) < ANDESITE_THRESHOLD) return ANDESITE;
-        if (noise > SLATE_THRESHOLD) return SLATE;
-        return STONE;
-    }
-
-    public static byte getGeneratingMudType(int x, int y, int z) {
-        double noise = OpenSimplex2S.noise3_ImproveXY(SEED, x * MUD_TYPE_FREQUENCY, y * MUD_TYPE_FREQUENCY, z * MUD_TYPE_FREQUENCY);
-        if (Math.abs(noise) < GRAVEL_THRESHOLD) return GRAVEL;
-        if (noise > CLAY_THRESHOLD) return CLAY;
-        if (noise < SAND_THRESHOLD) return SAND;
-        return MUD;
-    }
-
     public static int getBlockTypeOcclusionData(byte block, int side) {
         return BLOCK_TYPE_OCCLUSION_DATA[BLOCK_TYPE[Byte.toUnsignedInt(block)]] & SIDE_MASKS[side];
     }
@@ -398,6 +383,13 @@ public class Block {
         TEXTURE_INDICES[CLAY] = new int[]{CLAY};
         BLOCK_TYPE[MOSS] = FULL_BLOCK;
         TEXTURE_INDICES[MOSS] = new int[]{MOSS};
+        BLOCK_TYPE[ICE] = FULL_BLOCK;
+        TEXTURE_INDICES[ICE] = new int[]{ICE};
+        BLOCK_TYPE[HEAVY_ICE] = FULL_BLOCK;
+        TEXTURE_INDICES[HEAVY_ICE] = new int[]{HEAVY_ICE};
+
+        BLOCK_TYPE[CACTUS] = CACTUS_TYPE;
+        TEXTURE_INDICES[CACTUS] = new int[]{CACTUS_SIDE, CACTUS_TOP, CACTUS_SIDE, CACTUS_SIDE, CACTUS_TOP, CACTUS_SIDE};
 
         BLOCK_TYPE[GLASS] = GLASS_TYPE;
         TEXTURE_INDICES[GLASS] = new int[]{GLASS};
@@ -906,6 +898,13 @@ public class Block {
         BLOCK_TYPE_OCCLUSION_DATA[PLAYER_HEAD] = (byte) 0b00000000;
         BLOCK_TYPE_DATA[PLAYER_HEAD] = 0b00010000;
 
+        BLOCK_TYPE_OCCLUSION_DATA[CACTUS_TYPE] = (byte) 0b10000000;
+        BLOCK_TYPE_DATA[CACTUS_TYPE] = (byte) 0b10010010;
+
+
+        BLOCK_TYPE_XYZ_SUB_DATA[CACTUS_TYPE] = new byte[]{1, -1, 0, 0, 1, -1};
+
+        BLOCK_TYPE_UV_SUB_DATA[CACTUS_TYPE] = new byte[]{1, 0, -1, 0, 1, 0, -1, 0, 1, 1, -1, 1, 1, -1, -1, -1, 1, 0, -1, 0, 1, 0, -1, 0, 1, 0, -1, 0, 1, 0, -1, 0, -1, -1, -1, 1, 1, -1, 1, 1, -1, 0, 1, 0, -1, 0, 1, 0};
 
         BLOCK_TYPE_XYZ_SUB_DATA[PLAYER_HEAD] = new byte[]{4, -4, 0, -8, 4, -4};
 
@@ -915,11 +914,9 @@ public class Block {
 
         BLOCK_TYPE_UV_SUB_DATA[UP_DOWN_WALL] = new byte[]{0, 4, 0, 4, 0, -4, 0, -4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 4, 0, -4, 0, -4, 0, 4, 0, 4, 0, -4, 0, -4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 4, 0, -4, 0, -4};
 
-
         BLOCK_TYPE_XYZ_SUB_DATA[FRONT_BACK_WALL] = new byte[]{0, 0, 0, 0, 4, -4};
 
-        BLOCK_TYPE_UV_SUB_DATA[FRONT_BACK_WALL] = new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 4, 0, -4, 0, 4, 0, -4, 0, 4, 0, -4, 0, 4, 0, -4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -5, 0, 3, 0, -5, 0, 3,// !!??!?!?
-                -4, 0, 4, 0, -4, 0, 4, 0};
+        BLOCK_TYPE_UV_SUB_DATA[FRONT_BACK_WALL] = new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 4, 0, -4, 0, 4, 0, -4, 0, 4, 0, -4, 0, 4, 0, -4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -4, 0, 4, 0, -4, 0, 4, -4, 0, 4, 0, -4, 0, 4, 0};
 
         BLOCK_TYPE_XYZ_SUB_DATA[LEFT_RIGHT_WALL] = new byte[]{4, -4, 0, 0, 0, 0};
 
