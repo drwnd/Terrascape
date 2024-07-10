@@ -1,5 +1,7 @@
 package com.MBEv2.core.utils;
 
+import java.util.Random;
+
 public class Constants {
 
     //Change to whatever you want
@@ -61,7 +63,8 @@ public class Constants {
     public static final int RENDERED_WORLD_HEIGHT = RENDER_DISTANCE_Y * 2 + 5;
 
     //World generation
-    public static final long SEED = 0;
+    public static final long SEED = new Random().nextLong();
+//    public static final long SEED = 0;
     public static final int WATER_LEVEL = 96;
     public static final int SNOW_LEVEL = 200;
     public static final int ICE_LEVEL = 250;
@@ -116,6 +119,7 @@ public class Constants {
     public static final int BACK = 3;
     public static final int BOTTOM = 4;
     public static final int LEFT = 5;
+    public static final int NONE = 6;
 
     //Indices for information on block types
     public static final int FULL_BLOCK = 0;

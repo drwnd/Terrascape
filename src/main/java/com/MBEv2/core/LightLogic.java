@@ -101,7 +101,7 @@ public class LightLogic {
             }
 
             int index = (x & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS * 2 | (y & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS | (z & CHUNK_SIZE - 1);
-            chunk.storeSaveBlockLight(index, 0);
+            chunk.removeBlockLight(index);
             chunk.setMeshed(false);
             unMeshNextChunkIfNecessary(x & CHUNK_SIZE - 1, y & CHUNK_SIZE - 1, z & CHUNK_SIZE - 1, chunk);
             chunk.setModified();
@@ -157,7 +157,6 @@ public class LightLogic {
         if (max < toTest && canLightTravel(nextBlock, FRONT, currentBlock, BACK)) max = toTest;
         return max;
     }
-
 
     public static void setChunkColumnSkyLight(final int x, final int y, final int z) {
         LinkedList<Vector4i> toPlaceLights = new LinkedList<>();
@@ -269,7 +268,7 @@ public class LightLogic {
             }
 
             int index = (x & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS * 2 | (y & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS | (z & CHUNK_SIZE - 1);
-            chunk.storeSaveSkyLight(index, 0);
+            chunk.removeSkyLight(index);
             chunk.setMeshed(false);
             unMeshNextChunkIfNecessary(x & CHUNK_SIZE - 1, y & CHUNK_SIZE - 1, z & CHUNK_SIZE - 1, chunk);
             byte currentBlock = onFirstIteration ? AIR : chunk.getSaveBlock(index);
@@ -344,7 +343,7 @@ public class LightLogic {
         return Block.getBlockTypeOcclusionData(destinationBlock, enterSide) == 0 || (destinationBlockProperties & LIGHT_EMITTING_MASK) != 0 || destinationBlockType == WATER_TYPE || destinationBlockType == GLASS_TYPE;
     }
 
-    private static void unMeshNextChunkIfNecessary(int x, int y, int z, Chunk chunk){
+    private static void unMeshNextChunkIfNecessary(int x, int y, int z, Chunk chunk) {
         if (x == 0) unMeshChunk(chunk.getX() - 1, chunk.getY(), chunk.getZ());
         else if (x == CHUNK_SIZE - 1) unMeshChunk(chunk.getX() + 1, chunk.getY(), chunk.getZ());
 
@@ -355,7 +354,7 @@ public class LightLogic {
         else if (z == CHUNK_SIZE - 1) unMeshChunk(chunk.getX(), chunk.getY(), chunk.getZ() + 1);
     }
 
-    private static void unMeshChunk(int chunkX, int chunkY, int ChunkZ){
+    private static void unMeshChunk(int chunkX, int chunkY, int ChunkZ) {
         Chunk chunk = Chunk.getChunk(chunkX, chunkY, ChunkZ);
         if (chunk != null)
             chunk.setMeshed(false);

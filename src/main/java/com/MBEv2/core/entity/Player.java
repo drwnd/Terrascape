@@ -508,13 +508,13 @@ public class Player {
             setGrounded(false);
 
         if (Utils.floor(oldPosition.x) >> CHUNK_SIZE_BITS != Utils.floor(position.x) >> CHUNK_SIZE_BITS)
-            GameLogic.loadUnloadChunks();
+            GameLogic.loadUnloadChunks(position.x > oldPosition.x ? FRONT : BACK);
 
         else if (Utils.floor(oldPosition.y) >> CHUNK_SIZE_BITS != Utils.floor(position.y) >> CHUNK_SIZE_BITS)
-            GameLogic.loadUnloadChunks();
+            GameLogic.loadUnloadChunks(position.y > oldPosition.y ? TOP : BOTTOM);
 
         else if (Utils.floor(oldPosition.z) >> CHUNK_SIZE_BITS != Utils.floor(position.z) >> CHUNK_SIZE_BITS)
-            GameLogic.loadUnloadChunks();
+            GameLogic.loadUnloadChunks(position.z > oldPosition.z ? RIGHT : LEFT);
 
         camera.setPosition(position.x, position.y, position.z);
     }

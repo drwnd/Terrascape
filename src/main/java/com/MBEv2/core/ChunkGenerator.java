@@ -15,6 +15,7 @@ public class ChunkGenerator {
 
     private boolean shouldExecute = false;
     private boolean shouldFinish = true;
+    private int travelDirection;
 
     private final LinkedList<Vector4i> changes;
 
@@ -52,6 +53,16 @@ public class ChunkGenerator {
     }
 
     public void processLightChanges() {
+        if (travelDirection == TOP || travelDirection == BOTTOM)
+            for (Chunk chunk : Chunk.getWorld()) {
+                if (chunk == null)
+                    continue;
+                byte[] light = chunk.getLight();
+                for (int index = 0; index < light.length; index++)
+                    light[index] &= 15;
+                chunk.setMeshed(false);
+            }
+
         synchronized (changes) {
             while (!changes.isEmpty() && shouldFinish) {
                 Vector4i change = changes.removeFirst();
@@ -168,8 +179,7 @@ public class ChunkGenerator {
     }
 
     private void meshChunkColumn(int x, int playerY, int z) {
-
-        LightLogic.setChunkColumnSkyLight(x << CHUNK_SIZE_BITS, (playerY + RENDER_DISTANCE_Y + 1) << CHUNK_SIZE_BITS, z << CHUNK_SIZE_BITS);
+        LightLogic.setChunkColumnSkyLight(x << CHUNK_SIZE_BITS, ((playerY + RENDER_DISTANCE_Y + 1) << CHUNK_SIZE_BITS) - 1, z << CHUNK_SIZE_BITS);
 
         for (int y = RENDER_DISTANCE_Y + playerY; y >= -RENDER_DISTANCE_Y + playerY && shouldFinish; y--) {
             Chunk chunk = Chunk.getChunk(x, y, z);
@@ -188,9 +198,10 @@ public class ChunkGenerator {
             GameLogic.addToBufferChunk(chunk);
     }
 
-    public void continueRunning() {
+    public void continueRunning(int travelDirection) {
         shouldExecute = true;
         shouldFinish = false;
+        this.travelDirection = travelDirection;
         synchronized (thread) {
             thread.notify();
         }

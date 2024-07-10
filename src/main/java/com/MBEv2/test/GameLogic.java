@@ -30,11 +30,11 @@ public class GameLogic {
         player.init();
 
         player.getRenderer().init();
-        generator.continueRunning();
+        generator.continueRunning(NONE);
     }
 
-    public static void loadUnloadChunks() {
-        generator.continueRunning();
+    public static void loadUnloadChunks(int direction) {
+        generator.continueRunning(direction);
     }
 
     public static void placeBlock(byte block, Vector3i position) {
@@ -85,7 +85,7 @@ public class GameLogic {
                     if (toMeshChunk != null)
                         toMeshChunk.setMeshed(false);
                 }
-        generator.continueRunning();
+        generator.continueRunning(NONE);
     }
 
     public static void bufferChunkMesh(Chunk chunk) {

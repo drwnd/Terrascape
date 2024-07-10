@@ -13,6 +13,8 @@ public class Launcher {
         window = new WindowManager(TITLE, 0, 0, true);
         engine = new EngineManager();
 
+        System.out.println("Seed: " + SEED);
+
         try {
             engine.start();
         } catch (Exception e) {

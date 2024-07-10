@@ -423,6 +423,10 @@ public class Chunk {
         light[index] = (byte) (oldLight & 240 | blockLight);
     }
 
+    public void removeBlockLight(int index) {
+        light[index] &= (byte) 240;
+    }
+
     public static byte getSkyLightInWorld(int x, int y, int z) {
         Chunk chunk = world[GameLogic.getChunkIndex(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS)];
         if (chunk == null || !chunk.isGenerated) return 0;
@@ -435,6 +439,10 @@ public class Chunk {
 
     public byte getSaveSkyLight(int index) {
         return (byte) (light[index] >> 4 & 15);
+    }
+
+    public void removeSkyLight(int index) {
+        light[index] &= 15;
     }
 
     public void storeSaveSkyLight(int index, int skyLight) {
@@ -521,6 +529,10 @@ public class Chunk {
 
     public void setModified() {
         isModified = true;
+    }
+
+    public byte[] getLight() {
+        return light;
     }
 
     public static Chunk[] getWorld() {

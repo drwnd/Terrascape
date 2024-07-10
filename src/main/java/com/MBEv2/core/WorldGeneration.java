@@ -416,6 +416,7 @@ public class WorldGeneration {
         }
     }
 
+
     public static int getHeightMapValue(int totalX, int totalZ) {
         double height;
         height = OpenSimplex2S.noise3_ImproveXY(SEED, totalX * HEIGHT_MAP_FREQUENCY, totalZ * HEIGHT_MAP_FREQUENCY, 0);
@@ -509,6 +510,10 @@ public class WorldGeneration {
 
         return blobCaveValue < BLOB_CAVE_THRESHOLD;
     }
+
+//    private static boolean isOutsideCave(int x, int y, int z) {
+//        return true;
+//    }
 
 
     private static byte getGeneratingStoneType(int x, int y, int z) {
