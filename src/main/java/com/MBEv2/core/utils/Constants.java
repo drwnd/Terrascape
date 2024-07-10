@@ -63,13 +63,21 @@ public class Constants {
     //World generation
     public static final long SEED = 0;
     public static final int WATER_LEVEL = 96;
-    public static final int SNOW_LEVEL = 160;
-    public static final double TREE_THRESHOLD = 0.73;
-    public static final byte OAK_TREE_VALUE = 1;
-    public static final byte SPRUCE_TREE_VALUE = 2;
-    public static final byte DARK_OAK_TREE_VALUE = 3;
+    public static final int SNOW_LEVEL = 200;
+    public static final int ICE_LEVEL = 250;
+    public static final double PLAINS_TREE_THRESHOLD = 0.998;
+    public static final double FOREST_TREE_THRESHOLD = 0.95;
+    public static final double CACTUS_THRESHOLD = 0.992;
+    public static final double WASTELAND_FEATURE_THRESHOLD = 0.999;
     public static final double HEIGHT_MAP_FREQUENCY = 0.01;
-    public static final double STONE_MAP_FREQUENCY = 0.005;
+    public static final double TEMPERATURE_FREQUENCY = 0.001;
+    public static final double HUMIDITY_FREQUENCY = TEMPERATURE_FREQUENCY;
+    public static final double EROSION_FREQUENCY = 0.001;
+
+    public static final double MAX_TERRAIN_HEIGHT_DIFFERENCE = 50;
+
+    public static final double MOUNTAIN_THRESHOLD = 0.3;
+    public static final double OCEAN_THRESHOLD = -0.3;
 
     public static final int CAVE_HEIGHT = 10;
     public static final double CAVE_HEIGHT_BIAS = 0.0002;
@@ -87,6 +95,17 @@ public class Constants {
     public static final double GRAVEL_THRESHOLD = 0.1;
     public static final double CLAY_THRESHOLD = 0.5;
     public static final double SAND_THRESHOLD = -0.5;
+
+    public static final double DIRT_TYPE_FREQUENCY = 0.05;
+    public static final double COURSE_DIRT_THRESHOLD = 0.15;
+
+    public static final double ICE_BERG_FREQUENCY = 0.025;
+    public static final double ICE_BERG_THRESHOLD = 0.35;
+    public static final double ICE_BERG_HEIGHT = 30;
+    public static final double ICE_PLANE_THRESHOLD = 0.0;
+
+    public static final double ICE_TYPE_FREQUENCY = 0.08;
+    public static final double HEAVY_ICE_THRESHOLD = 0.6;
 
     public static final byte OUT_OF_WORLD = -1;
 

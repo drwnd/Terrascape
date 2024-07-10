@@ -134,7 +134,7 @@ public class Chunk {
             else chunk = new Chunk(x, y, z);
 
             storeChunk(chunk);
-            if (!chunk.isGenerated) WorldGeneration.generateChunk(chunk);
+            if (!chunk.isGenerated) WorldGeneration.generate(chunk);
 
         } else if (chunk.getId() != expectedId) {
             GameLogic.addToUnloadChunk(chunk);
@@ -145,9 +145,9 @@ public class Chunk {
             else chunk = new Chunk(x, y, z);
 
             Chunk.storeChunk(chunk);
-            if (!chunk.isGenerated) WorldGeneration.generateChunk(chunk);
+            if (!chunk.isGenerated) WorldGeneration.generate(chunk);
 
-        } else if (!chunk.isGenerated) WorldGeneration.generateChunk(chunk);
+        } else if (!chunk.isGenerated) WorldGeneration.generate(chunk);
     }
 
     public void addSideToList(int x, int y, int z, int u, int v, int side, ArrayList<Integer> verticesList, byte block) {

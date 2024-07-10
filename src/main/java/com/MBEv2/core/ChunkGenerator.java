@@ -130,9 +130,10 @@ public class ChunkGenerator {
 
     private void generateChunkColumn(int x, int playerY, int z) {
         double[][] heightMap = WorldGeneration.heightMap(x, z);
-        int[][] stoneMap = WorldGeneration.stoneMap(x, z, heightMap);
+        double[][] temperatureMap = WorldGeneration.temperatureMap(x, z);
+        double[][] humidityMap = WorldGeneration.humidityMap(x, z);
+        double[][] erosionMap = WorldGeneration.erosionMap(x, z);
         double[][] featureMap = WorldGeneration.featureMap(x, z);
-        byte[][] treeMap = WorldGeneration.treeMap(x, z, heightMap, stoneMap, featureMap);
 
         for (int y = RENDER_DISTANCE_Y + playerY; y >= -RENDER_DISTANCE_Y + playerY && shouldFinish; y--) {
             final long expectedId = GameLogic.getChunkId(x, y, z);
@@ -146,7 +147,7 @@ public class ChunkGenerator {
 
                 Chunk.storeChunk(chunk);
                 if (!chunk.isGenerated())
-                    WorldGeneration.generate(heightMap, stoneMap, featureMap, treeMap, chunk);
+                    WorldGeneration.generate(chunk, heightMap, temperatureMap, humidityMap, erosionMap, featureMap);
 
             } else if (chunk.getId() != expectedId) {
                 GameLogic.addToUnloadChunk(chunk);
@@ -161,14 +162,14 @@ public class ChunkGenerator {
 
                 Chunk.storeChunk(chunk);
                 if (!chunk.isGenerated())
-                    WorldGeneration.generate(heightMap, stoneMap, featureMap, treeMap, chunk);
+                    WorldGeneration.generate(chunk, heightMap, temperatureMap, humidityMap, erosionMap, featureMap);
             }
         }
     }
 
     private void meshChunkColumn(int x, int playerY, int z) {
 
-        LightLogic.setChunkColumnSkyLight(x << CHUNK_SIZE_BITS, (playerY + RENDER_DISTANCE_Y) << CHUNK_SIZE_BITS, z << CHUNK_SIZE_BITS);
+        LightLogic.setChunkColumnSkyLight(x << CHUNK_SIZE_BITS, (playerY + RENDER_DISTANCE_Y + 1) << CHUNK_SIZE_BITS, z << CHUNK_SIZE_BITS);
 
         for (int y = RENDER_DISTANCE_Y + playerY; y >= -RENDER_DISTANCE_Y + playerY && shouldFinish; y--) {
             Chunk chunk = Chunk.getChunk(x, y, z);

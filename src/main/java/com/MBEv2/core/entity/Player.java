@@ -66,7 +66,7 @@ public class Player {
         mouseInput = new MouseInput();
 
         velocity = new Vector3f(0, 0, 0);
-        camera.setPosition(0, 100, 0);
+        camera.setPosition(0.5f, WorldGeneration.getHeightMapValue(0, 0) + 3, 0.5f);
         pos1 = new Vector3i();
         pos2 = new Vector3i();
     }

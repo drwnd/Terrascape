@@ -37,4 +37,9 @@ public class Utils {
         int addend = value < 0 ? -1 : 0;
         return (int) value + addend;
     }
+
+    public static int floor(double value){
+        int addend = value < 0 ? -1 : 0;
+        return (int) value + addend;
+    }
 }
