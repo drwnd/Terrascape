@@ -64,7 +64,7 @@ public class Constants {
 
     //World generation
     public static final long SEED = new Random().nextLong();
-//    public static final long SEED = 0;
+    //    public static final long SEED = 0;
     public static final int WATER_LEVEL = 96;
     public static final int SNOW_LEVEL = 200;
     public static final int ICE_LEVEL = 250;
@@ -82,13 +82,15 @@ public class Constants {
     public static final double MOUNTAIN_THRESHOLD = 0.3;
     public static final double OCEAN_THRESHOLD = -0.3;
 
-    public static final int CAVE_HEIGHT = 10;
-    public static final double CAVE_HEIGHT_BIAS = 0.0002;
+    public static final double BLOB_CAVE_CAVE_HEIGHT_BIAS = 0.008;
+    public static final double BLOB_CAVE_FREQUENCY = 0.008;
+    public static final double BLOB_CAVE_THRESHOLD = 0.3;
+    public static final double BLOB_CAVE_MAX_Y = (1 - BLOB_CAVE_THRESHOLD) / BLOB_CAVE_CAVE_HEIGHT_BIAS;
 
-    public static final double BLOB_CAVE_FREQUENCY = 0.05;
-    public static final double BLOB_CAVE_THRESHOLD = 0.9;
-    public static final double BLOB_CAVE_MAX_Y = CAVE_HEIGHT + 1.0 / Math.sqrt(BLOB_CAVE_THRESHOLD * CAVE_HEIGHT_BIAS);
-    public static final double BLOB_CAVE_MIN_Y = CAVE_HEIGHT - 1.0 / Math.sqrt(BLOB_CAVE_THRESHOLD * CAVE_HEIGHT_BIAS);
+    public static final double NOODLE_CAVE_FREQUENCY = 0.01;
+    public static final double NOODLE_CAVE_THRESHOLD = 0.01;
+    public static final double NOODLE_CAVE_HEIGHT_BIAS = 0.004;
+    public static final double NOODLE_CAVE_MAX_Y = (Math.sqrt(0.5 * NOODLE_CAVE_THRESHOLD) + 1) / NOODLE_CAVE_HEIGHT_BIAS;
 
     public static final double STONE_TYPE_FREQUENCY = 0.02;
     public static final double ANDESITE_THRESHOLD = 0.1;
