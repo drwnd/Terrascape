@@ -3,7 +3,6 @@ package com.MBEv2.test;
 import com.MBEv2.core.*;
 import com.MBEv2.core.entity.*;
 import org.joml.Vector3i;
-import org.joml.Vector4i;
 import org.lwjgl.opengl.GL11;
 
 import java.util.LinkedList;
@@ -30,11 +29,11 @@ public class GameLogic {
         player.init();
 
         player.getRenderer().init();
-        generator.continueRunning(NONE);
+        generator.restart(NONE);
     }
 
     public static void loadUnloadChunks(int direction) {
-        generator.continueRunning(direction);
+        generator.restart(direction);
     }
 
     public static void placeBlock(byte block, Vector3i position) {
@@ -57,10 +56,6 @@ public class GameLogic {
         chunk.storeSave(inChunkX, inChunkY, inChunkZ, block);
         chunk.setModified();
 
-        synchronized (generator.getChanges()){
-            generator.addChange(new Vector4i(position.x, position.y, position.z, previousBlock));
-        }
-
         int minX = chunkX, maxX = chunkX;
         int minY = chunkY, maxY = chunkY;
         int minZ = chunkZ, maxZ = chunkZ;
@@ -78,14 +73,38 @@ public class GameLogic {
         else if (inChunkZ == CHUNK_SIZE - 1)
             maxZ++;
 
+        processLightChanges(position.x, position.y, position.z, previousBlock);
+
         for (int x = minX; x <= maxX; x++)
             for (int y = minY; y <= maxY; y++)
                 for (int z = minZ; z <= maxZ; z++) {
                     Chunk toMeshChunk = Chunk.getChunk(x, y, z);
-                    if (toMeshChunk != null)
-                        toMeshChunk.setMeshed(false);
+                    toMeshChunk.generateMesh();
+                    deleteChunkMeshBuffers(toMeshChunk);
+                    bufferChunkMesh(toMeshChunk);
                 }
-        generator.continueRunning(NONE);
+    }
+
+    public static void processLightChanges(int x, int y, int z, byte previousBlock) {
+        byte block = Chunk.getBlockInWorld(x, y, z);
+
+        boolean blockEmitsLight = (Block.getBlockProperties(block) & LIGHT_EMITTING_MASK) != 0;
+        boolean previousBlockEmitsLight = (Block.getBlockProperties(previousBlock) & LIGHT_EMITTING_MASK) != 0;
+
+        if (blockEmitsLight && !previousBlockEmitsLight)
+            LightLogic.setBlockLight(x, y, z, MAX_BLOCK_LIGHT_VALUE);
+        else if (block == AIR)
+            if (previousBlockEmitsLight)
+                LightLogic.dePropagateBlockLight(x, y, z);
+            else
+                LightLogic.setBlockLight(x, y, z, LightLogic.getMaxSurroundingBlockLight(x, y, z) - 1);
+        else if (!blockEmitsLight)
+            LightLogic.dePropagateBlockLight(x, y, z);
+
+        if (block == AIR)
+            LightLogic.setSkyLight(x, y, z, LightLogic.getMaxSurroundingSkyLight(x, y, z) - 1);
+        else
+            LightLogic.dePropagateSkyLight(x, y, z);
     }
 
     public static void bufferChunkMesh(Chunk chunk) {

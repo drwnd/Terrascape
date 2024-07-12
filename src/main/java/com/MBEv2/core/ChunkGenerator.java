@@ -3,9 +3,6 @@ package com.MBEv2.core;
 import com.MBEv2.core.utils.Utils;
 import com.MBEv2.test.GameLogic;
 import org.joml.Vector3f;
-import org.joml.Vector4i;
-
-import java.util.LinkedList;
 
 import static com.MBEv2.core.utils.Constants.*;
 
@@ -14,7 +11,7 @@ public class ChunkGenerator {
     private final Thread genThread;
     private final Thread meshThread;
 
-    private boolean getThreadShouldExecute = false;
+    private boolean genThreadShouldExecute = false;
     private boolean genThreadShouldFinish = true;
     private boolean meshThreadShouldExecute = true;
     private boolean meshThreadShouldFinish = true;
@@ -26,17 +23,14 @@ public class ChunkGenerator {
     private int playerY;
     private int playerZ;
 
-    private final LinkedList<Vector4i> changes;
-
     public ChunkGenerator() {
         genThread = new Thread(this::runGenThread);
         meshThread = new Thread(this::runMeshThread);
-        changes = new LinkedList<>();
     }
 
     private void runGenThread() {
         while (EngineManager.isRunning) {
-            if (!getThreadShouldExecute) {
+            if (!genThreadShouldExecute) {
                 try {
                     synchronized (genThread) {
                         genThread.wait();
@@ -45,9 +39,9 @@ public class ChunkGenerator {
                     throw new RuntimeException(e);
                 }
             }
-            if (!getThreadShouldExecute)
+            if (!genThreadShouldExecute)
                 break;
-            getThreadShouldExecute = false;
+            genThreadShouldExecute = false;
             genThreadShouldFinish = true;
 
             Vector3f cameraPosition = GameLogic.getPlayer().getCamera().getPosition();
@@ -59,7 +53,7 @@ public class ChunkGenerator {
             maxToMeshRing = -1;
             meshThreadShouldFinish = false;
 
-            processLightChanges();
+            processSkyLight();
             unloadChunks(playerX, playerY, playerZ);
             generateChunks();
         }
@@ -79,11 +73,10 @@ public class ChunkGenerator {
 
             meshChunks();
         }
-        System.out.println("done");
     }
 
-    public void processLightChanges() {
-        if (travelDirection == TOP || travelDirection == BOTTOM)
+    public void processSkyLight() {
+        if (travelDirection == TOP)
             for (Chunk chunk : Chunk.getWorld()) {
                 if (chunk == null)
                     continue;
@@ -92,34 +85,11 @@ public class ChunkGenerator {
                     light[index] &= 15;
                 chunk.setMeshed(false);
             }
-
-        synchronized (changes) {
-            while (!changes.isEmpty() && genThreadShouldFinish) {
-                Vector4i change = changes.removeFirst();
-                int x = change.x;
-                int y = change.y;
-                int z = change.z;
-                byte previousBlock = (byte) change.w;
-                byte block = Chunk.getBlockInWorld(x, y, z);
-
-                boolean blockEmitsLight = (Block.getBlockProperties(block) & LIGHT_EMITTING_MASK) != 0;
-                boolean previousBlockEmitsLight = (Block.getBlockProperties(previousBlock) & LIGHT_EMITTING_MASK) != 0;
-
-                if (blockEmitsLight && !previousBlockEmitsLight)
-                    LightLogic.setBlockLight(x, y, z, MAX_BLOCK_LIGHT_VALUE);
-                else if (block == AIR)
-                    if (previousBlockEmitsLight)
-                        LightLogic.dePropagateBlockLight(x, y, z);
-                    else
-                        LightLogic.setBlockLight(x, y, z, LightLogic.getMaxSurroundingBlockLight(x, y, z) - 1);
-                else if (!blockEmitsLight)
-                    LightLogic.dePropagateBlockLight(x, y, z);
-
-                if (block == AIR)
-                    LightLogic.setSkyLight(x, y, z, LightLogic.getMaxSurroundingSkyLight(x, y, z) - 1);
-                else
-                    LightLogic.dePropagateSkyLight(x, y, z);
-            }
+        else if (travelDirection == BOTTOM) {
+            for (int chunkX = playerX - RENDER_DISTANCE_XZ; chunkX <= playerX + RENDER_DISTANCE_XZ; chunkX++)
+                for (int chunkZ = playerZ - RENDER_DISTANCE_XZ; chunkZ <= playerZ + RENDER_DISTANCE_XZ; chunkZ++) {
+                    LightLogic.propagateChunkSkyLight(chunkX << CHUNK_SIZE_BITS, ((playerY - RENDER_DISTANCE_Y + 1) << CHUNK_SIZE_BITS) - 1, chunkZ << CHUNK_SIZE_BITS);
+                }
         }
     }
 
@@ -158,9 +128,9 @@ public class ChunkGenerator {
             if (genThreadShouldFinish) {
                 maxToMeshRing = ring - 1;
                 meshThreadShouldFinish = true;
-            }
-            synchronized (meshThread) {
-                meshThread.notify();
+                synchronized (meshThread) {
+                    meshThread.notify();
+                }
             }
         }
     }
@@ -245,8 +215,8 @@ public class ChunkGenerator {
             GameLogic.addToBufferChunk(chunk);
     }
 
-    public void continueRunning(int travelDirection) {
-        getThreadShouldExecute = true;
+    public void restart(int travelDirection) {
+        genThreadShouldExecute = true;
         genThreadShouldFinish = false;
         meshThreadShouldFinish = false;
         this.travelDirection = travelDirection;
@@ -261,7 +231,7 @@ public class ChunkGenerator {
     }
 
     public void cleanUp() {
-        getThreadShouldExecute = false;
+        genThreadShouldExecute = false;
         genThreadShouldFinish = false;
         meshThreadShouldFinish = false;
         meshThreadShouldExecute = false;
@@ -271,13 +241,5 @@ public class ChunkGenerator {
         synchronized (meshThread) {
             meshThread.notify();
         }
-    }
-
-    public LinkedList<Vector4i> getChanges() {
-        return changes;
-    }
-
-    public void addChange(Vector4i change) {
-        changes.add(change);
     }
 }

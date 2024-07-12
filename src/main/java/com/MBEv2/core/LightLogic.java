@@ -158,6 +158,23 @@ public class LightLogic {
         return max;
     }
 
+
+    public static void propagateChunkSkyLight(final int x, final int y, final int z) {
+        LinkedList<Vector4i> toPlaceLights = new LinkedList<>();
+
+        for (int totalX = x, maxX = x + CHUNK_SIZE; totalX < maxX; totalX++)
+            for (int totalZ = z, maxZ = z + CHUNK_SIZE; totalZ < maxZ; totalZ++) {
+               byte block = Chunk.getBlockInWorld(totalX, y, totalZ);
+               byte blockAbove = Chunk.getBlockInWorld(totalX, y + 1, totalZ);
+               if (!canLightTravel(block, TOP, blockAbove, BOTTOM))
+                   continue;
+
+               toPlaceLights.add(new Vector4i(totalX, y, totalZ, Chunk.getSkyLightInWorld(totalX, y + 1, totalZ)));
+            }
+
+        setSkyLight(toPlaceLights);
+    }
+
     public static void setChunkColumnSkyLight(final int x, final int y, final int z) {
         LinkedList<Vector4i> toPlaceLights = new LinkedList<>();
 
