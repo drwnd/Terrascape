@@ -11,45 +11,75 @@ import static com.MBEv2.core.utils.Constants.*;
 
 public class ChunkGenerator {
 
-    private final Thread thread;
+    private final Thread genThread;
+    private final Thread meshThread;
 
-    private boolean shouldExecute = false;
-    private boolean shouldFinish = true;
+    private boolean getThreadShouldExecute = false;
+    private boolean genThreadShouldFinish = true;
+    private boolean meshThreadShouldExecute = true;
+    private boolean meshThreadShouldFinish = true;
     private int travelDirection;
+
+    private int maxToMeshRing = -1;
+
+    private int playerX;
+    private int playerY;
+    private int playerZ;
 
     private final LinkedList<Vector4i> changes;
 
     public ChunkGenerator() {
-        thread = new Thread(this::run);
+        genThread = new Thread(this::runGenThread);
+        meshThread = new Thread(this::runMeshThread);
         changes = new LinkedList<>();
     }
 
-    private void run() {
+    private void runGenThread() {
         while (EngineManager.isRunning) {
-            if (!shouldExecute) {
+            if (!getThreadShouldExecute) {
                 try {
-                    synchronized (thread) {
-                        thread.wait();
+                    synchronized (genThread) {
+                        genThread.wait();
                     }
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
             }
-            if (!shouldExecute)
+            if (!getThreadShouldExecute)
                 break;
-            shouldExecute = false;
-            shouldFinish = true;
+            getThreadShouldExecute = false;
+            genThreadShouldFinish = true;
 
             Vector3f cameraPosition = GameLogic.getPlayer().getCamera().getPosition();
 
-            final int playerX = Utils.floor(cameraPosition.x) >> CHUNK_SIZE_BITS;
-            final int playerY = Utils.floor(cameraPosition.y) >> CHUNK_SIZE_BITS;
-            final int playerZ = Utils.floor(cameraPosition.z) >> CHUNK_SIZE_BITS;
+            playerX = Utils.floor(cameraPosition.x) >> CHUNK_SIZE_BITS;
+            playerY = Utils.floor(cameraPosition.y) >> CHUNK_SIZE_BITS;
+            playerZ = Utils.floor(cameraPosition.z) >> CHUNK_SIZE_BITS;
+
+            maxToMeshRing = -1;
+            meshThreadShouldFinish = false;
 
             processLightChanges();
             unloadChunks(playerX, playerY, playerZ);
-            loadChunks(playerX, playerY, playerZ);
+            generateChunks();
         }
+    }
+
+    private void runMeshThread() {
+        while (EngineManager.isRunning) {
+            try {
+                synchronized (meshThread) {
+                    meshThread.wait();
+                }
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            if (!meshThreadShouldExecute)
+                break;
+
+            meshChunks();
+        }
+        System.out.println("done");
     }
 
     public void processLightChanges() {
@@ -64,7 +94,7 @@ public class ChunkGenerator {
             }
 
         synchronized (changes) {
-            while (!changes.isEmpty() && shouldFinish) {
+            while (!changes.isEmpty() && genThreadShouldFinish) {
                 Vector4i change = changes.removeFirst();
                 int x = change.x;
                 int y = change.y;
@@ -111,31 +141,46 @@ public class ChunkGenerator {
         }
     }
 
-    private void loadChunks(final int playerX, final int playerY, final int playerZ) {
+    private void generateChunks() {
         generateChunkColumn(playerX, playerY, playerZ);
-        for (int ring = 1; ring <= RENDER_DISTANCE_XZ && shouldFinish; ring++) {
-            for (int x = -ring; x < ring && shouldFinish; x++)
+        for (int ring = 1; ring <= RENDER_DISTANCE_XZ + 1 && genThreadShouldFinish; ring++) {
+//            long startTime = System.nanoTime();
+            for (int x = -ring; x < ring && genThreadShouldFinish; x++)
                 generateChunkColumn(x + playerX, playerY, ring + playerZ);
-            for (int z = ring; z > -ring && shouldFinish; z--)
+            for (int z = ring; z > -ring && genThreadShouldFinish; z--)
                 generateChunkColumn(ring + playerX, playerY, z + playerZ);
-            for (int x = ring; x > -ring && shouldFinish; x--)
+            for (int x = ring; x > -ring && genThreadShouldFinish; x--)
                 generateChunkColumn(x + playerX, playerY, -ring + playerZ);
-            for (int z = -ring; z < ring && shouldFinish; z++)
+            for (int z = -ring; z < ring && genThreadShouldFinish; z++)
                 generateChunkColumn(-ring + playerX, playerY, z + playerZ);
 
-            if (ring == 1) {
-                meshChunkColumn(playerX, playerY, playerZ);
-                continue;
+//            System.out.println(System.nanoTime() - startTime + " generating ring " + ring);
+            if (genThreadShouldFinish) {
+                maxToMeshRing = ring - 1;
+                meshThreadShouldFinish = true;
             }
-            int meshRing = ring - 1;
-            for (int x = -meshRing; x < meshRing && shouldFinish; x++)
+            synchronized (meshThread) {
+                meshThread.notify();
+            }
+        }
+    }
+
+    private void meshChunks() {
+        if (maxToMeshRing >= 0 && meshThreadShouldFinish)
+            meshChunkColumn(playerX, playerY, playerZ);
+        for (int meshRing = 1; meshRing <= maxToMeshRing && meshThreadShouldFinish; meshRing++) {
+//            long startTime = System.nanoTime();
+
+            for (int x = -meshRing; x < meshRing && meshThreadShouldFinish; x++)
                 meshChunkColumn(x + playerX, playerY, meshRing + playerZ);
-            for (int z = meshRing; z > -meshRing && shouldFinish; z--)
+            for (int z = meshRing; z > -meshRing && meshThreadShouldFinish; z--)
                 meshChunkColumn(meshRing + playerX, playerY, z + playerZ);
-            for (int x = meshRing; x > -meshRing && shouldFinish; x--)
+            for (int x = meshRing; x > -meshRing && meshThreadShouldFinish; x--)
                 meshChunkColumn(x + playerX, playerY, -meshRing + playerZ);
-            for (int z = -meshRing; z < meshRing && shouldFinish; z++)
+            for (int z = -meshRing; z < meshRing && meshThreadShouldFinish; z++)
                 meshChunkColumn(-meshRing + playerX, playerY, z + playerZ);
+
+//            System.out.println(System.nanoTime() - startTime + " meshing ring " + meshRing);
         }
     }
 
@@ -146,7 +191,7 @@ public class ChunkGenerator {
         double[][] erosionMap = WorldGeneration.erosionMap(x, z);
         double[][] featureMap = WorldGeneration.featureMap(x, z);
 
-        for (int y = RENDER_DISTANCE_Y + playerY; y >= -RENDER_DISTANCE_Y + playerY && shouldFinish; y--) {
+        for (int y = RENDER_DISTANCE_Y + playerY + 1; y >= -RENDER_DISTANCE_Y + playerY - 1 && genThreadShouldFinish; y--) {
             final long expectedId = GameLogic.getChunkId(x, y, z);
             Chunk chunk = Chunk.getChunk(x, y, z);
 
@@ -181,8 +226,10 @@ public class ChunkGenerator {
     private void meshChunkColumn(int x, int playerY, int z) {
         LightLogic.setChunkColumnSkyLight(x << CHUNK_SIZE_BITS, ((playerY + RENDER_DISTANCE_Y + 1) << CHUNK_SIZE_BITS) - 1, z << CHUNK_SIZE_BITS);
 
-        for (int y = RENDER_DISTANCE_Y + playerY; y >= -RENDER_DISTANCE_Y + playerY && shouldFinish; y--) {
+        for (int y = RENDER_DISTANCE_Y + playerY; y >= -RENDER_DISTANCE_Y + playerY && meshThreadShouldFinish; y--) {
             Chunk chunk = Chunk.getChunk(x, y, z);
+            if (chunk == null)
+                continue;
             if (!chunk.hasPropagatedBlockLight()) {
                 chunk.propagateBlockLight();
                 chunk.setHasPropagatedBlockLight();
@@ -199,23 +246,30 @@ public class ChunkGenerator {
     }
 
     public void continueRunning(int travelDirection) {
-        shouldExecute = true;
-        shouldFinish = false;
+        getThreadShouldExecute = true;
+        genThreadShouldFinish = false;
+        meshThreadShouldFinish = false;
         this.travelDirection = travelDirection;
-        synchronized (thread) {
-            thread.notify();
+        synchronized (genThread) {
+            genThread.notify();
         }
     }
 
     public void start() {
-        thread.start();
+        meshThread.start();
+        genThread.start();
     }
 
     public void cleanUp() {
-        shouldExecute = false;
-        shouldFinish = false;
-        synchronized (thread) {
-            thread.notify();
+        getThreadShouldExecute = false;
+        genThreadShouldFinish = false;
+        meshThreadShouldFinish = false;
+        meshThreadShouldExecute = false;
+        synchronized (genThread) {
+            genThread.notify();
+        }
+        synchronized (meshThread) {
+            meshThread.notify();
         }
     }
 

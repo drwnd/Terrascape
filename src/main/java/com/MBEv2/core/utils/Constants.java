@@ -66,8 +66,8 @@ public class Constants {
     public static final long SEED = new Random().nextLong();
     //    public static final long SEED = 0;
     public static final int WATER_LEVEL = 96;
-    public static final int SNOW_LEVEL = 200;
-    public static final int ICE_LEVEL = 250;
+    public static final int SNOW_LEVEL = 187;
+    public static final int ICE_LEVEL = 237;
     public static final double PLAINS_TREE_THRESHOLD = 0.998;
     public static final double FOREST_TREE_THRESHOLD = 0.95;
     public static final double CACTUS_THRESHOLD = 0.992;
@@ -96,10 +96,11 @@ public class Constants {
     public static final double ANDESITE_THRESHOLD = 0.1;
     public static final double SLATE_THRESHOLD = 0.7;
 
-    public static final double MUD_TYPE_FREQUENCY = 0.08;
+    public static final double MUD_TYPE_FREQUENCY = 0.04;
     public static final double GRAVEL_THRESHOLD = 0.1;
     public static final double CLAY_THRESHOLD = 0.5;
     public static final double SAND_THRESHOLD = -0.5;
+    public static final double MUD_THRESHOLD = -0.5;
 
     public static final double DIRT_TYPE_FREQUENCY = 0.05;
     public static final double COURSE_DIRT_THRESHOLD = 0.15;
