@@ -91,11 +91,7 @@ public class WorldGeneration {
                     chunk.storeSave(inChunkX, inChunkY, inChunkZ, height <= WATER_LEVEL ? getOceanFloorBlock(totalX, totalY, totalZ) : DIRT);
             } else if (totalY <= WATER_LEVEL) chunk.storeSave(inChunkX, inChunkY, inChunkZ, WATER);
 
-            if (feature > PLAINS_TREE_THRESHOLD && totalY < height + OAK_TREE.length && totalY >= height && height > WATER_LEVEL &&
-                    inChunkX >= 2 && inChunkZ >= 2 && inChunkX < CHUNK_SIZE - 2 && inChunkZ < CHUNK_SIZE - 2 && isOutsideCave(totalX, height, totalZ))
-                for (int i = 0; i < 5; i++)
-                    for (int j = 0; j < 5; j++)
-                        chunk.storeTreeBlock(inChunkX + i - 2, inChunkY, inChunkZ + j - 2, OAK_TREE[totalY - height][i][j]);
+            genOakTree(chunk, height, inChunkX, inChunkY, inChunkZ, totalX, totalY, totalZ, feature);
         }
     }
 
@@ -118,11 +114,7 @@ public class WorldGeneration {
                     chunk.storeSave(inChunkX, inChunkY, inChunkZ, height <= WATER_LEVEL ? getOceanFloorBlock(totalX, totalY, totalZ) : DIRT);
             } else if (totalY <= WATER_LEVEL) chunk.storeSave(inChunkX, inChunkY, inChunkZ, WATER);
 
-            if (feature > FOREST_TREE_THRESHOLD && totalY < height + OAK_TREE.length && totalY >= height && height > WATER_LEVEL && height > sandHeight &&
-                    inChunkX >= 2 && inChunkZ >= 2 && inChunkX < CHUNK_SIZE - 2 && inChunkZ < CHUNK_SIZE - 2 && isOutsideCave(totalX, height, totalZ))
-                for (int i = 0; i < 5; i++)
-                    for (int j = 0; j < 5; j++)
-                        chunk.storeTreeBlock(inChunkX + i - 2, inChunkY, inChunkZ + j - 2, OAK_TREE[totalY - height][i][j]);
+            genDarkOakTree(chunk, height, inChunkX, inChunkY, inChunkZ, totalX, totalY, totalZ, feature);
         }
     }
 
@@ -145,11 +137,7 @@ public class WorldGeneration {
                     chunk.storeSave(inChunkX, inChunkY, inChunkZ, height <= WATER_LEVEL ? getOceanFloorBlock(totalX, totalY, totalZ) : DIRT);
             } else if (totalY <= WATER_LEVEL) chunk.storeSave(inChunkX, inChunkY, inChunkZ, WATER);
 
-            if (feature > FOREST_TREE_THRESHOLD && totalY < height + SPRUCE_TREE.length && totalY >= height && height > WATER_LEVEL && height > sandHeight &&
-                    inChunkX >= 3 && inChunkZ >= 3 && inChunkX < CHUNK_SIZE - 3 && inChunkZ < CHUNK_SIZE - 3 && isOutsideCave(totalX, height, totalZ))
-                for (int i = 0; i < 7; i++)
-                    for (int j = 0; j < 7; j++)
-                        chunk.storeTreeBlock(inChunkX + i - 3, inChunkY, inChunkZ + j - 3, SPRUCE_TREE[totalY - height][i][j]);
+            genSpruceTree(chunk, height, inChunkX, inChunkY, inChunkZ, totalX, totalY, totalZ, feature);
         }
     }
 
@@ -216,11 +204,7 @@ public class WorldGeneration {
             if (feature > WASTELAND_FEATURE_THRESHOLD && height > WATER_LEVEL && totalY > height && totalY < height + 1 + (feature - CACTUS_THRESHOLD) * 250 && isOutsideCave(totalX, height, totalZ))
                 chunk.storeSave(inChunkX, inChunkY, inChunkZ, CACTUS);
 
-            else if (feature < 1 - WASTELAND_FEATURE_THRESHOLD && totalY < height + OAK_TREE.length && totalY >= height && height > WATER_LEVEL &&
-                    inChunkX >= 2 && inChunkZ >= 2 && inChunkX < CHUNK_SIZE - 2 && inChunkZ < CHUNK_SIZE - 2 && isOutsideCave(totalX, height, totalZ))
-                for (int i = 0; i < 5; i++)
-                    for (int j = 0; j < 5; j++)
-                        chunk.storeTreeBlock(inChunkX + i - 2, inChunkY, inChunkZ + j - 2, OAK_TREE[totalY - height][i][j]);
+            genOakTree(chunk, height, inChunkX, inChunkY, inChunkZ, totalX, totalY, totalZ, feature);
         }
     }
 
@@ -243,11 +227,7 @@ public class WorldGeneration {
                     chunk.storeSave(inChunkX, inChunkY, inChunkZ, height <= WATER_LEVEL ? getColdOceanFloorBlock(totalX, totalY, totalZ) : SNOW);
             } else if (totalY <= WATER_LEVEL) chunk.storeSave(inChunkX, inChunkY, inChunkZ, WATER);
 
-            if (feature > PLAINS_TREE_THRESHOLD && totalY < height + SPRUCE_TREE.length && totalY >= height && height > WATER_LEVEL && height > sandHeight &&
-                    inChunkX >= 3 && inChunkZ >= 3 && inChunkX < CHUNK_SIZE - 3 && inChunkZ < CHUNK_SIZE - 3 && isOutsideCave(totalX, height, totalZ))
-                for (int i = 0; i < 7; i++)
-                    for (int j = 0; j < 7; j++)
-                        chunk.storeTreeBlock(inChunkX + i - 3, inChunkY, inChunkZ + j - 3, SPRUCE_TREE[totalY - height][i][j]);
+            genSpruceTree(chunk, height, inChunkX, inChunkY, inChunkZ, totalX, totalY, totalZ, feature);
         }
     }
 
@@ -270,11 +250,7 @@ public class WorldGeneration {
                     chunk.storeSave(inChunkX, inChunkY, inChunkZ, height <= WATER_LEVEL ? getColdOceanFloorBlock(totalX, totalY, totalZ) : SNOW);
             } else if (totalY <= WATER_LEVEL) chunk.storeSave(inChunkX, inChunkY, inChunkZ, WATER);
 
-            if (feature > FOREST_TREE_THRESHOLD && totalY < height + SPRUCE_TREE.length && totalY >= height && height > WATER_LEVEL && height > sandHeight &&
-                    inChunkX >= 3 && inChunkZ >= 3 && inChunkX < CHUNK_SIZE - 3 && inChunkZ < CHUNK_SIZE - 3 && isOutsideCave(totalX, height, totalZ))
-                for (int i = 0; i < 7; i++)
-                    for (int j = 0; j < 7; j++)
-                        chunk.storeTreeBlock(inChunkX + i - 3, inChunkY, inChunkZ + j - 3, SPRUCE_TREE[totalY - height][i][j]);
+            genSpruceTree(chunk, height, inChunkX, inChunkY, inChunkZ, totalX, totalY, totalZ, feature);
         }
     }
 
@@ -403,6 +379,30 @@ public class WorldGeneration {
         }
     }
 
+
+    public static void genOakTree(Chunk chunk, int height, int inChunkX, int inChunkY, int inChunkZ, int totalX, int totalY, int totalZ, double feature) {
+        if (feature > PLAINS_TREE_THRESHOLD && totalY < height + OAK_TREE.length && totalY >= height && height > WATER_LEVEL &&
+                inChunkX >= 2 && inChunkZ >= 2 && inChunkX < CHUNK_SIZE - 2 && inChunkZ < CHUNK_SIZE - 2 && isOutsideCave(totalX, height, totalZ))
+            for (int i = 0; i < 5; i++)
+                for (int j = 0; j < 5; j++)
+                    chunk.storeTreeBlock(inChunkX + i - 2, inChunkY, inChunkZ + j - 2, OAK_TREE[totalY - height][i][j]);
+    }
+
+    public static void genSpruceTree(Chunk chunk, int height, int inChunkX, int inChunkY, int inChunkZ, int totalX, int totalY, int totalZ, double feature) {
+        if (feature > FOREST_TREE_THRESHOLD && totalY < height + SPRUCE_TREE.length && totalY >= height && height > WATER_LEVEL &&
+                inChunkX >= 3 && inChunkZ >= 3 && inChunkX < CHUNK_SIZE - 3 && inChunkZ < CHUNK_SIZE - 3 && isOutsideCave(totalX, height, totalZ))
+            for (int i = 0; i < 7; i++)
+                for (int j = 0; j < 7; j++)
+                    chunk.storeTreeBlock(inChunkX + i - 3, inChunkY, inChunkZ + j - 3, SPRUCE_TREE[totalY - height][i][j]);
+    }
+
+    public static void genDarkOakTree(Chunk chunk, int height, int inChunkX, int inChunkY, int inChunkZ, int totalX, int totalY, int totalZ, double feature) {
+        if (feature > FOREST_TREE_THRESHOLD && totalY < height + OAK_TREE.length && totalY >= height && height > WATER_LEVEL &&
+                inChunkX >= 2 && inChunkZ >= 2 && inChunkX < CHUNK_SIZE - 2 && inChunkZ < CHUNK_SIZE - 2 && isOutsideCave(totalX, height, totalZ))
+            for (int i = 0; i < 5; i++)
+                for (int j = 0; j < 5; j++)
+                    chunk.storeTreeBlock(inChunkX + i - 2, inChunkY, inChunkZ + j - 2, OAK_TREE[totalY - height][i][j]);
+    }
 
     public static int getHeightMapValue(int totalX, int totalZ) {
         double height;
