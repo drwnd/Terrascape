@@ -35,7 +35,7 @@ public class Player {
     //Debug
     private boolean noClip, gKeyPressed;
     private boolean isFling, vKeyPressed;
-    private boolean tPressed = false, zPressed = false;
+    private boolean tPressed = false, zPressed = false, xKeyPressed = false;
     private final Vector3i pos1, pos2;
 
     private final byte[][] hotBars = {
@@ -58,8 +58,8 @@ public class Player {
     private int movementState = WALKING;
     private boolean isGrounded = false;
 
-    public Player(Texture atlas) {
-        this.atlas = atlas;
+    public Player() throws Exception{
+        atlas = new Texture(ObjectLoader.loadTexture("textures/atlas256.png"));
         window = Launcher.getWindow();
         renderer = new RenderManager();
         camera = new Camera();
@@ -352,11 +352,16 @@ public class Player {
             if (movementState == SWIMMING)
                 movementState = CRAWLING;
         }
+        if (window.isKeyPressed(GLFW.GLFW_KEY_X) && !xKeyPressed) {
+            xKeyPressed = true;
+            renderer.setxRay(!renderer.isxRay());
+        }
 
         if (gKeyPressed && !window.isKeyPressed(GLFW.GLFW_KEY_G)) gKeyPressed = false;
         if (tPressed && !window.isKeyPressed(GLFW.GLFW_KEY_T)) tPressed = false;
         if (zPressed && !window.isKeyPressed(GLFW.GLFW_KEY_Y)) zPressed = false;
         if (vKeyPressed && !window.isKeyPressed(GLFW.GLFW_KEY_V)) vKeyPressed = false;
+        if (xKeyPressed && !window.isKeyPressed(GLFW.GLFW_KEY_X)) xKeyPressed = false;
     }
 
     private void handleInputMovementStateChange(Vector3f position) {

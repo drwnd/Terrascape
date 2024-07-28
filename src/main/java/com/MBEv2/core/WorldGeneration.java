@@ -342,7 +342,7 @@ public class WorldGeneration {
         }
     }
 
-    private static void generateMountain(Chunk chunk, int inChunkX, int inChunkZ, double height, double feature) {
+    private static void generateMountain(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature) {
         int totalX = chunk.getX() << CHUNK_SIZE_BITS | inChunkX;
         int totalZ = chunk.getZ() << CHUNK_SIZE_BITS | inChunkZ;
 

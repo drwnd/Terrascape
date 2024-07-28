@@ -3,6 +3,7 @@ package com.MBEv2.test;
 import com.MBEv2.core.*;
 import com.MBEv2.core.entity.*;
 import org.joml.Vector3i;
+import org.joml.Vector4i;
 import org.lwjgl.opengl.GL11;
 
 import java.util.LinkedList;
@@ -12,7 +13,6 @@ import static com.MBEv2.core.utils.Constants.*;
 
 public class GameLogic {
 
-    private static Texture atlas;
     private static final LinkedList<Chunk> toBufferChunks = new LinkedList<>();
     private static final LinkedList<Chunk> toUnloadChunks = new LinkedList<>();
     private static ChunkGenerator generator;
@@ -21,11 +21,9 @@ public class GameLogic {
 
     public static void init() throws Exception {
 
+        player = new Player();
+
         generator = new ChunkGenerator();
-
-        atlas = new Texture(ObjectLoader.loadTexture("textures/atlas256.png"));
-
-        player = new Player(atlas);
         player.init();
 
         player.getRenderer().init();
@@ -60,64 +58,56 @@ public class GameLogic {
         int minY = chunkY, maxY = chunkY;
         int minZ = chunkZ, maxZ = chunkZ;
 
-        if (inChunkX == 0)
-            minX--;
-        else if (inChunkX == CHUNK_SIZE - 1)
-            maxX++;
-        if (inChunkY == 0)
-            minY--;
-        else if (inChunkY == CHUNK_SIZE - 1)
-            maxY++;
-        if (inChunkZ == 0)
-            minZ--;
-        else if (inChunkZ == CHUNK_SIZE - 1)
-            maxZ++;
+        if ((Block.getBlockProperties(block) & LIGHT_EMITTING_MASK) != 0 || (Block.getBlockProperties(previousBlock) & LIGHT_EMITTING_MASK) != 0) {
+            if (inChunkX <= 15)
+                minX = chunkX - 1;
+            else if (inChunkX >= CHUNK_SIZE - 16)
+                maxX = chunkX + 1;
+            if (inChunkY <= 15)
+                minY = chunkY - 1;
+            else if (inChunkY >= CHUNK_SIZE - 16)
+                maxY = chunkY + 1;
+            if (inChunkZ <= 15)
+                minZ = chunkZ - 1;
+            else if (inChunkZ >= CHUNK_SIZE - 16)
+                maxZ = chunkZ + 1;
+        } else {
+            if (inChunkX == 0)
+                minX = chunkX - 1;
+            else if (inChunkX == CHUNK_SIZE - 1)
+                maxX = chunkX + 1;
+            if (inChunkY == 0)
+                minY = chunkY - 1;
+            else if (inChunkY == CHUNK_SIZE - 1)
+                maxY = chunkY + 1;
+            if (inChunkZ == 0)
+                minZ = chunkZ - 1;
+            else if (inChunkZ == CHUNK_SIZE - 1)
+                maxZ = chunkZ + 1;
+        }
 
-        processLightChanges(position.x, position.y, position.z, previousBlock);
+        generator.addBlockChange(new Vector4i(position.x, position.y, position.z, previousBlock));
 
         for (int x = minX; x <= maxX; x++)
             for (int y = minY; y <= maxY; y++)
                 for (int z = minZ; z <= maxZ; z++) {
                     Chunk toMeshChunk = Chunk.getChunk(x, y, z);
-                    toMeshChunk.generateMesh();
-                    deleteChunkMeshBuffers(toMeshChunk);
-                    bufferChunkMesh(toMeshChunk);
+                    if (toMeshChunk == null)
+                        continue;
+                    toMeshChunk.setMeshed(false);
                 }
-    }
-
-    public static void processLightChanges(int x, int y, int z, byte previousBlock) {
-        byte block = Chunk.getBlockInWorld(x, y, z);
-
-        boolean blockEmitsLight = (Block.getBlockProperties(block) & LIGHT_EMITTING_MASK) != 0;
-        boolean previousBlockEmitsLight = (Block.getBlockProperties(previousBlock) & LIGHT_EMITTING_MASK) != 0;
-
-        if (blockEmitsLight && !previousBlockEmitsLight)
-            LightLogic.setBlockLight(x, y, z, MAX_BLOCK_LIGHT_VALUE);
-        else if (block == AIR)
-            if (previousBlockEmitsLight)
-                LightLogic.dePropagateBlockLight(x, y, z);
-            else
-                LightLogic.setBlockLight(x, y, z, LightLogic.getMaxSurroundingBlockLight(x, y, z) - 1);
-        else if (!blockEmitsLight)
-            LightLogic.dePropagateBlockLight(x, y, z);
-
-        if (block == AIR)
-            LightLogic.setSkyLight(x, y, z, LightLogic.getMaxSurroundingSkyLight(x, y, z) - 1);
-        else
-            LightLogic.dePropagateSkyLight(x, y, z);
+        generator.restart(NONE);
     }
 
     public static void bufferChunkMesh(Chunk chunk) {
         if (chunk.getVertices() != null && chunk.getVertices().length != 0) {
             Model model = ObjectLoader.loadModel(chunk.getVertices(), chunk.getWorldCoordinate());
-            model.setTexture(atlas);
             chunk.setModel(model);
         } else
             chunk.setModel(null);
 
         if (chunk.getTransparentVertices() != null && chunk.getTransparentVertices().length != 0) {
             Model transparentModel = ObjectLoader.loadModel(chunk.getTransparentVertices(), chunk.getWorldCoordinate());
-            transparentModel.setTexture(atlas);
             chunk.setTransparentModel(transparentModel);
         } else
             chunk.setTransparentModel(null);

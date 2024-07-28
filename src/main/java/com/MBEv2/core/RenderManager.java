@@ -6,6 +6,7 @@ import com.MBEv2.core.entity.SkyBox;
 
 import static com.MBEv2.core.utils.Constants.*;
 
+import com.MBEv2.core.entity.Texture;
 import com.MBEv2.core.utils.Transformation;
 import com.MBEv2.core.utils.Utils;
 import com.MBEv2.test.Launcher;
@@ -36,11 +37,18 @@ public class RenderManager {
 
     private int modelIndexBuffer;
 
+    private Texture xRayAtlas;
+    private Texture atlas;
+    private boolean xRay;
+
     public RenderManager() {
         window = Launcher.getWindow();
     }
 
     public void init() throws Exception {
+
+        xRayAtlas = new Texture(ObjectLoader.loadTexture("textures/XRayAtlas.png"));
+        atlas = new Texture(ObjectLoader.loadTexture("textures/atlas256.png"));
 
         blockShader = new ShaderManager();
         blockShader.createVertexShader(Utils.loadResources("/shaders/blockVertex.glsl"));
@@ -92,7 +100,7 @@ public class RenderManager {
         GL20.glEnableVertexAttribArray(0);
 
         GL13.glActiveTexture(GL13.GL_TEXTURE0);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, model.getTexture().id());
+        GL11.glBindTexture(GL11.GL_TEXTURE_2D, isxRay() ? xRayAtlas.id() : atlas.id());
     }
 
     public void bindSkyBox(SkyBox skyBox) {
@@ -253,5 +261,15 @@ public class RenderManager {
 
     public void cleanUp() {
         blockShader.cleanUp();
+        skyBoxShader.cleanUp();
+        GUIShader.cleanUp();
+    }
+
+    public void setxRay(boolean xRay) {
+        this.xRay = xRay;
+    }
+
+    public boolean isxRay() {
+        return xRay;
     }
 }

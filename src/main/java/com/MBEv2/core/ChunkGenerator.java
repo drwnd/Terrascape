@@ -3,6 +3,9 @@ package com.MBEv2.core;
 import com.MBEv2.core.utils.Utils;
 import com.MBEv2.test.GameLogic;
 import org.joml.Vector3f;
+import org.joml.Vector4i;
+
+import java.util.LinkedList;
 
 import static com.MBEv2.core.utils.Constants.*;
 
@@ -23,9 +26,12 @@ public class ChunkGenerator {
     private int playerY;
     private int playerZ;
 
+    private final LinkedList<Vector4i> blockChanges;
+
     public ChunkGenerator() {
         genThread = new Thread(this::runGenThread);
         meshThread = new Thread(this::runMeshThread);
+        blockChanges = new LinkedList<>();
     }
 
     private void runGenThread() {
@@ -53,6 +59,7 @@ public class ChunkGenerator {
             maxToMeshRing = -1;
             meshThreadShouldFinish = false;
 
+            processBlockChanges();
             processSkyLight();
             unloadChunks(playerX, playerY, playerZ);
             generateChunks();
@@ -75,7 +82,7 @@ public class ChunkGenerator {
         }
     }
 
-    public void processSkyLight() {
+    private void processSkyLight() {
         if (travelDirection == TOP)
             for (Chunk chunk : Chunk.getWorld()) {
                 if (chunk == null)
@@ -93,7 +100,40 @@ public class ChunkGenerator {
         }
     }
 
-    public void unloadChunks(final int chunkX, final int chunkY, final int chunkZ) {
+    public void processBlockChanges() {
+        synchronized (blockChanges) {
+            while (!blockChanges.isEmpty()) {
+
+                Vector4i blockChange = blockChanges.removeFirst();
+                int x = blockChange.x;
+                int y = blockChange.y;
+                int z = blockChange.z;
+                byte previousBlock = (byte) blockChange.w;
+
+                byte block = Chunk.getBlockInWorld(x, y, z);
+
+                boolean blockEmitsLight = (Block.getBlockProperties(block) & LIGHT_EMITTING_MASK) != 0;
+                boolean previousBlockEmitsLight = (Block.getBlockProperties(previousBlock) & LIGHT_EMITTING_MASK) != 0;
+
+                if (blockEmitsLight && !previousBlockEmitsLight)
+                    LightLogic.setBlockLight(x, y, z, MAX_BLOCK_LIGHT_VALUE);
+                else if (block == AIR)
+                    if (previousBlockEmitsLight)
+                        LightLogic.dePropagateBlockLight(x, y, z);
+                    else
+                        LightLogic.setBlockLight(x, y, z, LightLogic.getMaxSurroundingBlockLight(x, y, z) - 1);
+                else if (!blockEmitsLight)
+                    LightLogic.dePropagateBlockLight(x, y, z);
+
+                if (block == AIR)
+                    LightLogic.setSkyLight(x, y, z, LightLogic.getMaxSurroundingSkyLight(x, y, z) - 1);
+                else
+                    LightLogic.dePropagateSkyLight(x, y, z);
+            }
+        }
+    }
+
+    private void unloadChunks(final int chunkX, final int chunkY, final int chunkZ) {
         for (Chunk chunk : Chunk.getWorld()) {
             if (chunk == null)
                 continue;
@@ -241,5 +281,9 @@ public class ChunkGenerator {
         synchronized (meshThread) {
             meshThread.notify();
         }
+    }
+
+    public void addBlockChange(Vector4i change) {
+        blockChanges.add(change);
     }
 }
