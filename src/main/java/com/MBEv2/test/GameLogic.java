@@ -27,7 +27,7 @@ public class GameLogic {
         player.init();
 
         player.getRenderer().init();
-        generator.restart(NONE);
+        generator.start();
     }
 
     public static void loadUnloadChunks(int direction) {
@@ -35,10 +35,8 @@ public class GameLogic {
     }
 
     public static void placeBlock(short block, Vector3i position) {
-        if (position == null)
-            return;
-        if (Chunk.getBlockInWorld(position.x, position.y, position.z) == block)
-            return;
+        if (position == null) return;
+        if (Chunk.getBlockInWorld(position.x, position.y, position.z) == block) return;
 
         int chunkX = position.x >> CHUNK_SIZE_BITS;
         int chunkY = position.y >> CHUNK_SIZE_BITS;
@@ -59,31 +57,19 @@ public class GameLogic {
         int minZ = chunkZ, maxZ = chunkZ;
 
         if ((Block.getBlockProperties(block) & LIGHT_EMITTING_MASK) != 0 || (Block.getBlockProperties(previousBlock) & LIGHT_EMITTING_MASK) != 0) {
-            if (inChunkX <= 15)
-                minX = chunkX - 1;
-            else if (inChunkX >= CHUNK_SIZE - 16)
-                maxX = chunkX + 1;
-            if (inChunkY <= 15)
-                minY = chunkY - 1;
-            else if (inChunkY >= CHUNK_SIZE - 16)
-                maxY = chunkY + 1;
-            if (inChunkZ <= 15)
-                minZ = chunkZ - 1;
-            else if (inChunkZ >= CHUNK_SIZE - 16)
-                maxZ = chunkZ + 1;
+            if (inChunkX <= 15) minX = chunkX - 1;
+            if (inChunkX >= CHUNK_SIZE - 16) maxX = chunkX + 1;
+            if (inChunkY <= 15) minY = chunkY - 1;
+            if (inChunkY >= CHUNK_SIZE - 16) maxY = chunkY + 1;
+            if (inChunkZ <= 15) minZ = chunkZ - 1;
+            if (inChunkZ >= CHUNK_SIZE - 16) maxZ = chunkZ + 1;
         } else {
-            if (inChunkX == 0)
-                minX = chunkX - 1;
-            else if (inChunkX == CHUNK_SIZE - 1)
-                maxX = chunkX + 1;
-            if (inChunkY == 0)
-                minY = chunkY - 1;
-            else if (inChunkY == CHUNK_SIZE - 1)
-                maxY = chunkY + 1;
-            if (inChunkZ == 0)
-                minZ = chunkZ - 1;
-            else if (inChunkZ == CHUNK_SIZE - 1)
-                maxZ = chunkZ + 1;
+            if (inChunkX == 0) minX = chunkX - 1;
+            else if (inChunkX == CHUNK_SIZE - 1) maxX = chunkX + 1;
+            if (inChunkY == 0) minY = chunkY - 1;
+            else if (inChunkY == CHUNK_SIZE - 1) maxY = chunkY + 1;
+            if (inChunkZ == 0) minZ = chunkZ - 1;
+            else if (inChunkZ == CHUNK_SIZE - 1) maxZ = chunkZ + 1;
         }
 
         generator.addBlockChange(new Vector4i(position.x, position.y, position.z, previousBlock));
@@ -92,8 +78,7 @@ public class GameLogic {
             for (int y = minY; y <= maxY; y++)
                 for (int z = minZ; z <= maxZ; z++) {
                     Chunk toMeshChunk = Chunk.getChunk(x, y, z);
-                    if (toMeshChunk == null)
-                        continue;
+                    if (toMeshChunk == null) continue;
                     toMeshChunk.setMeshed(false);
                 }
         generator.restart(NONE);
@@ -103,14 +88,12 @@ public class GameLogic {
         if (chunk.getVertices() != null && chunk.getVertices().length != 0) {
             Model model = ObjectLoader.loadModel(chunk.getVertices(), chunk.getWorldCoordinate());
             chunk.setModel(model);
-        } else
-            chunk.setModel(null);
+        } else chunk.setModel(null);
 
         if (chunk.getTransparentVertices() != null && chunk.getTransparentVertices().length != 0) {
             Model transparentModel = ObjectLoader.loadModel(chunk.getTransparentVertices(), chunk.getWorldCoordinate());
             chunk.setTransparentModel(transparentModel);
-        } else
-            chunk.setTransparentModel(null);
+        } else chunk.setTransparentModel(null);
 
         chunk.clearMesh();
     }
@@ -127,8 +110,7 @@ public class GameLogic {
         synchronized (toUnloadChunks) {
             while (!toUnloadChunks.isEmpty()) {
                 Chunk chunk = toUnloadChunks.removeFirst();
-                if (chunk != null)
-                    deleteChunkMeshBuffers(chunk);
+                if (chunk != null) deleteChunkMeshBuffers(chunk);
             }
         }
         player.update();
@@ -164,8 +146,7 @@ public class GameLogic {
 
     public static void addToBufferChunk(Chunk chunk) {
         synchronized (toBufferChunks) {
-            if (!toBufferChunks.contains(chunk))
-                toBufferChunks.add(chunk);
+            if (!toBufferChunks.contains(chunk)) toBufferChunks.add(chunk);
         }
     }
 
@@ -182,20 +163,17 @@ public class GameLogic {
         int height = window.getHeight();
         float size = 16;
 
-        return new float[]{
-                -size * GUI_SIZE / width, size * GUI_SIZE / height,
+        return new float[]{-size * GUI_SIZE / width, size * GUI_SIZE / height,
                 -size * GUI_SIZE / width, -size * GUI_SIZE / height,
                 size * GUI_SIZE / width, size * GUI_SIZE / height,
 
                 -size * GUI_SIZE / width, -size * GUI_SIZE / height,
                 size * GUI_SIZE / width, -size * GUI_SIZE / height,
-                size * GUI_SIZE / width, size * GUI_SIZE / height
-        };
+                size * GUI_SIZE / width, size * GUI_SIZE / height};
     }
 
     public static float[] getHotBarElementVertices(int index, short block) {
-        if (block == AIR)
-            return new float[]{};
+        if (block == AIR) return new float[]{};
         WindowManager window = Launcher.getWindow();
 
         final int width = window.getWidth();
@@ -223,8 +201,7 @@ public class GameLogic {
         float value6 = yOffset + sin30 * widthX / height;
         float value8 = yOffset + sin30 * widthZ / height;
         float value9 = yOffset + widthY / height;
-        return new float[]{
-                xOffset, yOffset,
+        return new float[]{xOffset, yOffset,
                 xOffset, value9,
                 value5, value6,
                 xOffset, value9,
@@ -243,8 +220,7 @@ public class GameLogic {
                 value7, value8,
                 xOffset, value9,
                 value7, value2,
-                value7, value8,
-        };
+                value7, value8,};
     }
 
     public static float[] getHotBarVertices() {
@@ -257,14 +233,9 @@ public class GameLogic {
 
         return new float[]{
 
-                -sizeX * GUI_SIZE / width, -0.5f,
-                -sizeX * GUI_SIZE / width, sizeY * GUI_SIZE / height - 0.5f,
-                sizeX * GUI_SIZE / width, -0.5f,
+                -sizeX * GUI_SIZE / width, -0.5f, -sizeX * GUI_SIZE / width, sizeY * GUI_SIZE / height - 0.5f, sizeX * GUI_SIZE / width, -0.5f,
 
-                -sizeX * GUI_SIZE / width, sizeY * GUI_SIZE / height - 0.5f,
-                sizeX * GUI_SIZE / width, sizeY * GUI_SIZE / height - 0.5f,
-                sizeX * GUI_SIZE / width, -0.5f
-        };
+                -sizeX * GUI_SIZE / width, sizeY * GUI_SIZE / height - 0.5f, sizeX * GUI_SIZE / width, sizeY * GUI_SIZE / height - 0.5f, sizeX * GUI_SIZE / width, -0.5f};
     }
 
     public static long getChunkId(int x, int y, int z) {
@@ -283,10 +254,6 @@ public class GameLogic {
         if (z < 0) z += RENDERED_WORLD_WIDTH;
 
         return (x * RENDERED_WORLD_HEIGHT + y) * RENDERED_WORLD_WIDTH + z;
-    }
-
-    public static void startChunkGenerator() {
-        generator.start();
     }
 
     public static Player getPlayer() {

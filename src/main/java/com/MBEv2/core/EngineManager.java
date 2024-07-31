@@ -34,7 +34,6 @@ public class EngineManager {
 
     public void run() {
         isRunning = true;
-        GameLogic.startChunkGenerator();
         long lastTime = System.nanoTime();
         long frameTime = (long) (NANOSECONDS_PER_SECOND / FRAME_RATE);
 

@@ -54,13 +54,15 @@ public class Constants {
 
     //Change based on computing power
     public static final int REACH_ACCURACY = 100;
-    public static final int MAX_CHUNKS_TO_BUFFER_PER_FRAME = 10;
+    public static final int MAX_CHUNKS_TO_BUFFER_PER_FRAME = 5;
 
     public static final int RENDER_DISTANCE_XZ = 15;
     public static final int RENDER_DISTANCE_Y = 5;
 
     public static final int RENDERED_WORLD_WIDTH = RENDER_DISTANCE_XZ * 2 + 5;
     public static final int RENDERED_WORLD_HEIGHT = RENDER_DISTANCE_Y * 2 + 5;
+
+    public static final int NUMBER_OF_GENERATION_THREADS = 4;
 
     //World generation
     public static final long SEED = new Random().nextLong();
