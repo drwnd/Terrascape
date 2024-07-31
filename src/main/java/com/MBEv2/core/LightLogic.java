@@ -40,9 +40,9 @@ public class LightLogic {
 
             byte nextBlockLight = (byte) (currentBlockLight - 1);
             if (nextBlockLight <= 0) continue;
-            byte currentBlock = chunk.getSaveBlock(index);
+            short currentBlock = chunk.getSaveBlock(index);
 
-            byte nextBlock = Chunk.getBlockInWorld(x + 1, y, z);
+            short nextBlock = Chunk.getBlockInWorld(x + 1, y, z);
             if (Chunk.getBlockLightInWorld(x + 1, y, z) < nextBlockLight && canLightTravel(nextBlock, LEFT, currentBlock, RIGHT))
                 toPlaceLights.add(new Vector4i(x + 1, y, z, nextBlockLight));
             nextBlock = Chunk.getBlockInWorld(x - 1, y, z);
@@ -105,9 +105,9 @@ public class LightLogic {
             chunk.setMeshed(false);
             unMeshNextChunkIfNecessary(x & CHUNK_SIZE - 1, y & CHUNK_SIZE - 1, z & CHUNK_SIZE - 1, chunk);
             chunk.setModified();
-            byte currentBlock = onFirstIteration ? AIR : chunk.getSaveBlock(index);
+            short currentBlock = onFirstIteration ? AIR : chunk.getSaveBlock(index);
 
-            byte nextBlock = Chunk.getBlockInWorld(x + 1, y, z);
+            short nextBlock = Chunk.getBlockInWorld(x + 1, y, z);
             if (canLightTravel(nextBlock, LEFT, currentBlock, RIGHT))
                 toDePropagate.add(new Vector4i(x + 1, y, z, currentBlockLight));
             nextBlock = Chunk.getBlockInWorld(x - 1, y, z);
@@ -133,10 +133,11 @@ public class LightLogic {
     }
 
     public static byte getMaxSurroundingBlockLight(int x, int y, int z) {
-        byte max = 0, currentBlock = Chunk.getBlockInWorld(x, y, z);
+        byte max = 0;
+        short currentBlock = Chunk.getBlockInWorld(x, y, z);
 
         byte toTest = Chunk.getBlockLightInWorld(x + 1, y, z);
-        byte nextBlock = Chunk.getBlockInWorld(x + 1, y, z);
+        short nextBlock = Chunk.getBlockInWorld(x + 1, y, z);
         if (max < toTest && canLightTravel(nextBlock, LEFT, currentBlock, RIGHT)) max = toTest;
         toTest = Chunk.getBlockLightInWorld(x - 1, y, z);
         nextBlock = Chunk.getBlockInWorld(x - 1, y, z);
@@ -164,12 +165,12 @@ public class LightLogic {
 
         for (int totalX = x, maxX = x + CHUNK_SIZE; totalX < maxX; totalX++)
             for (int totalZ = z, maxZ = z + CHUNK_SIZE; totalZ < maxZ; totalZ++) {
-               byte block = Chunk.getBlockInWorld(totalX, y, totalZ);
-               byte blockAbove = Chunk.getBlockInWorld(totalX, y + 1, totalZ);
-               if (!canLightTravel(block, TOP, blockAbove, BOTTOM))
-                   continue;
+                short block = Chunk.getBlockInWorld(totalX, y, totalZ);
+                short blockAbove = Chunk.getBlockInWorld(totalX, y + 1, totalZ);
+                if (!canLightTravel(block, TOP, blockAbove, BOTTOM))
+                    continue;
 
-               toPlaceLights.add(new Vector4i(totalX, y, totalZ, Chunk.getSkyLightInWorld(totalX, y + 1, totalZ)));
+                toPlaceLights.add(new Vector4i(totalX, y, totalZ, Chunk.getSkyLightInWorld(totalX, y + 1, totalZ)));
             }
 
         setSkyLight(toPlaceLights);
@@ -221,9 +222,9 @@ public class LightLogic {
             unMeshNextChunkIfNecessary(x & CHUNK_SIZE - 1, y & CHUNK_SIZE - 1, z & CHUNK_SIZE - 1, chunk);
 
             byte nextSkyLight = (byte) (currentSkyLight - 1);
-            byte currentBlock = chunk.getSaveBlock(index);
+            short currentBlock = chunk.getSaveBlock(index);
 
-            byte nextBlock = Chunk.getBlockInWorld(x + 1, y, z);
+            short nextBlock = Chunk.getBlockInWorld(x + 1, y, z);
             if (Chunk.getSkyLightInWorld(x + 1, y, z) < nextSkyLight && canLightTravel(nextBlock, LEFT, currentBlock, RIGHT))
                 toPlaceLights.add(new Vector4i(x + 1, y, z, nextSkyLight));
             nextBlock = Chunk.getBlockInWorld(x - 1, y, z);
@@ -235,7 +236,7 @@ public class LightLogic {
                 toPlaceLights.add(new Vector4i(x, y + 1, z, nextSkyLight));
 
             nextBlock = Chunk.getBlockInWorld(x, y - 1, z);
-            if (Block.getBlockType(nextBlock) == WATER_TYPE || Block.getBlockType(nextBlock) == LEAVE_TYPE)
+            if (Block.isLeaveType(nextBlock) || Block.getBlockType(nextBlock) == WATER_TYPE)
                 currentSkyLight--;
             if (Chunk.getSkyLightInWorld(x, y - 1, z) < currentSkyLight && canLightTravel(nextBlock, TOP, currentBlock, BOTTOM))
                 toPlaceLights.add(new Vector4i(x, y - 1, z, currentSkyLight));
@@ -288,9 +289,9 @@ public class LightLogic {
             chunk.removeSkyLight(index);
             chunk.setMeshed(false);
             unMeshNextChunkIfNecessary(x & CHUNK_SIZE - 1, y & CHUNK_SIZE - 1, z & CHUNK_SIZE - 1, chunk);
-            byte currentBlock = onFirstIteration ? AIR : chunk.getSaveBlock(index);
+            short currentBlock = onFirstIteration ? AIR : chunk.getSaveBlock(index);
 
-            byte nextBlock = Chunk.getBlockInWorld(x + 1, y, z);
+            short nextBlock = Chunk.getBlockInWorld(x + 1, y, z);
             if (canLightTravel(nextBlock, LEFT, currentBlock, RIGHT))
                 toDePropagate.add(new Vector4i(x + 1, y, z, currentSkyLight));
             nextBlock = Chunk.getBlockInWorld(x - 1, y, z);
@@ -316,10 +317,11 @@ public class LightLogic {
     }
 
     public static byte getMaxSurroundingSkyLight(int x, int y, int z) {
-        byte max = 0, currentBlock = Chunk.getBlockInWorld(x, y, z);
+        byte max = 0;
+        short currentBlock = Chunk.getBlockInWorld(x, y, z);
 
         byte toTest = Chunk.getSkyLightInWorld(x + 1, y, z);
-        byte nextBlock = Chunk.getBlockInWorld(x + 1, y, z);
+        short nextBlock = Chunk.getBlockInWorld(x + 1, y, z);
         if (max < toTest && canLightTravel(nextBlock, LEFT, currentBlock, RIGHT)) max = toTest;
         toTest = Chunk.getSkyLightInWorld(x - 1, y, z);
         nextBlock = Chunk.getBlockInWorld(x - 1, y, z);
@@ -349,15 +351,17 @@ public class LightLogic {
         return true;
     }
 
-    public static boolean canLightTravel(byte destinationBlock, int enterSide, byte originBlock, int exitSide) {
+    public static boolean canLightTravel(short destinationBlock, int enterSide, short originBlock, int exitSide) {
         int originBlockType = Block.getBlockType(originBlock);
         int originBlockProperties = Block.getBlockProperties(originBlock);
-        boolean canExit = Block.getBlockTypeOcclusionData(originBlock, exitSide) == 0 || (originBlockProperties & LIGHT_EMITTING_MASK) != 0 || originBlockType == WATER_TYPE || originBlockType == GLASS_TYPE;
+        boolean canExit = Block.getBlockTypeOcclusionData(originBlock, exitSide) == 0 || (originBlockProperties & LIGHT_EMITTING_MASK) != 0 || originBlockType == WATER_TYPE ||
+                Block.isGlassType(originBlock) || Block.isLeaveType(originBlock);
         if (!canExit) return false;
 
         int destinationBlockType = Block.getBlockType(destinationBlock);
         int destinationBlockProperties = Block.getBlockProperties(destinationBlock);
-        return Block.getBlockTypeOcclusionData(destinationBlock, enterSide) == 0 || (destinationBlockProperties & LIGHT_EMITTING_MASK) != 0 || destinationBlockType == WATER_TYPE || destinationBlockType == GLASS_TYPE;
+        return Block.getBlockTypeOcclusionData(destinationBlock, enterSide) == 0 || (destinationBlockProperties & LIGHT_EMITTING_MASK) != 0 || destinationBlockType == WATER_TYPE ||
+                Block.isGlassType(destinationBlock) || Block.isLeaveType(destinationBlock);
     }
 
     private static void unMeshNextChunkIfNecessary(int x, int y, int z, Chunk chunk) {

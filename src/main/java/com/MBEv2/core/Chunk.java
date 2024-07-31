@@ -14,7 +14,7 @@ public class Chunk {
     private static final Chunk[] world = new Chunk[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
     private static final HashMap<Long, Chunk> savedChunks = new HashMap<>();
 
-    private final byte[] blocks;
+    private final short[] blocks;
     private final byte[] light;
 
     private int[] vertices;
@@ -38,7 +38,7 @@ public class Chunk {
         this.Y = y;
         this.Z = z;
         worldCoordinate = new Vector3i(X << CHUNK_SIZE_BITS, Y << CHUNK_SIZE_BITS, Z << CHUNK_SIZE_BITS);
-        blocks = new byte[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
+        blocks = new short[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
         light = new byte[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
         id = GameLogic.getChunkId(X, Y, Z);
         index = GameLogic.getChunkIndex(X, Y, Z);
@@ -55,7 +55,7 @@ public class Chunk {
             for (int y = 0; y < CHUNK_SIZE; y++)
                 for (int z = 0; z < CHUNK_SIZE; z++) {
 
-                    byte block = getSaveBlock(x, y, z);
+                    short block = getSaveBlock(x, y, z);
 
                     if (Block.getBlockType(block) == AIR_TYPE) continue;
 
@@ -150,7 +150,7 @@ public class Chunk {
         } else if (!chunk.isGenerated) WorldGeneration.generate(chunk);
     }
 
-    public void addSideToList(int x, int y, int z, int u, int v, int side, ArrayList<Integer> verticesList, byte block) {
+    public void addSideToList(int x, int y, int z, int u, int v, int side, ArrayList<Integer> verticesList, short block) {
         int skyLight;
         int blockLight;
 
@@ -206,7 +206,7 @@ public class Chunk {
         }
     }
 
-    public void addVertexToList(ArrayList<Integer> list, int x, int y, int z, int u, int v, int side, int skyLight, int blockLight, byte block, int corner, int blockX, int blockY, int blockZ) {
+    public void addVertexToList(ArrayList<Integer> list, int x, int y, int z, int u, int v, int side, int skyLight, int blockLight, short block, int corner, int blockX, int blockY, int blockZ) {
         if ((Block.getBlockTypeData(block) & DYNAMIC_SHAPE_MASK) != 0) {
             addVertexToListDynamic(list, x, y, z, u, v, side, skyLight, blockLight, block, corner, blockX, blockY, blockZ);
             return;
@@ -222,7 +222,7 @@ public class Chunk {
         list.add(packData(side, (u << 4) + subU + 15, (v << 4) + subV + 15, (z << 4) + subZ + 15));
     }
 
-    public void addVertexToListDynamic(ArrayList<Integer> list, int x, int y, int z, int u, int v, int side, int skyLight, int blockLight, byte block, int corner, int blockX, int blockY, int blockZ) {
+    public void addVertexToListDynamic(ArrayList<Integer> list, int x, int y, int z, int u, int v, int side, int skyLight, int blockLight, short block, int corner, int blockX, int blockY, int blockZ) {
         int subX = 0;
         int subY = 0;
         int subZ = 0;
@@ -233,13 +233,13 @@ public class Chunk {
             if (side == TOP) {
                 subY = -2;
             } else if (side != BOTTOM) {
-                byte blockAbove = getBlock(blockX, blockY + 1, blockZ);
+                short blockAbove = getBlock(blockX, blockY + 1, blockZ);
                 if ((corner == 0 || corner == 1) && blockAbove != block && Block.getBlockTypeOcclusionData(blockAbove, BOTTOM) == 0) {
                     subY = -2;
                     subV = 2;
                 } else if (corner == 2 || corner == 3) {
                     int[] normal = Block.NORMALS[side];
-                    byte adjacentBlock = getBlock(blockX + normal[0], blockY, blockZ + normal[2]);
+                    short adjacentBlock = getBlock(blockX + normal[0], blockY, blockZ + normal[2]);
                     if (adjacentBlock == block && (blockAbove == block || Block.getBlockTypeOcclusionData(blockAbove, BOTTOM) != 0)) {
                         subY = 14;
                         subV = -14;
@@ -346,7 +346,7 @@ public class Chunk {
         return level & 3;
     }
 
-    public byte getBlock(int x, int y, int z) {
+    public short getBlock(int x, int y, int z) {
         if (x < 0) {
             Chunk neighbor = getChunk(X - 1, Y, Z);
             if (neighbor == null) return OUT_OF_WORLD;
@@ -380,25 +380,25 @@ public class Chunk {
         return getSaveBlock(x, y, z);
     }
 
-    public byte getSaveBlock(int x, int y, int z) {
+    public short getSaveBlock(int x, int y, int z) {
         return blocks[x << CHUNK_SIZE_BITS * 2 | y << CHUNK_SIZE_BITS | z];
     }
 
-    public byte getSaveBlock(int index) {
+    public short getSaveBlock(int index) {
         return blocks[index];
     }
 
-    public static byte getBlockInWorld(int x, int y, int z) {
+    public static short getBlockInWorld(int x, int y, int z) {
         Chunk chunk = world[GameLogic.getChunkIndex(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS)];
         if (chunk == null || !chunk.isGenerated) return OUT_OF_WORLD;
         return chunk.getSaveBlock(x & CHUNK_SIZE - 1, y & CHUNK_SIZE - 1, z & CHUNK_SIZE - 1);
     }
 
-    public void storeSave(int x, int y, int z, byte block) {
+    public void storeSave(int x, int y, int z, short block) {
         blocks[x << CHUNK_SIZE_BITS * 2 | y << CHUNK_SIZE_BITS | z] = block;
     }
 
-    public void storeTreeBlock(int x, int y, int z, byte block) {
+    public void storeTreeBlock(int x, int y, int z, short block) {
         if (block == AIR || blocks[x << CHUNK_SIZE_BITS * 2 | y << CHUNK_SIZE_BITS | z] != AIR && Block.isLeaveType(block))
             return;
         blocks[x << CHUNK_SIZE_BITS * 2 | y << CHUNK_SIZE_BITS | z] = block;

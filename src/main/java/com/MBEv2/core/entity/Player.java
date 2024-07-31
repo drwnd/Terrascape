@@ -31,6 +31,7 @@ public class Player {
     private long rightButtonPressTime, leftButtonPressTime, spaceButtonPressTime;
     private boolean rightButtonWasJustPressed, leftButtonWasJustPressed;
     private boolean UPArrowPressed, DOWNArrowPressed;
+    private boolean LEFTArrowPressed, RIGHTArrowPressed;
 
     //Debug
     private boolean noClip, gKeyPressed;
@@ -38,27 +39,20 @@ public class Player {
     private boolean tPressed = false, zPressed = false, xKeyPressed = false;
     private final Vector3i pos1, pos2;
 
-    private final byte[][] hotBars = {
-            {GRASS, DIRT, SAND, MUD, SNOW, LAVA, WATER, GRAVEL, COURSE_DIRT},
-            {CREATOR_HEAD, COAL_ORE, IRON_ORE, DIAMOND_ORE, GLASS, GLASS_WALL, CLAY, MOSS, CACTUS},
-            {OAK_LOG, STRIPPED_OAK_LOG, OAK_LEAVES, OAK_PLANKS, OAK_PLANKS_SLAB, OAK_PLANKS_WALL, OAK_PLANKS_POST, OAK_PLANKS_PLATE, AIR},
-            {SPRUCE_LOG, STRIPPED_SPRUCE_LOG, SPRUCE_LEAVES, SPRUCE_PLANKS, SPRUCE_PLANKS_SLAB, SPRUCE_PLANKS_WALL, SPRUCE_PLANKS_POST, SPRUCE_PLANKS_PLATE, AIR},
-            {DARK_OAK_LOG, STRIPPED_DARK_OAK_LOG, DARK_OAK_LEAVES, DARK_OAK_PLANKS, DARK_OAK_PLANKS_SLAB, DARK_OAK_PLANKS_WALL, DARK_OAK_PLANKS_POST, DARK_OAK_PLANKS_PLATE, AIR},
-            {COBBLESTONE, COBBLESTONE_SLAB, COBBLESTONE_PLATE, COBBLESTONE_POST, COBBLESTONE_WALL, AIR, AIR, AIR, AIR},
-            {STONE, STONE_SLAB, STONE_PLATE, STONE_POST, STONE_WALL, CHISELED_STONE, AIR, AIR, AIR},
-            {STONE_BRICKS, STONE_BRICK_SLAB, STONE_BRICK_PLATE, STONE_BRICK_POST, STONE_BRICK_WALL, AIR, AIR, AIR, AIR},
-            {POLISHED_STONE, POLISHED_STONE_SLAB, POLISHED_STONE_PLATE, POLISHED_STONE_POST, POLISHED_STONE_WALL, CHISELED_POLISHED_STONE, AIR, AIR, AIR},
-            {SLATE, SLATE_SLAB, SLATE_PLATE, SLATE_POST, SLATE_WALL, CHISELED_SLATE, AIR, AIR, AIR},
-            {ANDESITE, ANDESITE_SLAB, ANDESITE_PLATE, ANDESITE_POST, ANDESITE_WALL, AIR, AIR, ICE, HEAVY_ICE},
-            {RED, GREEN, BLUE, YELLOW, MAGENTA, CYAN, WHITE, BLACK, BARRIER}
-    };
+    private final short[][] hotBars = {{GRASS, DIRT, STONE, MUD, ANDESITE, SNOW, SAND, STONE_BRICK, SLATE},
+            {GLASS, COBBLESTONE, GRAVEL, POLISHED_STONE, CHISELED_POLISHED_STONE, ICE, CLAY},
+            {MOSS, HEAVY_ICE, CHISELED_SLATE, COAL_ORE, IRON_ORE, DIAMOND_ORE, UP_DOWN_OAK_LOG, UP_DOWN_SPRUCE_LOG, UP_DOWN_DARK_OAK_LOG},
+            {UP_DOWN_STRIPPED_OAK_LOG, UP_DOWN_STRIPPED_SPRUCE_LOG, UP_DOWN_STRIPPED_DARK_OAK_LOG, OAK_PLANKS, SPRUCE_PLANKS, DARK_OAK_PLANKS, OAK_LEAVES, SPRUCE_LEAVES, DARK_OAK_LEAVES},
+            {BLACK, WHITE, CYAN, MAGENTA, YELLOW, BLUE, GREEN, RED, AIR},
+            {WATER, LAVA, CACTUS, FRONT_CREATOR_HEAD, AIR, AIR, AIR, AIR, AIR}};
     private int selectedHotBar = 0;
     private int selectedHotBarSlot = 0;
+    private int selectedBlockType = 0;
 
     private int movementState = WALKING;
     private boolean isGrounded = false;
 
-    public Player() throws Exception{
+    public Player() throws Exception {
         atlas = new Texture(ObjectLoader.loadTexture("textures/atlas256.png"));
         window = Launcher.getWindow();
         renderer = new RenderManager();
@@ -117,8 +111,8 @@ public class Player {
             Vector3f cameraDirection = camera.getDirection();
             Vector3f target = getTarget(1, cameraDirection);
             if (target != null) {
-                byte selectedBlock = hotBars[selectedHotBar][selectedHotBarSlot];
-                byte toPlaceBlock = Block.getToPlaceBlock(selectedBlock, camera.getPrimaryDirection(cameraDirection), camera.getPrimaryXZDirection(cameraDirection), target);
+                short selectedBlock = getHeldBlock();
+                short toPlaceBlock = Block.getToPlaceBlock(selectedBlock, camera.getPrimaryDirection(cameraDirection), camera.getPrimaryXZDirection(cameraDirection), target);
 
                 GameLogic.placeBlock(toPlaceBlock, new Vector3i(Utils.floor(target.x), Utils.floor(target.y), Utils.floor(target.z)));
             }
@@ -138,12 +132,9 @@ public class Player {
 
         handleInputMovementStateChange(position);
 
-        if (isFling)
-            handleInputFling(velocity, passedTime);
-        else if (isInWater)
-            handleInputSwimming(velocity, passedTime);
-        else
-            handleInputWalking(velocity, passedTime);
+        if (isFling) handleInputFling(velocity, passedTime);
+        else if (isInWater) handleInputSwimming(velocity, passedTime);
+        else handleInputWalking(velocity, passedTime);
 
         normalizeVelocity(velocity);
         addVelocityChange(velocity);
@@ -159,8 +150,7 @@ public class Player {
         float movementSpeedModifier = 1.0f;
         float accelerationModifier = isGrounded ? 1.0f : IN_AIR_SPEED;
 
-        if (movementState == WALKING && window.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL))
-            movementSpeedModifier *= 1.5f;
+        if (movementState == WALKING && window.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL)) movementSpeedModifier *= 1.5f;
 
         if (window.isKeyPressed(GLFW.GLFW_KEY_W)) {
             float acceleration = MOVEMENT_STATE_SPEED[movementState] * movementSpeedModifier * accelerationModifier * passedTime;
@@ -200,10 +190,8 @@ public class Player {
             velocity.z -= (float) (acceleration * Math.cos(Math.toRadians(cameraRotation.x)));
             velocity.y -= (float) (acceleration * Math.sin(Math.toRadians(cameraRotation.x)));
             if (movementState != SWIMMING) {
-                if (movementState == WALKING)
-                    camera.movePosition(0.0f, -1.25f, 0.0f);
-                else if (movementState == CROUCHING)
-                    camera.movePosition(0.0f, -1.0f, 0.0f);
+                if (movementState == WALKING) camera.movePosition(0.0f, -1.25f, 0.0f);
+                else if (movementState == CROUCHING) camera.movePosition(0.0f, -1.0f, 0.0f);
                 movementState = SWIMMING;
             }
         } else {
@@ -238,8 +226,7 @@ public class Player {
                 isGrounded = false;
             }
 
-        if (window.isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT))
-            velocity.y -= SWIM_STRENGTH * passedTime;
+        if (window.isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT)) velocity.y -= SWIM_STRENGTH * passedTime;
     }
 
     private void handleInputFling(Vector3f velocity, float passedTime) {
@@ -247,10 +234,8 @@ public class Player {
 
         float movementSpeedModifier = 1.0f;
 
-        if (window.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL))
-            movementSpeedModifier *= 2.5f;
-        if (window.isKeyPressed(GLFW.GLFW_KEY_TAB))
-            movementSpeedModifier *= 5.0f;
+        if (window.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL)) movementSpeedModifier *= 2.5f;
+        if (window.isKeyPressed(GLFW.GLFW_KEY_TAB)) movementSpeedModifier *= 5.0f;
 
         if (window.isKeyPressed(GLFW.GLFW_KEY_W)) {
             float acceleration = FLY_SPEED * MOVEMENT_STATE_SPEED[movementState] * movementSpeedModifier * passedTime;
@@ -270,11 +255,9 @@ public class Player {
             velocity.x += acceleration;
         }
 
-        if (window.isKeyPressed(GLFW.GLFW_KEY_SPACE))
-            velocity.y += FLY_SPEED * MOVEMENT_SPEED * passedTime;
+        if (window.isKeyPressed(GLFW.GLFW_KEY_SPACE)) velocity.y += FLY_SPEED * MOVEMENT_SPEED * passedTime;
 
-        if (window.isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT))
-            velocity.y -= FLY_SPEED * MOVEMENT_SPEED * passedTime;
+        if (window.isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT)) velocity.y -= FLY_SPEED * MOVEMENT_SPEED * passedTime;
     }
 
     private void handleInputHotkeys() {
@@ -298,8 +281,21 @@ public class Player {
             updateHotBarElements();
             DOWNArrowPressed = true;
         }
+        if (window.isKeyPressed(GLFW.GLFW_KEY_LEFT) && !LEFTArrowPressed) {
+            LEFTArrowPressed = true;
+            selectedBlockType = (selectedBlockType + toPlaceBlockTypes.length - 1) % toPlaceBlockTypes.length;
+            updateHotBarElements();
+        }
+        if (window.isKeyPressed(GLFW.GLFW_KEY_RIGHT) && !RIGHTArrowPressed) {
+            RIGHTArrowPressed = true;
+            selectedBlockType = (selectedBlockType + 1) % toPlaceBlockTypes.length;
+            updateHotBarElements();
+        }
+
         if (UPArrowPressed && !window.isKeyPressed(GLFW.GLFW_KEY_UP)) UPArrowPressed = false;
         if (DOWNArrowPressed && !window.isKeyPressed(GLFW.GLFW_KEY_DOWN)) DOWNArrowPressed = false;
+        if (LEFTArrowPressed && !window.isKeyPressed(GLFW.GLFW_KEY_LEFT)) LEFTArrowPressed = false;
+        if (RIGHTArrowPressed && !window.isKeyPressed(GLFW.GLFW_KEY_RIGHT)) RIGHTArrowPressed = false;
     }
 
     private void handleInputDebugHotkeys() {
@@ -337,7 +333,7 @@ public class Player {
                     System.out.print("{");
 
                     for (int k = 0; k < z; k++) {
-                        byte block = Chunk.getBlockInWorld(minX + j, minY + i, minZ + k);
+                        short block = Chunk.getBlockInWorld(minX + j, minY + i, minZ + k);
                         System.out.print(block + " ,");
                     }
                     System.out.println("},");
@@ -349,8 +345,7 @@ public class Player {
         if (window.isKeyPressed(GLFW.GLFW_KEY_V) && !vKeyPressed) {
             isFling = !isFling;
             vKeyPressed = true;
-            if (movementState == SWIMMING)
-                movementState = CRAWLING;
+            if (movementState == SWIMMING) movementState = CRAWLING;
         }
         if (window.isKeyPressed(GLFW.GLFW_KEY_X) && !xKeyPressed) {
             xKeyPressed = true;
@@ -375,15 +370,12 @@ public class Player {
             if (!collidesWithBlock(position.x, position.y + 0.25f, position.z, WALKING)) {
                 camera.movePosition(0.0f, 0.25f, 0.0f);
                 movementState = WALKING;
-            } else if (!collidesWithBlock(position.x, position.y, position.z, WALKING))
-                movementState = WALKING;
+            } else if (!collidesWithBlock(position.x, position.y, position.z, WALKING)) movementState = WALKING;
         }
 
         if (window.isKeyPressed(GLFW.GLFW_KEY_CAPS_LOCK)) {
-            if (movementState == WALKING)
-                camera.movePosition(0.0f, -1.25f, 0.0f);
-            else if (movementState == CROUCHING)
-                camera.movePosition(0.0f, -1.0f, 0.0f);
+            if (movementState == WALKING) camera.movePosition(0.0f, -1.25f, 0.0f);
+            else if (movementState == CROUCHING) camera.movePosition(0.0f, -1.0f, 0.0f);
             movementState = CRAWLING;
 
         } else if (movementState == CRAWLING) {
@@ -393,14 +385,11 @@ public class Player {
             } else if (!collidesWithBlock(position.x, position.y + 1.0f, position.z, CROUCHING)) {
                 camera.movePosition(0.0f, 1.0f, 0.0f);
                 movementState = CROUCHING;
-            } else if (!collidesWithBlock(position.x, position.y, position.z, WALKING))
-                movementState = WALKING;
-            else if (!collidesWithBlock(position.x, position.y, position.z, CROUCHING))
-                movementState = CROUCHING;
+            } else if (!collidesWithBlock(position.x, position.y, position.z, WALKING)) movementState = WALKING;
+            else if (!collidesWithBlock(position.x, position.y, position.z, CROUCHING)) movementState = CROUCHING;
         }
 
-        if (movementState == SWIMMING && !window.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL))
-            movementState = CRAWLING;
+        if (movementState == SWIMMING && !window.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL)) movementState = CRAWLING;
         else if (movementState == SWIMMING && !collidesWithBlock(position.x, position.y, position.z, SWIMMING, WATER))
             movementState = CRAWLING;
     }
@@ -465,19 +454,15 @@ public class Player {
                 setVelocityX(0.0f);
             }
 
-            if (!(xFirst && xAndZ) && !(zFirst && xAndZ))
-                if (Math.abs(x) > Math.abs(z))
-                    position.x += x;
-                else
-                    position.z += z;
+            if (!(xFirst && xAndZ) && !(zFirst && xAndZ)) if (Math.abs(x) > Math.abs(z)) position.x += x;
+            else position.z += z;
         }
 
         if (collidesWithBlock(position.x, position.y, position.z, movementState)) {
             position.y = oldPosition.y;
             setGrounded(y < 0.0f);
             setVelocityY(0.0f);
-            if (y < 0.0f)
-                isFling = false;
+            if (y < 0.0f) isFling = false;
         } else if ((movementState == CROUCHING || movementState == CRAWLING) && isGrounded() && y < 0.0f && collidesWithBlock(oldPosition.x, position.y, oldPosition.z, movementState)) {
             boolean onEdgeX = !collidesWithBlock(position.x, position.y - 0.0625f, oldPosition.z, movementState);
             boolean onEdgeZ = !collidesWithBlock(oldPosition.x, position.y - 0.0625f, position.z, movementState);
@@ -509,8 +494,7 @@ public class Player {
             setVelocityZ(0.0f);
         }
 
-        if (position.y != oldPosition.y)
-            setGrounded(false);
+        if (position.y != oldPosition.y) setGrounded(false);
 
         if (Utils.floor(oldPosition.x) >> CHUNK_SIZE_BITS != Utils.floor(position.x) >> CHUNK_SIZE_BITS)
             GameLogic.loadUnloadChunks(position.x > oldPosition.x ? FRONT : BACK);
@@ -525,8 +509,7 @@ public class Player {
     }
 
     public boolean collidesWithBlock(float x, float y, float z, int movementState) {
-        if (isNoClip())
-            return false;
+        if (isNoClip()) return false;
 
         final float minX = x - HALF_PLAYER_WIDTH;
         final float maxX = x + HALF_PLAYER_WIDTH;
@@ -539,7 +522,7 @@ public class Player {
             for (int blockY = Utils.floor(minY), maxBlockY = Utils.floor(maxY); blockY <= maxBlockY; blockY++)
                 for (int blockZ = Utils.floor(minZ), maxBlockZ = Utils.floor(maxZ); blockZ <= maxBlockZ; blockZ++) {
 
-                    byte block = Chunk.getBlockInWorld(blockX, blockY, blockZ);
+                    short block = Chunk.getBlockInWorld(blockX, blockY, blockZ);
 
                     if (Block.playerIntersectsBlock(minX, maxX, minY, maxY, minZ, maxZ, blockX, blockY, blockZ, block, this))
                         return true;
@@ -547,9 +530,8 @@ public class Player {
         return false;
     }
 
-    public boolean collidesWithBlock(float x, float y, float z, int movementState, byte block) {
-        if (isNoClip())
-            return false;
+    public boolean collidesWithBlock(float x, float y, float z, int movementState, short block) {
+        if (isNoClip()) return false;
 
         final float minX = x - HALF_PLAYER_WIDTH;
         final float maxX = x + HALF_PLAYER_WIDTH;
@@ -561,8 +543,7 @@ public class Player {
         for (int blockX = Utils.floor(minX), maxBlockX = Utils.floor(maxX); blockX <= maxBlockX; blockX++)
             for (int blockY = Utils.floor(minY), maxBlockY = Utils.floor(maxY); blockY <= maxBlockY; blockY++)
                 for (int blockZ = Utils.floor(minZ), maxBlockZ = Utils.floor(maxZ); blockZ <= maxBlockZ; blockZ++)
-                    if (Chunk.getBlockInWorld(blockX, blockY, blockZ) == block)
-                        return true;
+                    if (Chunk.getBlockInWorld(blockX, blockY, blockZ) == block) return true;
         return false;
     }
 
@@ -581,7 +562,7 @@ public class Player {
                 for (int blockZ = Utils.floor(minZ), maxBlockZ = Utils.floor(maxZ); blockZ <= maxBlockZ; blockZ++) {
 
                     float thisBlockStepHeight = 0.0f;
-                    byte block = Chunk.getBlockInWorld(blockX, blockY, blockZ);
+                    short block = Chunk.getBlockInWorld(blockX, blockY, blockZ);
 
                     if (Block.playerIntersectsBlock(minX, maxX, minY, maxY, minZ, maxZ, blockX, blockY, blockZ, block, this))
                         thisBlockStepHeight = Block.getSubY(block, TOP, 0) * 0.0625f + blockY + 1 - minY;
@@ -598,7 +579,7 @@ public class Player {
         Vector3f cameraPosition = camera.getPosition();     //cameraPosition
         float interval = REACH / REACH_ACCURACY;
         int i = 0;
-        byte block = OUT_OF_WORLD, previousBlock = OUT_OF_WORLD;
+        short block = OUT_OF_WORLD, previousBlock = OUT_OF_WORLD;
 
         for (; i < REACH_ACCURACY; i++) {
             previousBlock = block;
@@ -610,7 +591,8 @@ public class Player {
             block = Chunk.getBlockInWorld(Utils.floor(x), Utils.floor(y), Utils.floor(z));
             if (Block.intersectsBlock(x, y, z, block)) break;
         }
-        if (Block.getBlockType(block) == AIR_TYPE || block == OUT_OF_WORLD || Block.getBlockType(block) == WATER_TYPE) return null;
+        if (Block.getBlockType(block) == AIR_TYPE || block == OUT_OF_WORLD || Block.getBlockType(block) == WATER_TYPE)
+            return null;
 
         if (action == placing) {
             i--;
@@ -624,9 +606,9 @@ public class Player {
                     i--;
                 }
                 int blockType = Block.getBlockType(block);
-                if (blockType != AIR_TYPE && blockType != WATER_TYPE)
-                    return null;
-            } else if (Block.getBlockType(previousBlock) != AIR_TYPE && Block.getBlockType(previousBlock) != WATER_TYPE) return null;
+                if (blockType != AIR_TYPE && blockType != WATER_TYPE) return null;
+            } else if (Block.getBlockType(previousBlock) != AIR_TYPE && Block.getBlockType(previousBlock) != WATER_TYPE)
+                return null;
         }
         float x = cameraPosition.x + i * interval * cameraDirection.x;
         float y = cameraPosition.y + i * interval * cameraDirection.y;
@@ -640,7 +622,7 @@ public class Player {
         final float minZ = cameraPosition.z - HALF_PLAYER_WIDTH;
         final float maxZ = cameraPosition.z + HALF_PLAYER_WIDTH;
 
-        byte toPlaceBlock = Block.getToPlaceBlock(hotBars[selectedHotBar][selectedHotBarSlot], camera.getPrimaryDirection(), camera.getPrimaryXZDirection(), target);
+        short toPlaceBlock = Block.getToPlaceBlock(getHeldBlock(), camera.getPrimaryDirection(), camera.getPrimaryXZDirection(), target);
 
         if (action == placing && Block.playerIntersectsBlock(minX, maxX, minY, maxY, minZ, maxZ, Utils.floor(target.x), Utils.floor(target.y), Utils.floor(target.z), toPlaceBlock, this))
             return null;
@@ -672,19 +654,15 @@ public class Player {
     private void renderChunkColumn(int x, int cameraY, int z) {
         for (int y = RENDER_DISTANCE_Y + 2; y >= -RENDER_DISTANCE_Y - 2; y--) {
             Chunk chunk = Chunk.getChunk(x, y + cameraY, z);
-            if (chunk == null)
-                continue;
-            if (chunk.getModel() != null)
-                renderer.processModel(chunk.getModel());
-            if (chunk.getTransparentModel() != null)
-                renderer.processTransparentModel(chunk.getTransparentModel());
+            if (chunk == null) continue;
+            if (chunk.getModel() != null) renderer.processModel(chunk.getModel());
+            if (chunk.getTransparentModel() != null) renderer.processTransparentModel(chunk.getTransparentModel());
         }
     }
 
     private void updateHotBarElements() {
         for (GUIElement element : hotBarElements) {
-            if (element == null)
-                continue;
+            if (element == null) continue;
             ObjectLoader.removeVAO(element.getVao());
             ObjectLoader.removeVBO(element.getVbo1());
             ObjectLoader.removeVBO(element.getVbo2());
@@ -692,7 +670,9 @@ public class Player {
         hotBarElements.clear();
 
         for (int i = 0; i < hotBars[selectedHotBar].length; i++) {
-            byte block = hotBars[selectedHotBar][i];
+            short block = hotBars[selectedHotBar][i];
+            if (block >= STANDARD_BLOCKS_THRESHOLD) block = (short) (block | toPlaceBlockTypes[selectedBlockType]);
+
             int textureIndexFront = Block.getTextureIndex(block, FRONT) - 1;
             int textureIndexTop = Block.getTextureIndex(block, TOP) - 1;
             int textureIndexRight = Block.getTextureIndex(block, RIGHT) - 1;
@@ -703,9 +683,8 @@ public class Player {
         }
     }
 
-    private static float[] getTextureCoordinates(int textureIndexFront, int textureIndexTop, int textureIndexRight, byte block) {
-        if (block == AIR)
-            return new float[]{};
+    private static float[] getTextureCoordinates(int textureIndexFront, int textureIndexTop, int textureIndexRight, short block) {
+        if (block == AIR) return new float[]{};
 
         final int textureFrontX = textureIndexFront & 15;
         final int textureFrontY = (textureIndexFront >> 4) & 15;
@@ -728,30 +707,23 @@ public class Player {
         final float upperRightY = (textureRightY + Block.getSubV(block, RIGHT, 1) * 0.0625f) * 0.0625f;
         final float lowerRightY = (textureRightY + 1 + Block.getSubV(block, RIGHT, 2) * 0.0625f) * 0.0625f;
 
-        return new float[]{
-                lowerFrontX, lowerFrontY,
-                lowerFrontX, upperFrontY,
-                upperFrontX, lowerFrontY,
+        return new float[]{lowerFrontX, lowerFrontY, lowerFrontX, upperFrontY, upperFrontX, lowerFrontY,
 
-                lowerFrontX, upperFrontY,
-                upperFrontX, upperFrontY,
-                upperFrontX, lowerFrontY,
+                lowerFrontX, upperFrontY, upperFrontX, upperFrontY, upperFrontX, lowerFrontY,
 
-                lowerTopX, lowerTopY,
-                lowerTopX, upperTopY,
-                upperTopX, lowerTopY,
+                lowerTopX, lowerTopY, lowerTopX, upperTopY, upperTopX, lowerTopY,
 
-                lowerTopX, upperTopY,
-                upperTopX, upperTopY,
-                upperTopX, lowerTopY,
+                lowerTopX, upperTopY, upperTopX, upperTopY, upperTopX, lowerTopY,
 
-                lowerRightX, lowerRightY,
-                lowerRightX, upperRightY,
-                upperRightX, lowerRightY,
+                lowerRightX, lowerRightY, lowerRightX, upperRightY, upperRightX, lowerRightY,
 
-                lowerRightX, upperRightY,
-                upperRightX, upperRightY,
-                upperRightX, lowerRightY};
+                lowerRightX, upperRightY, upperRightX, upperRightY, upperRightX, lowerRightY};
+    }
+
+    public short getHeldBlock() {
+        short baseBlock = hotBars[selectedHotBar][selectedHotBarSlot];
+        if (baseBlock < STANDARD_BLOCKS_THRESHOLD) return baseBlock;
+        return (short) (baseBlock | toPlaceBlockTypes[selectedBlockType]);
     }
 
     public RenderManager getRenderer() {

@@ -34,7 +34,7 @@ public class GameLogic {
         generator.restart(direction);
     }
 
-    public static void placeBlock(byte block, Vector3i position) {
+    public static void placeBlock(short block, Vector3i position) {
         if (position == null)
             return;
         if (Chunk.getBlockInWorld(position.x, position.y, position.z) == block)
@@ -49,7 +49,7 @@ public class GameLogic {
         int inChunkZ = position.z & CHUNK_SIZE - 1;
 
         Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
-        byte previousBlock = chunk.getSaveBlock(inChunkX, inChunkY, inChunkZ);
+        short previousBlock = chunk.getSaveBlock(inChunkX, inChunkY, inChunkZ);
 
         chunk.storeSave(inChunkX, inChunkY, inChunkZ, block);
         chunk.setModified();
@@ -193,7 +193,7 @@ public class GameLogic {
         };
     }
 
-    public static float[] getHotBarElementVertices(int index, byte block) {
+    public static float[] getHotBarElementVertices(int index, short block) {
         if (block == AIR)
             return new float[]{};
         WindowManager window = Launcher.getWindow();

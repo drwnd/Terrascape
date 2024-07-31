@@ -108,9 +108,9 @@ public class ChunkGenerator {
                 int x = blockChange.x;
                 int y = blockChange.y;
                 int z = blockChange.z;
-                byte previousBlock = (byte) blockChange.w;
+                short previousBlock = (short) blockChange.w;
 
-                byte block = Chunk.getBlockInWorld(x, y, z);
+                short block = Chunk.getBlockInWorld(x, y, z);
 
                 boolean blockEmitsLight = (Block.getBlockProperties(block) & LIGHT_EMITTING_MASK) != 0;
                 boolean previousBlockEmitsLight = (Block.getBlockProperties(previousBlock) & LIGHT_EMITTING_MASK) != 0;
