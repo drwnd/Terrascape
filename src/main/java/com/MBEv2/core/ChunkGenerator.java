@@ -121,6 +121,7 @@ public class ChunkGenerator {
 
         private boolean shouldFinish = true;
         private boolean shouldExecute = true;
+        private boolean shouldRestart = false;
 
         public GenerationStarter(LinkedList<Vector4i> changes, ThreadPoolExecutor executor) {
             this.changes = changes;
@@ -128,6 +129,7 @@ public class ChunkGenerator {
         }
 
         public void restart(int travelDirection, int playerX, int playerY, int playerZ) {
+            shouldRestart = true;
             shouldFinish = false;
             this.travelDirection = travelDirection;
             this.playerX = playerX;
@@ -140,7 +142,8 @@ public class ChunkGenerator {
             while (shouldExecute) {
                 try {
                     synchronized (starterThread) {
-                        starterThread.wait();
+                        if (!shouldRestart) starterThread.wait();
+                        shouldRestart = false;
                     }
                 }catch (InterruptedException e) {
                     throw new RuntimeException(e);
