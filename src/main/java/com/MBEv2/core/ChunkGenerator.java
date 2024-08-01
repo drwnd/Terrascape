@@ -17,12 +17,17 @@ public class ChunkGenerator {
 
     private final LinkedList<Vector4i> blockChanges;
 
-    private GenerationStarter previousGenerationStarter;
+    private final GenerationStarter generationStarter;
+
+    private final Thread starterThread;
 
 
     public ChunkGenerator() {
         executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(NUMBER_OF_GENERATION_THREADS);
         blockChanges = new LinkedList<>();
+        generationStarter = new GenerationStarter(blockChanges, executor);
+        starterThread = new Thread(generationStarter);
+        starterThread.start();
     }
 
     public void start() {
@@ -30,8 +35,10 @@ public class ChunkGenerator {
         int playerX = Utils.floor(playerPosition.x) >> CHUNK_SIZE_BITS;
         int playerY = Utils.floor(playerPosition.y) >> CHUNK_SIZE_BITS;
         int playerZ = Utils.floor(playerPosition.z) >> CHUNK_SIZE_BITS;
-        previousGenerationStarter = new GenerationStarter(blockChanges, NONE, playerX, playerY, playerZ, executor);
-        new Thread(previousGenerationStarter).start();
+        generationStarter.restart(NONE, playerX, playerY, playerZ);
+        synchronized (starterThread) {
+            starterThread.notify();
+        }
     }
 
     public void restart(int direction) {
@@ -39,9 +46,10 @@ public class ChunkGenerator {
         int playerX = Utils.floor(playerPosition.x) >> CHUNK_SIZE_BITS;
         int playerY = Utils.floor(playerPosition.y) >> CHUNK_SIZE_BITS;
         int playerZ = Utils.floor(playerPosition.z) >> CHUNK_SIZE_BITS;
-        previousGenerationStarter.stop();
-        previousGenerationStarter = new GenerationStarter(blockChanges, direction, playerX, playerY, playerZ, executor);
-        new Thread(previousGenerationStarter).start();
+        generationStarter.restart(direction, playerX, playerY, playerZ);
+        synchronized (starterThread) {
+            starterThread.notify();
+        }
     }
 
     public void addBlockChange(Vector4i blockChange) {
@@ -49,7 +57,10 @@ public class ChunkGenerator {
     }
 
     public void cleanUp() {
-        previousGenerationStarter.stop();
+        generationStarter.stop();
+        synchronized (starterThread) {
+            starterThread.notify();
+        }
         executor.getQueue().clear();
         executor.shutdown();
     }
@@ -101,18 +112,23 @@ public class ChunkGenerator {
         }
     }
 
-    static class GenerationStarter implements Runnable {
+    class GenerationStarter implements Runnable {
 
         private final ThreadPoolExecutor executor;
         private final LinkedList<Vector4i> changes;
-        private final int travelDirection;
-        private final int playerX, playerY, playerZ;
+        private int travelDirection;
+        private int playerX, playerY, playerZ;
 
         private boolean shouldFinish = true;
+        private boolean shouldExecute = true;
 
-        public GenerationStarter(LinkedList<Vector4i> changes, int travelDirection, int playerX, int playerY, int playerZ, ThreadPoolExecutor executor) {
-            this.executor = executor;
+        public GenerationStarter(LinkedList<Vector4i> changes, ThreadPoolExecutor executor) {
             this.changes = changes;
+            this.executor = executor;
+        }
+
+        public void restart(int travelDirection, int playerX, int playerY, int playerZ) {
+            shouldFinish = false;
             this.travelDirection = travelDirection;
             this.playerX = playerX;
             this.playerY = playerY;
@@ -121,16 +137,26 @@ public class ChunkGenerator {
 
         @Override
         public void run() {
-//            long time = System.nanoTime();
-//            System.out.println(System.nanoTime() - time);
-            executor.getQueue().clear();
-            unloadChunks();
-            handleBlockChanges();
-            handleSkyLight();
-            submitTasks();
+            while (shouldExecute) {
+                try {
+                    synchronized (starterThread) {
+                        starterThread.wait();
+                    }
+                }catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+
+                shouldFinish = true;
+
+                executor.getQueue().clear();
+                unloadChunks(playerX, playerY, playerZ);
+                handleBlockChanges();
+                handleSkyLight(travelDirection, playerX, playerY, playerZ);
+                submitTasks(playerX, playerY, playerZ);
+            }
         }
 
-        private void unloadChunks() {
+        private void unloadChunks(int playerX, int playerY, int playerZ) {
             for (Chunk chunk : Chunk.getWorld()) {
                 if (chunk == null)
                     continue;
@@ -181,7 +207,7 @@ public class ChunkGenerator {
             }
         }
 
-        private void handleSkyLight() {
+        private void handleSkyLight(int travelDirection, int playerX, int playerY, int playerZ) {
             if (travelDirection == TOP)
                 for (Chunk chunk : Chunk.getWorld()) {
                     if (chunk == null)
@@ -199,35 +225,35 @@ public class ChunkGenerator {
             }
         }
 
-        private void submitTasks() {
-            submitChunkColumnGeneration(playerX, playerZ);
+        private void submitTasks(int playerX, int playerY, int playerZ) {
+            submitChunkColumnGeneration(playerX, playerY, playerZ);
             for (int ring = 1; ring <= RENDER_DISTANCE_XZ && shouldFinish; ring++) {
                 for (int x = -ring; x < ring && shouldFinish; x++)
-                    submitChunkColumnGeneration(x + playerX, ring + playerZ);
+                    submitChunkColumnGeneration(x + playerX, playerY, ring + playerZ);
                 for (int z = ring; z > -ring && shouldFinish; z--)
-                    submitChunkColumnGeneration(ring + playerX, z + playerZ);
+                    submitChunkColumnGeneration(ring + playerX, playerY, z + playerZ);
                 for (int x = ring; x > -ring && shouldFinish; x--)
-                    submitChunkColumnGeneration(x + playerX, -ring + playerZ);
+                    submitChunkColumnGeneration(x + playerX, playerY, -ring + playerZ);
                 for (int z = -ring; z < ring && shouldFinish; z++)
-                    submitChunkColumnGeneration(-ring + playerX, z + playerZ);
+                    submitChunkColumnGeneration(-ring + playerX, playerY, z + playerZ);
 
                 if (ring == 1 && shouldFinish) {
-                    submitChunkColumnMeshing(playerX, playerZ);
+                    submitChunkColumnMeshing(playerX, playerY, playerZ);
                     continue;
                 }
                 int meshRing = ring - 1;
                 for (int x = -meshRing; x < meshRing && shouldFinish; x++)
-                    submitChunkColumnMeshing(x + playerX, meshRing + playerZ);
+                    submitChunkColumnMeshing(x + playerX, playerY, meshRing + playerZ);
                 for (int z = meshRing; z > -meshRing && shouldFinish; z--)
-                    submitChunkColumnMeshing(meshRing + playerX, z + playerZ);
+                    submitChunkColumnMeshing(meshRing + playerX, playerY, z + playerZ);
                 for (int x = meshRing; x > -meshRing && shouldFinish; x--)
-                    submitChunkColumnMeshing(x + playerX, -meshRing + playerZ);
+                    submitChunkColumnMeshing(x + playerX, playerY, -meshRing + playerZ);
                 for (int z = -meshRing; z < meshRing && shouldFinish; z++)
-                    submitChunkColumnMeshing(-meshRing + playerX, z + playerZ);
+                    submitChunkColumnMeshing(-meshRing + playerX, playerY, z + playerZ);
             }
         }
 
-        private void submitChunkColumnGeneration(int x, int z) {
+        private void submitChunkColumnGeneration(int x, int playerY, int z) {
             double[][] heightMap = WorldGeneration.heightMap(x, z);
             double[][] temperatureMap = WorldGeneration.temperatureMap(x, z);
             double[][] humidityMap = WorldGeneration.humidityMap(x, z);
@@ -265,7 +291,7 @@ public class ChunkGenerator {
             }
         }
 
-        private void submitChunkColumnMeshing(int x, int z) {
+        private void submitChunkColumnMeshing(int x, int playerY, int z) {
             LightLogic.setChunkColumnSkyLight(x << CHUNK_SIZE_BITS, ((playerY + RENDER_DISTANCE_Y + 1) << CHUNK_SIZE_BITS) - 1, z << CHUNK_SIZE_BITS);
 
             for (int y = RENDER_DISTANCE_Y + playerY; y >= -RENDER_DISTANCE_Y + playerY && shouldFinish; y--) {
@@ -280,6 +306,7 @@ public class ChunkGenerator {
 
         public void stop() {
             shouldFinish = false;
+            shouldExecute = false;
         }
     }
 }
