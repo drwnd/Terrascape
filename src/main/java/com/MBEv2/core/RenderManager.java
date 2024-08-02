@@ -1,12 +1,9 @@
 package com.MBEv2.core;
 
-import com.MBEv2.core.entity.GUIElement;
-import com.MBEv2.core.entity.Model;
-import com.MBEv2.core.entity.SkyBox;
+import com.MBEv2.core.entity.*;
 
 import static com.MBEv2.core.utils.Constants.*;
 
-import com.MBEv2.core.entity.Texture;
 import com.MBEv2.core.utils.Transformation;
 import com.MBEv2.core.utils.Utils;
 import com.MBEv2.test.Launcher;
@@ -29,7 +26,9 @@ public class RenderManager {
     private final List<Model> chunkModels = new ArrayList<>();
     private final List<Model> transparentChunkModels = new ArrayList<>();
     private final List<GUIElement> GUIElements = new ArrayList<>();
+    private final Player player;
     private GUIElement waterOverlay;
+    private GUIElement inventoryOverlay;
     private SkyBox skyBox;
     private boolean headUnderWater = false;
 
@@ -41,8 +40,9 @@ public class RenderManager {
     private Texture atlas;
     private boolean xRay;
 
-    public RenderManager() {
+    public RenderManager(Player player) {
         window = Launcher.getWindow();
+        this.player = player;
     }
 
     public void init() throws Exception {
@@ -76,6 +76,7 @@ public class RenderManager {
         GUIShader.createFragmentShader(Utils.loadResources("/shaders/GUIFragment.glsl"));
         GUIShader.link();
         GUIShader.createUniform("textureSampler");
+        GUIShader.createUniform("position");
 
         int[] indices = new int[786432];
         int index = 0;
@@ -98,9 +99,6 @@ public class RenderManager {
     public void bindModel(Model model) {
         GL30.glBindVertexArray(model.getVao());
         GL20.glEnableVertexAttribArray(0);
-
-        GL13.glActiveTexture(GL13.GL_TEXTURE0);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, isxRay() ? xRayAtlas.id() : atlas.id());
     }
 
     public void bindSkyBox(SkyBox skyBox) {
@@ -121,6 +119,8 @@ public class RenderManager {
 
         GL13.glActiveTexture(GL13.GL_TEXTURE0);
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, element.getTexture().id());
+
+        GUIShader.setUniform("position", element.getPosition());
     }
 
     public void unbind() {
@@ -154,19 +154,32 @@ public class RenderManager {
 
         Matrix4f projectionMatrix = window.updateProjectionMatrix();
         Matrix4f viewMatrix = Transformation.getViewMatrix(camera);
+        Matrix4f projectionViewMatrix = new Matrix4f();
+        projectionMatrix.mul(viewMatrix, projectionViewMatrix);
+        FrustumIntersection frustumIntersection = new FrustumIntersection(projectionViewMatrix);
 
         clear();
+
         blockShader.bind();
         blockShader.setUniform("projectionMatrix", projectionMatrix);
         blockShader.setUniform("viewMatrix", viewMatrix);
         blockShader.setUniform("textureSampler", 0);
         blockShader.setUniform("time", time);
+
+        renderOpaqueChunks(frustumIntersection);
+
+        renderTransparentChunks(frustumIntersection);
+
+        renderSkyBox(camera);
+
+        renderGUIElements();
+    }
+
+    public void renderOpaqueChunks(FrustumIntersection frustumIntersection) {
         GL11.glEnable(GL11.GL_DEPTH_TEST);
         GL11.glEnable(GL11.GL_CULL_FACE);
-
-        Matrix4f projectionViewMatrix = new Matrix4f();
-        projectionMatrix.mul(viewMatrix, projectionViewMatrix);
-        FrustumIntersection frustumIntersection = new FrustumIntersection(projectionViewMatrix);
+        GL13.glActiveTexture(GL13.GL_TEXTURE0);
+        GL11.glBindTexture(GL11.GL_TEXTURE_2D, isxRay() ? xRayAtlas.id() : atlas.id());
 
         for (Model model : chunkModels) {
             Vector3f position = new Vector3f(model.getPosition());
@@ -181,7 +194,9 @@ public class RenderManager {
             unbind();
         }
         chunkModels.clear();
+    }
 
+    public void renderTransparentChunks(FrustumIntersection frustumIntersection) {
         GL11.glEnable(GL11.GL_BLEND);
         GL11.glDisable(GL11.GL_CULL_FACE);
         for (Model transparentModel : transparentChunkModels) {
@@ -199,21 +214,35 @@ public class RenderManager {
         GL11.glDisable(GL11.GL_BLEND);
         transparentChunkModels.clear();
         blockShader.unBind();
+    }
 
+    public void renderSkyBox(Camera camera) {
         skyBoxShader.bind();
         bindSkyBox(skyBox);
         prepareSkyBox(camera);
         GL11.glDrawElements(GL11.GL_TRIANGLES, skyBox.getVertexCount(), GL11.GL_UNSIGNED_INT, 0);
         unbind();
         skyBoxShader.unBind();
+    }
 
+    public void renderGUIElements() {
         GUIShader.bind();
         GL11.glDisable(GL11.GL_DEPTH_TEST);
+
         if (headUnderWater) {
             GL11.glEnable(GL11.GL_BLEND);
             bindGUIElement(waterOverlay);
 
             GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, waterOverlay.getVertexCount());
+
+            unbind();
+            GL11.glDisable(GL11.GL_BLEND);
+        }
+        if (player.isInInventory()) {
+            GL11.glEnable(GL11.GL_BLEND);
+            bindGUIElement(inventoryOverlay);
+
+            GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, inventoryOverlay.getVertexCount());
 
             unbind();
             GL11.glDisable(GL11.GL_BLEND);
@@ -253,6 +282,10 @@ public class RenderManager {
 
     public void setWaterOverlay(GUIElement waterOverlay) {
         this.waterOverlay = waterOverlay;
+    }
+
+    public void setInventoryOverlay(GUIElement inventoryOverlay) {
+        this.inventoryOverlay = inventoryOverlay;
     }
 
     public void clear() {

@@ -1,19 +1,25 @@
 package com.MBEv2.core;
 
+import com.MBEv2.core.entity.GUIElement;
+import com.MBEv2.core.entity.Player;
 import com.MBEv2.test.Launcher;
 import org.joml.Vector2f;
 import org.lwjgl.glfw.GLFW;
+
+import java.util.ArrayList;
 
 public class MouseInput {
 
     private final Vector2f previousPos, currentPos;
     private final Vector2f displayVec;
+    private final Player player;
 
     private long rightButtonPressTime = -1, leftButtonPressTime = -1;
     private boolean rightButtonWasJustPressed, leftButtonWasJustPressed;
     private boolean mouseButton4IsPressed, mouseButton5IsPressed;
 
-    public MouseInput() {
+    public MouseInput(Player player) {
+        this.player = player;
         previousPos = new Vector2f(0, 0);
         currentPos = new Vector2f(0, 0);
         displayVec = new Vector2f();
@@ -48,6 +54,17 @@ public class MouseInput {
                 mouseButton5IsPressed = action == GLFW.GLFW_PRESS;
             if (button == GLFW.GLFW_MOUSE_BUTTON_4)
                 mouseButton4IsPressed = action == GLFW.GLFW_PRESS;
+        });
+
+        GLFW.glfwSetScrollCallback(Launcher.getWindow().getWindow(), (window, xPos, yPos) -> {
+            if (!player.isInInventory())
+                return;
+            ArrayList<GUIElement> inventoryElements = player.getInventoryElements();
+            float scrollValue = (float) yPos * -0.05f;
+            player.addToInventoryScroll(scrollValue);
+            for (GUIElement element : inventoryElements) {
+                element.getPosition().add(0.0f, scrollValue);
+            }
         });
 
         GLFW.glfwSetInputMode(Launcher.getWindow().getWindow(), GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_DISABLED);

@@ -4,6 +4,7 @@ import com.MBEv2.core.entity.GUIElement;
 import com.MBEv2.core.entity.Model;
 import com.MBEv2.core.entity.SkyBox;
 import com.MBEv2.core.utils.Utils;
+import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.joml.Vector3i;
 import org.lwjgl.opengl.GL11;
@@ -40,12 +41,12 @@ public class ObjectLoader {
         return new SkyBox(vao, indices.length, position);
     }
 
-    public static GUIElement loadGUIElement(float[] vertices, float[] textureCoordinates) {
+    public static GUIElement loadGUIElement(float[] vertices, float[] textureCoordinates, Vector2f position) {
         int vao = createVAO();
         int vbo1 = storeDateInAttributeList(0, 2, vertices);
         int vbo2 = storeDateInAttributeList(1, 2, textureCoordinates);
         unbind();
-        return new GUIElement(vao, vertices.length, vbo1, vbo2);
+        return new GUIElement(vao, vertices.length, vbo1, vbo2, position);
     }
 
     public static int loadTexture(String filename) throws Exception {

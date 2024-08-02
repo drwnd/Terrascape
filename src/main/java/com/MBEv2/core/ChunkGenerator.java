@@ -274,7 +274,7 @@ public class ChunkGenerator {
                         chunk = new Chunk(x, y, z);
 
                     Chunk.storeChunk(chunk);
-                    if (!chunk.isGenerated())
+                    if (!chunk.isGenerated() && shouldExecute)
                         executor.submit(new Generator(x, y, z, heightMap, temperatureMap, humidityMap, erosionMap, featureMap));
                 } else if (chunk.getId() != expectedId) {
                     GameLogic.addToUnloadChunk(chunk);
@@ -288,7 +288,7 @@ public class ChunkGenerator {
                         chunk = new Chunk(x, y, z);
 
                     Chunk.storeChunk(chunk);
-                    if (!chunk.isGenerated())
+                    if (!chunk.isGenerated() && shouldExecute)
                         executor.submit(new Generator(x, y, z, heightMap, temperatureMap, humidityMap, erosionMap, featureMap));
                 }
             }
@@ -303,6 +303,8 @@ public class ChunkGenerator {
                     continue;
                 if (chunk.isMeshed())
                     continue;
+                if (!shouldExecute)
+                    return;
                 executor.submit(new MeshHandler(chunk));
             }
         }

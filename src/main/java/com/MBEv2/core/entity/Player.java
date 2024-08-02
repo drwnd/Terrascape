@@ -13,7 +13,6 @@ import org.joml.Vector3i;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class Player {
 
@@ -24,8 +23,9 @@ public class Player {
 
     private final Vector3f velocity;
 
-    private final List<GUIElement> GUIElements = new ArrayList<>();
-    private final List<GUIElement> hotBarElements = new ArrayList<>();
+    private final ArrayList<GUIElement> GUIElements = new ArrayList<>();
+    private final ArrayList<GUIElement> hotBarElements = new ArrayList<>();
+    private final ArrayList<GUIElement> inventoryElements = new ArrayList<>();
     private final Texture atlas;
 
     private long rightButtonPressTime, leftButtonPressTime, spaceButtonPressTime;
@@ -33,21 +33,17 @@ public class Player {
     private boolean UPArrowPressed, DOWNArrowPressed;
     private boolean LEFTArrowPressed, RIGHTArrowPressed;
 
+    private float inventoryScroll;
+
     //Debug
     private boolean noClip, gKeyPressed;
     private boolean isFling, vKeyPressed;
-    private boolean tPressed = false, zPressed = false, xKeyPressed = false;
+    private boolean inInventory, ePressed;
+    private boolean tPressed, zPressed, xPressed;
     private final Vector3i pos1, pos2;
 
-    private final short[][] hotBars = {{GRASS, DIRT, STONE, MUD, ANDESITE, SNOW, SAND, STONE_BRICK, SLATE},
-            {GLASS, COBBLESTONE, GRAVEL, POLISHED_STONE, CHISELED_POLISHED_STONE, ICE, CLAY},
-            {MOSS, HEAVY_ICE, CHISELED_SLATE, COAL_ORE, IRON_ORE, DIAMOND_ORE, UP_DOWN_OAK_LOG, UP_DOWN_SPRUCE_LOG, UP_DOWN_DARK_OAK_LOG},
-            {UP_DOWN_STRIPPED_OAK_LOG, UP_DOWN_STRIPPED_SPRUCE_LOG, UP_DOWN_STRIPPED_DARK_OAK_LOG, OAK_PLANKS, SPRUCE_PLANKS, DARK_OAK_PLANKS, OAK_LEAVES, SPRUCE_LEAVES, DARK_OAK_LEAVES},
-            {BLACK, WHITE, CYAN, MAGENTA, YELLOW, BLUE, GREEN, RED, AIR},
-            {WATER, LAVA, CACTUS, FRONT_CREATOR_HEAD, AIR, AIR, AIR, AIR, AIR}};
-    private int selectedHotBar = 0;
+    private final short[] hotBar = new short[9];
     private int selectedHotBarSlot = 0;
-    private int selectedBlockType = 0;
 
     private int movementState = WALKING;
     private boolean isGrounded = false;
@@ -55,9 +51,9 @@ public class Player {
     public Player() throws Exception {
         atlas = new Texture(ObjectLoader.loadTexture("textures/atlas256.png"));
         window = Launcher.getWindow();
-        renderer = new RenderManager();
+        renderer = new RenderManager(this);
         camera = new Camera();
-        mouseInput = new MouseInput();
+        mouseInput = new MouseInput(this);
 
         velocity = new Vector3f(0, 0, 0);
         camera.setPosition(0.5f, WorldGeneration.getHeightMapValue(0, 0) + 3, 0.5f);
@@ -72,19 +68,24 @@ public class Player {
         skyBox.setTexture(skyBoxTexture1, skyBoxTexture2);
         renderer.processSkyBox(skyBox);
 
-        GUIElement crossHair = ObjectLoader.loadGUIElement(GameLogic.getCrossHairVertices(), GUI_ELEMENT_TEXTURE_COORDINATES);
+        GUIElement crossHair = ObjectLoader.loadGUIElement(GameLogic.getCrossHairVertices(), GUI_ELEMENT_TEXTURE_COORDINATES, new Vector2f(0.0f, 0.0f));
         crossHair.setTexture(new Texture(ObjectLoader.loadTexture("textures/CrossHair.png")));
         GUIElements.add(crossHair);
 
-        GUIElement hotBarGUIElement = ObjectLoader.loadGUIElement(GameLogic.getHotBarVertices(), GUI_ELEMENT_TEXTURE_COORDINATES);
+        GUIElement hotBarGUIElement = ObjectLoader.loadGUIElement(GameLogic.getHotBarVertices(), GUI_ELEMENT_TEXTURE_COORDINATES, new Vector2f(0.0f, 0.0f));
         hotBarGUIElement.setTexture(new Texture(ObjectLoader.loadTexture("textures/HotBar.png")));
         GUIElements.add(hotBarGUIElement);
 
-        GUIElement waterOverly = ObjectLoader.loadGUIElement(OVERLAY_VERTICES, GUI_ELEMENT_TEXTURE_COORDINATES);
+        GUIElement waterOverly = ObjectLoader.loadGUIElement(OVERLAY_VERTICES, GUI_ELEMENT_TEXTURE_COORDINATES, new Vector2f(0.0f, 0.0f));
         waterOverly.setTexture(new Texture(ObjectLoader.loadTexture("textures/WaterOverlay.png")));
         renderer.setWaterOverlay(waterOverly);
 
+        GUIElement inventoryOverlay = ObjectLoader.loadGUIElement(OVERLAY_VERTICES, GUI_ELEMENT_TEXTURE_COORDINATES, new Vector2f(0.0f, 0.0f));
+        inventoryOverlay.setTexture(new Texture(ObjectLoader.loadTexture("textures/InventoryOverlay.png")));
+        renderer.setInventoryOverlay(inventoryOverlay);
+
         updateHotBarElements();
+        generateInventoryElements(inventoryElements);
 
         mouseInput.init();
     }
@@ -93,25 +94,29 @@ public class Player {
         moveCameraHandleCollisions(velocity.x, velocity.y, velocity.z);
 
         Vector2f rotVec = mouseInput.getDisplayVec();
-        camera.moveRotation(rotVec.x * MOUSE_SENSITIVITY, rotVec.y * MOUSE_SENSITIVITY);
+        if (!inInventory)
+            camera.moveRotation(rotVec.x * MOUSE_SENSITIVITY, rotVec.y * MOUSE_SENSITIVITY);
 
         Vector3f cP = camera.getPosition();
         renderer.setHeadUnderWater(Chunk.getBlockInWorld(Utils.floor(cP.x), Utils.floor(cP.y), Utils.floor(cP.z)) == WATER);
 
+        if (inInventory)
+            for (GUIElement element : inventoryElements) renderer.processGUIElement(element);
+
         long currentTime = System.nanoTime();
 
-        if (leftButtonPressTime != -1 && (currentTime - leftButtonPressTime > 300_000_000 || leftButtonWasJustPressed)) {
+        if (!inInventory && leftButtonPressTime != -1 && (currentTime - leftButtonPressTime > 300_000_000 || leftButtonWasJustPressed)) {
             Vector3f target = getTarget(0, camera.getDirection());
             if (target != null)
                 GameLogic.placeBlock(AIR, new Vector3i(Utils.floor(target.x), Utils.floor(target.y), Utils.floor(target.z)));
         }
 
-        if (rightButtonPressTime != -1 && (currentTime - rightButtonPressTime > 300_000_000 || rightButtonWasJustPressed) && hotBars[selectedHotBar][selectedHotBarSlot] != AIR) {
+        if (!inInventory && rightButtonPressTime != -1 && (currentTime - rightButtonPressTime > 300_000_000 || rightButtonWasJustPressed) && hotBar[selectedHotBarSlot] != AIR) {
 
             Vector3f cameraDirection = camera.getDirection();
             Vector3f target = getTarget(1, cameraDirection);
             if (target != null) {
-                short selectedBlock = getHeldBlock();
+                short selectedBlock = hotBar[selectedHotBarSlot];
                 short toPlaceBlock = Block.getToPlaceBlock(selectedBlock, camera.getPrimaryDirection(cameraDirection), camera.getPrimaryXZDirection(cameraDirection), target);
 
                 GameLogic.placeBlock(toPlaceBlock, new Vector3i(Utils.floor(target.x), Utils.floor(target.y), Utils.floor(target.z)));
@@ -135,6 +140,7 @@ public class Player {
         if (isFling) handleInputFling(velocity, passedTime);
         else if (isInWater) handleInputSwimming(velocity, passedTime);
         else handleInputWalking(velocity, passedTime);
+        if (inInventory) handleInventoryHotkeys();
 
         normalizeVelocity(velocity);
         addVelocityChange(velocity);
@@ -146,6 +152,9 @@ public class Player {
     private void handleInputWalking(Vector3f velocity, float passedTime) {
         float friction = (float) Math.pow(isGrounded ? GROUND_FRICTION : AIR_FRICTION, passedTime);
         this.velocity.mul(friction, (float) Math.pow(FALL_FRICTION, passedTime), friction);
+        applyGravity(passedTime);
+
+        if (inInventory) return;
 
         float movementSpeedModifier = 1.0f;
         float accelerationModifier = isGrounded ? 1.0f : IN_AIR_SPEED;
@@ -176,11 +185,15 @@ public class Player {
             isGrounded = false;
             spaceButtonPressTime = currentTime;
         }
-        applyGravity(passedTime);
     }
 
     private void handleInputSwimming(Vector3f velocity, float passedTime) {
         this.velocity.mul((float) Math.pow(WATER_FRICTION, passedTime));
+
+        if (inInventory) {
+            applyGravity(passedTime);
+            return;
+        }
 
         float accelerationModifier = SWIM_STRENGTH * (isGrounded ? 2.0f : 1.0f);
 
@@ -232,6 +245,8 @@ public class Player {
     private void handleInputFling(Vector3f velocity, float passedTime) {
         this.velocity.mul((float) Math.pow(FLY_FRICTION, passedTime));
 
+        if (inInventory) return;
+
         float movementSpeedModifier = 1.0f;
 
         if (window.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL)) movementSpeedModifier *= 2.5f;
@@ -271,31 +286,17 @@ public class Player {
         else if (mouseInput.isMouseButton5IsPressed()) selectedHotBarSlot = 7;
         else if (mouseInput.isMouseButton4IsPressed()) selectedHotBarSlot = 8;
 
-        if (window.isKeyPressed(GLFW.GLFW_KEY_UP) && !UPArrowPressed) {
-            selectedHotBar = (selectedHotBar + 1) % hotBars.length;
-            updateHotBarElements();
-            UPArrowPressed = true;
-        }
-        if (window.isKeyPressed(GLFW.GLFW_KEY_DOWN) && !DOWNArrowPressed) {
-            selectedHotBar = (selectedHotBar - 1 + hotBars.length) % hotBars.length;
-            updateHotBarElements();
-            DOWNArrowPressed = true;
-        }
-        if (window.isKeyPressed(GLFW.GLFW_KEY_LEFT) && !LEFTArrowPressed) {
-            LEFTArrowPressed = true;
-            selectedBlockType = (selectedBlockType + toPlaceBlockTypes.length - 1) % toPlaceBlockTypes.length;
-            updateHotBarElements();
-        }
-        if (window.isKeyPressed(GLFW.GLFW_KEY_RIGHT) && !RIGHTArrowPressed) {
-            RIGHTArrowPressed = true;
-            selectedBlockType = (selectedBlockType + 1) % toPlaceBlockTypes.length;
-            updateHotBarElements();
+        if (window.isKeyPressed(GLFW.GLFW_KEY_E) && !ePressed) {
+            ePressed = true;
+            inInventory = !inInventory;
+            GLFW.glfwSetInputMode(window.getWindow(), GLFW.GLFW_CURSOR, inInventory ? GLFW.GLFW_CURSOR_NORMAL : GLFW.GLFW_CURSOR_DISABLED);
         }
 
         if (UPArrowPressed && !window.isKeyPressed(GLFW.GLFW_KEY_UP)) UPArrowPressed = false;
         if (DOWNArrowPressed && !window.isKeyPressed(GLFW.GLFW_KEY_DOWN)) DOWNArrowPressed = false;
         if (LEFTArrowPressed && !window.isKeyPressed(GLFW.GLFW_KEY_LEFT)) LEFTArrowPressed = false;
         if (RIGHTArrowPressed && !window.isKeyPressed(GLFW.GLFW_KEY_RIGHT)) RIGHTArrowPressed = false;
+        if (ePressed && !window.isKeyPressed(GLFW.GLFW_KEY_E)) ePressed = false;
     }
 
     private void handleInputDebugHotkeys() {
@@ -347,8 +348,8 @@ public class Player {
             vKeyPressed = true;
             if (movementState == SWIMMING) movementState = CRAWLING;
         }
-        if (window.isKeyPressed(GLFW.GLFW_KEY_X) && !xKeyPressed) {
-            xKeyPressed = true;
+        if (window.isKeyPressed(GLFW.GLFW_KEY_X) && !xPressed) {
+            xPressed = true;
             renderer.setxRay(!renderer.isxRay());
         }
 
@@ -356,10 +357,57 @@ public class Player {
         if (tPressed && !window.isKeyPressed(GLFW.GLFW_KEY_T)) tPressed = false;
         if (zPressed && !window.isKeyPressed(GLFW.GLFW_KEY_Y)) zPressed = false;
         if (vKeyPressed && !window.isKeyPressed(GLFW.GLFW_KEY_V)) vKeyPressed = false;
-        if (xKeyPressed && !window.isKeyPressed(GLFW.GLFW_KEY_X)) xKeyPressed = false;
+        if (xPressed && !window.isKeyPressed(GLFW.GLFW_KEY_X)) xPressed = false;
+    }
+
+    private void handleInventoryHotkeys() {
+        if (window.isKeyPressed(GLFW.GLFW_KEY_Q)) hotBar[0] = getHoveredOverInventoryBlock();
+        else if (window.isKeyPressed(GLFW.GLFW_KEY_2)) hotBar[1] = getHoveredOverInventoryBlock();
+        else if (window.isKeyPressed(GLFW.GLFW_KEY_3)) hotBar[2] = getHoveredOverInventoryBlock();
+        else if (window.isKeyPressed(GLFW.GLFW_KEY_4)) hotBar[3] = getHoveredOverInventoryBlock();
+        else if (window.isKeyPressed(GLFW.GLFW_KEY_5)) hotBar[4] = getHoveredOverInventoryBlock();
+        else if (window.isKeyPressed(GLFW.GLFW_KEY_R)) hotBar[5] = getHoveredOverInventoryBlock();
+        else if (window.isKeyPressed(GLFW.GLFW_KEY_F)) hotBar[6] = getHoveredOverInventoryBlock();
+        else if (mouseInput.isMouseButton5IsPressed()) hotBar[7] = getHoveredOverInventoryBlock();
+        else if (mouseInput.isMouseButton4IsPressed()) hotBar[8] = getHoveredOverInventoryBlock();
+        updateHotBarElements();
+    }
+
+    private short getHoveredOverInventoryBlock() {
+        double[] xPos = new double[1];
+        double[] yPos = new double[1];
+        GLFW.glfwGetCursorPos(window.getWindow(), xPos, yPos);
+        double x = xPos[0] / window.getWidth() - 0.5;
+        double y = yPos[0] / window.getHeight() - 0.5;
+
+        y += inventoryScroll;
+
+        if (y < -0.5f + GUI_SIZE * 0.04f) {
+            if (y < -0.5)
+                return 0;
+            if (x < 0.5f - (TO_PLACE_NON_STANDARD_BLOCKS.length + 1) * 0.02f * GUI_SIZE)
+                return 0;
+            int value = (int) ((0.5 - 0.01 * GUI_SIZE - x) / (0.02 * GUI_SIZE));
+            value = Math.min(TO_PLACE_NON_STANDARD_BLOCKS.length - 1, Math.max(value, 0));
+            return TO_PLACE_NON_STANDARD_BLOCKS[value];
+        }
+        if (x < 0.5f - (TO_PLACE_BLOCK_TYPES.length + 1) * 0.02f * GUI_SIZE)
+            return 0;
+        if (y > -0.5f + GUI_SIZE * 0.04f * (AMOUNT_OF_TO_PLACE_STANDARD_BLOCKS))
+            return 0;
+
+        int valueX = (int) ((0.5 - 0.01 * GUI_SIZE - x) / (0.02 * GUI_SIZE));
+        valueX = Math.min(TO_PLACE_BLOCK_TYPES.length - 1, Math.max(valueX, 0));
+
+        int valueY = (int) ((y - 0.005 * GUI_SIZE + 0.5) / (0.04 * GUI_SIZE));
+        valueY = Math.min(AMOUNT_OF_TO_PLACE_STANDARD_BLOCKS - 1, Math.max(valueY, 1));
+
+        return (short) (valueY << BLOCK_TYPE_BITS | TO_PLACE_BLOCK_TYPES[valueX]);
     }
 
     private void handleInputMovementStateChange(Vector3f position) {
+        if (inInventory) return;
+
         if (window.isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT)) {
             if (movementState == WALKING) {
                 camera.movePosition(0.0f, -0.25f, 0.0f);
@@ -426,8 +474,6 @@ public class Player {
         Vector3f oldPosition = new Vector3f(position);
         position.add(x, y, z);
 
-        int movementState = getMovementState();
-
         boolean xFirst = collidesWithBlock(position.x, oldPosition.y, oldPosition.z, movementState);
         boolean zFirst = collidesWithBlock(oldPosition.x, oldPosition.y, position.z, movementState);
         boolean xAndZ = collidesWithBlock(position.x, oldPosition.y, position.z, movementState);
@@ -440,18 +486,18 @@ public class Player {
         } else if ((xFirst || xAndZ) && (zFirst || xAndZ)) {
             if (xFirst && xAndZ) {
                 position.x = oldPosition.x;
-                setVelocityX(0.0f);
+                velocity.x = 0.0f;
             } else {
                 position.z = oldPosition.z;
-                setVelocityZ(0.0f);
+                velocity.z = 0.0f;
             }
 
             if (zFirst && xAndZ) {
                 position.z = oldPosition.z;
-                setVelocityZ(0.0f);
+                velocity.z = 0.0f;
             } else {
                 position.x = oldPosition.x;
-                setVelocityX(0.0f);
+                velocity.x = 0.0f;
             }
 
             if (!(xFirst && xAndZ) && !(zFirst && xAndZ)) if (Math.abs(x) > Math.abs(z)) position.x += x;
@@ -460,41 +506,39 @@ public class Player {
 
         if (collidesWithBlock(position.x, position.y, position.z, movementState)) {
             position.y = oldPosition.y;
-            setGrounded(y < 0.0f);
-            setVelocityY(0.0f);
+            isGrounded = y < 0.0f;
+            velocity.y = 0.0f;
             if (y < 0.0f) isFling = false;
-        } else if ((movementState == CROUCHING || movementState == CRAWLING) && isGrounded() && y < 0.0f && collidesWithBlock(oldPosition.x, position.y, oldPosition.z, movementState)) {
+        } else if ((movementState == CROUCHING || movementState == CRAWLING) && isGrounded && y < 0.0f && collidesWithBlock(oldPosition.x, position.y, oldPosition.z, movementState)) {
             boolean onEdgeX = !collidesWithBlock(position.x, position.y - 0.0625f, oldPosition.z, movementState);
             boolean onEdgeZ = !collidesWithBlock(oldPosition.x, position.y - 0.0625f, position.z, movementState);
 
             if (onEdgeX) {
                 position.x = oldPosition.x;
                 position.y = oldPosition.y;
-                setVelocityX(0.0f);
-                setVelocityY(0.0f);
+                velocity.x = 0.0f;
+                velocity.y = 0.0f;
             }
             if (onEdgeZ) {
                 position.z = oldPosition.z;
                 position.y = oldPosition.y;
-                setVelocityZ(0.0f);
-                setVelocityY(0.0f);
+                velocity.z = 0.0f;
+                velocity.y = 0.0f;
             }
         }
         if (movementState == SWIMMING && y > 0.0f && !collidesWithBlock(position.x, position.y, position.z, SWIMMING, WATER)) {
             position.y = oldPosition.y;
-            setVelocityY(0.0f);
+            velocity.y = 0.0f;
         }
 
         if (collidesWithBlock(position.x, position.y, position.z, movementState)) {
             position.x = oldPosition.x;
             position.y = oldPosition.y;
             position.z = oldPosition.z;
-            setVelocityX(0.0f);
-            setVelocityY(0.0f);
-            setVelocityZ(0.0f);
+            velocity.set(0.0f, 0.0f, 0.0f);
         }
 
-        if (position.y != oldPosition.y) setGrounded(false);
+        if (position.y != oldPosition.y) isGrounded = false;
 
         if (Utils.floor(oldPosition.x) >> CHUNK_SIZE_BITS != Utils.floor(position.x) >> CHUNK_SIZE_BITS)
             GameLogic.loadUnloadChunks(position.x > oldPosition.x ? FRONT : BACK);
@@ -509,7 +553,7 @@ public class Player {
     }
 
     public boolean collidesWithBlock(float x, float y, float z, int movementState) {
-        if (isNoClip()) return false;
+        if (noClip) return false;
 
         final float minX = x - HALF_PLAYER_WIDTH;
         final float maxX = x + HALF_PLAYER_WIDTH;
@@ -531,7 +575,7 @@ public class Player {
     }
 
     public boolean collidesWithBlock(float x, float y, float z, int movementState, short block) {
-        if (isNoClip()) return false;
+        if (noClip) return false;
 
         final float minX = x - HALF_PLAYER_WIDTH;
         final float maxX = x + HALF_PLAYER_WIDTH;
@@ -622,7 +666,7 @@ public class Player {
         final float minZ = cameraPosition.z - HALF_PLAYER_WIDTH;
         final float maxZ = cameraPosition.z + HALF_PLAYER_WIDTH;
 
-        short toPlaceBlock = Block.getToPlaceBlock(getHeldBlock(), camera.getPrimaryDirection(), camera.getPrimaryXZDirection(), target);
+        short toPlaceBlock = Block.getToPlaceBlock(hotBar[selectedHotBarSlot], camera.getPrimaryDirection(), camera.getPrimaryXZDirection(), target);
 
         if (action == placing && Block.playerIntersectsBlock(minX, maxX, minY, maxY, minZ, maxZ, Utils.floor(target.x), Utils.floor(target.y), Utils.floor(target.z), toPlaceBlock, this))
             return null;
@@ -669,61 +713,53 @@ public class Player {
         }
         hotBarElements.clear();
 
-        for (int i = 0; i < hotBars[selectedHotBar].length; i++) {
-            short block = hotBars[selectedHotBar][i];
-            if (block >= STANDARD_BLOCKS_THRESHOLD) block = (short) (block | toPlaceBlockTypes[selectedBlockType]);
+        int width = window.getWidth();
+        int height = window.getHeight();
+
+        for (int i = 0; i < hotBar.length; i++) {
+            short block = hotBar[i];
 
             int textureIndexFront = Block.getTextureIndex(block, FRONT) - 1;
             int textureIndexTop = Block.getTextureIndex(block, TOP) - 1;
             int textureIndexRight = Block.getTextureIndex(block, RIGHT) - 1;
-            float[] textureCoordinates = getTextureCoordinates(textureIndexFront, textureIndexTop, textureIndexRight, block);
-            GUIElement element = ObjectLoader.loadGUIElement(GameLogic.getHotBarElementVertices(i, block), textureCoordinates);
+            float[] textureCoordinates = GameLogic.getBlockDisplayTextureCoordinates(textureIndexFront, textureIndexTop, textureIndexRight, block);
+            float xOffset = (40.0f * i - 165 + 4) * GUI_SIZE / width;
+            float yOffset = -0.5f + 4.0f * GUI_SIZE / height;
+            GUIElement element = ObjectLoader.loadGUIElement(GameLogic.getBlockDisplayVertices(block), textureCoordinates, new Vector2f(xOffset, yOffset));
             element.setTexture(atlas);
             hotBarElements.add(element);
         }
     }
 
-    private static float[] getTextureCoordinates(int textureIndexFront, int textureIndexTop, int textureIndexRight, short block) {
-        if (block == AIR) return new float[]{};
+    private void generateInventoryElements(ArrayList<GUIElement> elements) {
+        for (int i = 0; i < TO_PLACE_NON_STANDARD_BLOCKS.length; i++) {
+            short block = TO_PLACE_NON_STANDARD_BLOCKS[i];
+            float[] vertices = GameLogic.getBlockDisplayVertices(block);
 
-        final int textureFrontX = textureIndexFront & 15;
-        final int textureFrontY = (textureIndexFront >> 4) & 15;
-        final float upperFrontX = (textureFrontX + Block.getSubU(block, FRONT, 0) * 0.0625f) * 0.0625f;
-        final float lowerFrontX = (textureFrontX + 1 + Block.getSubU(block, FRONT, 1) * 0.0625f) * 0.0625f;
-        final float upperFrontY = (textureFrontY + Block.getSubV(block, FRONT, 1) * 0.0625f) * 0.0625f;
-        final float lowerFrontY = (textureFrontY + 1 + Block.getSubV(block, FRONT, 2) * 0.0625f) * 0.0625f;
+            int textureIndexFront = Block.getTextureIndex(block, FRONT) - 1;
+            int textureIndexTop = Block.getTextureIndex(block, TOP) - 1;
+            int textureIndexRight = Block.getTextureIndex(block, RIGHT) - 1;
+            float[] textureCoordinates = GameLogic.getBlockDisplayTextureCoordinates(textureIndexFront, textureIndexTop, textureIndexRight, block);
+            GUIElement element = ObjectLoader.loadGUIElement(vertices, textureCoordinates, new Vector2f(0.5f - (i + 1) * 0.02f * GUI_SIZE, 0.5f - GUI_SIZE * 0.04f));
+            element.setTexture(atlas);
+            elements.add(element);
+        }
+        for (int baseBlock = 1; baseBlock < AMOUNT_OF_TO_PLACE_STANDARD_BLOCKS; baseBlock++) {
+            for (int blockTypeIndex = 0; blockTypeIndex < TO_PLACE_BLOCK_TYPES.length; blockTypeIndex++) {
+                int blockType = TO_PLACE_BLOCK_TYPES[blockTypeIndex];
+                short block = (short) (baseBlock << BLOCK_TYPE_BITS | blockType);
+                float[] vertices = GameLogic.getBlockDisplayVertices(block);
 
-        final int textureTopX = textureIndexTop & 15;
-        final int textureTopY = (textureIndexTop >> 4) & 15;
-        final float upperTopX = (textureTopX + Block.getSubU(block, TOP, 0) * 0.0625f) * 0.0625f;
-        final float lowerTopX = (textureTopX + 1 + Block.getSubU(block, TOP, 1) * 0.0625f) * 0.0625f;
-        final float upperTopY = (textureTopY + Block.getSubV(block, TOP, 1) * 0.0625f) * 0.0625f;
-        final float lowerTopY = (textureTopY + 1 + Block.getSubV(block, TOP, 2) * 0.0625f) * 0.0625f;
-
-        final int textureRightX = textureIndexRight & 15;
-        final int textureRightY = (textureIndexRight >> 4) & 15;
-        final float upperRightX = (textureRightX + Block.getSubU(block, RIGHT, 0) * 0.0625f) * 0.0625f;
-        final float lowerRightX = (textureRightX + 1 + Block.getSubU(block, RIGHT, 1) * 0.0625f) * 0.0625f;
-        final float upperRightY = (textureRightY + Block.getSubV(block, RIGHT, 1) * 0.0625f) * 0.0625f;
-        final float lowerRightY = (textureRightY + 1 + Block.getSubV(block, RIGHT, 2) * 0.0625f) * 0.0625f;
-
-        return new float[]{lowerFrontX, lowerFrontY, lowerFrontX, upperFrontY, upperFrontX, lowerFrontY,
-
-                lowerFrontX, upperFrontY, upperFrontX, upperFrontY, upperFrontX, lowerFrontY,
-
-                lowerTopX, lowerTopY, lowerTopX, upperTopY, upperTopX, lowerTopY,
-
-                lowerTopX, upperTopY, upperTopX, upperTopY, upperTopX, lowerTopY,
-
-                lowerRightX, lowerRightY, lowerRightX, upperRightY, upperRightX, lowerRightY,
-
-                lowerRightX, upperRightY, upperRightX, upperRightY, upperRightX, lowerRightY};
-    }
-
-    public short getHeldBlock() {
-        short baseBlock = hotBars[selectedHotBar][selectedHotBarSlot];
-        if (baseBlock < STANDARD_BLOCKS_THRESHOLD) return baseBlock;
-        return (short) (baseBlock | toPlaceBlockTypes[selectedBlockType]);
+                int textureIndexFront = Block.getTextureIndex(block, FRONT) - 1;
+                int textureIndexTop = Block.getTextureIndex(block, TOP) - 1;
+                int textureIndexRight = Block.getTextureIndex(block, RIGHT) - 1;
+                float[] textureCoordinates = GameLogic.getBlockDisplayTextureCoordinates(textureIndexFront, textureIndexTop, textureIndexRight, block);
+                GUIElement element = ObjectLoader.loadGUIElement(vertices, textureCoordinates,
+                        new Vector2f(0.5f - (blockTypeIndex + 1) * 0.02f * GUI_SIZE, 0.5f - GUI_SIZE * 0.04f * (1 + baseBlock)));
+                element.setTexture(atlas);
+                elements.add(element);
+            }
+        }
     }
 
     public RenderManager getRenderer() {
@@ -738,31 +774,19 @@ public class Player {
         return noClip;
     }
 
-    public int getMovementState() {
-        return movementState;
+    public boolean isInInventory() {
+        return inInventory;
     }
 
     public float clampVelocity(float velocity, float lowHigh) {
         return Math.max(-lowHigh, Math.min(velocity, lowHigh));
     }
 
-    public void setVelocityX(float x) {
-        velocity.x = x;
+    public ArrayList<GUIElement> getInventoryElements() {
+        return inventoryElements;
     }
 
-    public void setVelocityY(float y) {
-        velocity.y = y;
-    }
-
-    public void setVelocityZ(float z) {
-        velocity.z = z;
-    }
-
-    public void setGrounded(boolean grounded) {
-        isGrounded = grounded;
-    }
-
-    public boolean isGrounded() {
-        return isGrounded;
+    public void addToInventoryScroll(float value) {
+        inventoryScroll += value;
     }
 }

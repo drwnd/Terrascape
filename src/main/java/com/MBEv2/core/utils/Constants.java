@@ -179,7 +179,7 @@ public class Constants {
 
     public static final int PLAYER_HEAD = 19;
 
-    public static final int[] toPlaceBlockTypes = new int[]{FULL_BLOCK, PLAYER_HEAD, BOTTOM_SLAB, BOTTOM_PLATE, FRONT_BACK_WALL, UP_DOWN_POST};
+    public static final int[] TO_PLACE_BLOCK_TYPES = new int[]{FULL_BLOCK, PLAYER_HEAD, BOTTOM_SLAB, BOTTOM_PLATE, FRONT_BACK_WALL, UP_DOWN_POST};
 
     public static final int CACTUS_TYPE = 20;
     public static final int AIR_TYPE = 21;
@@ -203,6 +203,7 @@ public class Constants {
     public static final short BACK_CREATOR_HEAD = 6;
     public static final short RIGHT_CREATOR_HEAD = 7;
     public static final short LEFT_CREATOR_HEAD = 8;
+    public static final short[] TO_PLACE_NON_STANDARD_BLOCKS = new short[]{WATER, LAVA, CACTUS, FRONT_CREATOR_HEAD};
 
     //Standard blocks, aka blocks with blockTypes
     public static final short GRASS = 1 << BLOCK_TYPE_BITS;
@@ -229,39 +230,41 @@ public class Constants {
     public static final short COAL_ORE = 22 << BLOCK_TYPE_BITS;
     public static final short IRON_ORE = 23 << BLOCK_TYPE_BITS;
     public static final short DIAMOND_ORE = 24 << BLOCK_TYPE_BITS;
-    public static final short FRONT_BACK_OAK_LOG = 25 << BLOCK_TYPE_BITS;
-    public static final short UP_DOWN_OAK_LOG = 26 << BLOCK_TYPE_BITS;
-    public static final short LEFT_RIGHT_OAK_LOG = 27 << BLOCK_TYPE_BITS;
-    public static final short FRONT_BACK_STRIPPED_OAK_LOG = 28 << BLOCK_TYPE_BITS;
-    public static final short UP_DOWN_STRIPPED_OAK_LOG = 29 << BLOCK_TYPE_BITS;
-    public static final short LEFT_RIGHT_STRIPPED_OAK_LOG = 30 << BLOCK_TYPE_BITS;
-    public static final short FRONT_BACK_SPRUCE_LOG = 31 << BLOCK_TYPE_BITS;
-    public static final short UP_DOWN_SPRUCE_LOG = 32 << BLOCK_TYPE_BITS;
-    public static final short LEFT_RIGHT_SPRUCE_LOG = 33 << BLOCK_TYPE_BITS;
-    public static final short FRONT_BACK_STRIPPED_SPRUCE_LOG = 34 << BLOCK_TYPE_BITS;
-    public static final short UP_DOWN_STRIPPED_SPRUCE_LOG = 35 << BLOCK_TYPE_BITS;
-    public static final short LEFT_RIGHT_STRIPPED_SPRUCE_LOG = 36 << BLOCK_TYPE_BITS;
-    public static final short FRONT_BACK_DARK_OAK_LOG = 37 << BLOCK_TYPE_BITS;
-    public static final short UP_DOWN_DARK_OAK_LOG = 38 << BLOCK_TYPE_BITS;
-    public static final short LEFT_RIGHT_DARK_OAK_LOG = 39 << BLOCK_TYPE_BITS;
-    public static final short FRONT_BACK_STRIPPED_DARK_OAK_LOG = 40 << BLOCK_TYPE_BITS;
-    public static final short UP_DOWN_STRIPPED_DARK_OAK_LOG = 41 << BLOCK_TYPE_BITS;
-    public static final short LEFT_RIGHT_STRIPPED_DARK_OAK_LOG = 42 << BLOCK_TYPE_BITS;
-    public static final short OAK_LEAVES = 43 << BLOCK_TYPE_BITS;
-    public static final short SPRUCE_LEAVES = 44 << BLOCK_TYPE_BITS;
-    public static final short DARK_OAK_LEAVES = 45 << BLOCK_TYPE_BITS;
-    public static final short OAK_PLANKS = 46 << BLOCK_TYPE_BITS;
-    public static final short SPRUCE_PLANKS = 47 << BLOCK_TYPE_BITS;
-    public static final short DARK_OAK_PLANKS = 48 << BLOCK_TYPE_BITS;
-    public static final short BLACK = 49 << BLOCK_TYPE_BITS;
-    public static final short WHITE = 50 << BLOCK_TYPE_BITS;
-    public static final short CYAN = 51 << BLOCK_TYPE_BITS;
-    public static final short MAGENTA = 52 << BLOCK_TYPE_BITS;
-    public static final short YELLOW = 53 << BLOCK_TYPE_BITS;
-    public static final short BLUE = 54 << BLOCK_TYPE_BITS;
-    public static final short GREEN = 55 << BLOCK_TYPE_BITS;
-    public static final short RED = 56 << BLOCK_TYPE_BITS;
+    public static final short UP_DOWN_OAK_LOG = 25 << BLOCK_TYPE_BITS;
+    public static final short UP_DOWN_STRIPPED_OAK_LOG = 26 << BLOCK_TYPE_BITS;
+    public static final short UP_DOWN_SPRUCE_LOG = 27 << BLOCK_TYPE_BITS;
+    public static final short UP_DOWN_STRIPPED_SPRUCE_LOG = 28 << BLOCK_TYPE_BITS;
+    public static final short UP_DOWN_DARK_OAK_LOG = 29 << BLOCK_TYPE_BITS;
+    public static final short UP_DOWN_STRIPPED_DARK_OAK_LOG = 30 << BLOCK_TYPE_BITS;
+    public static final short OAK_LEAVES = 31 << BLOCK_TYPE_BITS;
+    public static final short SPRUCE_LEAVES = 32 << BLOCK_TYPE_BITS;
+    public static final short DARK_OAK_LEAVES = 33 << BLOCK_TYPE_BITS;
+    public static final short OAK_PLANKS = 34 << BLOCK_TYPE_BITS;
+    public static final short SPRUCE_PLANKS = 35 << BLOCK_TYPE_BITS;
+    public static final short DARK_OAK_PLANKS = 36 << BLOCK_TYPE_BITS;
+    public static final short BLACK = 37 << BLOCK_TYPE_BITS;
+    public static final short WHITE = 38 << BLOCK_TYPE_BITS;
+    public static final short CYAN = 39 << BLOCK_TYPE_BITS;
+    public static final short MAGENTA = 40 << BLOCK_TYPE_BITS;
+    public static final short YELLOW = 41 << BLOCK_TYPE_BITS;
+    public static final short BLUE = 42 << BLOCK_TYPE_BITS;
+    public static final short GREEN = 43 << BLOCK_TYPE_BITS;
+    public static final short RED = 44 << BLOCK_TYPE_BITS;
 
+    public static final short FRONT_BACK_OAK_LOG = 45 << BLOCK_TYPE_BITS;
+    public static final short LEFT_RIGHT_OAK_LOG = 46 << BLOCK_TYPE_BITS;
+    public static final short FRONT_BACK_STRIPPED_OAK_LOG = 47 << BLOCK_TYPE_BITS;
+    public static final short LEFT_RIGHT_STRIPPED_OAK_LOG = 48 << BLOCK_TYPE_BITS;
+    public static final short FRONT_BACK_SPRUCE_LOG = 49 << BLOCK_TYPE_BITS;
+    public static final short LEFT_RIGHT_SPRUCE_LOG = 50 << BLOCK_TYPE_BITS;
+    public static final short FRONT_BACK_STRIPPED_SPRUCE_LOG = 51 << BLOCK_TYPE_BITS;
+    public static final short LEFT_RIGHT_STRIPPED_SPRUCE_LOG = 52 << BLOCK_TYPE_BITS;
+    public static final short FRONT_BACK_DARK_OAK_LOG = 53 << BLOCK_TYPE_BITS;
+    public static final short LEFT_RIGHT_DARK_OAK_LOG = 54 << BLOCK_TYPE_BITS;
+    public static final short FRONT_BACK_STRIPPED_DARK_OAK_LOG = 55 << BLOCK_TYPE_BITS;
+    public static final short LEFT_RIGHT_STRIPPED_DARK_OAK_LOG = 56 << BLOCK_TYPE_BITS;
+
+    public static final int AMOUNT_OF_TO_PLACE_STANDARD_BLOCKS = 45;
     public static final int AMOUNT_OF_STANDARD_BLOCKS = 57;
 
 

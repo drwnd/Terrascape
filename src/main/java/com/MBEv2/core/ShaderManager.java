@@ -1,6 +1,7 @@
 package com.MBEv2.core;
 
 import org.joml.Matrix4f;
+import org.joml.Vector2f;
 import org.joml.Vector3i;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.system.MemoryStack;
@@ -38,6 +39,10 @@ public class ShaderManager {
 
     public void setUniform(String uniformName, Vector3i value) {
         GL20.glUniform3i(uniforms.get(uniformName), value.x, value.y, value.z);
+    }
+
+    public void setUniform(String uniformName, Vector2f value) {
+        GL20.glUniform2f(uniforms.get(uniformName), value.x, value.y);
     }
 
     public void setUniform(String uniformName, int value) {

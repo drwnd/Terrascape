@@ -172,15 +172,12 @@ public class GameLogic {
                 size * GUI_SIZE / width, size * GUI_SIZE / height};
     }
 
-    public static float[] getHotBarElementVertices(int index, short block) {
+    public static float[] getBlockDisplayVertices(short block) {
         if (block == AIR) return new float[]{};
         WindowManager window = Launcher.getWindow();
 
         final int width = window.getWidth();
         final int height = window.getHeight();
-
-        final float xOffset = (40.0f * index - 165 + 4) * GUI_SIZE / width;
-        final float yOffset = -0.5f + 4.0f * GUI_SIZE / height;
 
         final float sin30 = (float) Math.sin(Math.toRadians(30)) * GUI_SIZE;
         final float cos30 = (float) Math.cos(Math.toRadians(30)) * GUI_SIZE;
@@ -191,36 +188,75 @@ public class GameLogic {
         float widthY = (XYZSubData[MAX_Y] - XYZSubData[MIN_Y] + 16) * GUI_SIZE;
         float widthZ = XYZSubData[MAX_Z] - XYZSubData[MIN_Z] + 16;
 
-        //Ignorance is bliss, so be ignorant
-        float value1 = yOffset + widthY / height + sin30 * widthX / height;
-        float value2 = yOffset + widthY / height + sin30 * widthZ / height;
-        float value7 = xOffset - cos30 * widthZ / width;
-        float value3 = value7 + cos30 * widthX / width;
-        float value4 = yOffset + widthY / height + sin30 * widthZ / height + sin30 * widthX / height;
-        float value5 = xOffset + cos30 * widthX / width;
-        float value6 = yOffset + sin30 * widthX / height;
-        float value8 = yOffset + sin30 * widthZ / height;
-        float value9 = yOffset + widthY / height;
-        return new float[]{xOffset, yOffset,
-                xOffset, value9,
-                value5, value6,
-                xOffset, value9,
-                value5, value1,
-                value5, value6,
+        float rightCornersX = cos30 * widthX / width;
+        float leftCornersX = -cos30 * widthZ / width;
+        float backCornerX = leftCornersX + cos30 * widthX / width;
 
-                value7, value2,
-                value3, value4,
-                xOffset, value9,
-                value3, value4,
-                value5, value1,
-                xOffset, value9,
+        float bottomRightCornerY = sin30 * widthX / height;
+        float topRightCornerY = widthY / height + sin30 * widthX / height;
+        float bottomLeftCornerY = sin30 * widthZ / height;
+        float topLeftCornerY = widthY / height + sin30 * widthZ / height;
+        float backCornerY = widthY / height + sin30 * widthZ / height + sin30 * widthX / height;
+        float centerCornerY = widthY / height;
+        return new float[]{
+                0, 0,
+                0, centerCornerY,
+                rightCornersX, bottomRightCornerY,
+                0, centerCornerY,
+                rightCornersX, topRightCornerY,
+                rightCornersX, bottomRightCornerY,
 
-                xOffset, yOffset,
-                xOffset, value9,
-                value7, value8,
-                xOffset, value9,
-                value7, value2,
-                value7, value8,};
+                leftCornersX, topLeftCornerY,
+                backCornerX, backCornerY,
+                0, centerCornerY,
+                backCornerX, backCornerY,
+                rightCornersX, topRightCornerY,
+                0, centerCornerY,
+
+                0, 0,
+                0, centerCornerY,
+                leftCornersX, bottomLeftCornerY,
+                0, centerCornerY,
+                leftCornersX, topLeftCornerY,
+                leftCornersX, bottomLeftCornerY
+        };
+    }
+
+    public static float[] getBlockDisplayTextureCoordinates(int textureIndexFront, int textureIndexTop, int textureIndexRight, short block) {
+        if (block == AIR) return new float[]{};
+
+        final int textureFrontX = textureIndexFront & 15;
+        final int textureFrontY = (textureIndexFront >> 4) & 15;
+        final float upperFrontX = (textureFrontX + Block.getSubU(block, FRONT, 0) * 0.0625f) * 0.0625f;
+        final float lowerFrontX = (textureFrontX + 1 + Block.getSubU(block, FRONT, 1) * 0.0625f) * 0.0625f;
+        final float upperFrontY = (textureFrontY + Block.getSubV(block, FRONT, 1) * 0.0625f) * 0.0625f;
+        final float lowerFrontY = (textureFrontY + 1 + Block.getSubV(block, FRONT, 2) * 0.0625f) * 0.0625f;
+
+        final int textureTopX = textureIndexTop & 15;
+        final int textureTopY = (textureIndexTop >> 4) & 15;
+        final float upperTopX = (textureTopX + Block.getSubU(block, TOP, 0) * 0.0625f) * 0.0625f;
+        final float lowerTopX = (textureTopX + 1 + Block.getSubU(block, TOP, 1) * 0.0625f) * 0.0625f;
+        final float upperTopY = (textureTopY + Block.getSubV(block, TOP, 1) * 0.0625f) * 0.0625f;
+        final float lowerTopY = (textureTopY + 1 + Block.getSubV(block, TOP, 2) * 0.0625f) * 0.0625f;
+
+        final int textureRightX = textureIndexRight & 15;
+        final int textureRightY = (textureIndexRight >> 4) & 15;
+        final float upperRightX = (textureRightX + Block.getSubU(block, RIGHT, 0) * 0.0625f) * 0.0625f;
+        final float lowerRightX = (textureRightX + 1 + Block.getSubU(block, RIGHT, 1) * 0.0625f) * 0.0625f;
+        final float upperRightY = (textureRightY + Block.getSubV(block, RIGHT, 1) * 0.0625f) * 0.0625f;
+        final float lowerRightY = (textureRightY + 1 + Block.getSubV(block, RIGHT, 2) * 0.0625f) * 0.0625f;
+
+        return new float[]{lowerFrontX, lowerFrontY, lowerFrontX, upperFrontY, upperFrontX, lowerFrontY,
+
+                lowerFrontX, upperFrontY, upperFrontX, upperFrontY, upperFrontX, lowerFrontY,
+
+                lowerTopX, lowerTopY, lowerTopX, upperTopY, upperTopX, lowerTopY,
+
+                lowerTopX, upperTopY, upperTopX, upperTopY, upperTopX, lowerTopY,
+
+                lowerRightX, lowerRightY, lowerRightX, upperRightY, upperRightX, lowerRightY,
+
+                lowerRightX, upperRightY, upperRightX, upperRightY, upperRightX, lowerRightY};
     }
 
     public static float[] getHotBarVertices() {
@@ -232,10 +268,12 @@ public class GameLogic {
         float sizeY = 40;
 
         return new float[]{
-
-                -sizeX * GUI_SIZE / width, -0.5f, -sizeX * GUI_SIZE / width, sizeY * GUI_SIZE / height - 0.5f, sizeX * GUI_SIZE / width, -0.5f,
-
-                -sizeX * GUI_SIZE / width, sizeY * GUI_SIZE / height - 0.5f, sizeX * GUI_SIZE / width, sizeY * GUI_SIZE / height - 0.5f, sizeX * GUI_SIZE / width, -0.5f};
+                -sizeX * GUI_SIZE / width, -0.5f,
+                -sizeX * GUI_SIZE / width, sizeY * GUI_SIZE / height - 0.5f,
+                sizeX * GUI_SIZE / width, -0.5f,
+                -sizeX * GUI_SIZE / width, sizeY * GUI_SIZE / height - 0.5f,
+                sizeX * GUI_SIZE / width, sizeY * GUI_SIZE / height - 0.5f,
+                sizeX * GUI_SIZE / width, -0.5f};
     }
 
     public static long getChunkId(int x, int y, int z) {
