@@ -393,11 +393,11 @@ public class WorldGeneration {
     }
 
     public static void genDarkOakTree(Chunk chunk, int height, int inChunkX, int inChunkY, int inChunkZ, int totalX, int totalY, int totalZ, double feature, double threshold) {
-        if (feature > threshold && totalY < height + OAK_TREE.length && totalY >= height && height > WATER_LEVEL &&
-                inChunkX >= 2 && inChunkZ >= 2 && inChunkX < CHUNK_SIZE - 2 && inChunkZ < CHUNK_SIZE - 2 && isOutsideCave(totalX, height, totalZ))
-            for (int i = 0; i < 5; i++)
-                for (int j = 0; j < 5; j++)
-                    chunk.storeTreeBlock(inChunkX + i - 2, inChunkY, inChunkZ + j - 2, OAK_TREE[totalY - height][i][j]);
+        if (feature > threshold && totalY < height + DARK_OAK_TREE.length && totalY >= height && height > WATER_LEVEL &&
+                inChunkX >= 3 && inChunkZ >= 3 && inChunkX < CHUNK_SIZE - 3 && inChunkZ < CHUNK_SIZE - 3 && isOutsideCave(totalX, height, totalZ))
+            for (int i = 0; i < 7; i++)
+                for (int j = 0; j < 7; j++)
+                    chunk.storeTreeBlock(inChunkX + i - 3, inChunkY, inChunkZ + j - 3, DARK_OAK_TREE[totalY - height][i][j]);
     }
 
     public static int getHeightMapValue(int totalX, int totalZ) {
