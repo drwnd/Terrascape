@@ -114,7 +114,7 @@ public class WorldGeneration {
                     chunk.storeSave(inChunkX, inChunkY, inChunkZ, height <= WATER_LEVEL ? getOceanFloorBlock(totalX, totalY, totalZ) : DIRT);
             } else if (totalY <= WATER_LEVEL) chunk.storeSave(inChunkX, inChunkY, inChunkZ, WATER);
 
-            genDarkOakTree(chunk, height, inChunkX, inChunkY, inChunkZ, totalX, totalY, totalZ, feature, FOREST_TREE_THRESHOLD);
+            genOakTree(chunk, height, inChunkX, inChunkY, inChunkZ, totalX, totalY, totalZ, feature, FOREST_TREE_THRESHOLD);
         }
     }
 
