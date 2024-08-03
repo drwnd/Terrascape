@@ -13,6 +13,7 @@ import org.joml.Vector3i;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class Player {
 
@@ -22,6 +23,7 @@ public class Player {
     private final MouseInput mouseInput;
 
     private final Vector3f velocity;
+    private final long[] visibleChunks;
 
     private final ArrayList<GUIElement> GUIElements = new ArrayList<>();
     private final ArrayList<GUIElement> hotBarElements = new ArrayList<>();
@@ -39,7 +41,7 @@ public class Player {
     private boolean noClip, gKeyPressed;
     private boolean isFling, vKeyPressed;
     private boolean inInventory, ePressed;
-    private boolean tPressed, zPressed, xPressed;
+    private boolean tPressed, zPressed, xPressed, oPressed;
     private final Vector3i pos1, pos2;
 
     private final short[] hotBar = new short[9];
@@ -59,6 +61,7 @@ public class Player {
         camera.setPosition(0.5f, WorldGeneration.getHeightMapValue(0, 0) + 3, 0.5f);
         pos1 = new Vector3i();
         pos2 = new Vector3i();
+        visibleChunks = new long[(RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH >> 6) + 1];
     }
 
     public void init() throws Exception {
@@ -352,12 +355,22 @@ public class Player {
             xPressed = true;
             renderer.setxRay(!renderer.isxRay());
         }
+        if (window.isKeyPressed(GLFW.GLFW_KEY_O) && !oPressed) {
+            oPressed = true;
+            Vector3f position = camera.getPosition();
+            int x = Utils.floor(position.x) >> CHUNK_SIZE_BITS;
+            int y = Utils.floor(position.y) >> CHUNK_SIZE_BITS;
+            int z = Utils.floor(position.z) >> CHUNK_SIZE_BITS;
+            Chunk chunk = Chunk.getChunk(x, y, z);
+            System.out.println(Integer.toBinaryString(Short.toUnsignedInt(chunk.getOcclusionCullingData())));
+        }
 
         if (gKeyPressed && !window.isKeyPressed(GLFW.GLFW_KEY_G)) gKeyPressed = false;
         if (tPressed && !window.isKeyPressed(GLFW.GLFW_KEY_T)) tPressed = false;
         if (zPressed && !window.isKeyPressed(GLFW.GLFW_KEY_Y)) zPressed = false;
         if (vKeyPressed && !window.isKeyPressed(GLFW.GLFW_KEY_V)) vKeyPressed = false;
         if (xPressed && !window.isKeyPressed(GLFW.GLFW_KEY_X)) xPressed = false;
+        if (oPressed && !window.isKeyPressed(GLFW.GLFW_KEY_O)) oPressed = false;
     }
 
     private void handleInventoryHotkeys() {
@@ -680,6 +693,8 @@ public class Player {
         final int chunkY = Utils.floor(cameraPosition.y) >> CHUNK_SIZE_BITS;
         final int chunkZ = Utils.floor(cameraPosition.z) >> CHUNK_SIZE_BITS;
 
+        calculateVisibleChunks(chunkX, chunkY, chunkZ);
+
         renderChunkColumn(chunkX, chunkY, chunkZ);
         for (int ring = 1; ring <= RENDER_DISTANCE_XZ + 2; ring++) {
             for (int x = -ring; x < ring; x++) renderChunkColumn(x + chunkX, chunkY, ring + chunkZ);
@@ -699,9 +714,54 @@ public class Player {
         for (int y = RENDER_DISTANCE_Y + 2; y >= -RENDER_DISTANCE_Y - 2; y--) {
             Chunk chunk = Chunk.getChunk(x, y + cameraY, z);
             if (chunk == null) continue;
+            int chunkIndex = chunk.getIndex();
+            if ((visibleChunks[chunkIndex >> 6] & 1L << (chunkIndex & 63)) == 0) continue;
+
             if (chunk.getModel() != null) renderer.processModel(chunk.getModel());
             if (chunk.getTransparentModel() != null) renderer.processTransparentModel(chunk.getTransparentModel());
         }
+    }
+
+    private void calculateVisibleChunks(int chunkX, int chunkY, int chunkZ) {
+        Arrays.fill(visibleChunks, 0);
+        int chunkIndex = GameLogic.getChunkIndex(chunkX, chunkY, chunkZ);
+
+        visibleChunks[chunkIndex >> 6] = visibleChunks[chunkIndex >> 6] | 1L << (chunkIndex & 63);
+
+        fillVisibleChunks(chunkX, chunkY, chunkZ + 1, BACK, 1 << FRONT, 0);
+        fillVisibleChunks(chunkX, chunkY, chunkZ - 1, FRONT, 1 << BACK, 0);
+
+        fillVisibleChunks(chunkX, chunkY + 1, chunkZ, BOTTOM, 1 << TOP, 0);
+        fillVisibleChunks(chunkX, chunkY - 1, chunkZ, TOP, 1 << BOTTOM, 0);
+
+        fillVisibleChunks(chunkX + 1, chunkY, chunkZ, LEFT, 1 << RIGHT, 0);
+        fillVisibleChunks(chunkX - 1, chunkY, chunkZ, RIGHT, 1 << LEFT, 0);
+    }
+
+    private void fillVisibleChunks(int chunkX, int chunkY, int chunkZ, int entrySide, int traveledDirections, int damper) {
+        if (damper >= MAX_OCCLUSION_CULLING_DAMPER) return;
+        int chunkIndex = GameLogic.getChunkIndex(chunkX, chunkY, chunkZ);
+        Chunk chunk = Chunk.getChunk(chunkIndex);
+        if (chunk == null) return;
+
+        if ((visibleChunks[chunkIndex >> 6] & 1L << (chunkIndex & 63)) != 0) return;
+        visibleChunks[chunkIndex >> 6] = visibleChunks[chunkIndex >> 6] | 1L << (chunkIndex & 63);
+        damper += chunk.getOcclusionCullingDamper();
+
+        if (chunk.readOcclusionCullingSidePair(entrySide, FRONT) && (traveledDirections & 1 << BACK) == 0)
+            fillVisibleChunks(chunkX, chunkY, chunkZ + 1, BACK, traveledDirections | 1 << FRONT, damper);
+        if (chunk.readOcclusionCullingSidePair(entrySide, BACK) && (traveledDirections & 1 << FRONT) == 0)
+            fillVisibleChunks(chunkX, chunkY, chunkZ - 1, FRONT, traveledDirections | 1 << BACK, damper);
+
+        if (chunk.readOcclusionCullingSidePair(entrySide, TOP) && (traveledDirections & 1 << BOTTOM) == 0)
+            fillVisibleChunks(chunkX, chunkY + 1, chunkZ, BOTTOM, traveledDirections | 1 << TOP, damper);
+        if (chunk.readOcclusionCullingSidePair(entrySide, BOTTOM) && (traveledDirections & 1 << TOP) == 0)
+            fillVisibleChunks(chunkX, chunkY - 1, chunkZ, TOP, traveledDirections | 1 << BOTTOM, damper);
+
+        if (chunk.readOcclusionCullingSidePair(entrySide, RIGHT) && (traveledDirections & 1 << LEFT) == 0)
+            fillVisibleChunks(chunkX + 1, chunkY, chunkZ, LEFT, traveledDirections | 1 << RIGHT, damper);
+        if (chunk.readOcclusionCullingSidePair(entrySide, LEFT) && (traveledDirections & 1 << RIGHT) == 0)
+            fillVisibleChunks(chunkX - 1, chunkY, chunkZ, RIGHT, traveledDirections | 1 << LEFT, damper);
     }
 
     private void updateHotBarElements() {

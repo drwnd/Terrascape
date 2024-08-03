@@ -51,6 +51,8 @@ public class GameLogic {
 
         chunk.storeSave(inChunkX, inChunkY, inChunkZ, block);
         chunk.setModified();
+        if (Block.getBlockType(block) == FULL_BLOCK || Block.getBlockType(previousBlock) == FULL_BLOCK)
+            chunk.setOcclusionCullingDataOutdated();
 
         int minX = chunkX, maxX = chunkX;
         int minY = chunkY, maxY = chunkY;

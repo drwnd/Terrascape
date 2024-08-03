@@ -3,6 +3,8 @@ package com.MBEv2.core;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
+import static com.MBEv2.core.utils.Constants.*;
+
 public class Camera {
 
     private final Vector3f position;
@@ -57,10 +59,10 @@ public class Camera {
         float y = Math.abs(cameraDirection.y);
         float z = Math.abs(cameraDirection.z);
         if (x > z && x > y)
-            return cameraDirection.x > 0 ? 2 : 5;
+            return cameraDirection.x > 0.0f ? RIGHT : LEFT;
         else if (z > x && z > y)
-            return cameraDirection.z > 0 ? 0 : 3;
-        return cameraDirection.y > 0 ? 1 : 4;
+            return cameraDirection.z > 0.0f ? FRONT : BACK;
+        return cameraDirection.y > 0.0f ? TOP : BOTTOM;
     }
 
     public void setPosition(float x, float y, float z) {

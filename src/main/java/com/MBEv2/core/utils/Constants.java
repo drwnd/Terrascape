@@ -47,6 +47,7 @@ public class Constants {
     //DO NOT CHANGE THESE VALUES
     public static final int CHUNK_SIZE = 32;
     public static final int CHUNK_SIZE_BITS = 5;
+    public static final int CHUNK_SIZE_MASK = (1 << CHUNK_SIZE_BITS) - 1;
     public static final int MAX_CHUNKS_XZ = 0x7FFFFFF;
     public static final int MAX_CHUNKS_Y = 0x3FF;
     public static final int MAX_BLOCK_LIGHT_VALUE = 15;
@@ -63,6 +64,7 @@ public class Constants {
     public static final int RENDERED_WORLD_HEIGHT = RENDER_DISTANCE_Y * 2 + 5;
 
     public static final int NUMBER_OF_GENERATION_THREADS = 4;
+    public static final int MAX_OCCLUSION_CULLING_DAMPER = 4;
 
     //World generation
     public static final long SEED = new Random().nextLong();
@@ -123,9 +125,6 @@ public class Constants {
     public static final int BOTTOM = 4;
     public static final int LEFT = 5;
     public static final int NONE = 6;
-
-    //Other information on stuff
-    public static final int[] SIDE_MASKS;
 
     //OCCLUSION_DATA
     public static final int OCCLUDES_ALL = 0;
@@ -549,8 +548,6 @@ public class Constants {
                 {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
                 {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
                 {AIR, AIR, AIR, AIR, AIR, AIR, AIR}}};
-
-        SIDE_MASKS = new int[]{1, 2, 4, 8, 16, 32};
 
         SKY_BOX_VERTICES = new float[]{
                 -1.0f, -1.0f, -1.0f,

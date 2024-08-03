@@ -17,7 +17,13 @@ public class Block {
     private static final byte[] BLOCK_TYPE_DATA = new byte[TOTAL_AMOUNT_OF_BLOCK_TYPES];
     private static final byte[][] BLOCK_TYPE_XYZ_SUB_DATA = new byte[TOTAL_AMOUNT_OF_BLOCK_TYPES][0];
     private static final byte[][] BLOCK_TYPE_UV_SUB_DATA = new byte[TOTAL_AMOUNT_OF_BLOCK_TYPES][0];
-    public static final int[][] NORMALS = {{0, 0, 1}, {0, 1, 0}, {1, 0, 0}, {0, 0, -1}, {0, -1, 0}, {-1, 0, 0}};
+    public static final int[][] NORMALS = {
+            {0, 0, 1},
+            {0, 1, 0},
+            {1, 0, 0},
+            {0, 0, -1},
+            {0, -1, 0},
+            {-1, 0, 0}};
 
     public static final int[][] CORNERS_OF_SIDE = {{1, 0, 5, 4}, {2, 0, 3, 1}, {3, 1, 7, 5}, {2, 3, 6, 7}, {6, 4, 7, 5}, {2, 0, 6, 4}};
 
@@ -28,8 +34,8 @@ public class Block {
         byte blockData = BLOCK_TYPE_DATA[getBlockType(toTestBlock)];
         int occludingSide = (side + 3) % 6;
         int occlusionType = (occlusionData >> 6) & 3;
-        int blockSideType = blockData & SIDE_MASKS[side];
-        int occludingSideType = occlusionData & SIDE_MASKS[occludingSide];
+        int blockSideType = blockData & 1 << side;
+        int occludingSideType = occlusionData & 1 << occludingSide;
 
         if ((occlusionType == OCCLUDES_ALL || occlusionType == OCCLUDES_DYNAMIC_ALL) && blockSideType != 0 && occludingSideType != 0)
             return true;
@@ -64,7 +70,7 @@ public class Block {
 
         int occludingSide = (side + 3) % 6;
         int occludingBlockData = BLOCK_TYPE_DATA[getBlockType(occludingBlock)];
-        int occludingBlockSideType = occludingBlockData & SIDE_MASKS[occludingSide];
+        int occludingBlockSideType = occludingBlockData & 1 << occludingSide;
 
         return getBlockType(toTestBlock) == getBlockType(occludingBlock) && blockSideType != 0 && occludingBlockSideType != 0;
     }
@@ -160,8 +166,8 @@ public class Block {
 
     public static int getBlockTypeOcclusionData(short block, int side) {
         if (block < STANDARD_BLOCKS_THRESHOLD)
-            return BLOCK_TYPE_OCCLUSION_DATA[NON_STANDARD_BLOCK_TYPE[block]] & SIDE_MASKS[side];
-        return BLOCK_TYPE_OCCLUSION_DATA[block & BLOCK_TYPE_MASK] & SIDE_MASKS[side];
+            return BLOCK_TYPE_OCCLUSION_DATA[NON_STANDARD_BLOCK_TYPE[block]] & 1 << side;
+        return BLOCK_TYPE_OCCLUSION_DATA[block & BLOCK_TYPE_MASK] & 1 << side;
     }
 
     public static byte[] getXYZSubData(short block) {

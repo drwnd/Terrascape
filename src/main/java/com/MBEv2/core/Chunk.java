@@ -6,6 +6,7 @@ import org.joml.Vector3i;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 
 import static com.MBEv2.core.utils.Constants.*;
 
@@ -33,6 +34,10 @@ public class Chunk {
     private Model model;
     private Model transparentModel;
 
+    private short occlusionCullingData;
+    private byte occlusionCullingDamper;
+    private final byte[] occlusionCullingLargerSideOffsets = new byte[]{0, 1, 3, 6, 10};
+
     public Chunk(int x, int y, int z) {
         this.X = x;
         this.Y = y;
@@ -44,12 +49,105 @@ public class Chunk {
         index = GameLogic.getChunkIndex(X, Y, Z);
     }
 
+    public void setOcclusionCullingSidePair(int side1, int side2) {
+        if (side1 == side2) return;
+        int largerSide = Math.max(side1, side2);
+        int smallerSide = Math.min(side1, side2);
+
+        occlusionCullingData = (short) (occlusionCullingData | 1 << occlusionCullingLargerSideOffsets[largerSide - 1] + smallerSide);
+    }
+
+    public boolean readOcclusionCullingSidePair(int side1, int side2) {
+        if (side1 == side2) return false;
+        int largerSide = Math.max(side1, side2);
+        int smallerSide = Math.min(side1, side2);
+
+        return (occlusionCullingData & 1 << occlusionCullingLargerSideOffsets[largerSide - 1] + smallerSide) != 0;
+    }
+
+    public void generateOcclusionCullingData() {
+        occlusionCullingData = (short) 0x8000;
+
+        int[] visitedBlocks = new int[CHUNK_SIZE * CHUNK_SIZE];
+        LinkedList<Integer> toVisitBlockIndexes = new LinkedList<>();
+        int maxLightValue = 0;
+
+        for (int blockIndex = 0; blockIndex < blocks.length; blockIndex++) {
+            if ((visitedBlocks[blockIndex >> CHUNK_SIZE_BITS] & (1 << (blockIndex & CHUNK_SIZE_MASK))) != 0) continue;
+
+            toVisitBlockIndexes.add(blockIndex);
+            byte visitedSides = 0;
+
+            while (!toVisitBlockIndexes.isEmpty()) {
+                int floodFillBlockIndex = toVisitBlockIndexes.removeFirst();
+
+                if ((visitedBlocks[floodFillBlockIndex >> CHUNK_SIZE_BITS] & (1 << (floodFillBlockIndex & CHUNK_SIZE_MASK))) != 0)
+                    continue;
+                visitedBlocks[floodFillBlockIndex >> CHUNK_SIZE_BITS] |= 1 << (floodFillBlockIndex & CHUNK_SIZE_MASK);
+
+                if (Block.getBlockType(blocks[floodFillBlockIndex]) == FULL_BLOCK) continue;
+                byte light = this.light[floodFillBlockIndex];
+                if ((light & 15) > maxLightValue) maxLightValue = light & 15;
+                if ((light >> 4 & 15) > maxLightValue) maxLightValue = light >> 4 & 15;
+
+                int nextBlockIndex = floodFillBlockIndex - (1 << CHUNK_SIZE_BITS * 2);
+                if (floodFillBlockIndex >> CHUNK_SIZE_BITS * 2 == 0)
+                    visitedSides = (byte) (visitedSides | 1 << LEFT);
+                else if ((visitedBlocks[nextBlockIndex >> CHUNK_SIZE_BITS] & (1 << (nextBlockIndex & CHUNK_SIZE_MASK))) == 0)
+                    toVisitBlockIndexes.add(nextBlockIndex);
+
+                nextBlockIndex = floodFillBlockIndex + (1 << CHUNK_SIZE_BITS * 2);
+                if (floodFillBlockIndex >> CHUNK_SIZE_BITS * 2 == CHUNK_SIZE - 1)
+                    visitedSides = (byte) (visitedSides | 1 << RIGHT);
+                else if ((visitedBlocks[nextBlockIndex >> CHUNK_SIZE_BITS] & (1 << (nextBlockIndex & CHUNK_SIZE_MASK))) == 0)
+                    toVisitBlockIndexes.add(nextBlockIndex);
+
+                nextBlockIndex = floodFillBlockIndex - (1 << CHUNK_SIZE_BITS);
+                if ((floodFillBlockIndex >> CHUNK_SIZE_BITS & CHUNK_SIZE_MASK) == 0)
+                    visitedSides = (byte) (visitedSides | 1 << BOTTOM);
+                else if ((visitedBlocks[nextBlockIndex >> CHUNK_SIZE_BITS] & (1 << (nextBlockIndex & CHUNK_SIZE_MASK))) == 0)
+                    toVisitBlockIndexes.add(nextBlockIndex);
+
+                nextBlockIndex = (floodFillBlockIndex) + (1 << CHUNK_SIZE_BITS);
+                if ((floodFillBlockIndex >> CHUNK_SIZE_BITS & CHUNK_SIZE_MASK) == CHUNK_SIZE - 1)
+                    visitedSides = (byte) (visitedSides | 1 << TOP);
+                else if ((visitedBlocks[nextBlockIndex >> CHUNK_SIZE_BITS] & (1 << (nextBlockIndex & CHUNK_SIZE_MASK))) == 0)
+                    toVisitBlockIndexes.add(nextBlockIndex);
+
+                nextBlockIndex = floodFillBlockIndex - 1;
+                if ((floodFillBlockIndex & CHUNK_SIZE_MASK) == 0)
+                    visitedSides = (byte) (visitedSides | 1 << BACK);
+                else if ((visitedBlocks[nextBlockIndex >> CHUNK_SIZE_BITS] & (1 << (nextBlockIndex & CHUNK_SIZE_MASK))) == 0)
+                    toVisitBlockIndexes.add(nextBlockIndex);
+
+                nextBlockIndex = floodFillBlockIndex + 1;
+                if ((floodFillBlockIndex & CHUNK_SIZE_MASK) == CHUNK_SIZE - 1)
+                    visitedSides = (byte) (visitedSides | 1 << FRONT);
+                else if ((visitedBlocks[nextBlockIndex >> CHUNK_SIZE_BITS] & (1 << (nextBlockIndex & CHUNK_SIZE_MASK))) == 0)
+                    toVisitBlockIndexes.add(nextBlockIndex);
+            }
+
+            for (int side1 = 0; side1 < 6; side1++) {
+                if ((visitedSides & 1 << side1) == 0)
+                    continue;
+                for (int side2 = side1 + 1; side2 < 6; side2++) {
+                    if ((visitedSides & 1 << side2) != 0)
+                        setOcclusionCullingSidePair(side1, side2);
+                }
+            }
+        }
+        if (maxLightValue != 0) occlusionCullingDamper = 0;
+        else occlusionCullingDamper = 1;
+    }
+
     public void generateMesh() {
         isMeshed = true;
         ArrayList<Integer> verticesList = new ArrayList<>();
         ArrayList<Integer> transparentVerticesList = new ArrayList<>();
 
         generateSurroundingChunks();
+        if ((occlusionCullingData & 0x8000) == 0)
+            generateOcclusionCullingData();
 
         for (int x = 0; x < CHUNK_SIZE; x++)
             for (int y = 0; y < CHUNK_SIZE; y++)
@@ -519,7 +617,7 @@ public class Chunk {
         return isGenerated;
     }
 
-    public void setGenerated(){
+    public void setGenerated() {
         isGenerated = true;
     }
 
@@ -570,5 +668,17 @@ public class Chunk {
 
     public void setHasPropagatedBlockLight() {
         hasPropagatedBlockLight = true;
+    }
+
+    public short getOcclusionCullingData() {
+        return occlusionCullingData;
+    }
+
+    public void setOcclusionCullingDataOutdated() {
+        occlusionCullingData = (short) (occlusionCullingData & 0b111111111111111);
+    }
+
+    public byte getOcclusionCullingDamper() {
+        return occlusionCullingDamper;
     }
 }
