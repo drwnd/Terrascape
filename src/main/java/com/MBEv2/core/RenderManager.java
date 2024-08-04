@@ -298,7 +298,7 @@ public class RenderManager {
         GUIShader.cleanUp();
     }
 
-    public void setxRay(boolean xRay) {
+    public void setXRay(boolean xRay) {
         this.xRay = xRay;
     }
 

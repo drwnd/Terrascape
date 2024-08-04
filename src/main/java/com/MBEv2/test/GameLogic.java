@@ -49,7 +49,7 @@ public class GameLogic {
         Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
         short previousBlock = chunk.getSaveBlock(inChunkX, inChunkY, inChunkZ);
 
-        chunk.storeSave(inChunkX, inChunkY, inChunkZ, block);
+        chunk.placeBlock(inChunkX, inChunkY, inChunkZ, block);
         chunk.setModified();
         if (Block.getBlockType(block) == FULL_BLOCK || Block.getBlockType(previousBlock) == FULL_BLOCK)
             chunk.setOcclusionCullingDataOutdated();

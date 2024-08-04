@@ -56,8 +56,8 @@ public class WorldGeneration {
                 else
                     generatePlains(chunk, inChunkX, inChunkZ, resultingHeight, feature);
             }
+        chunk.optimizeBlockStorage();
     }
-
 
     private static void generateMountains(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature, double temperature) {
         if (temperature > 0.4) generateDryMountain(chunk, inChunkX, inChunkZ, height, feature);
@@ -381,7 +381,7 @@ public class WorldGeneration {
                 inChunkX >= 2 && inChunkZ >= 2 && inChunkX < CHUNK_SIZE - 2 && inChunkZ < CHUNK_SIZE - 2 && isOutsideCave(totalX, height, totalZ))
             for (int i = 0; i < 5; i++)
                 for (int j = 0; j < 5; j++)
-                    chunk.storeTreeBlock(inChunkX + i - 2, inChunkY, inChunkZ + j - 2, OAK_TREE[totalY - height][i][j]);
+                    chunk.storeTreeBlock(inChunkX + j - 2, inChunkY, inChunkZ + i - 2, OAK_TREE[totalY - height][i][j]);
     }
 
     public static void genSpruceTree(Chunk chunk, int height, int inChunkX, int inChunkY, int inChunkZ, int totalX, int totalY, int totalZ, double feature, double threshold) {
@@ -389,7 +389,7 @@ public class WorldGeneration {
                 inChunkX >= 3 && inChunkZ >= 3 && inChunkX < CHUNK_SIZE - 3 && inChunkZ < CHUNK_SIZE - 3 && isOutsideCave(totalX, height, totalZ))
             for (int i = 0; i < 7; i++)
                 for (int j = 0; j < 7; j++)
-                    chunk.storeTreeBlock(inChunkX + i - 3, inChunkY, inChunkZ + j - 3, SPRUCE_TREE[totalY - height][i][j]);
+                    chunk.storeTreeBlock(inChunkX + j - 3, inChunkY, inChunkZ + i - 3, SPRUCE_TREE[totalY - height][i][j]);
     }
 
     public static void genDarkOakTree(Chunk chunk, int height, int inChunkX, int inChunkY, int inChunkZ, int totalX, int totalY, int totalZ, double feature, double threshold) {
@@ -397,7 +397,7 @@ public class WorldGeneration {
                 inChunkX >= 3 && inChunkZ >= 3 && inChunkX < CHUNK_SIZE - 3 && inChunkZ < CHUNK_SIZE - 3 && isOutsideCave(totalX, height, totalZ))
             for (int i = 0; i < 7; i++)
                 for (int j = 0; j < 7; j++)
-                    chunk.storeTreeBlock(inChunkX + i - 3, inChunkY, inChunkZ + j - 3, DARK_OAK_TREE[totalY - height][i][j]);
+                    chunk.storeTreeBlock(inChunkX + j - 3, inChunkY, inChunkZ + i - 3, DARK_OAK_TREE[totalY - height][i][j]);
     }
 
     public static int getHeightMapValue(int totalX, int totalZ) {

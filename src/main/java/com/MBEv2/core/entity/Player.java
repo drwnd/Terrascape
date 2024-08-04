@@ -40,6 +40,7 @@ public class Player {
     //Debug
     private boolean noClip, gKeyPressed;
     private boolean isFling, vKeyPressed;
+    private boolean usingOcclusionCulling = true, cKeyPressed;
     private boolean inInventory, ePressed;
     private boolean tPressed, zPressed, xPressed, oPressed;
     private final Vector3i pos1, pos2;
@@ -353,7 +354,7 @@ public class Player {
         }
         if (window.isKeyPressed(GLFW.GLFW_KEY_X) && !xPressed) {
             xPressed = true;
-            renderer.setxRay(!renderer.isxRay());
+            renderer.setXRay(!renderer.isxRay());
         }
         if (window.isKeyPressed(GLFW.GLFW_KEY_O) && !oPressed) {
             oPressed = true;
@@ -364,6 +365,12 @@ public class Player {
             Chunk chunk = Chunk.getChunk(x, y, z);
             System.out.println(Integer.toBinaryString(Short.toUnsignedInt(chunk.getOcclusionCullingData())));
         }
+        if (window.isKeyPressed(GLFW.GLFW_KEY_C) && !cKeyPressed) {
+            cKeyPressed = true;
+            usingOcclusionCulling = !usingOcclusionCulling;
+            if (!usingOcclusionCulling)
+                Arrays.fill(visibleChunks, -1);
+        }
 
         if (gKeyPressed && !window.isKeyPressed(GLFW.GLFW_KEY_G)) gKeyPressed = false;
         if (tPressed && !window.isKeyPressed(GLFW.GLFW_KEY_T)) tPressed = false;
@@ -371,6 +378,7 @@ public class Player {
         if (vKeyPressed && !window.isKeyPressed(GLFW.GLFW_KEY_V)) vKeyPressed = false;
         if (xPressed && !window.isKeyPressed(GLFW.GLFW_KEY_X)) xPressed = false;
         if (oPressed && !window.isKeyPressed(GLFW.GLFW_KEY_O)) oPressed = false;
+        if (cKeyPressed && !window.isKeyPressed(GLFW.GLFW_KEY_C)) cKeyPressed = false;
     }
 
     private void handleInventoryHotkeys() {
@@ -693,7 +701,7 @@ public class Player {
         final int chunkY = Utils.floor(cameraPosition.y) >> CHUNK_SIZE_BITS;
         final int chunkZ = Utils.floor(cameraPosition.z) >> CHUNK_SIZE_BITS;
 
-        calculateVisibleChunks(chunkX, chunkY, chunkZ);
+        if (usingOcclusionCulling) calculateVisibleChunks(chunkX, chunkY, chunkZ);
 
         renderChunkColumn(chunkX, chunkY, chunkZ);
         for (int ring = 1; ring <= RENDER_DISTANCE_XZ + 2; ring++) {

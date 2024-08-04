@@ -64,7 +64,7 @@ public class Constants {
     public static final int RENDERED_WORLD_HEIGHT = RENDER_DISTANCE_Y * 2 + 5;
 
     public static final int NUMBER_OF_GENERATION_THREADS = 4;
-    public static final int MAX_OCCLUSION_CULLING_DAMPER = 4;
+    public static final int MAX_OCCLUSION_CULLING_DAMPER = 6;
 
     //World generation
     public static final long SEED = new Random().nextLong();
@@ -353,6 +353,8 @@ public class Constants {
     public static final short[][][] SPRUCE_TREE;
 
     public static final short[][][] DARK_OAK_TREE;
+
+    public static final byte[] OCCLUSION_CULLING_LARGER_SIDE_OFFSETS = new byte[]{0, 1, 3, 6, 10};
 
     //No like actually, this doesn't exist! Trust me. please...
     static {

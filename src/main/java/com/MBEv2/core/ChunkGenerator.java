@@ -221,8 +221,8 @@ public class ChunkGenerator {
                     chunk.setMeshed(false);
                 }
             else if (travelDirection == BOTTOM) {
-                for (int chunkX = playerX - RENDER_DISTANCE_XZ; chunkX <= playerX + RENDER_DISTANCE_XZ; chunkX++)
-                    for (int chunkZ = playerZ - RENDER_DISTANCE_XZ; chunkZ <= playerZ + RENDER_DISTANCE_XZ; chunkZ++) {
+                for (int chunkX = playerX - RENDER_DISTANCE_XZ - 2; chunkX <= playerX + RENDER_DISTANCE_XZ + 2; chunkX++)
+                    for (int chunkZ = playerZ - RENDER_DISTANCE_XZ - 2; chunkZ <= playerZ + RENDER_DISTANCE_XZ + 2; chunkZ++) {
                         LightLogic.propagateChunkSkyLight(chunkX << CHUNK_SIZE_BITS, ((playerY - RENDER_DISTANCE_Y + 1) << CHUNK_SIZE_BITS) - 1, chunkZ << CHUNK_SIZE_BITS);
                     }
             }

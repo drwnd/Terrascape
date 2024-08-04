@@ -29,7 +29,7 @@ public class LightLogic {
             Chunk chunk = Chunk.getChunk(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS);
             if (chunk == null) continue;
 
-            int index = (x & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS * 2 | (y & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS | (z & CHUNK_SIZE - 1);
+            int index = (x & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS * 2 | (z & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS | (y & CHUNK_SIZE - 1);
 
             if (chunk.getSaveBlockLight(index) >= currentBlockLight && !onFirstIteration) continue;
 
@@ -100,7 +100,7 @@ public class LightLogic {
                 continue;
             }
 
-            int index = (x & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS * 2 | (y & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS | (z & CHUNK_SIZE - 1);
+            int index = (x & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS * 2 | (z & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS | (y & CHUNK_SIZE - 1);
             chunk.removeBlockLight(index);
             chunk.setMeshed(false);
             unMeshNextChunkIfNecessary(x & CHUNK_SIZE - 1, y & CHUNK_SIZE - 1, z & CHUNK_SIZE - 1, chunk);
@@ -213,7 +213,7 @@ public class LightLogic {
             Chunk chunk = Chunk.getChunk(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS);
             if (chunk == null) continue;
 
-            int index = (x & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS * 2 | (y & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS | (z & CHUNK_SIZE - 1);
+            int index = (x & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS * 2 | (z & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS | (y & CHUNK_SIZE - 1);
 
             if (chunk.getSaveSkyLight(index) >= currentSkyLight && !onFirstIteration) continue;
 
@@ -285,7 +285,7 @@ public class LightLogic {
                 continue;
             }
 
-            int index = (x & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS * 2 | (y & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS | (z & CHUNK_SIZE - 1);
+            int index = (x & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS * 2 | (z & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS | (y & CHUNK_SIZE - 1);
             chunk.removeSkyLight(index);
             chunk.setMeshed(false);
             unMeshNextChunkIfNecessary(x & CHUNK_SIZE - 1, y & CHUNK_SIZE - 1, z & CHUNK_SIZE - 1, chunk);

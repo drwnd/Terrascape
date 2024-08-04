@@ -5,6 +5,7 @@ import com.MBEv2.test.GameLogic;
 import org.joml.Vector3i;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 
@@ -15,8 +16,8 @@ public class Chunk {
     private static final Chunk[] world = new Chunk[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
     private static final HashMap<Long, Chunk> savedChunks = new HashMap<>();
 
-    private final short[] blocks;
-    private final byte[] light;
+    private short[] blocks;
+    private byte[] light;
 
     private int[] vertices;
     private int[] transparentVertices;
@@ -36,17 +37,38 @@ public class Chunk {
 
     private short occlusionCullingData;
     private byte occlusionCullingDamper;
-    private final byte[] occlusionCullingLargerSideOffsets = new byte[]{0, 1, 3, 6, 10};
 
     public Chunk(int x, int y, int z) {
         this.X = x;
         this.Y = y;
         this.Z = z;
         worldCoordinate = new Vector3i(X << CHUNK_SIZE_BITS, Y << CHUNK_SIZE_BITS, Z << CHUNK_SIZE_BITS);
+
         blocks = new short[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
         light = new byte[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
+
         id = GameLogic.getChunkId(X, Y, Z);
         index = GameLogic.getChunkIndex(X, Y, Z);
+    }
+
+    public void optimizeBlockStorage() {
+        short firstBlock = blocks[0];
+        for (short block : blocks)
+            if (block != firstBlock)
+                return;
+
+        blocks = new short[]{firstBlock};
+//        System.out.println("Optimized block Storage! Block: " + firstBlock);
+    }
+
+    public void optimizeLightStorage() {
+        byte firstLight = light[0];
+        for (byte light : light)
+            if (light != firstLight)
+                return;
+
+        light = new byte[]{firstLight};
+//        System.out.println("Optimized light Storage! + BlockLight: " + getSaveBlockLight(0) + " SkyLight: " + getSaveSkyLight(0));
     }
 
     public void setOcclusionCullingSidePair(int side1, int side2) {
@@ -54,7 +76,7 @@ public class Chunk {
         int largerSide = Math.max(side1, side2);
         int smallerSide = Math.min(side1, side2);
 
-        occlusionCullingData = (short) (occlusionCullingData | 1 << occlusionCullingLargerSideOffsets[largerSide - 1] + smallerSide);
+        occlusionCullingData = (short) (occlusionCullingData | 1 << OCCLUSION_CULLING_LARGER_SIDE_OFFSETS[largerSide - 1] + smallerSide);
     }
 
     public boolean readOcclusionCullingSidePair(int side1, int side2) {
@@ -62,7 +84,7 @@ public class Chunk {
         int largerSide = Math.max(side1, side2);
         int smallerSide = Math.min(side1, side2);
 
-        return (occlusionCullingData & 1 << occlusionCullingLargerSideOffsets[largerSide - 1] + smallerSide) != 0;
+        return (occlusionCullingData & 1 << OCCLUSION_CULLING_LARGER_SIDE_OFFSETS[largerSide - 1] + smallerSide) != 0;
     }
 
     public void generateOcclusionCullingData() {
@@ -71,6 +93,12 @@ public class Chunk {
         int[] visitedBlocks = new int[CHUNK_SIZE * CHUNK_SIZE];
         LinkedList<Integer> toVisitBlockIndexes = new LinkedList<>();
         int maxLightValue = 0;
+
+        if (blocks.length == 1) {
+            if (Block.getBlockType(blocks[0]) != FULL_BLOCK)
+                occlusionCullingData = -1;
+            return;
+        }
 
         for (int blockIndex = 0; blockIndex < blocks.length; blockIndex++) {
             if ((visitedBlocks[blockIndex >> CHUNK_SIZE_BITS] & (1 << (blockIndex & CHUNK_SIZE_MASK))) != 0) continue;
@@ -86,7 +114,7 @@ public class Chunk {
                 visitedBlocks[floodFillBlockIndex >> CHUNK_SIZE_BITS] |= 1 << (floodFillBlockIndex & CHUNK_SIZE_MASK);
 
                 if (Block.getBlockType(blocks[floodFillBlockIndex]) == FULL_BLOCK) continue;
-                byte light = this.light[floodFillBlockIndex];
+                byte light = this.light[this.light.length <= floodFillBlockIndex ? 0 : floodFillBlockIndex];
                 if ((light & 15) > maxLightValue) maxLightValue = light & 15;
                 if ((light >> 4 & 15) > maxLightValue) maxLightValue = light >> 4 & 15;
 
@@ -104,25 +132,25 @@ public class Chunk {
 
                 nextBlockIndex = floodFillBlockIndex - (1 << CHUNK_SIZE_BITS);
                 if ((floodFillBlockIndex >> CHUNK_SIZE_BITS & CHUNK_SIZE_MASK) == 0)
-                    visitedSides = (byte) (visitedSides | 1 << BOTTOM);
+                    visitedSides = (byte) (visitedSides | 1 << BACK);
                 else if ((visitedBlocks[nextBlockIndex >> CHUNK_SIZE_BITS] & (1 << (nextBlockIndex & CHUNK_SIZE_MASK))) == 0)
                     toVisitBlockIndexes.add(nextBlockIndex);
 
                 nextBlockIndex = (floodFillBlockIndex) + (1 << CHUNK_SIZE_BITS);
                 if ((floodFillBlockIndex >> CHUNK_SIZE_BITS & CHUNK_SIZE_MASK) == CHUNK_SIZE - 1)
-                    visitedSides = (byte) (visitedSides | 1 << TOP);
+                    visitedSides = (byte) (visitedSides | 1 << FRONT);
                 else if ((visitedBlocks[nextBlockIndex >> CHUNK_SIZE_BITS] & (1 << (nextBlockIndex & CHUNK_SIZE_MASK))) == 0)
                     toVisitBlockIndexes.add(nextBlockIndex);
 
                 nextBlockIndex = floodFillBlockIndex - 1;
                 if ((floodFillBlockIndex & CHUNK_SIZE_MASK) == 0)
-                    visitedSides = (byte) (visitedSides | 1 << BACK);
+                    visitedSides = (byte) (visitedSides | 1 << BOTTOM);
                 else if ((visitedBlocks[nextBlockIndex >> CHUNK_SIZE_BITS] & (1 << (nextBlockIndex & CHUNK_SIZE_MASK))) == 0)
                     toVisitBlockIndexes.add(nextBlockIndex);
 
                 nextBlockIndex = floodFillBlockIndex + 1;
                 if ((floodFillBlockIndex & CHUNK_SIZE_MASK) == CHUNK_SIZE - 1)
-                    visitedSides = (byte) (visitedSides | 1 << FRONT);
+                    visitedSides = (byte) (visitedSides | 1 << TOP);
                 else if ((visitedBlocks[nextBlockIndex >> CHUNK_SIZE_BITS] & (1 << (nextBlockIndex & CHUNK_SIZE_MASK))) == 0)
                     toVisitBlockIndexes.add(nextBlockIndex);
             }
@@ -136,6 +164,7 @@ public class Chunk {
                 }
             }
         }
+
         if (maxLightValue != 0) occlusionCullingDamper = 0;
         else occlusionCullingDamper = 1;
     }
@@ -149,9 +178,11 @@ public class Chunk {
         if ((occlusionCullingData & 0x8000) == 0)
             generateOcclusionCullingData();
 
+        if (light.length != 1) optimizeLightStorage();
+
         for (int x = 0; x < CHUNK_SIZE; x++)
-            for (int y = 0; y < CHUNK_SIZE; y++)
-                for (int z = 0; z < CHUNK_SIZE; z++) {
+            for (int z = 0; z < CHUNK_SIZE; z++)
+                for (int y = 0; y < CHUNK_SIZE; y++) {
 
                     short block = getSaveBlock(x, y, z);
 
@@ -166,7 +197,7 @@ public class Chunk {
                         int texture = Block.getTextureIndex(block, side) - 1;
 
                         int u = texture & 15;
-                        int v = (texture >> 4) & 15;
+                        int v = texture >> 4 & 15;
 
                         if (block != WATER) {
                             addSideToList(x, y, z, u, v, side, verticesList, block);
@@ -187,65 +218,40 @@ public class Chunk {
 
     public void propagateBlockLight() {
         for (int x = 0; x < CHUNK_SIZE; x++)
-            for (int y = 0; y < CHUNK_SIZE; y++)
-                for (int z = 0; z < CHUNK_SIZE; z++)
+            for (int z = 0; z < CHUNK_SIZE; z++)
+                for (int y = 0; y < CHUNK_SIZE; y++)
                     if ((Block.getBlockProperties(getSaveBlock(x, y, z)) & LIGHT_EMITTING_MASK) != 0)
                         LightLogic.setBlockLight(worldCoordinate.x | x, worldCoordinate.y | y, worldCoordinate.z | z, MAX_BLOCK_LIGHT_VALUE);
     }
 
     public void generateSurroundingChunks() {
-        generateIfNecessary(X - 1, Y - 1, Z - 1);
-        generateIfNecessary(X - 1, Y - 1, Z);
-        generateIfNecessary(X - 1, Y - 1, Z + 1);
-        generateIfNecessary(X - 1, Y, Z - 1);
-        generateIfNecessary(X - 1, Y, Z);
-        generateIfNecessary(X - 1, Y, Z + 1);
-        generateIfNecessary(X - 1, Y + 1, Z - 1);
-        generateIfNecessary(X - 1, Y + 1, Z);
-        generateIfNecessary(X - 1, Y + 1, Z + 1);
-        generateIfNecessary(X, Y - 1, Z - 1);
-        generateIfNecessary(X, Y - 1, Z);
-        generateIfNecessary(X, Y - 1, Z + 1);
-        generateIfNecessary(X, Y, Z - 1);
-        generateIfNecessary(X, Y, Z + 1);
-        generateIfNecessary(X, Y + 1, Z - 1);
-        generateIfNecessary(X, Y + 1, Z);
-        generateIfNecessary(X, Y + 1, Z + 1);
-        generateIfNecessary(X + 1, Y - 1, Z - 1);
-        generateIfNecessary(X + 1, Y - 1, Z);
-        generateIfNecessary(X + 1, Y - 1, Z + 1);
-        generateIfNecessary(X + 1, Y, Z - 1);
-        generateIfNecessary(X + 1, Y, Z);
-        generateIfNecessary(X + 1, Y, Z + 1);
-        generateIfNecessary(X + 1, Y + 1, Z - 1);
-        generateIfNecessary(X + 1, Y + 1, Z);
-        generateIfNecessary(X + 1, Y + 1, Z + 1);
-    }
+        for (int x = X - 1; x <= X + 1; x++)
+            for (int y = Y - 1; y <= Y + 1; y++)
+                for (int z = Z - 1; z <= Z + 1; z++) {
+                    long expectedId = GameLogic.getChunkId(x, y, z);
+                    int index = GameLogic.getChunkIndex(x, y, z);
+                    Chunk chunk = getChunk(index);
 
-    public static void generateIfNecessary(int x, int y, int z) {
-        long expectedId = GameLogic.getChunkId(x, y, z);
-        int index = GameLogic.getChunkIndex(x, y, z);
-        Chunk chunk = getChunk(index);
+                    if (chunk == null) {
+                        if (containsSavedChunk(expectedId)) chunk = removeSavedChunk(expectedId);
+                        else chunk = new Chunk(x, y, z);
 
-        if (chunk == null) {
-            if (containsSavedChunk(expectedId)) chunk = removeSavedChunk(expectedId);
-            else chunk = new Chunk(x, y, z);
+                        storeChunk(chunk);
+                        if (!chunk.isGenerated) WorldGeneration.generate(chunk);
 
-            storeChunk(chunk);
-            if (!chunk.isGenerated) WorldGeneration.generate(chunk);
+                    } else if (chunk.getId() != expectedId) {
+                        GameLogic.addToUnloadChunk(chunk);
 
-        } else if (chunk.getId() != expectedId) {
-            GameLogic.addToUnloadChunk(chunk);
+                        if (chunk.isModified) putSavedChunk(chunk);
 
-            if (chunk.isModified) putSavedChunk(chunk);
+                        if (containsSavedChunk(expectedId)) chunk = removeSavedChunk(expectedId);
+                        else chunk = new Chunk(x, y, z);
 
-            if (containsSavedChunk(expectedId)) chunk = removeSavedChunk(expectedId);
-            else chunk = new Chunk(x, y, z);
+                        Chunk.storeChunk(chunk);
+                        if (!chunk.isGenerated) WorldGeneration.generate(chunk);
 
-            Chunk.storeChunk(chunk);
-            if (!chunk.isGenerated) WorldGeneration.generate(chunk);
-
-        } else if (!chunk.isGenerated) WorldGeneration.generate(chunk);
+                    } else if (!chunk.isGenerated) WorldGeneration.generate(chunk);
+                }
     }
 
     public void addSideToList(int x, int y, int z, int u, int v, int side, ArrayList<Integer> verticesList, short block) {
@@ -479,11 +485,12 @@ public class Chunk {
     }
 
     public short getSaveBlock(int x, int y, int z) {
-        return blocks[x << CHUNK_SIZE_BITS * 2 | y << CHUNK_SIZE_BITS | z];
+        int index = x << CHUNK_SIZE_BITS * 2 | z << CHUNK_SIZE_BITS | y;
+        return blocks[blocks.length <= index ? 0 : index];
     }
 
     public short getSaveBlock(int index) {
-        return blocks[index];
+        return blocks[blocks.length <= index ? 0 : index];
     }
 
     public static short getBlockInWorld(int x, int y, int z) {
@@ -492,14 +499,25 @@ public class Chunk {
         return chunk.getSaveBlock(x & CHUNK_SIZE - 1, y & CHUNK_SIZE - 1, z & CHUNK_SIZE - 1);
     }
 
+    public void placeBlock(int x, int y, int z, short block) {
+        if (blocks.length == 1 && blocks[0] == block) return;
+        if (blocks.length == 1) {
+            short oldBlock = blocks[0];
+            blocks = new short[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
+            Arrays.fill(blocks, oldBlock);
+        }
+        blocks[x << CHUNK_SIZE_BITS * 2 | z << CHUNK_SIZE_BITS | y] = block;
+    }
+
     public void storeSave(int x, int y, int z, short block) {
-        blocks[x << CHUNK_SIZE_BITS * 2 | y << CHUNK_SIZE_BITS | z] = block;
+        blocks[x << CHUNK_SIZE_BITS * 2 | z << CHUNK_SIZE_BITS | y] = block;
     }
 
     public void storeTreeBlock(int x, int y, int z, short block) {
-        if (block == AIR || blocks[x << CHUNK_SIZE_BITS * 2 | y << CHUNK_SIZE_BITS | z] != AIR && Block.isLeaveType(block))
+        int index = x << CHUNK_SIZE_BITS * 2 | z << CHUNK_SIZE_BITS | y;
+        if (block == AIR || blocks[index] != AIR && Block.isLeaveType(block))
             return;
-        blocks[x << CHUNK_SIZE_BITS * 2 | y << CHUNK_SIZE_BITS | z] = block;
+        blocks[index] = block;
     }
 
     public static byte getBlockLightInWorld(int x, int y, int z) {
@@ -509,19 +527,30 @@ public class Chunk {
     }
 
     public byte getSaveBlockLight(int x, int y, int z) {
-        return (byte) (light[x << CHUNK_SIZE_BITS * 2 | y << CHUNK_SIZE_BITS | z] & 15);
+        int index = x << CHUNK_SIZE_BITS * 2 | z << CHUNK_SIZE_BITS | y;
+        return (byte) (light[light.length <= index ? 0 : index] & 15);
     }
 
     public byte getSaveBlockLight(int index) {
-        return (byte) (light[index] & 15);
+        return (byte) (light[light.length <= index ? 0 : index] & 15);
     }
 
     public void storeSaveBlockLight(int index, int blockLight) {
+        if (light.length == 1) {
+            byte oldLight = light[0];
+            light = new byte[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
+            Arrays.fill(light, oldLight);
+        }
         byte oldLight = light[index];
         light[index] = (byte) (oldLight & 240 | blockLight);
     }
 
     public void removeBlockLight(int index) {
+        if (light.length == 1) {
+            byte oldLight = light[0];
+            light = new byte[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
+            Arrays.fill(light, oldLight);
+        }
         light[index] &= (byte) 240;
     }
 
@@ -532,18 +561,29 @@ public class Chunk {
     }
 
     public byte getSaveSkyLight(int x, int y, int z) {
-        return (byte) (light[x << CHUNK_SIZE_BITS * 2 | y << CHUNK_SIZE_BITS | z] >> 4 & 15);
+        int index = x << CHUNK_SIZE_BITS * 2 | z << CHUNK_SIZE_BITS | y;
+        return (byte) (light[light.length <= index ? 0 : index] >> 4 & 15);
     }
 
     public byte getSaveSkyLight(int index) {
-        return (byte) (light[index] >> 4 & 15);
+        return (byte) (light[light.length <= index ? 0 : index] >> 4 & 15);
     }
 
     public void removeSkyLight(int index) {
+        if (light.length == 1) {
+            byte oldLight = light[0];
+            light = new byte[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
+            Arrays.fill(light, oldLight);
+        }
         light[index] &= 15;
     }
 
     public void storeSaveSkyLight(int index, int skyLight) {
+        if (light.length == 1) {
+            byte oldLight = light[0];
+            light = new byte[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
+            Arrays.fill(light, oldLight);
+        }
         byte oldLight = light[index];
         light[index] = (byte) (skyLight << 4 | oldLight & 15);
     }
