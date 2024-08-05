@@ -11,7 +11,7 @@ import java.util.ArrayList;
 public class MouseInput {
 
     private final Vector2f previousPos, currentPos;
-    private final Vector2f displayVec;
+    private Vector2f displayVec;
     private final Player player;
 
     private long rightButtonPressTime = -1, leftButtonPressTime = -1;
@@ -71,7 +71,6 @@ public class MouseInput {
     }
 
     public void input() {
-
         float x = currentPos.x - previousPos.x;
         float y = currentPos.y - previousPos.y;
 
@@ -83,7 +82,9 @@ public class MouseInput {
     }
 
     public Vector2f getDisplayVec() {
-        return displayVec;
+        Vector2f returns = displayVec;
+        displayVec = new Vector2f();
+        return returns;
     }
 
     public long getRightButtonPressTime() {

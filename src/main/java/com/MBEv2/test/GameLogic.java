@@ -100,7 +100,7 @@ public class GameLogic {
         chunk.clearMesh();
     }
 
-    public static void update() {
+    public static void update(float passedTime) {
         synchronized (toBufferChunks) {
             for (int i = 0; i < MAX_CHUNKS_TO_BUFFER_PER_FRAME && !toBufferChunks.isEmpty(); i++) {
                 Chunk chunk = toBufferChunks.removeFirst();
@@ -115,7 +115,7 @@ public class GameLogic {
                 if (chunk != null) deleteChunkMeshBuffers(chunk);
             }
         }
-        player.update();
+        player.update(passedTime);
     }
 
     public static void deleteChunkMeshBuffers(Chunk chunk) {
@@ -131,8 +131,8 @@ public class GameLogic {
         }
     }
 
-    public static void input(float passedTime) {
-        player.input(passedTime);
+    public static void input() {
+        player.input();
     }
 
     public static void render() {

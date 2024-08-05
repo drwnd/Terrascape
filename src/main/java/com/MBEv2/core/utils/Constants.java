@@ -9,7 +9,6 @@ public class Constants {
     public static final float FOV = (float) Math.toRadians(90);
     public static final float GUI_SIZE = 1.0f;
     public static final float MOUSE_SENSITIVITY = 0.040f;
-    public static final float MOVEMENT_SPEED = 0.5f;
     public static final float REACH = 5.0f;
 
     //Recommended to not change, but I can't stop you
@@ -22,20 +21,20 @@ public class Constants {
     public static final float[] PLAYER_FEET_OFFSETS = new float[]{1.65f, 1.4f, 0.4f, 0.4f};
 
     //Player movement
-    public static final float AIR_FRICTION = 0.028944f;
-    public static final float FALL_FRICTION = 0.23521f;
-    public static final float WATER_FRICTION = 0.000000008f;
-    public static final float GROUND_FRICTION = 0.000000257f;
-    public static final float FLY_FRICTION = 0.00062f;
+    public static final float AIR_FRICTION = 0.91f;
+    public static final float FALL_FRICTION = 0.98f;
+    public static final float WATER_FRICTION = 0.4f;
+    public static final float GROUND_FRICTION = 0.546f;
+    public static final float FLY_FRICTION = 0.91f;
 
-    public static final float IN_AIR_SPEED = 0.23f;
-    public static final float[] MOVEMENT_STATE_SPEED = new float[]{MOVEMENT_SPEED, MOVEMENT_SPEED * 0.375f, MOVEMENT_SPEED * 0.25f};
-    public static final float MAX_FALL_SPEED = 0.4f;
-    public static final float FLY_SPEED = 1.0f;
+    public static final float MOVEMENT_SPEED = 0.098f;
+    public static final float IN_AIR_SPEED = 0.2f;
+    public static final float[] MOVEMENT_STATE_SPEED = new float[]{MOVEMENT_SPEED, 0.0294f, MOVEMENT_SPEED * 0.25f};
+    public static final float FLY_SPEED = 0.049f;
 
-    public static final float JUMP_STRENGTH = 11.81952f;
-    public static final float SWIM_STRENGTH = 0.486f;
-    public static final float GRAVITY_ACCELERATION = 0.28f;
+    public static final float JUMP_STRENGTH = 0.42f;
+    public static final float SWIM_STRENGTH = 0.2f;
+    public static final float GRAVITY_ACCELERATION = 0.08f;
     public static final float MAX_STEP_HEIGHT = 0.6f;
 
     //Movement state indices

@@ -6,11 +6,12 @@ import com.MBEv2.test.GameLogic;
 import com.MBEv2.test.Launcher;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;
+import org.lwjgl.glfw.GLFWVidMode;
 
 public class EngineManager {
 
     public static final float NANOSECONDS_PER_SECOND = 1_000_000_000;
-    public static final float FRAME_RATE = 144.0f;
+    public static float FRAME_RATE;
 
     public static boolean isRunning;
 
@@ -22,6 +23,11 @@ public class EngineManager {
         window = Launcher.getWindow();
         window.init();
         GameLogic.init();
+        if (window.isvSync()) {
+            GLFWVidMode vidMode = GLFW.glfwGetVideoMode(GLFW.glfwGetPrimaryMonitor());
+            assert vidMode != null;
+            FRAME_RATE = vidMode.refreshRate();
+        } else FRAME_RATE = Float.MAX_VALUE;
     }
 
     public void start() throws Exception {
@@ -34,23 +40,30 @@ public class EngineManager {
 
     public void run() {
         isRunning = true;
-        long lastTime = System.nanoTime();
-        long frameTime = (long) (NANOSECONDS_PER_SECOND / FRAME_RATE);
+        long lastTime = 0;
+        long lastFrameRateUpdateTime = 0;
+        long lastInputTime = 0;
+        int frames = 0;
 
         while (isRunning) {
-            long startTime = System.nanoTime();
-            long passedTime = startTime - lastTime;
-            lastTime = startTime;
+            long currentTime = System.nanoTime();
+            long passedTime = currentTime - lastTime;
+            lastTime = currentTime;
 
-            input((float) passedTime / NANOSECONDS_PER_SECOND);
-            update();
+            update(20 * passedTime / NANOSECONDS_PER_SECOND);
             render();
-            window.setTitle(TITLE + " FPS: " + (int) (NANOSECONDS_PER_SECOND / (float) passedTime));
+            frames++;
             if (window.windowShouldClose())
                 stop();
 
-            while (System.nanoTime() < startTime + frameTime) {
-                //Waiting until it's time for the next frame
+            if (currentTime - lastFrameRateUpdateTime > NANOSECONDS_PER_SECOND * 0.25f) {
+                lastFrameRateUpdateTime = currentTime;
+                window.setTitle(TITLE + " FPS: " + frames * 4);
+                frames = 0;
+            }
+            if (currentTime - lastInputTime > NANOSECONDS_PER_SECOND * 0.05f) {
+                lastInputTime = currentTime;
+                input();
             }
         }
         cleanUp();
@@ -60,8 +73,8 @@ public class EngineManager {
         isRunning = false;
     }
 
-    public void input(float passedTime) {
-        GameLogic.input(passedTime);
+    public void input() {
+        GameLogic.input();
     }
 
     private void render() {
@@ -69,8 +82,8 @@ public class EngineManager {
         window.update();
     }
 
-    private void update() {
-        GameLogic.update();
+    private void update(float passedTime) {
+        GameLogic.update(passedTime);
     }
 
     private void cleanUp() {
