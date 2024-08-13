@@ -63,6 +63,7 @@ public class EngineManager {
             }
             if (currentTime - lastInputTime > NANOSECONDS_PER_SECOND * 0.05f) {
                 lastInputTime = currentTime;
+                updateGT();
                 input();
             }
         }
@@ -84,6 +85,10 @@ public class EngineManager {
 
     private void update(float passedTime) {
         GameLogic.update(passedTime);
+    }
+
+    private void updateGT() {
+        GameLogic.updateGT();
     }
 
     private void cleanUp() {

@@ -107,7 +107,14 @@ public class ChunkGenerator {
 
         private void meshChunk() {
             chunk.generateMesh();
-            if (chunk.getVertices().length != 0 || chunk.getTransparentVertices().length != 0)
+            boolean shouldBuffer = false;
+            for (int side = 0; side < 6; side++) {
+                if (chunk.getVertices(side).length != 0) {
+                    shouldBuffer = true;
+                    break;
+                }
+            }
+            if (shouldBuffer || chunk.getTransparentVertices().length != 0)
                 GameLogic.addToBufferChunk(chunk);
         }
     }

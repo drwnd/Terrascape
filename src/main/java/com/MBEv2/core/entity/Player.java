@@ -714,12 +714,12 @@ public class Player {
 
         if (usingOcclusionCulling) calculateVisibleChunks(chunkX, chunkY, chunkZ);
 
-        renderChunkColumn(chunkX, chunkY, chunkZ);
+        renderChunkColumn(chunkX, chunkZ, chunkX, chunkY, chunkZ);
         for (int ring = 1; ring <= RENDER_DISTANCE_XZ + 2; ring++) {
-            for (int x = -ring; x < ring; x++) renderChunkColumn(x + chunkX, chunkY, ring + chunkZ);
-            for (int z = ring; z > -ring; z--) renderChunkColumn(ring + chunkX, chunkY, z + chunkZ);
-            for (int x = ring; x > -ring; x--) renderChunkColumn(x + chunkX, chunkY, -ring + chunkZ);
-            for (int z = -ring; z < ring; z++) renderChunkColumn(-ring + chunkX, chunkY, z + chunkZ);
+            for (int x = -ring; x < ring; x++) renderChunkColumn(x + chunkX, ring + chunkZ, chunkX, chunkY, chunkZ);
+            for (int z = ring; z > -ring; z--) renderChunkColumn(ring + chunkX, z + chunkZ, chunkX, chunkY, chunkZ);
+            for (int x = ring; x > -ring; x--) renderChunkColumn(x + chunkX, -ring + chunkZ, chunkX, chunkY, chunkZ);
+            for (int z = -ring; z < ring; z++) renderChunkColumn(-ring + chunkX, z + chunkZ, chunkX, chunkY, chunkZ);
         }
 
         for (GUIElement GUIElement : GUIElements)
@@ -729,15 +729,24 @@ public class Player {
             renderer.processGUIElement(GUIElement);
     }
 
-    private void renderChunkColumn(int x, int cameraY, int z) {
+    private void renderChunkColumn(int x, int z, int cameraX, int cameraY, int cameraZ) {
         for (int y = RENDER_DISTANCE_Y + 2; y >= -RENDER_DISTANCE_Y - 2; y--) {
             Chunk chunk = Chunk.getChunk(x, y + cameraY, z);
             if (chunk == null) continue;
             int chunkIndex = chunk.getIndex();
             if ((visibleChunks[chunkIndex >> 6] & 1L << (chunkIndex & 63)) == 0) continue;
 
-            if (chunk.getModel() != null) renderer.processModel(chunk.getModel());
-            if (chunk.getTransparentModel() != null) renderer.processTransparentModel(chunk.getTransparentModel());
+            if (chunk.getTransparentModel() != null)
+                renderer.processTransparentModel(chunk.getTransparentModel());
+
+            if (x >= cameraX && chunk.getModel(LEFT) != null) renderer.processModel(chunk.getModel(LEFT));
+            if (x <= cameraX && chunk.getModel(RIGHT) != null) renderer.processModel(chunk.getModel(RIGHT));
+
+            if (y >= 0 && chunk.getModel(BOTTOM) != null) renderer.processModel(chunk.getModel(BOTTOM));
+            if (y <= 0 && chunk.getModel(TOP) != null) renderer.processModel(chunk.getModel(TOP));
+
+            if (z <= cameraZ && chunk.getModel(FRONT) != null) renderer.processModel(chunk.getModel(FRONT));
+            if (z >= cameraZ && chunk.getModel(BACK) != null) renderer.processModel(chunk.getModel(BACK));
         }
     }
 

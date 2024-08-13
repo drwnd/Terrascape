@@ -5,7 +5,7 @@ import java.util.Random;
 public class Constants {
 
     //Change to whatever you want
-    public static final float TIME_SPEED = 0.000025f;
+    public static final float TIME_SPEED = 0.00008333f;
     public static final float FOV = (float) Math.toRadians(90);
     public static final float GUI_SIZE = 1.0f;
     public static final float MOUSE_SENSITIVITY = 0.040f;

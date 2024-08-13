@@ -19,7 +19,7 @@ public class Chunk {
     private short[] blocks;
     private byte[] light;
 
-    private int[] vertices;
+    private int[][] vertices;
     private int[] transparentVertices;
 
     private final int X, Y, Z;
@@ -32,7 +32,7 @@ public class Chunk {
     private boolean isModified = false;
     private boolean hasPropagatedBlockLight = false;
 
-    private Model model;
+    private final Model[] model;
     private Model transparentModel;
 
     private short occlusionCullingData;
@@ -49,6 +49,7 @@ public class Chunk {
 
         id = GameLogic.getChunkId(X, Y, Z);
         index = GameLogic.getChunkIndex(X, Y, Z);
+        model = new Model[6];
     }
 
     public void optimizeBlockStorage() {
@@ -171,8 +172,11 @@ public class Chunk {
 
     public void generateMesh() {
         isMeshed = true;
-        ArrayList<Integer> verticesList = new ArrayList<>();
+        ArrayList<ArrayList<Integer>> verticesList = new ArrayList<>(6);
         ArrayList<Integer> transparentVerticesList = new ArrayList<>();
+        for (int side = 0; side < 6; side++) {
+            verticesList.add(new ArrayList<>());
+        }
 
         generateSurroundingChunks();
         if ((occlusionCullingData & 0x8000) == 0)
@@ -200,16 +204,20 @@ public class Chunk {
                         int v = texture >> 4 & 15;
 
                         if (block != WATER) {
-                            addSideToList(x, y, z, u, v, side, verticesList, block);
+                            addSideToList(x, y, z, u, v, side, verticesList.get(side), block);
                             continue;
                         }
                         addSideToList(x, y, z, u, v, side, transparentVerticesList, block);
                     }
                 }
 
-        vertices = new int[verticesList.size()];
-        for (int i = 0, size = verticesList.size(); i < size; i++)
-            vertices[i] = verticesList.get(i);
+        vertices = new int[6][0];
+        for (int side = 0; side < 6; side++) {
+            ArrayList<Integer> sideVertices = verticesList.get(side);
+            vertices[side] = new int[sideVertices.size()];
+            for (int i = 0, size = sideVertices.size(); i < size; i++)
+                vertices[side][i] = sideVertices.get(i);
+        }
 
         transparentVertices = new int[transparentVerticesList.size()];
         for (int i = 0, size = transparentVerticesList.size(); i < size; i++)
@@ -604,8 +612,8 @@ public class Chunk {
         world[index] = null;
     }
 
-    public int[] getVertices() {
-        return vertices;
+    public int[] getVertices(int side) {
+        return vertices[side];
     }
 
     public int[] getTransparentVertices() {
@@ -617,16 +625,16 @@ public class Chunk {
     }
 
     public void clearMesh() {
-        vertices = new int[0];
+        vertices = new int[0][0];
         transparentVertices = new int[0];
     }
 
-    public Model getModel() {
-        return model;
+    public Model getModel(int side) {
+        return model[side];
     }
 
-    public void setModel(Model model) {
-        this.model = model;
+    public void setModel(Model model, int side) {
+        this.model[side] = model;
     }
 
     public Model getTransparentModel() {

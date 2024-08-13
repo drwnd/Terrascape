@@ -147,11 +147,6 @@ public class RenderManager {
     }
 
     public void render(Camera camera) {
-
-        time += TIME_SPEED;
-        if (time > 1.0f)
-            time = -1.0f;
-
         Matrix4f projectionMatrix = window.updateProjectionMatrix();
         Matrix4f viewMatrix = Transformation.getViewMatrix(camera);
         Matrix4f projectionViewMatrix = new Matrix4f();
@@ -304,5 +299,11 @@ public class RenderManager {
 
     public boolean isxRay() {
         return xRay;
+    }
+
+    public void incrementTime() {
+        time += TIME_SPEED;
+        if (time > 1.0f)
+            time -= 2.0f;
     }
 }

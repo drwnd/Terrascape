@@ -87,11 +87,12 @@ public class GameLogic {
     }
 
     public static void bufferChunkMesh(Chunk chunk) {
-        if (chunk.getVertices() != null && chunk.getVertices().length != 0) {
-            Model model = ObjectLoader.loadModel(chunk.getVertices(), chunk.getWorldCoordinate());
-            chunk.setModel(model);
-        } else chunk.setModel(null);
-
+        for (int side = 0; side < 6; side++) {
+            if (chunk.getVertices(side) != null && chunk.getVertices(side).length != 0) {
+                Model model = ObjectLoader.loadModel(chunk.getVertices(side), chunk.getWorldCoordinate());
+                chunk.setModel(model, side);
+            } else chunk.setModel(null, side);
+        }
         if (chunk.getTransparentVertices() != null && chunk.getTransparentVertices().length != 0) {
             Model transparentModel = ObjectLoader.loadModel(chunk.getTransparentVertices(), chunk.getWorldCoordinate());
             chunk.setTransparentModel(transparentModel);
@@ -118,17 +119,26 @@ public class GameLogic {
         player.update(passedTime);
     }
 
+    public static void updateGT() {
+        player.getRenderer().incrementTime();
+    }
+
     public static void deleteChunkMeshBuffers(Chunk chunk) {
-        if (chunk.getModel() != null) {
-            ObjectLoader.removeVAO(chunk.getModel().getVao());
-            ObjectLoader.removeVBO(chunk.getModel().getVbo());
-            chunk.setModel(null);
+        for (int side = 0; side < 6; side++) {
+            Model sideModel = chunk.getModel(side);
+            if (sideModel != null) {
+                ObjectLoader.removeVAO(sideModel.getVao());
+                ObjectLoader.removeVBO(sideModel.getVbo());
+                chunk.setModel(null, side);
+            }
         }
-        if (chunk.getTransparentModel() != null) {
-            ObjectLoader.removeVAO(chunk.getTransparentModel().getVao());
-            ObjectLoader.removeVBO(chunk.getTransparentModel().getVbo());
+        Model transparentModel = chunk.getTransparentModel();
+        if (transparentModel != null) {
+            ObjectLoader.removeVAO(transparentModel.getVao());
+            ObjectLoader.removeVBO(transparentModel.getVbo());
             chunk.setTransparentModel(null);
         }
+
     }
 
     public static void input() {
