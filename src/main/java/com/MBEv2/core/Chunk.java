@@ -265,70 +265,90 @@ public class Chunk {
     public void addSideToList(int x, int y, int z, int u, int v, int side, ArrayList<Integer> verticesList, short block) {
         int skyLight;
         int blockLight;
+        byte[] blockXYZSubData;
 
         switch (side) {
             case FRONT:
                 skyLight = getSkyLightInWorld(worldCoordinate.x | x, worldCoordinate.y | y, (worldCoordinate.z | z) + (Block.getXYZSubData(block)[MAX_Z] == 0 ? 1 : 0));
                 blockLight = getBlockLightInWorld(worldCoordinate.x | x, worldCoordinate.y | y, (worldCoordinate.z | z) + (Block.getXYZSubData(block)[MAX_Z] == 0 ? 1 : 0));
-                addVertexToList(verticesList, x + 1, y + 1, z + 1, u, v, side, skyLight, blockLight, block, 0, x, y, z);
-                addVertexToList(verticesList, x, y + 1, z + 1, u + 1, v, side, skyLight, blockLight, block, 1, x, y, z);
-                addVertexToList(verticesList, x + 1, y, z + 1, u, v + 1, side, skyLight, blockLight, block, 2, x, y, z);
-                addVertexToList(verticesList, x, y, z + 1, u + 1, v + 1, side, skyLight, blockLight, block, 3, x, y, z);
+                blockXYZSubData = Block.getXYZSubData(block);
+                for (int aabbIndex = 0; aabbIndex < blockXYZSubData.length; aabbIndex += 6) {
+                    addVertexToList(verticesList, x + 1, y + 1, z + 1, u, v, side, skyLight, blockLight, block, 0, x, y, z, aabbIndex);
+                    addVertexToList(verticesList, x, y + 1, z + 1, u + 1, v, side, skyLight, blockLight, block, 1, x, y, z, aabbIndex);
+                    addVertexToList(verticesList, x + 1, y, z + 1, u, v + 1, side, skyLight, blockLight, block, 2, x, y, z, aabbIndex);
+                    addVertexToList(verticesList, x, y, z + 1, u + 1, v + 1, side, skyLight, blockLight, block, 3, x, y, z, aabbIndex);
+                }
                 break;
             case TOP:
                 skyLight = getSkyLightInWorld(worldCoordinate.x | x, (worldCoordinate.y | y) + (Block.getXYZSubData(block)[MAX_Y] == 0 ? 1 : 0), worldCoordinate.z | z);
                 blockLight = getBlockLightInWorld(worldCoordinate.x | x, (worldCoordinate.y | y) + (Block.getXYZSubData(block)[MAX_Y] == 0 ? 1 : 0), worldCoordinate.z | z);
-                addVertexToList(verticesList, x, y + 1, z, u, v, side, skyLight, blockLight, block, 0, x, y, z);
-                addVertexToList(verticesList, x, y + 1, z + 1, u + 1, v, side, skyLight, blockLight, block, 1, x, y, z);
-                addVertexToList(verticesList, x + 1, y + 1, z, u, v + 1, side, skyLight, blockLight, block, 2, x, y, z);
-                addVertexToList(verticesList, x + 1, y + 1, z + 1, u + 1, v + 1, side, skyLight, blockLight, block, 3, x, y, z);
+                blockXYZSubData = Block.getXYZSubData(block);
+                for (int aabbIndex = 0; aabbIndex < blockXYZSubData.length; aabbIndex += 6) {
+                    addVertexToList(verticesList, x, y + 1, z, u, v, side, skyLight, blockLight, block, 0, x, y, z, aabbIndex);
+                    addVertexToList(verticesList, x, y + 1, z + 1, u + 1, v, side, skyLight, blockLight, block, 1, x, y, z, aabbIndex);
+                    addVertexToList(verticesList, x + 1, y + 1, z, u, v + 1, side, skyLight, blockLight, block, 2, x, y, z, aabbIndex);
+                    addVertexToList(verticesList, x + 1, y + 1, z + 1, u + 1, v + 1, side, skyLight, blockLight, block, 3, x, y, z, aabbIndex);
+                }
                 break;
             case RIGHT:
                 skyLight = getSkyLightInWorld((worldCoordinate.x | x) + (Block.getXYZSubData(block)[MAX_X] == 0 ? 1 : 0), worldCoordinate.y | y, worldCoordinate.z | z);
                 blockLight = getBlockLightInWorld((worldCoordinate.x | x) + (Block.getXYZSubData(block)[MAX_X] == 0 ? 1 : 0), worldCoordinate.y | y, worldCoordinate.z | z);
-                addVertexToList(verticesList, x + 1, y + 1, z, u, v, side, skyLight, blockLight, block, 0, x, y, z);
-                addVertexToList(verticesList, x + 1, y + 1, z + 1, u + 1, v, side, skyLight, blockLight, block, 1, x, y, z);
-                addVertexToList(verticesList, x + 1, y, z, u, v + 1, side, skyLight, blockLight, block, 2, x, y, z);
-                addVertexToList(verticesList, x + 1, y, z + 1, u + 1, v + 1, side, skyLight, blockLight, block, 3, x, y, z);
+                blockXYZSubData = Block.getXYZSubData(block);
+                for (int aabbIndex = 0; aabbIndex < blockXYZSubData.length; aabbIndex += 6) {
+                    addVertexToList(verticesList, x + 1, y + 1, z, u, v, side, skyLight, blockLight, block, 0, x, y, z, aabbIndex);
+                    addVertexToList(verticesList, x + 1, y + 1, z + 1, u + 1, v, side, skyLight, blockLight, block, 1, x, y, z, aabbIndex);
+                    addVertexToList(verticesList, x + 1, y, z, u, v + 1, side, skyLight, blockLight, block, 2, x, y, z, aabbIndex);
+                    addVertexToList(verticesList, x + 1, y, z + 1, u + 1, v + 1, side, skyLight, blockLight, block, 3, x, y, z, aabbIndex);
+                }
                 break;
             case BACK:
                 skyLight = getSkyLightInWorld(worldCoordinate.x | x, worldCoordinate.y | y, (worldCoordinate.z | z) - (Block.getXYZSubData(block)[MIN_Z] == 0 ? 1 : 0));
                 blockLight = getBlockLightInWorld(worldCoordinate.x | x, worldCoordinate.y | y, (worldCoordinate.z | z) - (Block.getXYZSubData(block)[MIN_Z] == 0 ? 1 : 0));
-                addVertexToList(verticesList, x, y + 1, z, u, v, side, skyLight, blockLight, block, 0, x, y, z);
-                addVertexToList(verticesList, x + 1, y + 1, z, u + 1, v, side, skyLight, blockLight, block, 1, x, y, z);
-                addVertexToList(verticesList, x, y, z, u, v + 1, side, skyLight, blockLight, block, 2, x, y, z);
-                addVertexToList(verticesList, x + 1, y, z, u + 1, v + 1, side, skyLight, blockLight, block, 3, x, y, z);
+                blockXYZSubData = Block.getXYZSubData(block);
+                for (int aabbIndex = 0; aabbIndex < blockXYZSubData.length; aabbIndex += 6) {
+                    addVertexToList(verticesList, x, y + 1, z, u, v, side, skyLight, blockLight, block, 0, x, y, z, aabbIndex);
+                    addVertexToList(verticesList, x + 1, y + 1, z, u + 1, v, side, skyLight, blockLight, block, 1, x, y, z, aabbIndex);
+                    addVertexToList(verticesList, x, y, z, u, v + 1, side, skyLight, blockLight, block, 2, x, y, z, aabbIndex);
+                    addVertexToList(verticesList, x + 1, y, z, u + 1, v + 1, side, skyLight, blockLight, block, 3, x, y, z, aabbIndex);
+                }
                 break;
             case BOTTOM:
                 skyLight = getSkyLightInWorld(worldCoordinate.x | x, (worldCoordinate.y | y) - (Block.getXYZSubData(block)[MIN_Y] == 0 ? 1 : 0), worldCoordinate.z | z);
                 blockLight = getBlockLightInWorld(worldCoordinate.x | x, (worldCoordinate.y | y) - (Block.getXYZSubData(block)[MIN_Y] == 0 ? 1 : 0), worldCoordinate.z | z);
-                addVertexToList(verticesList, x + 1, y, z + 1, u, v, side, skyLight, blockLight, block, 3, x, y, z);
-                addVertexToList(verticesList, x, y, z + 1, u + 1, v, side, skyLight, blockLight, block, 1, x, y, z);
-                addVertexToList(verticesList, x + 1, y, z, u, v + 1, side, skyLight, blockLight, block, 2, x, y, z);
-                addVertexToList(verticesList, x, y, z, u + 1, v + 1, side, skyLight, blockLight, block, 0, x, y, z);
+                blockXYZSubData = Block.getXYZSubData(block);
+                for (int aabbIndex = 0; aabbIndex < blockXYZSubData.length; aabbIndex += 6) {
+                    addVertexToList(verticesList, x + 1, y, z + 1, u, v, side, skyLight, blockLight, block, 3, x, y, z, aabbIndex);
+                    addVertexToList(verticesList, x, y, z + 1, u + 1, v, side, skyLight, blockLight, block, 1, x, y, z, aabbIndex);
+                    addVertexToList(verticesList, x + 1, y, z, u, v + 1, side, skyLight, blockLight, block, 2, x, y, z, aabbIndex);
+                    addVertexToList(verticesList, x, y, z, u + 1, v + 1, side, skyLight, blockLight, block, 0, x, y, z, aabbIndex);
+                }
                 break;
             case LEFT:
                 skyLight = getSkyLightInWorld((worldCoordinate.x | x) - (Block.getXYZSubData(block)[MIN_X] == 0 ? 1 : 0), worldCoordinate.y | y, worldCoordinate.z | z);
                 blockLight = getBlockLightInWorld((worldCoordinate.x | x) - (Block.getXYZSubData(block)[MIN_X] == 0 ? 1 : 0), worldCoordinate.y | y, worldCoordinate.z | z);
-                addVertexToList(verticesList, x, y + 1, z + 1, u, v, side, skyLight, blockLight, block, 1, x, y, z);
-                addVertexToList(verticesList, x, y + 1, z, u + 1, v, side, skyLight, blockLight, block, 0, x, y, z);
-                addVertexToList(verticesList, x, y, z + 1, u, v + 1, side, skyLight, blockLight, block, 3, x, y, z);
-                addVertexToList(verticesList, x, y, z, u + 1, v + 1, side, skyLight, blockLight, block, 2, x, y, z);
+                blockXYZSubData = Block.getXYZSubData(block);
+                for (int aabbIndex = 0; aabbIndex < blockXYZSubData.length; aabbIndex += 6) {
+                    addVertexToList(verticesList, x, y + 1, z + 1, u, v, side, skyLight, blockLight, block, 1, x, y, z, aabbIndex);
+                    addVertexToList(verticesList, x, y + 1, z, u + 1, v, side, skyLight, blockLight, block, 0, x, y, z, aabbIndex);
+                    addVertexToList(verticesList, x, y, z + 1, u, v + 1, side, skyLight, blockLight, block, 3, x, y, z, aabbIndex);
+                    addVertexToList(verticesList, x, y, z, u + 1, v + 1, side, skyLight, blockLight, block, 2, x, y, z, aabbIndex);
+                }
                 break;
         }
     }
 
-    public void addVertexToList(ArrayList<Integer> list, int x, int y, int z, int u, int v, int side, int skyLight, int blockLight, short block, int corner, int blockX, int blockY, int blockZ) {
+    public void addVertexToList(ArrayList<Integer> list, int x, int y, int z, int u, int v, int side, int skyLight, int blockLight, short block, int corner, int blockX, int blockY, int blockZ, int subDataAddend) {
         if ((Block.getBlockTypeData(block) & DYNAMIC_SHAPE_MASK) != 0) {
             addVertexToListDynamic(list, x, y, z, u, v, side, skyLight, blockLight, block, corner, blockX, blockY, blockZ);
             return;
         }
 
-        int subX = Block.getSubX(block, side, corner);
-        int subY = Block.getSubY(block, side, corner);
-        int subZ = Block.getSubZ(block, side, corner);
-        int subU = Block.getSubU(block, side, corner);
-        int subV = Block.getSubV(block, side, corner);
+        int blockType = Block.getBlockType(block);
+        int subX = Block.getSubX(blockType, side, corner, subDataAddend);
+        int subY = Block.getSubY(blockType, side, corner, subDataAddend);
+        int subZ = Block.getSubZ(blockType, side, corner, subDataAddend);
+        int subU = Block.getSubU(blockType, side, corner, subDataAddend / 6);
+        int subV = Block.getSubV(blockType, side, corner, subDataAddend / 6);
 
         list.add(packData(getAmbientOcclusionLevel(x, y, z, side, subX, subY, subZ), skyLight, blockLight, (x << 4) + subX + 15, (y << 4) + subY) + 15);
         list.add(packData(side, (u << 4) + subU + 15, (v << 4) + subV + 15, (z << 4) + subZ + 15));
@@ -359,16 +379,17 @@ public class Chunk {
                 }
             }
         } else if (Block.getBlockType(block) == CACTUS_TYPE) {
+            int blockType = Block.getBlockType(block);
             switch (side) {
                 case TOP, BOTTOM -> {
-                    subX = Block.getSubX(block, side, corner);
-                    subZ = Block.getSubZ(block, side, corner);
-                    subU = Block.getSubU(block, side, corner);
-                    subV = Block.getSubV(block, side, corner);
+                    subX = Block.getSubX(blockType, side, corner, 0);
+                    subZ = Block.getSubZ(blockType, side, corner, 0);
+                    subU = Block.getSubU(blockType, side, corner, 0);
+                    subV = Block.getSubV(blockType, side, corner, 0);
                 }
-                case FRONT, BACK -> subZ = Block.getSubZ(block, side, corner);
+                case FRONT, BACK -> subZ = Block.getSubZ(blockType, side, corner, 0);
 
-                case RIGHT, LEFT -> subX = Block.getSubX(block, side, corner);
+                case RIGHT, LEFT -> subX = Block.getSubX(blockType, side, corner, 0);
             }
         }
 

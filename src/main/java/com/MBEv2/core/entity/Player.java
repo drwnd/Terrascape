@@ -633,19 +633,31 @@ public class Player {
 
         float requiredStepHeight = 0.0f;
 
-        for (int blockX = Utils.floor(minX), maxBlockX = Utils.floor(maxX); blockX <= maxBlockX; blockX++)
-            for (int blockY = Utils.floor(minY), maxBlockY = Utils.floor(maxY); blockY <= maxBlockY; blockY++)
-                for (int blockZ = Utils.floor(minZ), maxBlockZ = Utils.floor(maxZ); blockZ <= maxBlockZ; blockZ++) {
+        for (int blockX = Utils.floor(minX), maxPlayerX = Utils.floor(maxX); blockX <= maxPlayerX; blockX++)
+            for (int blockY = Utils.floor(minY), maxPlayerY = Utils.floor(maxY); blockY <= maxPlayerY; blockY++)
+                for (int blockZ = Utils.floor(minZ), maxPlayerZ = Utils.floor(maxZ); blockZ <= maxPlayerZ; blockZ++) {
 
-                    float thisBlockStepHeight = 0.0f;
+                    float thisBlockStepHeight;
                     short block = Chunk.getBlockInWorld(blockX, blockY, blockZ);
 
-                    if (Block.playerIntersectsBlock(minX, maxX, minY, maxY, minZ, maxZ, blockX, blockY, blockZ, block, this))
-                        thisBlockStepHeight = Block.getSubY(block, TOP, 0) * 0.0625f + blockY + 1 - minY;
+                    int blockType = Block.getBlockType(block);
+                    byte[] blockXYZSubData = Block.getXYZSubData(block);
+                    if (blockXYZSubData.length == 0 || blockType == WATER_TYPE) continue;
 
-                    requiredStepHeight = Math.max(requiredStepHeight, thisBlockStepHeight);
+                    for (int aabbIndex = 0; aabbIndex < blockXYZSubData.length; aabbIndex += 6) {
+                        float minBlockX = blockX + blockXYZSubData[MIN_X + aabbIndex] * 0.0625f;
+                        float maxBlockX = 1 + blockX + blockXYZSubData[MAX_X + aabbIndex] * 0.0625f;
+                        float minBlockY = blockY + blockXYZSubData[MIN_Y + aabbIndex] * 0.0625f;
+                        float maxBlockY = 1 + blockY + blockXYZSubData[MAX_Y + aabbIndex] * 0.0625f;
+                        float minBlockZ = blockZ + blockXYZSubData[MIN_Z + aabbIndex] * 0.0625f;
+                        float maxBlockZ = 1 + blockZ + blockXYZSubData[MAX_Z + aabbIndex] * 0.0625f;
+
+                        if (minX < maxBlockX && maxX > minBlockX && minY < maxBlockY && maxY > minBlockY && minZ < maxBlockZ && maxZ > minBlockZ) {
+                            thisBlockStepHeight = maxBlockY - minY;
+                            requiredStepHeight = Math.max(requiredStepHeight, thisBlockStepHeight);
+                        }
+                    }
                 }
-
         return requiredStepHeight;
     }
 

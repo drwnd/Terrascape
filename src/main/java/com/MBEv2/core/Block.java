@@ -17,13 +17,7 @@ public class Block {
     private static final byte[] BLOCK_TYPE_DATA = new byte[TOTAL_AMOUNT_OF_BLOCK_TYPES];
     private static final byte[][] BLOCK_TYPE_XYZ_SUB_DATA = new byte[TOTAL_AMOUNT_OF_BLOCK_TYPES][0];
     private static final byte[][] BLOCK_TYPE_UV_SUB_DATA = new byte[TOTAL_AMOUNT_OF_BLOCK_TYPES][0];
-    public static final int[][] NORMALS = {
-            {0, 0, 1},
-            {0, 1, 0},
-            {1, 0, 0},
-            {0, 0, -1},
-            {0, -1, 0},
-            {-1, 0, 0}};
+    public static final int[][] NORMALS = {{0, 0, 1}, {0, 1, 0}, {1, 0, 0}, {0, 0, -1}, {0, -1, 0}, {-1, 0, 0}};
 
     public static final int[][] CORNERS_OF_SIDE = {{1, 0, 5, 4}, {2, 0, 3, 1}, {3, 1, 7, 5}, {2, 3, 6, 7}, {6, 4, 7, 5}, {2, 0, 6, 4}};
 
@@ -77,10 +71,8 @@ public class Block {
 
     public static int getTextureIndex(short block, int side) {
         int[] blockTextureIndices;
-        if (block < STANDARD_BLOCKS_THRESHOLD)
-            blockTextureIndices = NON_STANDARD_BLOCK_TEXTURE_INDICES[block];
-        else
-            blockTextureIndices = STANDARD_BLOCK_TEXTURE_INDICES[block >> BLOCK_TYPE_BITS];
+        if (block < STANDARD_BLOCKS_THRESHOLD) blockTextureIndices = NON_STANDARD_BLOCK_TEXTURE_INDICES[block];
+        else blockTextureIndices = STANDARD_BLOCK_TEXTURE_INDICES[block >> BLOCK_TYPE_BITS];
         return blockTextureIndices[side >= blockTextureIndices.length ? 0 : side];
     }
 
@@ -91,14 +83,17 @@ public class Block {
         byte[] blockXYZSubData = BLOCK_TYPE_XYZ_SUB_DATA[blockType];
         if (blockXYZSubData.length == 0 || blockType == WATER_TYPE) return false;
 
-        float minBlockX = blockX + blockXYZSubData[MIN_X] * 0.0625f;
-        float maxBlockX = 1 + blockX + blockXYZSubData[MAX_X] * 0.0625f;
-        float minBlockY = blockY + blockXYZSubData[MIN_Y] * 0.0625f;
-        float maxBlockY = 1 + blockY + blockXYZSubData[MAX_Y] * 0.0625f;
-        float minBlockZ = blockZ + blockXYZSubData[MIN_Z] * 0.0625f;
-        float maxBlockZ = 1 + blockZ + blockXYZSubData[MAX_Z] * 0.0625f;
-
-        return minX < maxBlockX && maxX > minBlockX && minY < maxBlockY && maxY > minBlockY && minZ < maxBlockZ && maxZ > minBlockZ;
+        for (int aabbIndex = 0; aabbIndex < blockXYZSubData.length; aabbIndex += 6) {
+            float minBlockX = blockX + blockXYZSubData[MIN_X + aabbIndex] * 0.0625f;
+            float maxBlockX = 1 + blockX + blockXYZSubData[MAX_X + aabbIndex] * 0.0625f;
+            float minBlockY = blockY + blockXYZSubData[MIN_Y + aabbIndex] * 0.0625f;
+            float maxBlockY = 1 + blockY + blockXYZSubData[MAX_Y + aabbIndex] * 0.0625f;
+            float minBlockZ = blockZ + blockXYZSubData[MIN_Z + aabbIndex] * 0.0625f;
+            float maxBlockZ = 1 + blockZ + blockXYZSubData[MAX_Z + aabbIndex] * 0.0625f;
+            if (minX < maxBlockX && maxX > minBlockX && minY < maxBlockY && maxY > minBlockY && minZ < maxBlockZ && maxZ > minBlockZ)
+                return true;
+        }
+        return false;
     }
 
     public static boolean intersectsBlock(double x, double y, double z, short block) {
@@ -109,7 +104,12 @@ public class Block {
         y = fraction(y) * 16.0;
         z = fraction(z) * 16.0;
 
-        return x > XYZSubData[MIN_X] && x < XYZSubData[MAX_X] + 16 && y > XYZSubData[MIN_Y] && y < XYZSubData[MAX_Y] + 16 && z > XYZSubData[MIN_Z] && z < XYZSubData[MAX_Z] + 16;
+        for (int aabbIndex = 0; aabbIndex < XYZSubData.length; aabbIndex += 6) {
+            if (x > XYZSubData[MIN_X + aabbIndex] && x < XYZSubData[MAX_X + aabbIndex] + 16 && y > XYZSubData[MIN_Y + aabbIndex] && y < XYZSubData[MAX_Y + aabbIndex] + 16 && z > XYZSubData[MIN_Z + aabbIndex] && z < XYZSubData[MAX_Z + aabbIndex] + 16)
+                return true;
+        }
+
+        return false;
     }
 
     public static int getToPlaceBlockAddend(int primaryCameraDirection, Vector3f target) {
@@ -129,39 +129,33 @@ public class Block {
     }
 
     public static int getBlockProperties(short block) {
-        if (block < STANDARD_BLOCKS_THRESHOLD)
-            return NON_STANDARD_BLOCK_PROPERTIES[block];
+        if (block < STANDARD_BLOCKS_THRESHOLD) return NON_STANDARD_BLOCK_PROPERTIES[block];
         return STANDARD_BLOCK_PROPERTIES[block >> BLOCK_TYPE_BITS];
     }
 
-    public static byte getSubX(short block, int side, int corner) {
-        int blockType = getBlockType(block);
+    public static byte getSubX(int blockType, int side, int corner, int subDataAddend) {
         if (BLOCK_TYPE_XYZ_SUB_DATA[blockType].length == 0) return 0;
-        return BLOCK_TYPE_XYZ_SUB_DATA[blockType][CORNERS_OF_SIDE[side][corner] & 1];
+        return BLOCK_TYPE_XYZ_SUB_DATA[blockType][(CORNERS_OF_SIDE[side][corner] & 1) + subDataAddend];
     }
 
-    public static byte getSubY(short block, int side, int corner) {
-        int blockType = getBlockType(block);
+    public static byte getSubY(int blockType, int side, int corner, int subDataAddend) {
         if (BLOCK_TYPE_XYZ_SUB_DATA[blockType].length == 0) return 0;
-        return BLOCK_TYPE_XYZ_SUB_DATA[blockType][CORNERS_OF_SIDE[side][corner] < 4 ? MAX_Y : MIN_Y];
+        return BLOCK_TYPE_XYZ_SUB_DATA[blockType][(CORNERS_OF_SIDE[side][corner] < 4 ? MAX_Y : MIN_Y) + subDataAddend];
     }
 
-    public static byte getSubZ(short block, int side, int corner) {
-        int blockType = getBlockType(block);
+    public static byte getSubZ(int blockType, int side, int corner, int subDataAddend) {
         if (BLOCK_TYPE_XYZ_SUB_DATA[blockType].length == 0) return 0;
-        return BLOCK_TYPE_XYZ_SUB_DATA[blockType][(CORNERS_OF_SIDE[side][corner] & 3) < 2 ? MAX_Z : MIN_Z];
+        return BLOCK_TYPE_XYZ_SUB_DATA[blockType][((CORNERS_OF_SIDE[side][corner] & 3) < 2 ? MAX_Z : MIN_Z) + subDataAddend];
     }
 
-    public static byte getSubU(short block, int side, int corner) {
-        int blockType = getBlockType(block);
+    public static byte getSubU(int blockType, int side, int corner, int subDataAddend) {
         if (BLOCK_TYPE_UV_SUB_DATA[blockType].length == 0) return 0;
-        return BLOCK_TYPE_UV_SUB_DATA[blockType][(side << 3) + (corner << 1)];
+        return BLOCK_TYPE_UV_SUB_DATA[blockType][(side << 3) + (corner << 1) + subDataAddend * 48];
     }
 
-    public static byte getSubV(short block, int side, int corner) {
-        int blockType = getBlockType(block);
+    public static byte getSubV(int blockType, int side, int corner, int subDataAddend) {
         if (BLOCK_TYPE_UV_SUB_DATA[blockType].length == 0) return 0;
-        return BLOCK_TYPE_UV_SUB_DATA[blockType][(side << 3) + (corner << 1) + 1];
+        return BLOCK_TYPE_UV_SUB_DATA[blockType][(side << 3) + (corner << 1) + 1 + subDataAddend * 48];
     }
 
     public static int getBlockTypeOcclusionData(short block, int side) {
@@ -175,8 +169,7 @@ public class Block {
     }
 
     public static int getBlockType(short block) {
-        if (block < STANDARD_BLOCKS_THRESHOLD)
-            return NON_STANDARD_BLOCK_TYPE[block];
+        if (block < STANDARD_BLOCKS_THRESHOLD) return NON_STANDARD_BLOCK_TYPE[block];
         return block & BLOCK_TYPE_MASK;
     }
 
@@ -191,9 +184,6 @@ public class Block {
     }
 
     public static short getToPlaceBlock(short toPlaceBlock, int primaryCameraDirection, int primaryXZDirection, Vector3f target) {
-        primaryCameraDirection %= 3;
-        int addend = getToPlaceBlockAddend(primaryCameraDirection, target);
-
         if (toPlaceBlock < STANDARD_BLOCKS_THRESHOLD) {
             if (toPlaceBlock == FRONT_CREATOR_HEAD) {
                 if (primaryXZDirection == BACK) return FRONT_CREATOR_HEAD;
@@ -206,7 +196,8 @@ public class Block {
         int blockType = toPlaceBlock & BLOCK_TYPE_MASK;
         int baseBlock = (toPlaceBlock >> BLOCK_TYPE_BITS) << BLOCK_TYPE_BITS;
 
-        int toPlaceBlockType = getToPlaceBlockType(blockType, primaryCameraDirection, addend);
+        int toPlaceBlockType = getToPlaceBlockType(blockType, primaryCameraDirection, target);
+        primaryCameraDirection %= 3;
 
         if (baseBlock == UP_DOWN_OAK_LOG) {
             if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_OAK_LOG | toPlaceBlockType);
@@ -244,14 +235,55 @@ public class Block {
         return (short) (baseBlock | toPlaceBlockType);
     }
 
-    private static int getToPlaceBlockType(int blockType, int primaryCameraDirection, int addend) {
-        if (blockType == BOTTOM_SLAB)
-            return SLABS[primaryCameraDirection + addend];
-        if (blockType == BOTTOM_PLATE)
-            return PLATES[primaryCameraDirection + addend];
+    private static int getToPlaceBlockType(int blockType, int primaryCameraDirection, Vector3f target) {
+        int addend = getToPlaceBlockAddend(primaryCameraDirection % 3, target);
+
+        if (blockType == BOTTOM_SLAB) return SLABS[primaryCameraDirection + addend];
+        if (blockType == BOTTOM_PLATE) return PLATES[primaryCameraDirection + addend];
         if (blockType == FRONT_BACK_WALL) return WALLS[primaryCameraDirection];
         if (blockType == UP_DOWN_POST) return POSTS[primaryCameraDirection];
+        if (blockType == BOTTOM_BACK_STAIR) {
+            double x = fraction(target.x);
+            double y = fraction(target.y);
+            double z = fraction(target.z);
 
+            if (primaryCameraDirection == FRONT) {
+                if (y < x && y < 1.0 - x) return BOTTOM_FRONT_STAIR;
+                if (y > x && y < 1.0 - x) return FRONT_LEFT_STAIR;
+                if (y > x && y > 1.0 - x) return TOP_FRONT_STAIR;
+                return FRONT_RIGHT_STAIR;
+            }
+            if (primaryCameraDirection == BACK) {
+                if (y < x && y < 1.0 - x) return BOTTOM_BACK_STAIR;
+                if (y > x && y < 1.0 - x) return BACK_LEFT_STAIR;
+                if (y > x && y > 1.0 - x) return TOP_BACK_STAIR;
+                return BACK_RIGHT_STAIR;
+            }
+            if (primaryCameraDirection == BOTTOM) {
+                if (x < z && x < 1.0 - z) return BOTTOM_LEFT_STAIR;
+                if (x > z && x < 1.0 - z) return BOTTOM_BACK_STAIR;
+                if (x > z && x > 1.0 - z) return BOTTOM_RIGHT_STAIR;
+                return BOTTOM_FRONT_STAIR;
+            }
+            if (primaryCameraDirection == TOP) {
+                if (x < z && x < 1.0 - z) return TOP_LEFT_STAIR;
+                if (x > z && x < 1.0 - z) return TOP_BACK_STAIR;
+                if (x > z && x > 1.0 - z) return TOP_RIGHT_STAIR;
+                return TOP_FRONT_STAIR;
+            }
+            if (primaryCameraDirection == RIGHT) {
+                if (y < z && y < 1.0 - z) return BOTTOM_RIGHT_STAIR;
+                if (y > z && y < 1.0 - z) return BACK_RIGHT_STAIR;
+                if (y > z && y > 1.0 - z) return TOP_RIGHT_STAIR;
+                return FRONT_RIGHT_STAIR;
+            }
+            if (primaryCameraDirection == LEFT) {
+                if (y < z && y < 1.0 - z) return BOTTOM_LEFT_STAIR;
+                if (y > z && y < 1.0 - z) return BACK_LEFT_STAIR;
+                if (y > z && y > 1.0 - z) return TOP_LEFT_STAIR;
+                return FRONT_LEFT_STAIR;
+            }
+        }
         return blockType;
     }
 
@@ -415,85 +447,137 @@ public class Block {
         BLOCK_TYPE_OCCLUSION_DATA[CACTUS_TYPE] = (byte) 0b10000000;
         BLOCK_TYPE_DATA[CACTUS_TYPE] = (byte) 0b10010010;
 
+        BLOCK_TYPE_OCCLUSION_DATA[BOTTOM_FRONT_STAIR] = (byte) 0b10010001;
+        BLOCK_TYPE_DATA[BOTTOM_FRONT_STAIR] = 0b00110101;
+
+        BLOCK_TYPE_OCCLUSION_DATA[BOTTOM_RIGHT_STAIR] = (byte) 0b10010100;
+        BLOCK_TYPE_DATA[BOTTOM_RIGHT_STAIR] = 0b00011101;
+
+        BLOCK_TYPE_OCCLUSION_DATA[BOTTOM_BACK_STAIR] = (byte) 0b10011000;
+        BLOCK_TYPE_DATA[BOTTOM_BACK_STAIR] = 0b00111100;
+
+        BLOCK_TYPE_OCCLUSION_DATA[BOTTOM_LEFT_STAIR] = (byte) 0b10110000;
+        BLOCK_TYPE_DATA[BOTTOM_LEFT_STAIR] = 0b00111001;
+
+        BLOCK_TYPE_OCCLUSION_DATA[TOP_FRONT_STAIR] = (byte) 0b10000011;
+        BLOCK_TYPE_DATA[TOP_FRONT_STAIR] = 0b00100111;
+
+        BLOCK_TYPE_OCCLUSION_DATA[TOP_RIGHT_STAIR] = (byte) 0b10000110;
+        BLOCK_TYPE_DATA[TOP_RIGHT_STAIR] = 0b00001111;
+
+        BLOCK_TYPE_OCCLUSION_DATA[TOP_BACK_STAIR] = (byte) 0b10001010;
+        BLOCK_TYPE_DATA[TOP_BACK_STAIR] = 0b00101110;
+
+        BLOCK_TYPE_OCCLUSION_DATA[TOP_LEFT_STAIR] = (byte) 0b10100010;
+        BLOCK_TYPE_DATA[TOP_LEFT_STAIR] = 0b00101011;
+
+        BLOCK_TYPE_OCCLUSION_DATA[FRONT_RIGHT_STAIR] = (byte) 0b10000101;
+        BLOCK_TYPE_DATA[FRONT_RIGHT_STAIR] = 0b00010111;
+
+        BLOCK_TYPE_OCCLUSION_DATA[FRONT_LEFT_STAIR] = (byte) 0b10100001;
+        BLOCK_TYPE_DATA[FRONT_LEFT_STAIR] = (byte) 0b00110011;
+
+        BLOCK_TYPE_OCCLUSION_DATA[BACK_RIGHT_STAIR] = (byte) 0b10001100;
+        BLOCK_TYPE_DATA[BACK_RIGHT_STAIR] = 0b00011110;
+
+        BLOCK_TYPE_OCCLUSION_DATA[BACK_LEFT_STAIR] = (byte) 0b10101000;
+        BLOCK_TYPE_DATA[BACK_LEFT_STAIR] = 0b00111010;
+
+
+        BLOCK_TYPE_XYZ_SUB_DATA[FRONT_RIGHT_STAIR] = new byte[]{8, 0, 0, 0, 0, -8, 0, 0, 0, 0, 8, 0};
+        BLOCK_TYPE_UV_SUB_DATA[FRONT_RIGHT_STAIR] = new byte[]{0, 0, -8, 0, 0, 0, -8, 0, 8, 8, 0, 8, 8, 0, 0, 0, 0, 0, -8, 0, 0, 0, -8, 0, 8, 0, 0, 0, 8, 0, 0, 0, -8, -8, -8, 0, 0, -8, 0, 0, 0, 0, 8, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 8, 0, 0, 0, 8, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -8, 0, 0, 0, -8, 0, 0, -8, 0, 0, 0, -8, 0, 0, 0};
+
+        BLOCK_TYPE_XYZ_SUB_DATA[FRONT_LEFT_STAIR] = new byte[]{0, -8, 0, 0, 0, -8, 0, 0, 0, 0, 8, 0};
+        BLOCK_TYPE_UV_SUB_DATA[FRONT_LEFT_STAIR] = new byte[]{0, 0, -8, 0, 0, 0, -8, 0, 8, 8, 0, 8, 8, 0, 0, 0, 0, 0, -8, 0, 0, 0, -8, 0, 8, 0, 0, 0, 8, 0, 0, 0, -8, -8, -8, 0, 0, -8, 0, 0, 0, 0, 8, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 8, 0, 0, 0, 8, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -8, 0, 0, 0, -8, 0, 0, -8, 0, 0, 0, -8, 0, 0, 0};
+
+        BLOCK_TYPE_XYZ_SUB_DATA[BACK_RIGHT_STAIR] = new byte[]{8, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, -8};
+        BLOCK_TYPE_UV_SUB_DATA[BACK_RIGHT_STAIR] = new byte[]{0, 0, -8, 0, 0, 0, -8, 0, 8, 8, 0, 8, 8, 0, 0, 0, 8, 0, 0, 0, 8, 0, 0, 0, 8, 0, 0, 0, 8, 0, 0, 0, -8, -8, -8, 0, 0, -8, 0, 0, -8, 0, 0, 0, -8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -8, 0, 0, 0, -8, 0, 0, 0, -8, 0, 0, 0, -8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 8, 0, 0, 8, 0, 0, 0, 8, 0};
+
+        BLOCK_TYPE_XYZ_SUB_DATA[BACK_LEFT_STAIR] = new byte[]{0, -8, 0, 0, 8, 0, 0, 0, 0, 0, 0, -8};
+        BLOCK_TYPE_UV_SUB_DATA[BACK_LEFT_STAIR] = new byte[]{8, 0, 0, 0, 8, 0, 0, 0, 0, 8, -8, 8, 0, 0, -8, 0, 8, 0, 0, 0, 8, 0, 0, 0, 8, 0, 0, 0, 8, 0, 0, 0, 0, -8, 0, 0, 8, -8, 8, 0, -8, 0, 0, 0, -8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -8, 0, 0, 0, -8, 0, 0, 0, -8, 0, 0, 0, -8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 8, 0, 0, 8, 0, 0, 0, 8, 0};
+
+        BLOCK_TYPE_XYZ_SUB_DATA[BOTTOM_FRONT_STAIR] = new byte[]{0, 0, 0, -8, 0, 0, 0, 0, 8, 0, 8, 0};
+        BLOCK_TYPE_UV_SUB_DATA[BOTTOM_FRONT_STAIR] = new byte[]{0, 8, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 8, 0, 0, 0, 0, 0, 8, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, -8, 0, -8, 8, 0, 0, 0, 8, 0, 0, 0, 8, 0, 0, 0, 8, -8, 0, -8, 0, 0, 0, 0, 0, -8, 0, -8, 0, 0, 0, 8, 0, 0, 0, 8, -8, 0, 0, 0, -8, -8, 0, -8};
+
+        BLOCK_TYPE_XYZ_SUB_DATA[BOTTOM_RIGHT_STAIR] = new byte[]{0, 0, 0, -8, 0, 0, 8, 0, 8, 0, 0, 0};
+        BLOCK_TYPE_UV_SUB_DATA[BOTTOM_RIGHT_STAIR] = new byte[]{0, 8, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 8, 0, 0, 0, 0, 0, 8, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 8, 0, 0, 0, 0, 0, 0, -8, 0, 0, -8, -8, -8, 0, 8, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, -8, 0, -8, 8, 0, 0, 0, 8, -8, 0, -8, -8, 0, -8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -8, 0, -8};
+
+        BLOCK_TYPE_XYZ_SUB_DATA[BOTTOM_BACK_STAIR] = new byte[]{0, 0, 0, -8, 0, 0, 0, 0, 8, 0, 0, -8};
+        BLOCK_TYPE_UV_SUB_DATA[BOTTOM_BACK_STAIR] = new byte[]{0, 8, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 8, 0, 0, 0, 0, 0, 8, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, -8, 0, -8, 0, 0, -8, 0, 0, 0, -8, 0, 0, 0, -8, 0, 0, -8, -8, -8, 0, 0, 0, 0, 0, -8, 0, -8, 0, 0, 0, 8, 0, 0, 0, 8, 0, 0, 8, 0, 0, -8, 8, -8};
+
+        BLOCK_TYPE_XYZ_SUB_DATA[BOTTOM_LEFT_STAIR] = new byte[]{0, 0, 0, -8, 0, 0, 0, -8, 8, 0, 0, 0};
+        BLOCK_TYPE_UV_SUB_DATA[BOTTOM_LEFT_STAIR] = new byte[]{0, 8, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 8, 0, 0, 0, 0, 0, 8, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 8, 0, 0, 0, 0, 8, 0, 0, 0, 8, -8, 0, -8, 0, 0, 0, 0, 0, -8, 0, -8, 0, 0, 0, 0, 0, -8, 0, -8, 0, 0, -8, 0, 0, -8, -8, -8, -8, 0, -8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -8, 0, -8};
+
+        BLOCK_TYPE_XYZ_SUB_DATA[TOP_FRONT_STAIR] = new byte[]{0, 0, 8, 0, 0, 0, 0, 0, 0, -8, 8, 0};
+        BLOCK_TYPE_UV_SUB_DATA[TOP_FRONT_STAIR] = new byte[]{0, 0, 0, 0, 0, -8, 0, -8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -8, 0, -8, 0, 0, 0, 0, 0, -8, 0, -8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -8, 0, -8, 0, 8, 0, 8, 0, 0, 0, 0, 8, 8, 0, 8, 8, 0, 0, 0, 8, 8, 0, 8, 8, 0, 0, 0, 0, 8, 0, 8, 0, 0, 0, 0, 0, -8, 0, 0, 0, -8, 0, 0, -8, 8, 0, 8, -8, 0, 0, 0};
+
+        BLOCK_TYPE_XYZ_SUB_DATA[TOP_RIGHT_STAIR] = new byte[]{0, 0, 8, 0, 0, 0, 8, 0, 0, -8, 0, 0};
+        BLOCK_TYPE_UV_SUB_DATA[TOP_RIGHT_STAIR] = new byte[]{0, 0, 0, 0, 0, -8, 0, -8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -8, 0, -8, 0, 0, 0, 0, 0, -8, 0, -8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -8, 0, -8, 8, 0, 0, 0, 8, -8, 0, -8, 0, 8, 0, 8, 0, 0, 0, 0, 0, 8, 0, 8, 0, 0, 0, 0, 0, 0, -8, 0, 0, -8, -8, -8, -8, 0, -8, 0, 0, 0, 0, 0, 0, 8, 0, 8, 0, 0, 0, 0};
+
+        BLOCK_TYPE_XYZ_SUB_DATA[TOP_BACK_STAIR] = new byte[]{0, 0, 8, 0, 0, 0, 0, 0, 0, -8, 0, -8};
+        BLOCK_TYPE_UV_SUB_DATA[TOP_BACK_STAIR] = new byte[]{0, 0, 0, 0, 0, -8, 0, -8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -8, 0, -8, 0, 0, 0, 0, 0, -8, 0, -8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -8, 0, -8, 0, 8, 0, 8, 0, 0, 0, 0, 0, 0, -8, 0, 0, 0, -8, 0, 8, 0, 0, 0, 8, -8, 0, -8, 0, 8, 0, 8, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 8, -8, 0, 0, 0, -8, -8, 0, -8};
+
+        BLOCK_TYPE_XYZ_SUB_DATA[TOP_LEFT_STAIR] = new byte[]{0, 0, 8, 0, 0, 0, 0, -8, 0, -8, 0, 0};
+        BLOCK_TYPE_UV_SUB_DATA[TOP_LEFT_STAIR] = new byte[]{0, 0, 0, 0, 0, -8, 0, -8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -8, 0, -8, 0, 0, 0, 0, 0, -8, 0, -8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -8, 0, -8, 0, 0, -8, 0, 0, -8, -8, -8, 0, 8, 0, 8, 0, 0, 0, 0, 0, 8, 0, 8, 0, 0, 0, 0, 8, 0, 0, 0, 8, -8, 0, -8, -8, 0, -8, 0, 0, 0, 0, 0, 0, 8, 0, 8, 0, 0, 0, 0};
 
         BLOCK_TYPE_XYZ_SUB_DATA[CACTUS_TYPE] = new byte[]{1, -1, 0, 0, 1, -1};
-
         BLOCK_TYPE_UV_SUB_DATA[CACTUS_TYPE] = new byte[]{1, 0, -1, 0, 1, 0, -1, 0, 1, 1, -1, 1, 1, -1, -1, -1, 1, 0, -1, 0, 1, 0, -1, 0, 1, 0, -1, 0, 1, 0, -1, 0, -1, -1, -1, 1, 1, -1, 1, 1, -1, 0, 1, 0, -1, 0, 1, 0};
 
         BLOCK_TYPE_XYZ_SUB_DATA[PLAYER_HEAD] = new byte[]{4, -4, 0, -8, 4, -4};
-
         BLOCK_TYPE_UV_SUB_DATA[PLAYER_HEAD] = new byte[]{4, 4, -4, 4, 4, -4, -4, -4, 4, 4, -4, 4, 4, -4, -4, -4, 4, 4, -4, 4, 4, -4, -4, -4, 4, 4, -4, 4, 4, -4, -4, -4, -4, -4, -4, 4, 4, -4, 4, 4, -4, 4, 4, 4, -4, -4, 4, -4};
 
         BLOCK_TYPE_XYZ_SUB_DATA[UP_DOWN_WALL] = new byte[]{0, 0, 4, -4, 0, 0};
-
         BLOCK_TYPE_UV_SUB_DATA[UP_DOWN_WALL] = new byte[]{0, 4, 0, 4, 0, -4, 0, -4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 4, 0, -4, 0, -4, 0, 4, 0, 4, 0, -4, 0, -4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 4, 0, -4, 0, -4};
 
         BLOCK_TYPE_XYZ_SUB_DATA[FRONT_BACK_WALL] = new byte[]{0, 0, 0, 0, 4, -4};
-
         BLOCK_TYPE_UV_SUB_DATA[FRONT_BACK_WALL] = new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 4, 0, -4, 0, 4, 0, -4, 0, 4, 0, -4, 0, 4, 0, -4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -4, 0, 4, 0, -4, 0, 4, -4, 0, 4, 0, -4, 0, 4, 0};
 
         BLOCK_TYPE_XYZ_SUB_DATA[LEFT_RIGHT_WALL] = new byte[]{4, -4, 0, 0, 0, 0};
-
         BLOCK_TYPE_UV_SUB_DATA[LEFT_RIGHT_WALL] = new byte[]{4, 0, -4, 0, 4, 0, -4, 0, 0, 4, 0, 4, 0, -4, 0, -4, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, -4, 0, 4, 0, -4, 0, -4, 0, -4, 0, 4, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
         BLOCK_TYPE_XYZ_SUB_DATA[LEFT_RIGHT_POST] = new byte[]{0, 0, 4, -4, 4, -4};
-
         BLOCK_TYPE_UV_SUB_DATA[LEFT_RIGHT_POST] = new byte[]{0, 0, 0, 0, 0, -8, 0, -8, 4, 0, -4, 0, 4, 0, -4, 0, 4, 4, -4, 4, 4, -4, -4, -4, 0, 8, 0, 8, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 8, -4, 4, 4, 4, -4, -4, 4, -4};
 
         BLOCK_TYPE_XYZ_SUB_DATA[FRONT_BACK_POST] = new byte[]{4, -4, 4, -4, 0, 0};
-
         BLOCK_TYPE_UV_SUB_DATA[FRONT_BACK_POST] = new byte[]{4, 4, -4, 4, 4, -4, -4, -4, 0, 8, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, -8, 0, -8, 4, 4, -4, 4, 4, -4, -4, -4, -8, 0, -8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -8, 0, -8};
 
         BLOCK_TYPE_XYZ_SUB_DATA[UP_DOWN_POST] = new byte[]{4, -4, 0, 0, 4, -4};
-
         BLOCK_TYPE_UV_SUB_DATA[UP_DOWN_POST] = new byte[]{0, 0, -8, 0, 0, 0, -8, 0, 4, 4, -4, 4, 4, -4, -4, -4, 8, 0, 0, 0, 8, 0, 0, 0, 0, 0, -8, 0, 0, 0, -8, 0, -4, -4, -4, 4, 4, -4, 4, 4, 0, 0, 8, 0, 0, 0, 8, 0};
 
         BLOCK_TYPE_XYZ_SUB_DATA[BOTTOM_SLAB] = new byte[]{0, 0, 0, -8, 0, 0};
-
         BLOCK_TYPE_UV_SUB_DATA[BOTTOM_SLAB] = new byte[]{0, 8, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 8, 0, 0, 0, 0, 0, 8, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 8, 0, 0, 0, 0};
 
         BLOCK_TYPE_XYZ_SUB_DATA[TOP_SLAB] = new byte[]{0, 0, 8, 0, 0, 0};
-
         BLOCK_TYPE_UV_SUB_DATA[TOP_SLAB] = new byte[]{0, 0, 0, 0, 0, -8, 0, -8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -8, 0, -8, 0, 0, 0, 0, 0, -8, 0, -8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -8, 0, -8};
 
         BLOCK_TYPE_XYZ_SUB_DATA[FRONT_SLAB] = new byte[]{0, 0, 0, 0, 8, 0};
-
         BLOCK_TYPE_UV_SUB_DATA[FRONT_SLAB] = new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 8, 0, 0, 0, 8, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -8, 0, 0, 0, -8, 0, 0, -8, 0, 0, 0, -8, 0, 0, 0};
 
         BLOCK_TYPE_XYZ_SUB_DATA[BACK_SLAB] = new byte[]{0, 0, 0, 0, 0, -8};
-
         BLOCK_TYPE_UV_SUB_DATA[BACK_SLAB] = new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -8, 0, 0, 0, -8, 0, 0, 0, -8, 0, 0, 0, -8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 8, 0, 0, 8, 0, 0, 0, 8, 0};
 
         BLOCK_TYPE_XYZ_SUB_DATA[RIGHT_SLAB] = new byte[]{8, 0, 0, 0, 0, 0};
-
         BLOCK_TYPE_UV_SUB_DATA[RIGHT_SLAB] = new byte[]{0, 0, -8, 0, 0, 0, -8, 0, 0, 8, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 8, 0, 0, 0, -8, 0, -8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
         BLOCK_TYPE_XYZ_SUB_DATA[LEFT_SLAB] = new byte[]{0, -8, 0, 0, 0, 0};
-
         BLOCK_TYPE_UV_SUB_DATA[LEFT_SLAB] = new byte[]{8, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, -8, 0, -8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -8, 0, 0, 0, -8, 0, 0, 0, 0, 0, 8, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
         BLOCK_TYPE_XYZ_SUB_DATA[BOTTOM_PLATE] = new byte[]{0, 0, 0, -12, 0, 0};
-
         BLOCK_TYPE_UV_SUB_DATA[BOTTOM_PLATE] = new byte[]{0, 12, 0, 12, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 0, 12, 0, 0, 0, 0, 0, 12, 0, 12, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 0, 12, 0, 0, 0, 0};
 
         BLOCK_TYPE_XYZ_SUB_DATA[TOP_PLATE] = new byte[]{0, 0, 12, 0, 0, 0};
-
         BLOCK_TYPE_UV_SUB_DATA[TOP_PLATE] = new byte[]{0, 0, 0, 0, 0, -12, 0, -12, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -12, 0, -12, 0, 0, 0, 0, 0, -12, 0, -12, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -12, 0, -12};
 
         BLOCK_TYPE_XYZ_SUB_DATA[FRONT_PLATE] = new byte[]{0, 0, 0, 0, 12, 0};
-
         BLOCK_TYPE_UV_SUB_DATA[FRONT_PLATE] = new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 12, 0, 0, 0, 12, 0, 0, 0, 12, 0, 0, 0, 12, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -12, 0, 0, 0, -12, 0, 0, -12, 0, 0, 0, -12, 0, 0, 0};
 
         BLOCK_TYPE_XYZ_SUB_DATA[BACK_PLATE] = new byte[]{0, 0, 0, 0, 0, -12};
-
         BLOCK_TYPE_UV_SUB_DATA[BACK_PLATE] = new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -12, 0, 0, 0, -12, 0, 0, 0, -12, 0, 0, 0, -12, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 0, 0, 0, 12, 0, 0, 12, 0, 0, 0, 12, 0};
 
         BLOCK_TYPE_XYZ_SUB_DATA[RIGHT_PLATE] = new byte[]{12, 0, 0, 0, 0, 0};
-
         BLOCK_TYPE_UV_SUB_DATA[RIGHT_PLATE] = new byte[]{0, 0, -12, 0, 0, 0, -12, 0, 0, 12, 0, 12, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 8, 0, 0, 0, -12, 0, -12, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
         BLOCK_TYPE_XYZ_SUB_DATA[LEFT_PLATE] = new byte[]{0, -12, 0, 0, 0, 0};
-
         BLOCK_TYPE_UV_SUB_DATA[LEFT_PLATE] = new byte[]{12, 0, 0, 0, 12, 0, 0, 0, 0, 0, 0, 0, 0, -12, 0, -12, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -12, 0, 0, 0, -12, 0, 0, 0, 0, 0, 12, 0, 12, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
         BLOCK_TYPE_XYZ_SUB_DATA[FULL_BLOCK] = new byte[]{0, 0, 0, 0, 0, 0};
