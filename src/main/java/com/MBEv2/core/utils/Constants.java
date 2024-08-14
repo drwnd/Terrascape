@@ -25,7 +25,7 @@ public class Constants {
     public static final float FALL_FRICTION = 0.98f;
     public static final float WATER_FRICTION = 0.4f;
     public static final float GROUND_FRICTION = 0.546f;
-    public static final float FLY_FRICTION = 0.91f;
+    public static final float FLY_FRICTION = 0.8f;
 
     public static final float MOVEMENT_SPEED = 0.098f;
     public static final float IN_AIR_SPEED = 0.2f;
@@ -222,24 +222,29 @@ public class Constants {
     public static final short GRASS = (short) (b++ << BLOCK_TYPE_BITS);
     public static final short DIRT = (short) (b++ << BLOCK_TYPE_BITS);
     public static final short STONE = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short STONE_BRICK = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short COBBLESTONE = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short CHISELED_STONE = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short POLISHED_STONE = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short CHISELED_POLISHED_STONE = (short) (b++ << BLOCK_TYPE_BITS);
     public static final short MUD = (short) (b++ << BLOCK_TYPE_BITS);
     public static final short ANDESITE = (short) (b++ << BLOCK_TYPE_BITS);
     public static final short SNOW = (short) (b++ << BLOCK_TYPE_BITS);
     public static final short SAND = (short) (b++ << BLOCK_TYPE_BITS);
-    public static final short STONE_BRICK = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short SANDSTONE = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short POLISHED_SANDSTONE = (short) (b++ << BLOCK_TYPE_BITS);
     public static final short SLATE = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short CHISELED_SLATE = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short COBBLED_SLATE = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short SLATE_BRICKS = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short POLISHED_SLATE = (short) (b++ << BLOCK_TYPE_BITS);
     public static final short GLASS = (short) (b++ << BLOCK_TYPE_BITS);
-    public static final short COBBLESTONE = (short) (b++ << BLOCK_TYPE_BITS);
     public static final short GRAVEL = (short) (b++ << BLOCK_TYPE_BITS);
-    public static final short POLISHED_STONE = (short) (b++ << BLOCK_TYPE_BITS);
     public static final short COURSE_DIRT = (short) (b++ << BLOCK_TYPE_BITS);
-    public static final short CHISELED_STONE = (short) (b++ << BLOCK_TYPE_BITS);
-    public static final short CHISELED_POLISHED_STONE = (short) (b++ << BLOCK_TYPE_BITS);
-    public static final short ICE = (short) (b++ << BLOCK_TYPE_BITS);
     public static final short CLAY = (short) (b++ << BLOCK_TYPE_BITS);
     public static final short MOSS = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short ICE = (short) (b++ << BLOCK_TYPE_BITS);
     public static final short HEAVY_ICE = (short) (b++ << BLOCK_TYPE_BITS);
-    public static final short CHISELED_SLATE = (short) (b++ << BLOCK_TYPE_BITS);
     public static final short COAL_ORE = (short) (b++ << BLOCK_TYPE_BITS);
     public static final short IRON_ORE = (short) (b++ << BLOCK_TYPE_BITS);
     public static final short DIAMOND_ORE = (short) (b++ << BLOCK_TYPE_BITS);
@@ -249,12 +254,25 @@ public class Constants {
     public static final short UP_DOWN_STRIPPED_SPRUCE_LOG = (short) (b++ << BLOCK_TYPE_BITS);
     public static final short UP_DOWN_DARK_OAK_LOG = (short) (b++ << BLOCK_TYPE_BITS);
     public static final short UP_DOWN_STRIPPED_DARK_OAK_LOG = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short UP_DOWN_PINE_LOG = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short UP_DOWN_STRIPPED_PINE_LOG = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short UP_DOWN_REDWOOD_LOG = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short UP_DOWN_STRIPPED_REDWOOD_LOG = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short UP_DOWN_BLACK_WOOD_LOG = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short UP_DOWN_STRIPPED_BLACK_WOOD_LOG = (short) (b++ << BLOCK_TYPE_BITS);
     public static final short OAK_LEAVES = (short) (b++ << BLOCK_TYPE_BITS);
     public static final short SPRUCE_LEAVES = (short) (b++ << BLOCK_TYPE_BITS);
     public static final short DARK_OAK_LEAVES = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short PINE_LEAVES = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short REDWOOD_LEAVES = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short BLACK_WOOD_LEAVES = (short) (b++ << BLOCK_TYPE_BITS);
     public static final short OAK_PLANKS = (short) (b++ << BLOCK_TYPE_BITS);
     public static final short SPRUCE_PLANKS = (short) (b++ << BLOCK_TYPE_BITS);
     public static final short DARK_OAK_PLANKS = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short PINE_PLANKS = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short REDWOOD_PLANKS = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short BLACK_WOOD_PLANKS = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short CRACKED_ANDESITE = (short) (b++ << BLOCK_TYPE_BITS);
     public static final short BLACK = (short) (b++ << BLOCK_TYPE_BITS);
     public static final short WHITE = (short) (b++ << BLOCK_TYPE_BITS);
     public static final short CYAN = (short) (b++ << BLOCK_TYPE_BITS);
@@ -263,6 +281,8 @@ public class Constants {
     public static final short BLUE = (short) (b++ << BLOCK_TYPE_BITS);
     public static final short GREEN = (short) (b++ << BLOCK_TYPE_BITS);
     public static final short RED = (short) (b++ << BLOCK_TYPE_BITS);
+
+    public static final int AMOUNT_OF_TO_PLACE_STANDARD_BLOCKS = b;
 
     public static final short FRONT_BACK_OAK_LOG = (short) (b++ << BLOCK_TYPE_BITS);
     public static final short LEFT_RIGHT_OAK_LOG = (short) (b++ << BLOCK_TYPE_BITS);
@@ -276,8 +296,19 @@ public class Constants {
     public static final short LEFT_RIGHT_DARK_OAK_LOG = (short) (b++ << BLOCK_TYPE_BITS);
     public static final short FRONT_BACK_STRIPPED_DARK_OAK_LOG = (short) (b++ << BLOCK_TYPE_BITS);
     public static final short LEFT_RIGHT_STRIPPED_DARK_OAK_LOG = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short FRONT_BACK_PINE_LOG = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short LEFT_RIGHT_PINE_LOG = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short FRONT_BACK_STRIPPED_PINE_LOG = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short LEFT_RIGHT_STRIPPED_PINE_LOG = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short FRONT_BACK_REDWOOD_LOG = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short LEFT_RIGHT_REDWOOD_LOG = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short FRONT_BACK_STRIPPED_REDWOOD_LOG = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short LEFT_RIGHT_STRIPPED_REDWOOD_LOG = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short FRONT_BACK_BLACK_WOOD_LOG = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short LEFT_RIGHT_BLACK_WOOD_LOG = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short FRONT_BACK_STRIPPED_BLACK_WOOD_LOG = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short LEFT_RIGHT_STRIPPED_BLACK_WOOD_LOG = (short) (b++ << BLOCK_TYPE_BITS);
 
-    public static final int AMOUNT_OF_TO_PLACE_STANDARD_BLOCKS = 45;
     public static final int AMOUNT_OF_STANDARD_BLOCKS = b;
 
 
@@ -350,6 +381,36 @@ public class Constants {
     public static final byte CYAN_TEXTURE = -6;
     public static final byte WHITE_TEXTURE = -7;
     public static final byte BLACK_TEXTURE = -8;
+    public static final byte COBBLED_SLATE_TEXTURE = 115;
+    public static final byte SLATE_BRICKS_TEXTURE = -125;
+    public static final byte POLISHED_SANDSTONE_TEXTURE = -93;
+    public static final byte SANDSTONE_TEXTURE = -94;
+    public static final byte POLISHED_SLATE_TEXTURE = -95;
+    public static final byte CRACKED_ANDESITE_TEXTURE = -92;
+    public static final byte PINE_LOG_TEXTURE = 7;
+    public static final byte PINE_LOG_TOP_TEXTURE = 23;
+    public static final byte STRIPPED_PINE_LOG_TEXTURE = 39;
+    public static final byte STRIPPED_PINE_LOG_TOP_TEXTURE = 55;
+    public static final byte PINE_PLANKS_TEXTURE = 71;
+    public static final byte PINE_LEAVES_TEXTURE = 87;
+    public static final byte ROTATED_PINE_LOG_TEXTURE = 103;
+    public static final byte ROTATED_STRIPPED_PINE_LOG_TEXTURE = 119;
+    public static final byte REDWOOD_LOG_TEXTURE = 8;
+    public static final byte REDWOOD_LOG_TOP_TEXTURE = 24;
+    public static final byte STRIPPED_REDWOOD_LOG_TEXTURE = 40;
+    public static final byte STRIPPED_REDWOOD_LOG_TOP_TEXTURE = 56;
+    public static final byte REDWOOD_PLANKS_TEXTURE = 72;
+    public static final byte REDWOOD_LEAVES_TEXTURE = 88;
+    public static final byte ROTATED_REDWOOD_LOG_TEXTURE = 104;
+    public static final byte ROTATED_STRIPPED_REDWOOD_LOG_TEXTURE = 120;
+    public static final byte BLACK_WOOD_LOG_TEXTURE = 9;
+    public static final byte BLACK_WOOD_LOG_TOP_TEXTURE = 25;
+    public static final byte STRIPPED_BLACK_WOOD_LOG_TEXTURE = 41;
+    public static final byte STRIPPED_BLACK_WOOD_LOG_TOP_TEXTURE = 57;
+    public static final byte BLACK_WOOD_PLANKS_TEXTURE = 73;
+    public static final byte BLACK_WOOD_LEAVES_TEXTURE = 89;
+    public static final byte ROTATED_BLACK_WOOD_LOG_TEXTURE = 105;
+    public static final byte ROTATED_STRIPPED_BLACK_WOOD_LOG_TEXTURE = 121;
 
     //Just pretend it doesn't exist
     public static final float[] SKY_BOX_VERTICES;

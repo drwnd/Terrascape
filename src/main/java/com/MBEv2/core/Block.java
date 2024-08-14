@@ -112,6 +112,146 @@ public class Block {
         return false;
     }
 
+    public static short getToPlaceBlock(short toPlaceBlock, int primaryCameraDirection, int primaryXZDirection, Vector3f target) {
+        if (toPlaceBlock < STANDARD_BLOCKS_THRESHOLD) {
+            if (toPlaceBlock == FRONT_CREATOR_HEAD) {
+                if (primaryXZDirection == BACK) return FRONT_CREATOR_HEAD;
+                if (primaryXZDirection == FRONT) return BACK_CREATOR_HEAD;
+                if (primaryXZDirection == RIGHT) return LEFT_CREATOR_HEAD;
+                if (primaryXZDirection == LEFT) return RIGHT_CREATOR_HEAD;
+            }
+            return toPlaceBlock;
+        }
+        int blockType = toPlaceBlock & BLOCK_TYPE_MASK;
+        int baseBlock = (toPlaceBlock >> BLOCK_TYPE_BITS) << BLOCK_TYPE_BITS;
+
+        int toPlaceBlockType = getToPlaceBlockType(blockType, primaryCameraDirection, target);
+        primaryCameraDirection %= 3;
+
+        if (baseBlock == UP_DOWN_OAK_LOG) {
+            if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_OAK_LOG | toPlaceBlockType);
+            if (primaryCameraDirection == TOP) return (short) (UP_DOWN_OAK_LOG | toPlaceBlockType);
+            return (short) (LEFT_RIGHT_OAK_LOG | toPlaceBlockType);
+        }
+        if (baseBlock == UP_DOWN_STRIPPED_OAK_LOG) {
+            if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_STRIPPED_OAK_LOG | toPlaceBlockType);
+            if (primaryCameraDirection == TOP) return (short) (UP_DOWN_STRIPPED_OAK_LOG | toPlaceBlockType);
+            return (short) (LEFT_RIGHT_STRIPPED_OAK_LOG | toPlaceBlockType);
+        }
+
+        if (baseBlock == UP_DOWN_SPRUCE_LOG) {
+            if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_SPRUCE_LOG | toPlaceBlockType);
+            if (primaryCameraDirection == TOP) return (short) (UP_DOWN_SPRUCE_LOG | toPlaceBlockType);
+            return (short) (LEFT_RIGHT_SPRUCE_LOG | toPlaceBlockType);
+        }
+        if (baseBlock == UP_DOWN_STRIPPED_SPRUCE_LOG) {
+            if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_STRIPPED_SPRUCE_LOG | toPlaceBlockType);
+            if (primaryCameraDirection == TOP) return (short) (UP_DOWN_STRIPPED_SPRUCE_LOG | toPlaceBlockType);
+            return (short) (LEFT_RIGHT_STRIPPED_SPRUCE_LOG | toPlaceBlockType);
+        }
+
+        if (baseBlock == UP_DOWN_DARK_OAK_LOG) {
+            if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_DARK_OAK_LOG | toPlaceBlockType);
+            if (primaryCameraDirection == TOP) return (short) (UP_DOWN_DARK_OAK_LOG | toPlaceBlockType);
+            return (short) (LEFT_RIGHT_DARK_OAK_LOG | toPlaceBlockType);
+        }
+        if (baseBlock == UP_DOWN_STRIPPED_DARK_OAK_LOG) {
+            if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_STRIPPED_DARK_OAK_LOG | toPlaceBlockType);
+            if (primaryCameraDirection == TOP) return (short) (UP_DOWN_STRIPPED_DARK_OAK_LOG | toPlaceBlockType);
+            return (short) (LEFT_RIGHT_STRIPPED_DARK_OAK_LOG | toPlaceBlockType);
+        }
+
+        if (baseBlock == UP_DOWN_PINE_LOG) {
+            if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_PINE_LOG | toPlaceBlockType);
+            if (primaryCameraDirection == TOP) return (short) (UP_DOWN_PINE_LOG | toPlaceBlockType);
+            return (short) (LEFT_RIGHT_PINE_LOG | toPlaceBlockType);
+        }
+        if (baseBlock == UP_DOWN_STRIPPED_PINE_LOG) {
+            if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_STRIPPED_PINE_LOG | toPlaceBlockType);
+            if (primaryCameraDirection == TOP) return (short) (UP_DOWN_STRIPPED_PINE_LOG | toPlaceBlockType);
+            return (short) (LEFT_RIGHT_STRIPPED_PINE_LOG | toPlaceBlockType);
+        }
+
+        if (baseBlock == UP_DOWN_REDWOOD_LOG) {
+            if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_REDWOOD_LOG | toPlaceBlockType);
+            if (primaryCameraDirection == TOP) return (short) (UP_DOWN_REDWOOD_LOG | toPlaceBlockType);
+            return (short) (LEFT_RIGHT_REDWOOD_LOG | toPlaceBlockType);
+        }
+        if (baseBlock == UP_DOWN_STRIPPED_REDWOOD_LOG) {
+            if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_STRIPPED_REDWOOD_LOG | toPlaceBlockType);
+            if (primaryCameraDirection == TOP) return (short) (UP_DOWN_STRIPPED_REDWOOD_LOG | toPlaceBlockType);
+            return (short) (LEFT_RIGHT_STRIPPED_REDWOOD_LOG | toPlaceBlockType);
+        }
+
+        if (baseBlock == UP_DOWN_BLACK_WOOD_LOG) {
+            if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_BLACK_WOOD_LOG | toPlaceBlockType);
+            if (primaryCameraDirection == TOP) return (short) (UP_DOWN_BLACK_WOOD_LOG | toPlaceBlockType);
+            return (short) (LEFT_RIGHT_BLACK_WOOD_LOG | toPlaceBlockType);
+        }
+        if (baseBlock == UP_DOWN_STRIPPED_BLACK_WOOD_LOG) {
+            if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_STRIPPED_BLACK_WOOD_LOG | toPlaceBlockType);
+            if (primaryCameraDirection == TOP) return (short) (UP_DOWN_STRIPPED_BLACK_WOOD_LOG | toPlaceBlockType);
+            return (short) (LEFT_RIGHT_STRIPPED_BLACK_WOOD_LOG | toPlaceBlockType);
+        }
+
+        return (short) (baseBlock | toPlaceBlockType);
+    }
+
+    private static int getToPlaceBlockType(int blockType, int primaryCameraDirection, Vector3f target) {
+        int addend = getToPlaceBlockAddend(primaryCameraDirection, target);
+
+        if (blockType == BOTTOM_BACK_STAIR) {
+            double x = fraction(target.x);
+            double y = fraction(target.y);
+            double z = fraction(target.z);
+
+            if (primaryCameraDirection == FRONT) {
+                if (y < x && y < 1.0 - x) return BOTTOM_FRONT_STAIR;
+                if (y > x && y < 1.0 - x) return FRONT_LEFT_STAIR;
+                if (y > x && y > 1.0 - x) return TOP_FRONT_STAIR;
+                return FRONT_RIGHT_STAIR;
+            }
+            if (primaryCameraDirection == BACK) {
+                if (y < x && y < 1.0 - x) return BOTTOM_BACK_STAIR;
+                if (y > x && y < 1.0 - x) return BACK_LEFT_STAIR;
+                if (y > x && y > 1.0 - x) return TOP_BACK_STAIR;
+                return BACK_RIGHT_STAIR;
+            }
+            if (primaryCameraDirection == BOTTOM) {
+                if (x < z && x < 1.0 - z) return BOTTOM_LEFT_STAIR;
+                if (x > z && x < 1.0 - z) return BOTTOM_BACK_STAIR;
+                if (x > z && x > 1.0 - z) return BOTTOM_RIGHT_STAIR;
+                return BOTTOM_FRONT_STAIR;
+            }
+            if (primaryCameraDirection == TOP) {
+                if (x < z && x < 1.0 - z) return TOP_LEFT_STAIR;
+                if (x > z && x < 1.0 - z) return TOP_BACK_STAIR;
+                if (x > z && x > 1.0 - z) return TOP_RIGHT_STAIR;
+                return TOP_FRONT_STAIR;
+            }
+            if (primaryCameraDirection == RIGHT) {
+                if (y < z && y < 1.0 - z) return BOTTOM_RIGHT_STAIR;
+                if (y > z && y < 1.0 - z) return BACK_RIGHT_STAIR;
+                if (y > z && y > 1.0 - z) return TOP_RIGHT_STAIR;
+                return FRONT_RIGHT_STAIR;
+            }
+            if (primaryCameraDirection == LEFT) {
+                if (y < z && y < 1.0 - z) return BOTTOM_LEFT_STAIR;
+                if (y > z && y < 1.0 - z) return BACK_LEFT_STAIR;
+                if (y > z && y > 1.0 - z) return TOP_LEFT_STAIR;
+                return FRONT_LEFT_STAIR;
+            }
+        }
+
+        primaryCameraDirection %= 3;
+
+        if (blockType == BOTTOM_SLAB) return SLABS[primaryCameraDirection + addend];
+        if (blockType == BOTTOM_PLATE) return PLATES[primaryCameraDirection + addend];
+        if (blockType == FRONT_BACK_WALL) return WALLS[primaryCameraDirection];
+        if (blockType == UP_DOWN_POST) return POSTS[primaryCameraDirection];
+        return blockType;
+    }
+
     public static int getToPlaceBlockAddend(int primaryCameraDirection, Vector3f target) {
         if (primaryCameraDirection == FRONT) return fraction(target.z) > 0.5f ? 0 : 3;
         if (primaryCameraDirection == TOP) return fraction(target.y) > 0.5f ? 0 : 3;
@@ -175,116 +315,12 @@ public class Block {
 
     public static boolean isLeaveType(short block) {
         int baseBlock = (block >> BLOCK_TYPE_BITS) << BLOCK_TYPE_BITS;
-        return baseBlock == OAK_LEAVES || baseBlock == SPRUCE_LEAVES || baseBlock == DARK_OAK_LEAVES;
+        return baseBlock == OAK_LEAVES || baseBlock == SPRUCE_LEAVES || baseBlock == DARK_OAK_LEAVES || baseBlock == PINE_LEAVES || baseBlock == REDWOOD_LEAVES || baseBlock == BLACK_WOOD_LEAVES;
     }
 
     public static boolean isGlassType(short block) {
         int baseBlock = (block >> BLOCK_TYPE_BITS) << BLOCK_TYPE_BITS;
         return baseBlock == GLASS;
-    }
-
-    public static short getToPlaceBlock(short toPlaceBlock, int primaryCameraDirection, int primaryXZDirection, Vector3f target) {
-        if (toPlaceBlock < STANDARD_BLOCKS_THRESHOLD) {
-            if (toPlaceBlock == FRONT_CREATOR_HEAD) {
-                if (primaryXZDirection == BACK) return FRONT_CREATOR_HEAD;
-                if (primaryXZDirection == FRONT) return BACK_CREATOR_HEAD;
-                if (primaryXZDirection == RIGHT) return LEFT_CREATOR_HEAD;
-                if (primaryXZDirection == LEFT) return RIGHT_CREATOR_HEAD;
-            }
-            return toPlaceBlock;
-        }
-        int blockType = toPlaceBlock & BLOCK_TYPE_MASK;
-        int baseBlock = (toPlaceBlock >> BLOCK_TYPE_BITS) << BLOCK_TYPE_BITS;
-
-        int toPlaceBlockType = getToPlaceBlockType(blockType, primaryCameraDirection, target);
-        primaryCameraDirection %= 3;
-
-        if (baseBlock == UP_DOWN_OAK_LOG) {
-            if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_OAK_LOG | toPlaceBlockType);
-            if (primaryCameraDirection == TOP) return (short) (UP_DOWN_OAK_LOG | toPlaceBlockType);
-            return (short) (LEFT_RIGHT_OAK_LOG | toPlaceBlockType);
-        }
-        if (baseBlock == UP_DOWN_STRIPPED_OAK_LOG) {
-            if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_STRIPPED_OAK_LOG | toPlaceBlockType);
-            if (primaryCameraDirection == TOP) return (short) (UP_DOWN_STRIPPED_OAK_LOG | toPlaceBlockType);
-            return (short) (LEFT_RIGHT_STRIPPED_OAK_LOG | toPlaceBlockType);
-        }
-
-        if (baseBlock == UP_DOWN_SPRUCE_LOG) {
-            if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_SPRUCE_LOG | toPlaceBlockType);
-            if (primaryCameraDirection == TOP) return (short) (UP_DOWN_SPRUCE_LOG | toPlaceBlockType);
-            return (short) (LEFT_RIGHT_SPRUCE_LOG | toPlaceBlockType);
-        }
-        if (baseBlock == UP_DOWN_STRIPPED_SPRUCE_LOG) {
-            if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_STRIPPED_SPRUCE_LOG | toPlaceBlockType);
-            if (primaryCameraDirection == TOP) return (short) (UP_DOWN_STRIPPED_SPRUCE_LOG | toPlaceBlockType);
-            return (short) (LEFT_RIGHT_STRIPPED_SPRUCE_LOG | toPlaceBlockType);
-        }
-
-        if (baseBlock == UP_DOWN_DARK_OAK_LOG) {
-            if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_DARK_OAK_LOG | toPlaceBlockType);
-            if (primaryCameraDirection == TOP) return (short) (UP_DOWN_DARK_OAK_LOG | toPlaceBlockType);
-            return (short) (LEFT_RIGHT_DARK_OAK_LOG | toPlaceBlockType);
-        }
-        if (baseBlock == UP_DOWN_STRIPPED_DARK_OAK_LOG) {
-            if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_STRIPPED_DARK_OAK_LOG | toPlaceBlockType);
-            if (primaryCameraDirection == TOP) return (short) (UP_DOWN_STRIPPED_DARK_OAK_LOG | toPlaceBlockType);
-            return (short) (LEFT_RIGHT_STRIPPED_DARK_OAK_LOG | toPlaceBlockType);
-        }
-
-        return (short) (baseBlock | toPlaceBlockType);
-    }
-
-    private static int getToPlaceBlockType(int blockType, int primaryCameraDirection, Vector3f target) {
-        int addend = getToPlaceBlockAddend(primaryCameraDirection % 3, target);
-
-        if (blockType == BOTTOM_SLAB) return SLABS[primaryCameraDirection + addend];
-        if (blockType == BOTTOM_PLATE) return PLATES[primaryCameraDirection + addend];
-        if (blockType == FRONT_BACK_WALL) return WALLS[primaryCameraDirection];
-        if (blockType == UP_DOWN_POST) return POSTS[primaryCameraDirection];
-        if (blockType == BOTTOM_BACK_STAIR) {
-            double x = fraction(target.x);
-            double y = fraction(target.y);
-            double z = fraction(target.z);
-
-            if (primaryCameraDirection == FRONT) {
-                if (y < x && y < 1.0 - x) return BOTTOM_FRONT_STAIR;
-                if (y > x && y < 1.0 - x) return FRONT_LEFT_STAIR;
-                if (y > x && y > 1.0 - x) return TOP_FRONT_STAIR;
-                return FRONT_RIGHT_STAIR;
-            }
-            if (primaryCameraDirection == BACK) {
-                if (y < x && y < 1.0 - x) return BOTTOM_BACK_STAIR;
-                if (y > x && y < 1.0 - x) return BACK_LEFT_STAIR;
-                if (y > x && y > 1.0 - x) return TOP_BACK_STAIR;
-                return BACK_RIGHT_STAIR;
-            }
-            if (primaryCameraDirection == BOTTOM) {
-                if (x < z && x < 1.0 - z) return BOTTOM_LEFT_STAIR;
-                if (x > z && x < 1.0 - z) return BOTTOM_BACK_STAIR;
-                if (x > z && x > 1.0 - z) return BOTTOM_RIGHT_STAIR;
-                return BOTTOM_FRONT_STAIR;
-            }
-            if (primaryCameraDirection == TOP) {
-                if (x < z && x < 1.0 - z) return TOP_LEFT_STAIR;
-                if (x > z && x < 1.0 - z) return TOP_BACK_STAIR;
-                if (x > z && x > 1.0 - z) return TOP_RIGHT_STAIR;
-                return TOP_FRONT_STAIR;
-            }
-            if (primaryCameraDirection == RIGHT) {
-                if (y < z && y < 1.0 - z) return BOTTOM_RIGHT_STAIR;
-                if (y > z && y < 1.0 - z) return BACK_RIGHT_STAIR;
-                if (y > z && y > 1.0 - z) return TOP_RIGHT_STAIR;
-                return FRONT_RIGHT_STAIR;
-            }
-            if (primaryCameraDirection == LEFT) {
-                if (y < z && y < 1.0 - z) return BOTTOM_LEFT_STAIR;
-                if (y > z && y < 1.0 - z) return BACK_LEFT_STAIR;
-                if (y > z && y > 1.0 - z) return TOP_LEFT_STAIR;
-                return FRONT_LEFT_STAIR;
-            }
-        }
-        return blockType;
     }
 
     //I don't know how to use JSON-Files, so just ignore it
@@ -333,12 +369,24 @@ public class Block {
         STANDARD_BLOCK_TEXTURE_INDICES[COAL_ORE >> BLOCK_TYPE_BITS] = new int[]{COAL_ORE_TEXTURE};
         STANDARD_BLOCK_TEXTURE_INDICES[IRON_ORE >> BLOCK_TYPE_BITS] = new int[]{IRON_ORE_TEXTURE};
         STANDARD_BLOCK_TEXTURE_INDICES[DIAMOND_ORE >> BLOCK_TYPE_BITS] = new int[]{DIAMOND_ORE_TEXTURE};
+        STANDARD_BLOCK_TEXTURE_INDICES[CRACKED_ANDESITE >> BLOCK_TYPE_BITS] = new int[]{CRACKED_ANDESITE_TEXTURE};
+        STANDARD_BLOCK_TEXTURE_INDICES[COBBLED_SLATE >> BLOCK_TYPE_BITS] = new int[]{COBBLED_SLATE_TEXTURE};
+        STANDARD_BLOCK_TEXTURE_INDICES[SLATE_BRICKS >> BLOCK_TYPE_BITS] = new int[]{SLATE_BRICKS_TEXTURE};
+        STANDARD_BLOCK_TEXTURE_INDICES[POLISHED_SLATE >> BLOCK_TYPE_BITS] = new int[]{POLISHED_SLATE_TEXTURE};
+        STANDARD_BLOCK_TEXTURE_INDICES[SANDSTONE >> BLOCK_TYPE_BITS] = new int[]{SANDSTONE_TEXTURE};
+        STANDARD_BLOCK_TEXTURE_INDICES[POLISHED_SANDSTONE >> BLOCK_TYPE_BITS] = new int[]{POLISHED_SANDSTONE_TEXTURE};
         STANDARD_BLOCK_TEXTURE_INDICES[OAK_PLANKS >> BLOCK_TYPE_BITS] = new int[]{OAK_PLANKS_TEXTURE};
         STANDARD_BLOCK_TEXTURE_INDICES[SPRUCE_PLANKS >> BLOCK_TYPE_BITS] = new int[]{SPRUCE_PLANKS_TEXTURE};
         STANDARD_BLOCK_TEXTURE_INDICES[DARK_OAK_PLANKS >> BLOCK_TYPE_BITS] = new int[]{DARK_OAK_PLANKS_TEXTURE};
+        STANDARD_BLOCK_TEXTURE_INDICES[PINE_PLANKS >> BLOCK_TYPE_BITS] = new int[]{PINE_PLANKS_TEXTURE};
+        STANDARD_BLOCK_TEXTURE_INDICES[REDWOOD_PLANKS >> BLOCK_TYPE_BITS] = new int[]{REDWOOD_PLANKS_TEXTURE};
+        STANDARD_BLOCK_TEXTURE_INDICES[BLACK_WOOD_PLANKS >> BLOCK_TYPE_BITS] = new int[]{BLACK_WOOD_PLANKS_TEXTURE};
         STANDARD_BLOCK_TEXTURE_INDICES[OAK_LEAVES >> BLOCK_TYPE_BITS] = new int[]{OAK_LEAVES_TEXTURE};
         STANDARD_BLOCK_TEXTURE_INDICES[SPRUCE_LEAVES >> BLOCK_TYPE_BITS] = new int[]{SPRUCE_LEAVES_TEXTURE};
         STANDARD_BLOCK_TEXTURE_INDICES[DARK_OAK_LEAVES >> BLOCK_TYPE_BITS] = new int[]{DARK_OAK_LEAVES_TEXTURE};
+        STANDARD_BLOCK_TEXTURE_INDICES[PINE_LEAVES >> BLOCK_TYPE_BITS] = new int[]{PINE_LEAVES_TEXTURE};
+        STANDARD_BLOCK_TEXTURE_INDICES[REDWOOD_LEAVES >> BLOCK_TYPE_BITS] = new int[]{REDWOOD_LEAVES_TEXTURE};
+        STANDARD_BLOCK_TEXTURE_INDICES[BLACK_WOOD_LEAVES >> BLOCK_TYPE_BITS] = new int[]{BLACK_WOOD_LEAVES_TEXTURE};
 
         STANDARD_BLOCK_TEXTURE_INDICES[UP_DOWN_OAK_LOG >> BLOCK_TYPE_BITS] = new int[]{OAK_LOG_TEXTURE, OAK_LOG_TOP_TEXTURE, OAK_LOG_TEXTURE, OAK_LOG_TEXTURE, OAK_LOG_TOP_TEXTURE, OAK_LOG_TEXTURE};
         STANDARD_BLOCK_TEXTURE_INDICES[FRONT_BACK_OAK_LOG >> BLOCK_TYPE_BITS] = new int[]{OAK_LOG_TOP_TEXTURE, ROTATED_OAK_LOG_TEXTURE, ROTATED_OAK_LOG_TEXTURE, OAK_LOG_TOP_TEXTURE, OAK_LOG_TEXTURE, ROTATED_OAK_LOG_TEXTURE};
@@ -360,6 +408,27 @@ public class Block {
         STANDARD_BLOCK_TEXTURE_INDICES[UP_DOWN_STRIPPED_DARK_OAK_LOG >> BLOCK_TYPE_BITS] = new int[]{STRIPPED_DARK_OAK_LOG_TEXTURE, STRIPPED_DARK_OAK_LOG_TOP_TEXTURE, STRIPPED_DARK_OAK_LOG_TEXTURE, STRIPPED_DARK_OAK_LOG_TEXTURE, STRIPPED_DARK_OAK_LOG_TOP_TEXTURE, STRIPPED_DARK_OAK_LOG_TEXTURE};
         STANDARD_BLOCK_TEXTURE_INDICES[FRONT_BACK_STRIPPED_DARK_OAK_LOG >> BLOCK_TYPE_BITS] = new int[]{STRIPPED_DARK_OAK_LOG_TOP_TEXTURE, ROTATED_STRIPPED_DARK_OAK_LOG_TEXTURE, ROTATED_STRIPPED_DARK_OAK_LOG_TEXTURE, STRIPPED_DARK_OAK_LOG_TOP_TEXTURE, STRIPPED_DARK_OAK_LOG_TEXTURE, ROTATED_STRIPPED_DARK_OAK_LOG_TEXTURE};
         STANDARD_BLOCK_TEXTURE_INDICES[LEFT_RIGHT_STRIPPED_DARK_OAK_LOG >> BLOCK_TYPE_BITS] = new int[]{ROTATED_STRIPPED_DARK_OAK_LOG_TEXTURE, STRIPPED_DARK_OAK_LOG_TEXTURE, STRIPPED_DARK_OAK_LOG_TOP_TEXTURE, ROTATED_STRIPPED_DARK_OAK_LOG_TEXTURE, ROTATED_STRIPPED_DARK_OAK_LOG_TEXTURE, STRIPPED_DARK_OAK_LOG_TOP_TEXTURE};
+
+        STANDARD_BLOCK_TEXTURE_INDICES[UP_DOWN_PINE_LOG >> BLOCK_TYPE_BITS] = new int[]{PINE_LOG_TEXTURE, PINE_LOG_TOP_TEXTURE, PINE_LOG_TEXTURE, PINE_LOG_TEXTURE, PINE_LOG_TOP_TEXTURE, PINE_LOG_TEXTURE};
+        STANDARD_BLOCK_TEXTURE_INDICES[FRONT_BACK_PINE_LOG >> BLOCK_TYPE_BITS] = new int[]{PINE_LOG_TOP_TEXTURE, ROTATED_PINE_LOG_TEXTURE, ROTATED_PINE_LOG_TEXTURE, PINE_LOG_TOP_TEXTURE, PINE_LOG_TEXTURE, ROTATED_PINE_LOG_TEXTURE};
+        STANDARD_BLOCK_TEXTURE_INDICES[LEFT_RIGHT_PINE_LOG >> BLOCK_TYPE_BITS] = new int[]{ROTATED_PINE_LOG_TEXTURE, PINE_LOG_TEXTURE, PINE_LOG_TOP_TEXTURE, ROTATED_PINE_LOG_TEXTURE, ROTATED_PINE_LOG_TEXTURE, PINE_LOG_TOP_TEXTURE};
+        STANDARD_BLOCK_TEXTURE_INDICES[UP_DOWN_STRIPPED_PINE_LOG >> BLOCK_TYPE_BITS] = new int[]{STRIPPED_PINE_LOG_TEXTURE, STRIPPED_PINE_LOG_TOP_TEXTURE, STRIPPED_PINE_LOG_TEXTURE, STRIPPED_PINE_LOG_TEXTURE, STRIPPED_PINE_LOG_TOP_TEXTURE, STRIPPED_PINE_LOG_TEXTURE};
+        STANDARD_BLOCK_TEXTURE_INDICES[FRONT_BACK_STRIPPED_PINE_LOG >> BLOCK_TYPE_BITS] = new int[]{STRIPPED_PINE_LOG_TOP_TEXTURE, ROTATED_STRIPPED_PINE_LOG_TEXTURE, ROTATED_STRIPPED_PINE_LOG_TEXTURE, STRIPPED_PINE_LOG_TOP_TEXTURE, STRIPPED_PINE_LOG_TEXTURE, ROTATED_STRIPPED_PINE_LOG_TEXTURE};
+        STANDARD_BLOCK_TEXTURE_INDICES[LEFT_RIGHT_STRIPPED_PINE_LOG >> BLOCK_TYPE_BITS] = new int[]{ROTATED_STRIPPED_PINE_LOG_TEXTURE, STRIPPED_PINE_LOG_TEXTURE, STRIPPED_PINE_LOG_TOP_TEXTURE, ROTATED_STRIPPED_PINE_LOG_TEXTURE, ROTATED_STRIPPED_PINE_LOG_TEXTURE, STRIPPED_PINE_LOG_TOP_TEXTURE};
+
+        STANDARD_BLOCK_TEXTURE_INDICES[UP_DOWN_REDWOOD_LOG >> BLOCK_TYPE_BITS] = new int[]{REDWOOD_LOG_TEXTURE, REDWOOD_LOG_TOP_TEXTURE, REDWOOD_LOG_TEXTURE, REDWOOD_LOG_TEXTURE, REDWOOD_LOG_TOP_TEXTURE, REDWOOD_LOG_TEXTURE};
+        STANDARD_BLOCK_TEXTURE_INDICES[FRONT_BACK_REDWOOD_LOG >> BLOCK_TYPE_BITS] = new int[]{REDWOOD_LOG_TOP_TEXTURE, ROTATED_REDWOOD_LOG_TEXTURE, ROTATED_REDWOOD_LOG_TEXTURE, REDWOOD_LOG_TOP_TEXTURE, REDWOOD_LOG_TEXTURE, ROTATED_REDWOOD_LOG_TEXTURE};
+        STANDARD_BLOCK_TEXTURE_INDICES[LEFT_RIGHT_REDWOOD_LOG >> BLOCK_TYPE_BITS] = new int[]{ROTATED_REDWOOD_LOG_TEXTURE, REDWOOD_LOG_TEXTURE, REDWOOD_LOG_TOP_TEXTURE, ROTATED_REDWOOD_LOG_TEXTURE, ROTATED_REDWOOD_LOG_TEXTURE, REDWOOD_LOG_TOP_TEXTURE};
+        STANDARD_BLOCK_TEXTURE_INDICES[UP_DOWN_STRIPPED_REDWOOD_LOG >> BLOCK_TYPE_BITS] = new int[]{STRIPPED_REDWOOD_LOG_TEXTURE, STRIPPED_REDWOOD_LOG_TOP_TEXTURE, STRIPPED_REDWOOD_LOG_TEXTURE, STRIPPED_REDWOOD_LOG_TEXTURE, STRIPPED_REDWOOD_LOG_TOP_TEXTURE, STRIPPED_REDWOOD_LOG_TEXTURE};
+        STANDARD_BLOCK_TEXTURE_INDICES[FRONT_BACK_STRIPPED_REDWOOD_LOG >> BLOCK_TYPE_BITS] = new int[]{STRIPPED_REDWOOD_LOG_TOP_TEXTURE, ROTATED_STRIPPED_REDWOOD_LOG_TEXTURE, ROTATED_STRIPPED_REDWOOD_LOG_TEXTURE, STRIPPED_REDWOOD_LOG_TOP_TEXTURE, STRIPPED_REDWOOD_LOG_TEXTURE, ROTATED_STRIPPED_REDWOOD_LOG_TEXTURE};
+        STANDARD_BLOCK_TEXTURE_INDICES[LEFT_RIGHT_STRIPPED_REDWOOD_LOG >> BLOCK_TYPE_BITS] = new int[]{ROTATED_STRIPPED_REDWOOD_LOG_TEXTURE, STRIPPED_REDWOOD_LOG_TEXTURE, STRIPPED_REDWOOD_LOG_TOP_TEXTURE, ROTATED_STRIPPED_REDWOOD_LOG_TEXTURE, ROTATED_STRIPPED_REDWOOD_LOG_TEXTURE, STRIPPED_REDWOOD_LOG_TOP_TEXTURE};
+
+        STANDARD_BLOCK_TEXTURE_INDICES[UP_DOWN_BLACK_WOOD_LOG >> BLOCK_TYPE_BITS] = new int[]{BLACK_WOOD_LOG_TEXTURE, BLACK_WOOD_LOG_TOP_TEXTURE, BLACK_WOOD_LOG_TEXTURE, BLACK_WOOD_LOG_TEXTURE, BLACK_WOOD_LOG_TOP_TEXTURE, BLACK_WOOD_LOG_TEXTURE};
+        STANDARD_BLOCK_TEXTURE_INDICES[FRONT_BACK_BLACK_WOOD_LOG >> BLOCK_TYPE_BITS] = new int[]{BLACK_WOOD_LOG_TOP_TEXTURE, ROTATED_BLACK_WOOD_LOG_TEXTURE, ROTATED_BLACK_WOOD_LOG_TEXTURE, BLACK_WOOD_LOG_TOP_TEXTURE, BLACK_WOOD_LOG_TEXTURE, ROTATED_BLACK_WOOD_LOG_TEXTURE};
+        STANDARD_BLOCK_TEXTURE_INDICES[LEFT_RIGHT_BLACK_WOOD_LOG >> BLOCK_TYPE_BITS] = new int[]{ROTATED_BLACK_WOOD_LOG_TEXTURE, BLACK_WOOD_LOG_TEXTURE, BLACK_WOOD_LOG_TOP_TEXTURE, ROTATED_BLACK_WOOD_LOG_TEXTURE, ROTATED_BLACK_WOOD_LOG_TEXTURE, BLACK_WOOD_LOG_TOP_TEXTURE};
+        STANDARD_BLOCK_TEXTURE_INDICES[UP_DOWN_STRIPPED_BLACK_WOOD_LOG >> BLOCK_TYPE_BITS] = new int[]{STRIPPED_BLACK_WOOD_LOG_TEXTURE, STRIPPED_BLACK_WOOD_LOG_TOP_TEXTURE, STRIPPED_BLACK_WOOD_LOG_TEXTURE, STRIPPED_BLACK_WOOD_LOG_TEXTURE, STRIPPED_BLACK_WOOD_LOG_TOP_TEXTURE, STRIPPED_BLACK_WOOD_LOG_TEXTURE};
+        STANDARD_BLOCK_TEXTURE_INDICES[FRONT_BACK_STRIPPED_BLACK_WOOD_LOG >> BLOCK_TYPE_BITS] = new int[]{STRIPPED_BLACK_WOOD_LOG_TOP_TEXTURE, ROTATED_STRIPPED_BLACK_WOOD_LOG_TEXTURE, ROTATED_STRIPPED_BLACK_WOOD_LOG_TEXTURE, STRIPPED_BLACK_WOOD_LOG_TOP_TEXTURE, STRIPPED_BLACK_WOOD_LOG_TEXTURE, ROTATED_STRIPPED_BLACK_WOOD_LOG_TEXTURE};
+        STANDARD_BLOCK_TEXTURE_INDICES[LEFT_RIGHT_STRIPPED_BLACK_WOOD_LOG >> BLOCK_TYPE_BITS] = new int[]{ROTATED_STRIPPED_BLACK_WOOD_LOG_TEXTURE, STRIPPED_BLACK_WOOD_LOG_TEXTURE, STRIPPED_BLACK_WOOD_LOG_TOP_TEXTURE, ROTATED_STRIPPED_BLACK_WOOD_LOG_TEXTURE, ROTATED_STRIPPED_BLACK_WOOD_LOG_TEXTURE, STRIPPED_BLACK_WOOD_LOG_TOP_TEXTURE};
 
         STANDARD_BLOCK_TEXTURE_INDICES[BLACK >> BLOCK_TYPE_BITS] = new int[]{BLACK_TEXTURE};
         STANDARD_BLOCK_TEXTURE_INDICES[WHITE >> BLOCK_TYPE_BITS] = new int[]{WHITE_TEXTURE};
