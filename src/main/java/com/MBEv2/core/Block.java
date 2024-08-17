@@ -123,7 +123,7 @@ public class Block {
             return toPlaceBlock;
         }
         int blockType = toPlaceBlock & BLOCK_TYPE_MASK;
-        int baseBlock = (toPlaceBlock >> BLOCK_TYPE_BITS) << BLOCK_TYPE_BITS;
+        int baseBlock = toPlaceBlock & BASE_BLOCK_MASK;
 
         int toPlaceBlockType = getToPlaceBlockType(blockType, primaryCameraDirection, target);
         primaryCameraDirection %= 3;
@@ -198,7 +198,6 @@ public class Block {
     }
 
     private static int getToPlaceBlockType(int blockType, int primaryCameraDirection, Vector3f target) {
-        int addend = getToPlaceBlockAddend(primaryCameraDirection, target);
 
         if (blockType == BOTTOM_BACK_STAIR) {
             double x = fraction(target.x);
@@ -244,6 +243,7 @@ public class Block {
         }
 
         primaryCameraDirection %= 3;
+        int addend = getToPlaceBlockAddend(primaryCameraDirection, target);
 
         if (blockType == BOTTOM_SLAB) return SLABS[primaryCameraDirection + addend];
         if (blockType == BOTTOM_PLATE) return PLATES[primaryCameraDirection + addend];
@@ -265,6 +265,8 @@ public class Block {
     }
 
     public static byte getBlockTypeData(short block) {
+        if (isLeaveType(block)) return BLOCK_TYPE_DATA[LEAVE_TYPE];
+        if (isGlassType(block)) return BLOCK_TYPE_DATA[GLASS_TYPE];
         return BLOCK_TYPE_DATA[getBlockType(block)];
     }
 
@@ -314,12 +316,12 @@ public class Block {
     }
 
     public static boolean isLeaveType(short block) {
-        int baseBlock = (block >> BLOCK_TYPE_BITS) << BLOCK_TYPE_BITS;
-        return baseBlock == OAK_LEAVES || baseBlock == SPRUCE_LEAVES || baseBlock == DARK_OAK_LEAVES || baseBlock == PINE_LEAVES || baseBlock == REDWOOD_LEAVES || baseBlock == BLACK_WOOD_LEAVES;
+        int baseBlock = block & BASE_BLOCK_MASK;
+        return baseBlock >= OAK_LEAVES && baseBlock <= BLACK_WOOD_LEAVES;
     }
 
     public static boolean isGlassType(short block) {
-        int baseBlock = (block >> BLOCK_TYPE_BITS) << BLOCK_TYPE_BITS;
+        int baseBlock = block & BASE_BLOCK_MASK;
         return baseBlock == GLASS;
     }
 

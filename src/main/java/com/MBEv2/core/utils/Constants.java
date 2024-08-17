@@ -30,10 +30,10 @@ public class Constants {
     public static final float MOVEMENT_SPEED = 0.098f;
     public static final float IN_AIR_SPEED = 0.2f;
     public static final float[] MOVEMENT_STATE_SPEED = new float[]{MOVEMENT_SPEED, 0.0294f, MOVEMENT_SPEED * 0.25f};
-    public static final float FLY_SPEED = 0.049f;
+    public static final float FLY_SPEED = 0.06f;
 
     public static final float JUMP_STRENGTH = 0.42f;
-    public static final float SWIM_STRENGTH = 0.2f;
+    public static final float SWIM_STRENGTH = 0.26f;
     public static final float GRAVITY_ACCELERATION = 0.08f;
     public static final float MAX_STEP_HEIGHT = 0.6f;
 
@@ -43,7 +43,7 @@ public class Constants {
     public static final int CRAWLING = 2;
     public static final int SWIMMING = 3;
 
-    //DO NOT CHANGE THESE VALUES
+    //DO NOT CHANGE THESE VALUES (like really, it will crash)
     public static final int CHUNK_SIZE_BITS = 5;
     public static final int CHUNK_SIZE = 1 << CHUNK_SIZE_BITS;
     public static final int CHUNK_SIZE_MASK = CHUNK_SIZE - 1;
@@ -201,6 +201,7 @@ public class Constants {
 
     public static final int BLOCK_TYPE_BITS = 6;
     public static final int BLOCK_TYPE_MASK = (1 << BLOCK_TYPE_BITS) - 1;
+    public static final int BASE_BLOCK_MASK = -1 << BLOCK_TYPE_BITS;
     public static final int STANDARD_BLOCKS_THRESHOLD = 1 << BLOCK_TYPE_BITS;
 
     public static final int TOTAL_AMOUNT_OF_BLOCK_TYPES = bT;

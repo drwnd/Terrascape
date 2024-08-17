@@ -24,6 +24,9 @@ public class WorldGeneration {
         if (chunk.isGenerated())
             return;
         chunk.setGenerated();
+
+        int[] caveBitMap = generateCaveBitMap(chunk);
+
         for (int inChunkX = 0; inChunkX < CHUNK_SIZE; inChunkX++)
             for (int inChunkZ = 0; inChunkZ < CHUNK_SIZE; inChunkZ++) {
                 double height = heightMap[inChunkX][inChunkZ];
@@ -34,45 +37,45 @@ public class WorldGeneration {
 
                 int resultingHeight = getHeight(height, erosion);
                 if (resultingHeight <= WATER_LEVEL)
-                    generateOceans(chunk, inChunkX, inChunkZ, resultingHeight, feature, temperature);
+                    generateOceans(chunk, inChunkX, inChunkZ, resultingHeight, feature, temperature, caveBitMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ]);
                 else if (erosion > MOUNTAIN_THRESHOLD)
-                    generateMountains(chunk, inChunkX, inChunkZ, resultingHeight, feature, temperature);
+                    generateMountains(chunk, inChunkX, inChunkZ, resultingHeight, feature, temperature, caveBitMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ]);
                 else if (temperature > 0.4) {
                     if (humidity < -0.4)
-                        generateDesert(chunk, inChunkX, inChunkZ, resultingHeight, feature);
+                        generateDesert(chunk, inChunkX, inChunkZ, resultingHeight, feature, caveBitMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ]);
                     else if (humidity < 0.3)
-                        generateWasteLand(chunk, inChunkX, inChunkZ, resultingHeight, feature);
+                        generateWasteLand(chunk, inChunkX, inChunkZ, resultingHeight, feature, caveBitMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ]);
                     else
-                        generateDarkOakForest(chunk, inChunkX, inChunkZ, resultingHeight, feature);
+                        generateDarkOakForest(chunk, inChunkX, inChunkZ, resultingHeight, feature, caveBitMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ]);
                 } else if (temperature < -0.4) {
                     if (humidity > 0.0)
-                        generateSnowySpruceForest(chunk, inChunkX, inChunkZ, resultingHeight, feature);
+                        generateSnowySpruceForest(chunk, inChunkX, inChunkZ, resultingHeight, feature, caveBitMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ]);
                     else
-                        generateSnowyPlains(chunk, inChunkX, inChunkZ, resultingHeight, feature);
+                        generateSnowyPlains(chunk, inChunkX, inChunkZ, resultingHeight, feature, caveBitMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ]);
                 } else if (humidity > 0.3)
-                    generateOakForest(chunk, inChunkX, inChunkZ, resultingHeight, feature);
+                    generateOakForest(chunk, inChunkX, inChunkZ, resultingHeight, feature, caveBitMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ]);
                 else if (humidity < -0.4)
-                    generateSpruceForest(chunk, inChunkX, inChunkZ, resultingHeight, feature);
+                    generateSpruceForest(chunk, inChunkX, inChunkZ, resultingHeight, feature, caveBitMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ]);
                 else
-                    generatePlains(chunk, inChunkX, inChunkZ, resultingHeight, feature);
+                    generatePlains(chunk, inChunkX, inChunkZ, resultingHeight, feature, caveBitMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ]);
             }
         chunk.optimizeBlockStorage();
     }
 
-    private static void generateMountains(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature, double temperature) {
-        if (temperature > 0.4) generateDryMountain(chunk, inChunkX, inChunkZ, height, feature);
-        else if (temperature < -0.4) generateSnowyMountain(chunk, inChunkX, inChunkZ, height, feature);
-        else generateMountain(chunk, inChunkX, inChunkZ, height, feature);
+    private static void generateMountains(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature, double temperature, int caveBits) {
+        if (temperature > 0.4) generateDryMountain(chunk, inChunkX, inChunkZ, height, feature, caveBits);
+        else if (temperature < -0.4) generateSnowyMountain(chunk, inChunkX, inChunkZ, height, feature, caveBits);
+        else generateMountain(chunk, inChunkX, inChunkZ, height, feature, caveBits);
     }
 
-    private static void generateOceans(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature, double temperature) {
-        if (temperature > 0.4) generateWarmOcean(chunk, inChunkX, inChunkZ, height, feature);
-        else if (temperature < -0.4) generateColdOcean(chunk, inChunkX, inChunkZ, height, feature);
-        else generateOcean(chunk, inChunkX, inChunkZ, height, feature);
+    private static void generateOceans(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature, double temperature, int caveBits) {
+        if (temperature > 0.4) generateWarmOcean(chunk, inChunkX, inChunkZ, height, feature, caveBits);
+        else if (temperature < -0.4) generateColdOcean(chunk, inChunkX, inChunkZ, height, feature, caveBits);
+        else generateOcean(chunk, inChunkX, inChunkZ, height, feature, caveBits);
     }
 
 
-    private static void generatePlains(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature) {
+    private static void generatePlains(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature, int caveBits) {
         int totalX = chunk.getX() << CHUNK_SIZE_BITS | inChunkX;
         int totalZ = chunk.getZ() << CHUNK_SIZE_BITS | inChunkZ;
 
@@ -80,7 +83,7 @@ public class WorldGeneration {
         for (int inChunkY = 0; inChunkY < CHUNK_SIZE; inChunkY++) {
             int totalY = inChunkY + (chunk.getY() << CHUNK_SIZE_BITS);
 
-            if (totalY <= height && isOutsideCave(totalX, totalY, totalZ)) {
+            if (totalY <= height && (caveBits & 1 << inChunkY) == 0) {
                 if (totalY < height - 5)
                     chunk.storeSave(inChunkX, inChunkY, inChunkZ, getGeneratingStoneType(totalX, totalY, totalZ));
                 else if (height <= sandHeight + 2 && totalY <= sandHeight + 2 && totalY >= sandHeight - 2)
@@ -91,11 +94,11 @@ public class WorldGeneration {
                     chunk.storeSave(inChunkX, inChunkY, inChunkZ, height <= WATER_LEVEL ? getOceanFloorBlock(totalX, totalY, totalZ) : DIRT);
             } else if (totalY <= WATER_LEVEL) chunk.storeSave(inChunkX, inChunkY, inChunkZ, WATER);
 
-            genOakTree(chunk, height, inChunkX, inChunkY, inChunkZ, totalX, totalY, totalZ, feature, PLAINS_TREE_THRESHOLD);
+            genOakTree(chunk, height, inChunkX, inChunkY, inChunkZ, totalY, feature, PLAINS_TREE_THRESHOLD, caveBits);
         }
     }
 
-    private static void generateOakForest(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature) {
+    private static void generateOakForest(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature, int caveBits) {
         int totalX = chunk.getX() << CHUNK_SIZE_BITS | inChunkX;
         int totalZ = chunk.getZ() << CHUNK_SIZE_BITS | inChunkZ;
 
@@ -103,7 +106,7 @@ public class WorldGeneration {
         for (int inChunkY = 0; inChunkY < CHUNK_SIZE; inChunkY++) {
             int totalY = inChunkY + (chunk.getY() << CHUNK_SIZE_BITS);
 
-            if (totalY <= height && isOutsideCave(totalX, totalY, totalZ)) {
+            if (totalY <= height && (caveBits & 1 << inChunkY) == 0) {
                 if (totalY < height - 5)
                     chunk.storeSave(inChunkX, inChunkY, inChunkZ, getGeneratingStoneType(totalX, totalY, totalZ));
                 else if (height <= sandHeight + 2 && totalY <= sandHeight + 2 && totalY >= sandHeight - 2)
@@ -114,11 +117,11 @@ public class WorldGeneration {
                     chunk.storeSave(inChunkX, inChunkY, inChunkZ, height <= WATER_LEVEL ? getOceanFloorBlock(totalX, totalY, totalZ) : DIRT);
             } else if (totalY <= WATER_LEVEL) chunk.storeSave(inChunkX, inChunkY, inChunkZ, WATER);
 
-            genOakTree(chunk, height, inChunkX, inChunkY, inChunkZ, totalX, totalY, totalZ, feature, FOREST_TREE_THRESHOLD);
+            genOakTree(chunk, height, inChunkX, inChunkY, inChunkZ, totalY, feature, FOREST_TREE_THRESHOLD, caveBits);
         }
     }
 
-    private static void generateSpruceForest(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature) {
+    private static void generateSpruceForest(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature, int caveBits) {
         int totalX = chunk.getX() << CHUNK_SIZE_BITS | inChunkX;
         int totalZ = chunk.getZ() << CHUNK_SIZE_BITS | inChunkZ;
 
@@ -126,7 +129,7 @@ public class WorldGeneration {
         for (int inChunkY = 0; inChunkY < CHUNK_SIZE; inChunkY++) {
             int totalY = inChunkY + (chunk.getY() << CHUNK_SIZE_BITS);
 
-            if (totalY <= height && isOutsideCave(totalX, totalY, totalZ)) {
+            if (totalY <= height && (caveBits & 1 << inChunkY) == 0) {
                 if (totalY < height - 5)
                     chunk.storeSave(inChunkX, inChunkY, inChunkZ, getGeneratingStoneType(totalX, totalY, totalZ));
                 else if (height <= sandHeight + 2 && totalY <= sandHeight + 2 && totalY >= sandHeight - 2)
@@ -137,11 +140,11 @@ public class WorldGeneration {
                     chunk.storeSave(inChunkX, inChunkY, inChunkZ, height <= WATER_LEVEL ? getOceanFloorBlock(totalX, totalY, totalZ) : DIRT);
             } else if (totalY <= WATER_LEVEL) chunk.storeSave(inChunkX, inChunkY, inChunkZ, WATER);
 
-            genSpruceTree(chunk, height, inChunkX, inChunkY, inChunkZ, totalX, totalY, totalZ, feature, FOREST_TREE_THRESHOLD);
+            genSpruceTree(chunk, height, inChunkX, inChunkY, inChunkZ, totalY, feature, FOREST_TREE_THRESHOLD, caveBits);
         }
     }
 
-    private static void generateDarkOakForest(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature) {
+    private static void generateDarkOakForest(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature, int caveBits) {
         int totalX = chunk.getX() << CHUNK_SIZE_BITS | inChunkX;
         int totalZ = chunk.getZ() << CHUNK_SIZE_BITS | inChunkZ;
 
@@ -149,7 +152,7 @@ public class WorldGeneration {
         for (int inChunkY = 0; inChunkY < CHUNK_SIZE; inChunkY++) {
             int totalY = inChunkY + (chunk.getY() << CHUNK_SIZE_BITS);
 
-            if (totalY <= height && isOutsideCave(totalX, totalY, totalZ)) {
+            if (totalY <= height && (caveBits & 1 << inChunkY) == 0) {
                 if (totalY < height - 5)
                     chunk.storeSave(inChunkX, inChunkY, inChunkZ, getGeneratingStoneType(totalX, totalY, totalZ));
                 else if (height <= sandHeight + 2 && totalY <= sandHeight + 2 && totalY >= sandHeight - 2)
@@ -160,51 +163,51 @@ public class WorldGeneration {
                     chunk.storeSave(inChunkX, inChunkY, inChunkZ, height <= WATER_LEVEL ? getWarmOceanFloorBlocK(totalX, totalY, totalZ) : DIRT);
             } else if (totalY <= WATER_LEVEL) chunk.storeSave(inChunkX, inChunkY, inChunkZ, WATER);
 
-            genDarkOakTree(chunk, height, inChunkX, inChunkY, inChunkZ, totalX, totalY, totalZ, feature, FOREST_TREE_THRESHOLD);
+            genDarkOakTree(chunk, height, inChunkX, inChunkY, inChunkZ, totalY, feature, FOREST_TREE_THRESHOLD, caveBits);
         }
     }
 
-    private static void generateDesert(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature) {
+    private static void generateDesert(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature, int caveBits) {
         int totalX = chunk.getX() << CHUNK_SIZE_BITS | inChunkX;
         int totalZ = chunk.getZ() << CHUNK_SIZE_BITS | inChunkZ;
 
         for (int inChunkY = 0; inChunkY < CHUNK_SIZE; inChunkY++) {
             int totalY = inChunkY + (chunk.getY() << CHUNK_SIZE_BITS);
 
-            if (totalY <= height && isOutsideCave(totalX, totalY, totalZ)) {
+            if (totalY <= height && (caveBits & 1 << inChunkY) == 0) {
                 if (totalY < height - 5)
                     chunk.storeSave(inChunkX, inChunkY, inChunkZ, getGeneratingStoneType(totalX, totalY, totalZ));
                 else
                     chunk.storeSave(inChunkX, inChunkY, inChunkZ, height <= WATER_LEVEL ? getWarmOceanFloorBlocK(totalX, totalY, totalZ) : SAND);
             } else if (totalY <= WATER_LEVEL) chunk.storeSave(inChunkX, inChunkY, inChunkZ, WATER);
 
-            if (feature > CACTUS_THRESHOLD && height > WATER_LEVEL && totalY > height && totalY < height + 1 + (feature - CACTUS_THRESHOLD) * 500 && isOutsideCave(totalX, height, totalZ))
+            if (feature > CACTUS_THRESHOLD && height > WATER_LEVEL && totalY > height && totalY < height + 1 + (feature - CACTUS_THRESHOLD) * 500 && (caveBits & 1 << (height & CHUNK_SIZE_MASK)) == 0)
                 chunk.storeSave(inChunkX, inChunkY, inChunkZ, CACTUS);
         }
     }
 
-    private static void generateWasteLand(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature) {
+    private static void generateWasteLand(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature, int caveBits) {
         int totalX = chunk.getX() << CHUNK_SIZE_BITS | inChunkX;
         int totalZ = chunk.getZ() << CHUNK_SIZE_BITS | inChunkZ;
 
         for (int inChunkY = 0; inChunkY < CHUNK_SIZE; inChunkY++) {
             int totalY = inChunkY + (chunk.getY() << CHUNK_SIZE_BITS);
 
-            if (totalY <= height && isOutsideCave(totalX, totalY, totalZ)) {
+            if (totalY <= height && (caveBits & 1 << inChunkY) == 0) {
                 if (totalY < height - 5)
                     chunk.storeSave(inChunkX, inChunkY, inChunkZ, getGeneratingStoneType(totalX, totalY, totalZ));
                 else
                     chunk.storeSave(inChunkX, inChunkY, inChunkZ, height <= WATER_LEVEL ? getWarmOceanFloorBlocK(totalX, totalY, totalZ) : getGeneratingDirtType(totalX, totalY, totalZ));
             } else if (totalY <= WATER_LEVEL) chunk.storeSave(inChunkX, inChunkY, inChunkZ, WATER);
 
-            if (feature > WASTELAND_FEATURE_THRESHOLD && height > WATER_LEVEL && totalY > height && totalY < height + 1 + (feature - CACTUS_THRESHOLD) * 250 && isOutsideCave(totalX, height, totalZ))
+            if (feature > WASTELAND_FEATURE_THRESHOLD && height > WATER_LEVEL && totalY > height && totalY < height + 1 + (feature - CACTUS_THRESHOLD) * 250 && (caveBits & 1 << (height & CHUNK_SIZE_MASK)) == 0)
                 chunk.storeSave(inChunkX, inChunkY, inChunkZ, CACTUS);
 
-            genOakTree(chunk, height, inChunkX, inChunkY, inChunkZ, totalX, totalY, totalZ, feature, WASTELAND_FEATURE_THRESHOLD);
+            genOakTree(chunk, height, inChunkX, inChunkY, inChunkZ, totalY, feature, WASTELAND_FEATURE_THRESHOLD, caveBits);
         }
     }
 
-    private static void generateSnowyPlains(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature) {
+    private static void generateSnowyPlains(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature, int caveBits) {
         int totalX = chunk.getX() << CHUNK_SIZE_BITS | inChunkX;
         int totalZ = chunk.getZ() << CHUNK_SIZE_BITS | inChunkZ;
 
@@ -212,7 +215,7 @@ public class WorldGeneration {
         for (int inChunkY = 0; inChunkY < CHUNK_SIZE; inChunkY++) {
             int totalY = inChunkY + (chunk.getY() << CHUNK_SIZE_BITS);
 
-            if (totalY <= height && isOutsideCave(totalX, totalY, totalZ)) {
+            if (totalY <= height && (caveBits & 1 << inChunkY) == 0) {
                 if (totalY < height - 5)
                     chunk.storeSave(inChunkX, inChunkY, inChunkZ, getGeneratingStoneType(totalX, totalY, totalZ));
                 else if (totalY <= sandHeight + 2 && totalY >= sandHeight - 2)
@@ -223,11 +226,11 @@ public class WorldGeneration {
                     chunk.storeSave(inChunkX, inChunkY, inChunkZ, height <= WATER_LEVEL ? getColdOceanFloorBlock(totalX, totalY, totalZ) : SNOW);
             } else if (totalY <= WATER_LEVEL) chunk.storeSave(inChunkX, inChunkY, inChunkZ, WATER);
 
-            genSpruceTree(chunk, height, inChunkX, inChunkY, inChunkZ, totalX, totalY, totalZ, feature, PLAINS_TREE_THRESHOLD);
+            genSpruceTree(chunk, height, inChunkX, inChunkY, inChunkZ, totalY, feature, PLAINS_TREE_THRESHOLD, caveBits);
         }
     }
 
-    private static void generateSnowySpruceForest(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature) {
+    private static void generateSnowySpruceForest(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature, int caveBits) {
         int totalX = chunk.getX() << CHUNK_SIZE_BITS | inChunkX;
         int totalZ = chunk.getZ() << CHUNK_SIZE_BITS | inChunkZ;
 
@@ -235,7 +238,7 @@ public class WorldGeneration {
         for (int inChunkY = 0; inChunkY < CHUNK_SIZE; inChunkY++) {
             int totalY = inChunkY + (chunk.getY() << CHUNK_SIZE_BITS);
 
-            if (totalY <= height && isOutsideCave(totalX, totalY, totalZ)) {
+            if (totalY <= height && (caveBits & 1 << inChunkY) == 0) {
                 if (totalY < height - 5)
                     chunk.storeSave(inChunkX, inChunkY, inChunkZ, getGeneratingStoneType(totalX, totalY, totalZ));
                 else if (totalY <= sandHeight + 2 && totalY >= sandHeight - 2)
@@ -246,11 +249,11 @@ public class WorldGeneration {
                     chunk.storeSave(inChunkX, inChunkY, inChunkZ, height <= WATER_LEVEL ? getColdOceanFloorBlock(totalX, totalY, totalZ) : SNOW);
             } else if (totalY <= WATER_LEVEL) chunk.storeSave(inChunkX, inChunkY, inChunkZ, WATER);
 
-            genSpruceTree(chunk, height, inChunkX, inChunkY, inChunkZ, totalX, totalY, totalZ, feature, FOREST_TREE_THRESHOLD);
+            genSpruceTree(chunk, height, inChunkX, inChunkY, inChunkZ, totalY, feature, FOREST_TREE_THRESHOLD, caveBits);
         }
     }
 
-    private static void generateOcean(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature) {
+    private static void generateOcean(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature, int caveBits) {
         int totalX = chunk.getX() << CHUNK_SIZE_BITS | inChunkX;
         int totalZ = chunk.getZ() << CHUNK_SIZE_BITS | inChunkZ;
 
@@ -259,7 +262,7 @@ public class WorldGeneration {
         for (int inChunkY = 0; inChunkY < CHUNK_SIZE; inChunkY++) {
             int totalY = inChunkY + (chunk.getY() << CHUNK_SIZE_BITS);
 
-            if (totalY <= height && isOutsideCave(totalX, totalY, totalZ)) {
+            if (totalY <= height && (caveBits & 1 << inChunkY) == 0) {
                 if (totalY > sandHeight)
                     chunk.storeSave(inChunkX, inChunkY, inChunkZ, SAND);
                 else if (totalY > height - 5)
@@ -270,7 +273,7 @@ public class WorldGeneration {
         }
     }
 
-    private static void generateWarmOcean(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature) {
+    private static void generateWarmOcean(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature, int caveBits) {
         int totalX = chunk.getX() << CHUNK_SIZE_BITS | inChunkX;
         int totalZ = chunk.getZ() << CHUNK_SIZE_BITS | inChunkZ;
 
@@ -279,7 +282,7 @@ public class WorldGeneration {
         for (int inChunkY = 0; inChunkY < CHUNK_SIZE; inChunkY++) {
             int totalY = inChunkY + (chunk.getY() << CHUNK_SIZE_BITS);
 
-            if (totalY <= height && isOutsideCave(totalX, totalY, totalZ)) {
+            if (totalY <= height && (caveBits & 1 << inChunkY) == 0) {
                 if (totalY > sandHeight)
                     chunk.storeSave(inChunkX, inChunkY, inChunkZ, SAND);
                 else if (totalY > height - 5)
@@ -290,7 +293,7 @@ public class WorldGeneration {
         }
     }
 
-    private static void generateColdOcean(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature) {
+    private static void generateColdOcean(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature, int caveBits) {
         int totalX = chunk.getX() << CHUNK_SIZE_BITS | inChunkX;
         int totalZ = chunk.getZ() << CHUNK_SIZE_BITS | inChunkZ;
 
@@ -300,7 +303,7 @@ public class WorldGeneration {
         for (int inChunkY = 0; inChunkY < CHUNK_SIZE; inChunkY++) {
             int totalY = inChunkY + (chunk.getY() << CHUNK_SIZE_BITS);
 
-            if (totalY <= height && isOutsideCave(totalX, totalY, totalZ)) {
+            if (totalY <= height && (caveBits & 1 << inChunkY) == 0) {
                 if (totalY > sandHeight)
                     chunk.storeSave(inChunkX, inChunkY, inChunkZ, SAND);
                 else if (totalY > height - 5)
@@ -314,7 +317,7 @@ public class WorldGeneration {
         }
     }
 
-    private static void generateMountain(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature) {
+    private static void generateMountain(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature, int caveBits) {
         int totalX = chunk.getX() << CHUNK_SIZE_BITS | inChunkX;
         int totalZ = chunk.getZ() << CHUNK_SIZE_BITS | inChunkZ;
 
@@ -324,7 +327,7 @@ public class WorldGeneration {
         for (int inChunkY = 0; inChunkY < CHUNK_SIZE; inChunkY++) {
             int totalY = inChunkY + (chunk.getY() << CHUNK_SIZE_BITS);
 
-            if (totalY <= height && isOutsideCave(totalX, totalY, totalZ)) {
+            if (totalY <= height && (caveBits & 1 << inChunkY) == 0) {
                 if (totalY > snowHeight && totalY > height - 5)
                     chunk.storeSave(inChunkX, inChunkY, inChunkZ, SNOW);
                 else if (totalY == height && height <= grassHeight)
@@ -337,7 +340,7 @@ public class WorldGeneration {
         }
     }
 
-    private static void generateSnowyMountain(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature) {
+    private static void generateSnowyMountain(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature, int caveBits) {
         int totalX = chunk.getX() << CHUNK_SIZE_BITS | inChunkX;
         int totalZ = chunk.getZ() << CHUNK_SIZE_BITS | inChunkZ;
 
@@ -346,7 +349,7 @@ public class WorldGeneration {
         for (int inChunkY = 0; inChunkY < CHUNK_SIZE; inChunkY++) {
             int totalY = inChunkY + (chunk.getY() << CHUNK_SIZE_BITS);
 
-            if (totalY <= height && isOutsideCave(totalX, totalY, totalZ)) {
+            if (totalY <= height && (caveBits & 1 << inChunkY) == 0) {
                 if (totalY > iceHeight && totalY > height - 5)
                     chunk.storeSave(inChunkX, inChunkY, inChunkZ, getGeneratingIceType(totalX, totalY, totalZ));
                 else if (totalY > height - 5)
@@ -357,7 +360,7 @@ public class WorldGeneration {
         }
     }
 
-    private static void generateDryMountain(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature) {
+    private static void generateDryMountain(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature, int caveBits) {
         int totalX = chunk.getX() << CHUNK_SIZE_BITS | inChunkX;
         int totalZ = chunk.getZ() << CHUNK_SIZE_BITS | inChunkZ;
 
@@ -366,7 +369,7 @@ public class WorldGeneration {
         for (int inChunkY = 0; inChunkY < CHUNK_SIZE; inChunkY++) {
             int totalY = inChunkY + (chunk.getY() << CHUNK_SIZE_BITS);
 
-            if (totalY <= height && isOutsideCave(totalX, totalY, totalZ)) {
+            if (totalY <= height && (caveBits & 1 << inChunkY) == 0) {
                 if (totalY > height - 5 && height <= dirtHeight)
                     chunk.storeSave(inChunkX, inChunkY, inChunkZ, getGeneratingDirtType(totalX, totalY, totalZ));
                 else
@@ -376,25 +379,25 @@ public class WorldGeneration {
     }
 
 
-    public static void genOakTree(Chunk chunk, int height, int inChunkX, int inChunkY, int inChunkZ, int totalX, int totalY, int totalZ, double feature, double threshold) {
+    public static void genOakTree(Chunk chunk, int height, int inChunkX, int inChunkY, int inChunkZ, int totalY, double feature, double threshold, int caveBits) {
         if (feature > threshold && totalY < height + OAK_TREE.length && totalY >= height && height > WATER_LEVEL &&
-                inChunkX >= 2 && inChunkZ >= 2 && inChunkX < CHUNK_SIZE - 2 && inChunkZ < CHUNK_SIZE - 2 && isOutsideCave(totalX, height, totalZ))
+                inChunkX >= 2 && inChunkZ >= 2 && inChunkX < CHUNK_SIZE - 2 && inChunkZ < CHUNK_SIZE - 2 && (caveBits & 1 << (height & CHUNK_SIZE_MASK)) == 0)
             for (int i = 0; i < 5; i++)
                 for (int j = 0; j < 5; j++)
                     chunk.storeTreeBlock(inChunkX + j - 2, inChunkY, inChunkZ + i - 2, OAK_TREE[totalY - height][i][j]);
     }
 
-    public static void genSpruceTree(Chunk chunk, int height, int inChunkX, int inChunkY, int inChunkZ, int totalX, int totalY, int totalZ, double feature, double threshold) {
+    public static void genSpruceTree(Chunk chunk, int height, int inChunkX, int inChunkY, int inChunkZ, int totalY, double feature, double threshold, int caveBits) {
         if (feature > threshold && totalY < height + SPRUCE_TREE.length && totalY >= height && height > WATER_LEVEL &&
-                inChunkX >= 3 && inChunkZ >= 3 && inChunkX < CHUNK_SIZE - 3 && inChunkZ < CHUNK_SIZE - 3 && isOutsideCave(totalX, height, totalZ))
+                inChunkX >= 3 && inChunkZ >= 3 && inChunkX < CHUNK_SIZE - 3 && inChunkZ < CHUNK_SIZE - 3 && (caveBits & 1 << (height & CHUNK_SIZE_MASK)) == 0)
             for (int i = 0; i < 7; i++)
                 for (int j = 0; j < 7; j++)
                     chunk.storeTreeBlock(inChunkX + j - 3, inChunkY, inChunkZ + i - 3, SPRUCE_TREE[totalY - height][i][j]);
     }
 
-    public static void genDarkOakTree(Chunk chunk, int height, int inChunkX, int inChunkY, int inChunkZ, int totalX, int totalY, int totalZ, double feature, double threshold) {
+    public static void genDarkOakTree(Chunk chunk, int height, int inChunkX, int inChunkY, int inChunkZ, int totalY, double feature, double threshold, int caveBits) {
         if (feature > threshold && totalY < height + DARK_OAK_TREE.length && totalY >= height && height > WATER_LEVEL &&
-                inChunkX >= 3 && inChunkZ >= 3 && inChunkX < CHUNK_SIZE - 3 && inChunkZ < CHUNK_SIZE - 3 && isOutsideCave(totalX, height, totalZ))
+                inChunkX >= 3 && inChunkZ >= 3 && inChunkX < CHUNK_SIZE - 3 && inChunkZ < CHUNK_SIZE - 3 && (caveBits & 1 << (height & CHUNK_SIZE_MASK)) == 0)
             for (int i = 0; i < 7; i++)
                 for (int j = 0; j < 7; j++)
                     chunk.storeTreeBlock(inChunkX + j - 3, inChunkY, inChunkZ + i - 3, DARK_OAK_TREE[totalY - height][i][j]);
@@ -482,7 +485,8 @@ public class WorldGeneration {
         return featureMap;
     }
 
-    private static boolean isOutsideCave(int x, int y, int z) {
+
+    private static boolean isInsideCave(int x, int y, int z) {
 
         if (y <= NOODLE_CAVE_MAX_Y) {
             double noodleCaveHeightBias = Math.max(y, 0) * NOODLE_CAVE_HEIGHT_BIAS;
@@ -490,11 +494,11 @@ public class WorldGeneration {
             double noise1 = OpenSimplex2S.noise3_ImproveXY(SEED, x * NOODLE_CAVE_FREQUENCY, y * NOODLE_CAVE_FREQUENCY, z * NOODLE_CAVE_FREQUENCY) + noodleCaveHeightBias;
             double noise2 = OpenSimplex2S.noise3_ImproveXY(SEED + 100, x * NOODLE_CAVE_FREQUENCY, y * NOODLE_CAVE_FREQUENCY, z * NOODLE_CAVE_FREQUENCY) + noodleCaveHeightBias;
 
-            if (noise1 * noise1 + noise2 * noise2 < NOODLE_CAVE_THRESHOLD) return false;
+            if (noise1 * noise1 + noise2 * noise2 < NOODLE_CAVE_THRESHOLD) return true;
         }
 
         if (y > BLOB_CAVE_MAX_Y)
-            return true;
+            return false;
 
         double blobCaveHeightBias = Math.max(y, 0) * BLOB_CAVE_CAVE_HEIGHT_BIAS;
 
@@ -502,7 +506,46 @@ public class WorldGeneration {
         blobCaveNoise += OpenSimplex2S.noise3_ImproveXY(SEED + 300, x * 0.02, y * 0.02, z * 0.02) * 0.4444;
         blobCaveNoise -= blobCaveHeightBias;
 
-        return blobCaveNoise < BLOB_CAVE_THRESHOLD;
+        return blobCaveNoise > BLOB_CAVE_THRESHOLD;
+    }
+
+    private static int[] generateCaveBitMap(Chunk chunk) {
+        int[] bitMap = new int[CHUNK_SIZE * CHUNK_SIZE];
+        int chunkX = chunk.getX() << CHUNK_SIZE_BITS;
+        int chunkY = chunk.getY() << CHUNK_SIZE_BITS;
+        int chunkZ = chunk.getZ() << CHUNK_SIZE_BITS;
+
+        for (int x = chunkX; x < CHUNK_SIZE + chunkX; x += 4)
+            for (int y = chunkY; y < CHUNK_SIZE + chunkY; y += 4)
+                for (int z = chunkZ; z < CHUNK_SIZE + chunkZ; z += 4) {
+                    byte cornerValues = 0;
+                    if (isInsideCave(x, y, z)) cornerValues = 1;
+                    if (isInsideCave(x, y, z + 3)) cornerValues |= 2;
+                    if (isInsideCave(x, y + 3, z)) cornerValues |= 4;
+                    if (isInsideCave(x, y + 3, z + 3)) cornerValues |= 8;
+                    if (isInsideCave(x + 3, y, z)) cornerValues |= 16;
+                    if (isInsideCave(x + 3, y, z + 3)) cornerValues |= 32;
+                    if (isInsideCave(x + 3, y + 3, z)) cornerValues |= 64;
+                    if (isInsideCave(x + 3, y + 3, z + 3)) cornerValues |= -128;
+
+                    if (cornerValues == 0) continue;
+                    int inChunkX = x & CHUNK_SIZE_MASK;
+                    int inChunkY = y & CHUNK_SIZE_MASK;
+                    int inChunkZ = z & CHUNK_SIZE_MASK;
+                    if (cornerValues == -1) {
+                        int mask = 15 << y;
+                        for (int i = 0; i < 4; i++)
+                            for (int j = 0; j < 4; j++)
+                                bitMap[i + inChunkX << CHUNK_SIZE_BITS | inChunkZ + j] |= mask;
+                    } else
+                        for (int i = 0; i < 4; i++)
+                            for (int j = 0; j < 4; j++)
+                                for (int k = 0; k < 4; k++)
+                                    if (isInsideCave(x + i, y + k, z + j))
+                                        bitMap[i + inChunkX << CHUNK_SIZE_BITS | inChunkZ + j] |= 1 << inChunkY + k;
+                }
+
+        return bitMap;
     }
 
 

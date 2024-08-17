@@ -211,7 +211,7 @@ public class Player {
             return;
         }
 
-        float accelerationModifier = SWIM_STRENGTH * (isGrounded ? 2.0f : 1.0f);
+        float accelerationModifier = SWIM_STRENGTH;
 
         if (window.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL) && window.isKeyPressed(GLFW.GLFW_KEY_W)) {
             Vector2f cameraRotation = camera.getRotation();
@@ -541,9 +541,9 @@ public class Player {
             isGrounded = y < 0.0f;
             velocity.y = 0.0f;
             if (y < 0.0f) isFling = false;
-        } else if ((movementState == CROUCHING || movementState == CRAWLING) && isGrounded && y <= 0.0f) {
-            boolean onEdgeX = !collidesWithBlock(position.x, position.y - 0.0625f, oldPosition.z, movementState);
-            boolean onEdgeZ = !collidesWithBlock(oldPosition.x, position.y - 0.0625f, position.z, movementState);
+        } else if ((movementState == CROUCHING || movementState == CRAWLING) && isGrounded && y <= 0.0f && collidesWithBlock(oldPosition.x, position.y - 0.0625f, oldPosition.z, movementState)) {
+            boolean onEdgeX = !collidesWithBlock(position.x, position.y - 0.5625f, oldPosition.z, movementState);
+            boolean onEdgeZ = !collidesWithBlock(oldPosition.x, position.y - 0.5625f, position.z, movementState);
 
             if (onEdgeX) {
                 position.x = oldPosition.x;
@@ -637,7 +637,6 @@ public class Player {
             for (int blockY = Utils.floor(minY), maxPlayerY = Utils.floor(maxY); blockY <= maxPlayerY; blockY++)
                 for (int blockZ = Utils.floor(minZ), maxPlayerZ = Utils.floor(maxZ); blockZ <= maxPlayerZ; blockZ++) {
 
-                    float thisBlockStepHeight;
                     short block = Chunk.getBlockInWorld(blockX, blockY, blockZ);
 
                     int blockType = Block.getBlockType(block);
@@ -653,7 +652,7 @@ public class Player {
                         float maxBlockZ = 1 + blockZ + blockXYZSubData[MAX_Z + aabbIndex] * 0.0625f;
 
                         if (minX < maxBlockX && maxX > minBlockX && minY < maxBlockY && maxY > minBlockY && minZ < maxBlockZ && maxZ > minBlockZ) {
-                            thisBlockStepHeight = maxBlockY - minY;
+                            float thisBlockStepHeight = maxBlockY - minY;
                             requiredStepHeight = Math.max(requiredStepHeight, thisBlockStepHeight);
                         }
                     }
