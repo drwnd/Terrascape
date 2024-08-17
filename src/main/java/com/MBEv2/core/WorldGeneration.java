@@ -26,6 +26,7 @@ public class WorldGeneration {
         chunk.setGenerated();
 
         int[] caveBitMap = generateCaveBitMap(chunk);
+        int[] intHeightMap = Chunk.getHeightMap(chunk.getX(), chunk.getZ());
 
         for (int inChunkX = 0; inChunkX < CHUNK_SIZE; inChunkX++)
             for (int inChunkZ = 0; inChunkZ < CHUNK_SIZE; inChunkZ++) {
@@ -36,6 +37,9 @@ public class WorldGeneration {
                 double feature = featureMap[inChunkX][inChunkZ];
 
                 int resultingHeight = getHeight(height, erosion);
+                if (Math.max(resultingHeight, WATER_LEVEL) > intHeightMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ])
+                    intHeightMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ] = Math.max(resultingHeight, WATER_LEVEL);
+
                 if (resultingHeight <= WATER_LEVEL)
                     generateOceans(chunk, inChunkX, inChunkZ, resultingHeight, feature, temperature, caveBitMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ]);
                 else if (erosion > MOUNTAIN_THRESHOLD)

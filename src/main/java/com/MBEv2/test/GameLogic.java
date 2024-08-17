@@ -366,6 +366,17 @@ public class GameLogic {
         return (x * RENDERED_WORLD_HEIGHT + y) * RENDERED_WORLD_WIDTH + z;
     }
 
+    public static int getHeightMapIndex(int x, int z) {
+
+        x = (x % RENDERED_WORLD_WIDTH);
+        if (x < 0) x += RENDERED_WORLD_WIDTH;
+
+        z = (z % RENDERED_WORLD_WIDTH);
+        if (z < 0) z += RENDERED_WORLD_WIDTH;
+
+        return x * RENDERED_WORLD_WIDTH + z;
+    }
+
     public static Player getPlayer() {
         return player;
     }

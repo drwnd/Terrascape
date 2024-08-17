@@ -5,6 +5,7 @@ import com.MBEv2.test.GameLogic;
 import org.joml.Vector3f;
 import org.joml.Vector4i;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -152,7 +153,7 @@ public class ChunkGenerator {
                         if (!shouldRestart) starterThread.wait();
                         shouldRestart = false;
                     }
-                }catch (InterruptedException e) {
+                } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
 
@@ -173,6 +174,9 @@ public class ChunkGenerator {
 
                 if (Math.abs(chunk.getX() - playerX) <= RENDER_DISTANCE_XZ + 2 && Math.abs(chunk.getZ() - playerZ) <= RENDER_DISTANCE_XZ + 2 && Math.abs(chunk.getY() - playerY) <= RENDER_DISTANCE_Y + 2)
                     continue;
+
+                if (Math.abs(chunk.getY() - playerY) < RENDER_DISTANCE_Y + 2)
+                    Arrays.fill(Chunk.getHeightMap(chunk.getX(), chunk.getZ()), Integer.MIN_VALUE);
 
                 chunk.clearMesh();
                 GameLogic.addToUnloadChunk(chunk);
@@ -218,21 +222,12 @@ public class ChunkGenerator {
         }
 
         private void handleSkyLight(int travelDirection, int playerX, int playerY, int playerZ) {
-            if (travelDirection == TOP)
-                for (Chunk chunk : Chunk.getWorld()) {
-                    if (chunk == null)
-                        continue;
-                    byte[] light = chunk.getLight();
-                    for (int index = 0; index < light.length; index++)
-                        light[index] &= 15;
-                    chunk.setMeshed(false);
+            if (travelDirection != BOTTOM) return;
+
+            for (int chunkX = playerX - RENDER_DISTANCE_XZ - 2; chunkX <= playerX + RENDER_DISTANCE_XZ + 2; chunkX++)
+                for (int chunkZ = playerZ - RENDER_DISTANCE_XZ - 2; chunkZ <= playerZ + RENDER_DISTANCE_XZ + 2; chunkZ++) {
+                    LightLogic.propagateChunkSkyLight(chunkX << CHUNK_SIZE_BITS, ((playerY - RENDER_DISTANCE_Y + 1) << CHUNK_SIZE_BITS) - 1, chunkZ << CHUNK_SIZE_BITS);
                 }
-            else if (travelDirection == BOTTOM) {
-                for (int chunkX = playerX - RENDER_DISTANCE_XZ - 2; chunkX <= playerX + RENDER_DISTANCE_XZ + 2; chunkX++)
-                    for (int chunkZ = playerZ - RENDER_DISTANCE_XZ - 2; chunkZ <= playerZ + RENDER_DISTANCE_XZ + 2; chunkZ++) {
-                        LightLogic.propagateChunkSkyLight(chunkX << CHUNK_SIZE_BITS, ((playerY - RENDER_DISTANCE_Y + 1) << CHUNK_SIZE_BITS) - 1, chunkZ << CHUNK_SIZE_BITS);
-                    }
-            }
         }
 
         private void submitTasks(int playerX, int playerY, int playerZ) {

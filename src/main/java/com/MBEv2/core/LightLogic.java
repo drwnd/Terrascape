@@ -178,11 +178,13 @@ public class LightLogic {
 
     public static void setChunkColumnSkyLight(final int x, final int y, final int z) {
         LinkedList<Vector4i> toPlaceLights = new LinkedList<>();
+        int[] heightMap = Chunk.getHeightMap(x >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS);
 
         for (int totalX = x, maxX = x + CHUNK_SIZE; totalX < maxX; totalX++)
             for (int totalZ = z, maxZ = z + CHUNK_SIZE; totalZ < maxZ; totalZ++) {
-                if (Chunk.getSkyLightInWorld(totalX, y, totalZ) == MAX_SKY_LIGHT_VALUE)
-                    continue;
+                if (y < heightMap[(totalX & CHUNK_SIZE_MASK) << CHUNK_SIZE_BITS | totalZ & CHUNK_SIZE_MASK]) continue;
+
+                if (Chunk.getSkyLightInWorld(totalX, y, totalZ) == MAX_SKY_LIGHT_VALUE) continue;
 
                 toPlaceLights.add(new Vector4i(totalX, y, totalZ, MAX_SKY_LIGHT_VALUE));
             }
