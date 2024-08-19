@@ -4,14 +4,14 @@ import com.MBEv2.core.*;
 
 import static com.MBEv2.core.utils.Constants.*;
 
+import com.MBEv2.core.utils.Transformation;
 import com.MBEv2.core.utils.Utils;
 import com.MBEv2.test.GameLogic;
 import com.MBEv2.test.Launcher;
-import org.joml.Vector2f;
-import org.joml.Vector3f;
-import org.joml.Vector3i;
+import org.joml.*;
 import org.lwjgl.glfw.GLFW;
 
+import java.lang.Math;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -78,10 +78,6 @@ public class Player {
         GUIElement hotBarGUIElement = ObjectLoader.loadGUIElement(GameLogic.getHotBarVertices(), GUI_ELEMENT_TEXTURE_COORDINATES, new Vector2f(0.0f, 0.0f));
         hotBarGUIElement.setTexture(new Texture(ObjectLoader.loadTexture("textures/HotBar.png")));
         GUIElements.add(hotBarGUIElement);
-
-        GUIElement waterOverly = ObjectLoader.loadGUIElement(OVERLAY_VERTICES, GUI_ELEMENT_TEXTURE_COORDINATES, new Vector2f(0.0f, 0.0f));
-        waterOverly.setTexture(new Texture(ObjectLoader.loadTexture("textures/WaterOverlay.png")));
-        renderer.setWaterOverlay(waterOverly);
 
         GUIElement inventoryOverlay = ObjectLoader.loadGUIElement(OVERLAY_VERTICES, GUI_ELEMENT_TEXTURE_COORDINATES, new Vector2f(0.0f, 0.0f));
         inventoryOverlay.setTexture(new Texture(ObjectLoader.loadTexture("textures/InventoryOverlay.png")));
@@ -641,7 +637,7 @@ public class Player {
 
                     int blockType = Block.getBlockType(block);
                     byte[] blockXYZSubData = Block.getXYZSubData(block);
-                    if (blockXYZSubData.length == 0 || blockType == WATER_TYPE) continue;
+                    if (blockXYZSubData.length == 0 || blockType == LIQUID_TYPE) continue;
 
                     for (int aabbIndex = 0; aabbIndex < blockXYZSubData.length; aabbIndex += 6) {
                         float minBlockX = blockX + blockXYZSubData[MIN_X + aabbIndex] * 0.0625f;
@@ -678,7 +674,7 @@ public class Player {
             block = Chunk.getBlockInWorld(Utils.floor(x), Utils.floor(y), Utils.floor(z));
             if (Block.intersectsBlock(x, y, z, block)) break;
         }
-        if (Block.getBlockType(block) == AIR_TYPE || block == OUT_OF_WORLD || Block.getBlockType(block) == WATER_TYPE)
+        if (Block.getBlockType(block) == AIR_TYPE || block == OUT_OF_WORLD || Block.getBlockType(block) == LIQUID_TYPE)
             return null;
 
         if (action == placing) {
@@ -693,8 +689,8 @@ public class Player {
                     i--;
                 }
                 int blockType = Block.getBlockType(block);
-                if (blockType != AIR_TYPE && blockType != WATER_TYPE) return null;
-            } else if (Block.getBlockType(previousBlock) != AIR_TYPE && Block.getBlockType(previousBlock) != WATER_TYPE)
+                if (blockType != AIR_TYPE && blockType != LIQUID_TYPE) return null;
+            } else if (Block.getBlockType(previousBlock) != AIR_TYPE && Block.getBlockType(previousBlock) != LIQUID_TYPE)
                 return null;
         }
         float x = cameraPosition.x + i * interval * cameraDirection.x;
@@ -723,14 +719,20 @@ public class Player {
         final int chunkY = Utils.floor(cameraPosition.y) >> CHUNK_SIZE_BITS;
         final int chunkZ = Utils.floor(cameraPosition.z) >> CHUNK_SIZE_BITS;
 
+        Matrix4f projectionMatrix = window.getProjectionMatrix();
+        Matrix4f viewMatrix = Transformation.getViewMatrix(camera);
+        Matrix4f projectionViewMatrix = new Matrix4f();
+        projectionMatrix.mul(viewMatrix, projectionViewMatrix);
+        FrustumIntersection frustumIntersection = new FrustumIntersection(projectionViewMatrix);
+
         if (usingOcclusionCulling) calculateVisibleChunks(chunkX, chunkY, chunkZ);
 
-        renderChunkColumn(chunkX, chunkZ, chunkX, chunkY, chunkZ);
+        renderChunkColumn(chunkX, chunkZ, chunkX, chunkY, chunkZ, frustumIntersection);
         for (int ring = 1; ring <= RENDER_DISTANCE_XZ + 2; ring++) {
-            for (int x = -ring; x < ring; x++) renderChunkColumn(x + chunkX, ring + chunkZ, chunkX, chunkY, chunkZ);
-            for (int z = ring; z > -ring; z--) renderChunkColumn(ring + chunkX, z + chunkZ, chunkX, chunkY, chunkZ);
-            for (int x = ring; x > -ring; x--) renderChunkColumn(x + chunkX, -ring + chunkZ, chunkX, chunkY, chunkZ);
-            for (int z = -ring; z < ring; z++) renderChunkColumn(-ring + chunkX, z + chunkZ, chunkX, chunkY, chunkZ);
+            for (int x = -ring; x < ring; x++) renderChunkColumn(x + chunkX, ring + chunkZ, chunkX, chunkY, chunkZ, frustumIntersection);
+            for (int z = ring; z > -ring; z--) renderChunkColumn(ring + chunkX, z + chunkZ, chunkX, chunkY, chunkZ, frustumIntersection);
+            for (int x = ring; x > -ring; x--) renderChunkColumn(x + chunkX, -ring + chunkZ, chunkX, chunkY, chunkZ, frustumIntersection);
+            for (int z = -ring; z < ring; z++) renderChunkColumn(-ring + chunkX, z + chunkZ, chunkX, chunkY, chunkZ, frustumIntersection);
         }
 
         for (GUIElement GUIElement : GUIElements)
@@ -740,15 +742,20 @@ public class Player {
             renderer.processGUIElement(GUIElement);
     }
 
-    private void renderChunkColumn(int x, int z, int cameraX, int cameraY, int cameraZ) {
+    private void renderChunkColumn(int x, int z, int cameraX, int cameraY, int cameraZ, FrustumIntersection frustumIntersection) {
         for (int y = RENDER_DISTANCE_Y + 2; y >= -RENDER_DISTANCE_Y - 2; y--) {
             Chunk chunk = Chunk.getChunk(x, y + cameraY, z);
             if (chunk == null) continue;
             int chunkIndex = chunk.getIndex();
             if ((visibleChunks[chunkIndex >> 6] & 1L << (chunkIndex & 63)) == 0) continue;
 
-            if (chunk.getTransparentModel() != null)
-                renderer.processTransparentModel(chunk.getTransparentModel());
+            Vector3f position = new Vector3f(chunk.getWorldCoordinate());
+            int intersectionType = frustumIntersection.intersectAab(position, new Vector3f(position.x + CHUNK_SIZE, position.y + CHUNK_SIZE, position.z + CHUNK_SIZE));
+            if (intersectionType != FrustumIntersection.INTERSECT && intersectionType != FrustumIntersection.INSIDE)
+                continue;
+
+            if (chunk.getWaterModel() != null)
+                renderer.processWaterModel(chunk.getWaterModel());
 
             if (x >= cameraX && chunk.getModel(LEFT) != null) renderer.processModel(chunk.getModel(LEFT));
             if (x <= cameraX && chunk.getModel(RIGHT) != null) renderer.processModel(chunk.getModel(RIGHT));

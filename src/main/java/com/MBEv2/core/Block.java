@@ -41,7 +41,7 @@ public class Block {
     }
 
     public static boolean dynamicOcclusion(short toTestBlock, short occludingBlock, int side, int x, int y, int z, int blockSideType, int occludingSideType) {
-        if (getBlockType(occludingBlock) == WATER_TYPE) {
+        if (getBlockType(occludingBlock) == LIQUID_TYPE) {
             if (toTestBlock != occludingBlock) return false;
             if (side == TOP || side == BOTTOM) return true;
 
@@ -54,10 +54,11 @@ public class Block {
 
             if (getBlockTypeOcclusionData(blockAboveToTestBlock, BOTTOM) != 0 && getBlockTypeOcclusionData(blockAboveOccludingBlock, BOTTOM) == 0)
                 return false;
-            if ((blockAboveOccludingBlockType == WATER_TYPE) == (blockAboveToTestBlockType == WATER_TYPE)) return true;
-            if (getBlockTypeOcclusionData(blockAboveOccludingBlock, BOTTOM) != 0 && blockAboveToTestBlockType == WATER_TYPE)
+            if ((blockAboveOccludingBlockType == LIQUID_TYPE) == (blockAboveToTestBlockType == LIQUID_TYPE))
                 return true;
-            return blockAboveToTestBlockType != WATER_TYPE;
+            if (getBlockTypeOcclusionData(blockAboveOccludingBlock, BOTTOM) != 0 && blockAboveToTestBlockType == LIQUID_TYPE)
+                return true;
+            return blockAboveToTestBlockType != LIQUID_TYPE;
         }
 
         if (blockSideType != 0 && occludingSideType != 0) return true;
@@ -81,7 +82,7 @@ public class Block {
 
         int blockType = getBlockType(block);
         byte[] blockXYZSubData = BLOCK_TYPE_XYZ_SUB_DATA[blockType];
-        if (blockXYZSubData.length == 0 || blockType == WATER_TYPE) return false;
+        if (blockXYZSubData.length == 0 || blockType == LIQUID_TYPE) return false;
 
         for (int aabbIndex = 0; aabbIndex < blockXYZSubData.length; aabbIndex += 6) {
             float minBlockX = blockX + blockXYZSubData[MIN_X + aabbIndex] * 0.0625f;
@@ -99,15 +100,16 @@ public class Block {
     public static boolean intersectsBlock(double x, double y, double z, short block) {
         int blockType = getBlockType(block);
         byte[] XYZSubData = BLOCK_TYPE_XYZ_SUB_DATA[blockType];
-        if (blockType == WATER_TYPE || blockType == AIR_TYPE || XYZSubData.length == 0) return false;
+        if (blockType == LIQUID_TYPE || blockType == AIR_TYPE || XYZSubData.length == 0) return false;
         x = fraction(x) * 16.0;
         y = fraction(y) * 16.0;
         z = fraction(z) * 16.0;
 
-        for (int aabbIndex = 0; aabbIndex < XYZSubData.length; aabbIndex += 6) {
-            if (x > XYZSubData[MIN_X + aabbIndex] && x < XYZSubData[MAX_X + aabbIndex] + 16 && y > XYZSubData[MIN_Y + aabbIndex] && y < XYZSubData[MAX_Y + aabbIndex] + 16 && z > XYZSubData[MIN_Z + aabbIndex] && z < XYZSubData[MAX_Z + aabbIndex] + 16)
+        for (int aabbIndex = 0; aabbIndex < XYZSubData.length; aabbIndex += 6)
+            if (x > XYZSubData[MIN_X + aabbIndex] && x < XYZSubData[MAX_X + aabbIndex] + 16 &&
+                    y > XYZSubData[MIN_Y + aabbIndex] && y < XYZSubData[MAX_Y + aabbIndex] + 16 &&
+                    z > XYZSubData[MIN_Z + aabbIndex] && z < XYZSubData[MAX_Z + aabbIndex] + 16)
                 return true;
-        }
 
         return false;
     }
@@ -332,9 +334,9 @@ public class Block {
         NON_STANDARD_BLOCK_TYPE[OUT_OF_WORLD] = FULL_BLOCK;
 
         NON_STANDARD_BLOCK_TEXTURE_INDICES[WATER] = new int[]{WATER_TEXTURE};
-        NON_STANDARD_BLOCK_TYPE[WATER] = WATER_TYPE;
+        NON_STANDARD_BLOCK_TYPE[WATER] = LIQUID_TYPE;
         NON_STANDARD_BLOCK_TEXTURE_INDICES[LAVA] = new int[]{LAVA_TEXTURE};
-        NON_STANDARD_BLOCK_TYPE[LAVA] = WATER_TYPE;
+        NON_STANDARD_BLOCK_TYPE[LAVA] = LIQUID_TYPE;
         NON_STANDARD_BLOCK_PROPERTIES[LAVA] = LIGHT_EMITTING_MASK;
         NON_STANDARD_BLOCK_TEXTURE_INDICES[CACTUS] = new int[]{CACTUS_SIDE_TEXTURE, CACTUS_TOP_TEXTURE, CACTUS_SIDE_TEXTURE, CACTUS_SIDE_TEXTURE, CACTUS_TOP_TEXTURE, CACTUS_SIDE_TEXTURE};
         NON_STANDARD_BLOCK_TYPE[CACTUS] = CACTUS_TYPE;
@@ -455,8 +457,8 @@ public class Block {
         BLOCK_TYPE_OCCLUSION_DATA[GLASS_TYPE] = 0b01111111;
         BLOCK_TYPE_DATA[GLASS_TYPE] = 0b00111111;
 
-        BLOCK_TYPE_OCCLUSION_DATA[WATER_TYPE] = (byte) 0b11111111;
-        BLOCK_TYPE_DATA[WATER_TYPE] = (byte) 0b10111111;
+        BLOCK_TYPE_OCCLUSION_DATA[LIQUID_TYPE] = (byte) 0b11111111;
+        BLOCK_TYPE_DATA[LIQUID_TYPE] = (byte) 0b10111111;
 
         BLOCK_TYPE_OCCLUSION_DATA[BOTTOM_SLAB] = (byte) 0b10010000;
         BLOCK_TYPE_DATA[BOTTOM_SLAB] = 0b00111101;
@@ -654,6 +656,6 @@ public class Block {
         BLOCK_TYPE_XYZ_SUB_DATA[FULL_BLOCK] = new byte[]{0, 0, 0, 0, 0, 0};
         BLOCK_TYPE_XYZ_SUB_DATA[LEAVE_TYPE] = new byte[]{0, 0, 0, 0, 0, 0};
         BLOCK_TYPE_XYZ_SUB_DATA[GLASS_TYPE] = new byte[]{0, 0, 0, 0, 0, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[WATER_TYPE] = new byte[]{0, 0, 0, -2, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[LIQUID_TYPE] = new byte[]{0, 0, 0, -2, 0, 0};
     }
 }

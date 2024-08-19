@@ -93,10 +93,10 @@ public class GameLogic {
                 chunk.setModel(model, side);
             } else chunk.setModel(null, side);
         }
-        if (chunk.getTransparentVertices() != null && chunk.getTransparentVertices().length != 0) {
-            Model transparentModel = ObjectLoader.loadModel(chunk.getTransparentVertices(), chunk.getWorldCoordinate());
-            chunk.setTransparentModel(transparentModel);
-        } else chunk.setTransparentModel(null);
+        if (chunk.getWaterVertices() != null && chunk.getWaterVertices().length != 0) {
+            Model taterModel = ObjectLoader.loadModel(chunk.getWaterVertices(), chunk.getWorldCoordinate());
+            chunk.setWaterModel(taterModel);
+        } else chunk.setWaterModel(null);
 
         chunk.clearMesh();
     }
@@ -132,11 +132,11 @@ public class GameLogic {
                 chunk.setModel(null, side);
             }
         }
-        Model transparentModel = chunk.getTransparentModel();
-        if (transparentModel != null) {
-            ObjectLoader.removeVAO(transparentModel.getVao());
-            ObjectLoader.removeVBO(transparentModel.getVbo());
-            chunk.setTransparentModel(null);
+        Model waterModel = chunk.getWaterModel();
+        if (waterModel != null) {
+            ObjectLoader.removeVAO(waterModel.getVao());
+            ObjectLoader.removeVBO(waterModel.getVbo());
+            chunk.setWaterModel(null);
         }
 
     }

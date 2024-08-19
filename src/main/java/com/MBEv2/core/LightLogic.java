@@ -238,7 +238,7 @@ public class LightLogic {
                 toPlaceLights.add(new Vector4i(x, y + 1, z, nextSkyLight));
 
             nextBlock = Chunk.getBlockInWorld(x, y - 1, z);
-            if (Block.isLeaveType(nextBlock) || Block.getBlockType(nextBlock) == WATER_TYPE)
+            if (Block.isLeaveType(nextBlock) || Block.getBlockType(nextBlock) == LIQUID_TYPE)
                 currentSkyLight--;
             if (Chunk.getSkyLightInWorld(x, y - 1, z) < currentSkyLight && canLightTravel(nextBlock, TOP, currentBlock, BOTTOM))
                 toPlaceLights.add(new Vector4i(x, y - 1, z, currentSkyLight));
@@ -356,13 +356,13 @@ public class LightLogic {
     public static boolean canLightTravel(short destinationBlock, int enterSide, short originBlock, int exitSide) {
         int originBlockType = Block.getBlockType(originBlock);
         int originBlockProperties = Block.getBlockProperties(originBlock);
-        boolean canExit = Block.getBlockTypeOcclusionData(originBlock, exitSide) == 0 || (originBlockProperties & LIGHT_EMITTING_MASK) != 0 || originBlockType == WATER_TYPE ||
+        boolean canExit = Block.getBlockTypeOcclusionData(originBlock, exitSide) == 0 || (originBlockProperties & LIGHT_EMITTING_MASK) != 0 || originBlockType == LIQUID_TYPE ||
                 Block.isGlassType(originBlock) || Block.isLeaveType(originBlock);
         if (!canExit) return false;
 
         int destinationBlockType = Block.getBlockType(destinationBlock);
         int destinationBlockProperties = Block.getBlockProperties(destinationBlock);
-        return Block.getBlockTypeOcclusionData(destinationBlock, enterSide) == 0 || (destinationBlockProperties & LIGHT_EMITTING_MASK) != 0 || destinationBlockType == WATER_TYPE ||
+        return Block.getBlockTypeOcclusionData(destinationBlock, enterSide) == 0 || (destinationBlockProperties & LIGHT_EMITTING_MASK) != 0 || destinationBlockType == LIQUID_TYPE ||
                 Block.isGlassType(destinationBlock) || Block.isLeaveType(destinationBlock);
     }
 

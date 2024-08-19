@@ -7,9 +7,9 @@ import static com.MBEv2.core.utils.Constants.*;
 import com.MBEv2.core.utils.Transformation;
 import com.MBEv2.core.utils.Utils;
 import com.MBEv2.test.Launcher;
-import org.joml.FrustumIntersection;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
+import org.joml.Vector3i;
 import org.lwjgl.opengl.*;
 
 import java.nio.IntBuffer;
@@ -22,12 +22,12 @@ public class RenderManager {
     private ShaderManager blockShader;
     private ShaderManager skyBoxShader;
     private ShaderManager GUIShader;
+    private ShaderManager waterShader;
 
     private final List<Model> chunkModels = new ArrayList<>();
-    private final List<Model> transparentChunkModels = new ArrayList<>();
+    private final List<Model> waterModels = new ArrayList<>();
     private final List<GUIElement> GUIElements = new ArrayList<>();
     private final Player player;
-    private GUIElement waterOverlay;
     private GUIElement inventoryOverlay;
     private SkyBox skyBox;
     private boolean headUnderWater = false;
@@ -59,6 +59,21 @@ public class RenderManager {
         blockShader.createUniform("viewMatrix");
         blockShader.createUniform("worldPos");
         blockShader.createUniform("time");
+        blockShader.createUniform("headUnderWater");
+        blockShader.createUniform("cameraPosition");
+
+        waterShader = new ShaderManager();
+        waterShader.createVertexShader(Utils.loadResources("/shaders/waterVertex.glsl"));
+        waterShader.createFragmentShader(Utils.loadResources("/shaders/waterFragment.glsl"));
+        waterShader.link();
+        waterShader.createUniform("textureSampler");
+        waterShader.createUniform("projectionMatrix");
+        waterShader.createUniform("viewMatrix");
+        waterShader.createUniform("worldPos");
+        waterShader.createUniform("time");
+        waterShader.createUniform("headUnderWater");
+        waterShader.createUniform("cameraPosition");
+        waterShader.createUniform("shouldSimulateWaves");
 
         skyBoxShader = new ShaderManager();
         skyBoxShader.createVertexShader(Utils.loadResources("/shaders/skyBoxVertex.glsl"));
@@ -99,9 +114,12 @@ public class RenderManager {
     public void bindModel(Model model) {
         GL30.glBindVertexArray(model.getVao());
         GL20.glEnableVertexAttribArray(0);
+
+        blockShader.setUniform("worldPos", model.getPosition());
+        GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, modelIndexBuffer);
     }
 
-    public void bindSkyBox(SkyBox skyBox) {
+    public void bindSkyBox(SkyBox skyBox, Camera camera) {
         GL30.glBindVertexArray(skyBox.getVao());
         GL20.glEnableVertexAttribArray(0);
         GL20.glEnableVertexAttribArray(1);
@@ -110,6 +128,13 @@ public class RenderManager {
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, skyBox.getTexture1().id());
         GL13.glActiveTexture(GL13.GL_TEXTURE1);
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, skyBox.getTexture2().id());
+
+        skyBoxShader.setUniform("textureSampler1", 0);
+        skyBoxShader.setUniform("textureSampler2", 1);
+        skyBoxShader.setUniform("time", time);
+        skyBoxShader.setUniform("viewMatrix", Transformation.getViewMatrix(camera));
+        skyBoxShader.setUniform("projectionMatrix", window.getProjectionMatrix());
+        skyBoxShader.setUniform("transformationMatrix", Transformation.createTransformationMatrix(skyBox.getPosition()));
     }
 
     public void bindGUIElement(GUIElement element) {
@@ -120,103 +145,101 @@ public class RenderManager {
         GL13.glActiveTexture(GL13.GL_TEXTURE0);
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, element.getTexture().id());
 
+        GUIShader.setUniform("textureSampler", 0);
         GUIShader.setUniform("position", element.getPosition());
+    }
+
+    public void bindWaterModel(Model model, int chunkX, int chunkY, int chunkZ) {
+        GL30.glBindVertexArray(model.getVao());
+        GL20.glEnableVertexAttribArray(0);
+
+        Vector3i modelPosition = model.getPosition();
+        boolean shouldSimulateWaves = Math.abs(chunkX - (modelPosition.x >> CHUNK_SIZE_BITS)) < 2 && Math.abs(chunkY - (modelPosition.y >> CHUNK_SIZE_BITS)) < 2 && Math.abs(chunkZ - (modelPosition.z >> CHUNK_SIZE_BITS)) < 2;
+
+        waterShader.setUniform("shouldSimulateWaves", shouldSimulateWaves ? 1 : 0);
+        waterShader.setUniform("worldPos", modelPosition);
+        GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, modelIndexBuffer);
     }
 
     public void unbind() {
         GL20.glDisableVertexAttribArray(0);
+        GL20.glDisableVertexAttribArray(1);
         GL30.glBindVertexArray(0);
     }
 
-    public void prepareModel(Model model) {
-        blockShader.setUniform("worldPos", model.getPosition());
-        GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, modelIndexBuffer);
-    }
-
-    public void prepareSkyBox(Camera camera) {
-        skyBoxShader.setUniform("textureSampler1", 0);
-        skyBoxShader.setUniform("textureSampler2", 1);
-        skyBoxShader.setUniform("time", time);
-        skyBoxShader.setUniform("viewMatrix", Transformation.getViewMatrix(camera));
-        skyBoxShader.setUniform("projectionMatrix", window.getProjectionMatrix());
-        skyBoxShader.setUniform("transformationMatrix", Transformation.createTransformationMatrix(skyBox.getPosition()));
-    }
-
-    public void prepareGUIElement() {
-        GUIShader.setUniform("textureSampler", 0);
-    }
-
     public void render(Camera camera) {
-        Matrix4f projectionMatrix = window.updateProjectionMatrix();
+        Matrix4f projectionMatrix = window.getProjectionMatrix();
         Matrix4f viewMatrix = Transformation.getViewMatrix(camera);
-        Matrix4f projectionViewMatrix = new Matrix4f();
-        projectionMatrix.mul(viewMatrix, projectionViewMatrix);
-        FrustumIntersection frustumIntersection = new FrustumIntersection(projectionViewMatrix);
 
         clear();
 
+        renderSkyBox(camera);
+
+        renderOpaqueChunks(projectionMatrix, viewMatrix);
+
+        renderWaterChunks(projectionMatrix, viewMatrix);
+
+        renderGUIElements();
+
+        unbind();
+    }
+
+    public void renderOpaqueChunks(Matrix4f projectionMatrix, Matrix4f viewMatrix) {
         blockShader.bind();
         blockShader.setUniform("projectionMatrix", projectionMatrix);
         blockShader.setUniform("viewMatrix", viewMatrix);
         blockShader.setUniform("textureSampler", 0);
         blockShader.setUniform("time", time);
+        blockShader.setUniform("headUnderWater", headUnderWater ? 1 : 0);
+        blockShader.setUniform("cameraPosition", player.getCamera().getPosition());
 
-        renderOpaqueChunks(frustumIntersection);
-
-        renderTransparentChunks(frustumIntersection);
-
-        renderSkyBox(camera);
-
-        renderGUIElements();
-    }
-
-    public void renderOpaqueChunks(FrustumIntersection frustumIntersection) {
         GL11.glEnable(GL11.GL_DEPTH_TEST);
         GL11.glEnable(GL11.GL_CULL_FACE);
         GL13.glActiveTexture(GL13.GL_TEXTURE0);
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, isxRay() ? xRayAtlas.id() : atlas.id());
 
         for (Model model : chunkModels) {
-            Vector3f position = new Vector3f(model.getPosition());
-            int intersectionType = frustumIntersection.intersectAab(position, new Vector3f(position.x + CHUNK_SIZE, position.y + CHUNK_SIZE, position.z + CHUNK_SIZE));
-            if (intersectionType != FrustumIntersection.INTERSECT && intersectionType != FrustumIntersection.INSIDE)
-                continue;
             bindModel(model);
 
-            prepareModel(model);
             GL11.glDrawElements(GL11.GL_TRIANGLES, (int) (model.getVertexCount() * 0.75), GL11.GL_UNSIGNED_INT, 0);
-
-            unbind();
         }
+        blockShader.unBind();
         chunkModels.clear();
     }
 
-    public void renderTransparentChunks(FrustumIntersection frustumIntersection) {
+    public void renderWaterChunks(Matrix4f projectionMatrix, Matrix4f viewMatrix) {
+        waterShader.bind();
+        waterShader.setUniform("projectionMatrix", projectionMatrix);
+        waterShader.setUniform("viewMatrix", viewMatrix);
+        waterShader.setUniform("textureSampler", 0);
+        waterShader.setUniform("time", time);
+        waterShader.setUniform("headUnderWater", headUnderWater ? 1 : 0);
+        waterShader.setUniform("cameraPosition", player.getCamera().getPosition());
+
+        Vector3f playerPosition = player.getCamera().getPosition();
+        int chunkX = Utils.floor(playerPosition.x) >> CHUNK_SIZE_BITS;
+        int chunkY = Utils.floor(playerPosition.y) >> CHUNK_SIZE_BITS;
+        int chunkZ = Utils.floor(playerPosition.z) >> CHUNK_SIZE_BITS;
+
         GL11.glEnable(GL11.GL_BLEND);
         GL11.glDisable(GL11.GL_CULL_FACE);
-        for (Model transparentModel : transparentChunkModels) {
-            Vector3f position = new Vector3f(transparentModel.getPosition());
-            int intersectionType = frustumIntersection.intersectAab(position, new Vector3f(position.x + CHUNK_SIZE, position.y + CHUNK_SIZE, position.z + CHUNK_SIZE));
-            if (intersectionType != FrustumIntersection.INTERSECT && intersectionType != FrustumIntersection.INSIDE)
-                continue;
-            bindModel(transparentModel);
 
-            prepareModel(transparentModel);
-            GL11.glDrawElements(GL11.GL_TRIANGLES, (int) (transparentModel.getVertexCount() * 0.75), GL11.GL_UNSIGNED_INT, 0);
+        for (Model waterModel : waterModels) {
+            bindWaterModel(waterModel, chunkX, chunkY, chunkZ);
 
-            unbind();
+            GL11.glDrawElements(GL11.GL_TRIANGLES, (int) (waterModel.getVertexCount() * 0.75), GL11.GL_UNSIGNED_INT, 0);
         }
         GL11.glDisable(GL11.GL_BLEND);
-        transparentChunkModels.clear();
-        blockShader.unBind();
+        waterModels.clear();
+        waterShader.unBind();
     }
 
     public void renderSkyBox(Camera camera) {
         skyBoxShader.bind();
-        bindSkyBox(skyBox);
-        prepareSkyBox(camera);
+        bindSkyBox(skyBox, camera);
+
         GL11.glDrawElements(GL11.GL_TRIANGLES, skyBox.getVertexCount(), GL11.GL_UNSIGNED_INT, 0);
-        unbind();
+
         skyBoxShader.unBind();
     }
 
@@ -224,32 +247,19 @@ public class RenderManager {
         GUIShader.bind();
         GL11.glDisable(GL11.GL_DEPTH_TEST);
 
-        if (headUnderWater) {
-            GL11.glEnable(GL11.GL_BLEND);
-            bindGUIElement(waterOverlay);
-
-            GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, waterOverlay.getVertexCount());
-
-            unbind();
-            GL11.glDisable(GL11.GL_BLEND);
-        }
         if (player.isInInventory()) {
             GL11.glEnable(GL11.GL_BLEND);
             bindGUIElement(inventoryOverlay);
 
             GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, inventoryOverlay.getVertexCount());
 
-            unbind();
             GL11.glDisable(GL11.GL_BLEND);
         }
 
         for (GUIElement element : GUIElements) {
             bindGUIElement(element);
 
-            prepareGUIElement();
             GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, element.getVertexCount());
-
-            unbind();
         }
         GUIElements.clear();
         GUIShader.unBind();
@@ -259,8 +269,8 @@ public class RenderManager {
         chunkModels.add(model);
     }
 
-    public void processTransparentModel(Model transparentModel) {
-        transparentChunkModels.add(transparentModel);
+    public void processWaterModel(Model waterModel) {
+        waterModels.add(waterModel);
     }
 
     public void processSkyBox(SkyBox skyBox) {
@@ -273,10 +283,6 @@ public class RenderManager {
 
     public void setHeadUnderWater(boolean headUnderWater) {
         this.headUnderWater = headUnderWater;
-    }
-
-    public void setWaterOverlay(GUIElement waterOverlay) {
-        this.waterOverlay = waterOverlay;
     }
 
     public void setInventoryOverlay(GUIElement inventoryOverlay) {
@@ -303,7 +309,6 @@ public class RenderManager {
 
     public void incrementTime() {
         time += TIME_SPEED;
-        if (time > 1.0f)
-            time -= 2.0f;
+        if (time > 1.0f) time -= 2.0f;
     }
 }

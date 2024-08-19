@@ -23,7 +23,7 @@ public class Model {
         return vertexCount;
     }
 
-    public Vector3i getPosition(){
+    public Vector3i getPosition() {
         return position;
     }
 

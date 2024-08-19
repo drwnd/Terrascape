@@ -14,7 +14,7 @@ public class Constants {
     //Recommended to not change, but I can't stop you
     public static final String TITLE = "Minecräft Bad Edition v2";
     public static final float Z_NEAR = 0.01f;
-    public static final float Z_FAR = -1.0f;
+    public static final float Z_FAR = 1000.0f;
 
     public static final float HALF_PLAYER_WIDTH = 0.23f;
     public static final float PLAYER_HEAD_OFFSET = 0.08f;
@@ -67,7 +67,7 @@ public class Constants {
 
     //World generation
     public static final long SEED = new Random().nextLong();
-    //    public static final long SEED = 0;
+//        public static final long SEED = 0;
     public static final int WATER_LEVEL = 96;
     public static final int SNOW_LEVEL = 187;
     public static final int ICE_LEVEL = 237;
@@ -195,7 +195,7 @@ public class Constants {
 
     public static final int CACTUS_TYPE = bT++;
     public static final int AIR_TYPE = bT++;
-    public static final int WATER_TYPE = bT++;
+    public static final int LIQUID_TYPE = bT++;
     public static final int LEAVE_TYPE = bT++;
     public static final int GLASS_TYPE = bT++;
 

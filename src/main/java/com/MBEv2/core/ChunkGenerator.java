@@ -115,7 +115,7 @@ public class ChunkGenerator {
                     break;
                 }
             }
-            if (shouldBuffer || chunk.getTransparentVertices().length != 0)
+            if (shouldBuffer || chunk.getWaterVertices().length != 0)
                 GameLogic.addToBufferChunk(chunk);
         }
     }

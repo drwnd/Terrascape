@@ -61,6 +61,7 @@ public class WindowManager {
             this.width = width;
             this.height = height;
             this.setResize(true);
+            updateProjectionMatrix();
         });
 
         GLFW.glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
@@ -93,6 +94,8 @@ public class WindowManager {
         GL11.glEnable(GL11.GL_CULL_FACE);
         GL11.glCullFace(GL11.GL_BACK);
         GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+
+        updateProjectionMatrix();
     }
 
     public void update() {
@@ -140,9 +143,9 @@ public class WindowManager {
         return window;
     }
 
-    public Matrix4f updateProjectionMatrix() {
+    public void updateProjectionMatrix() {
         float aspectRatio = (float) width / height;
-        return projectionMatrix.setPerspective(FOV, aspectRatio, Z_NEAR, Z_FAR);
+        projectionMatrix.setPerspective(FOV, aspectRatio, Z_NEAR, Z_FAR);
     }
 
     public Matrix4f getProjectionMatrix() {
