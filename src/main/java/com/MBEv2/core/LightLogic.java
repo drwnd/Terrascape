@@ -2,7 +2,6 @@ package com.MBEv2.core;
 
 import org.joml.Vector4i;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 
 import static com.MBEv2.core.utils.Constants.*;
@@ -68,17 +67,16 @@ public class LightLogic {
     }
 
     public static void dePropagateBlockLight(int x, int y, int z) {
-        ArrayList<Vector4i> toRePropagate = new ArrayList<>();
+        LinkedList<Vector4i> toRePropagate = new LinkedList<>();
         LinkedList<Vector4i> toDePropagate = new LinkedList<>();
         toDePropagate.add(new Vector4i(x, y, z, Chunk.getBlockLightInWorld(x, y, z) + 1));
 
         dePropagateBlockLight(toRePropagate, toDePropagate);
 
-        for (Vector4i vec : toRePropagate)
-            setBlockLight(vec.x, vec.y, vec.z, vec.w);
+        setBlockLight(toRePropagate);
     }
 
-    public static void dePropagateBlockLight(ArrayList<Vector4i> toRePropagate, LinkedList<Vector4i> toDePropagate) {
+    public static void dePropagateBlockLight(LinkedList<Vector4i> toRePropagate, LinkedList<Vector4i> toDePropagate) {
         boolean onFirstIteration = true;
         while (!toDePropagate.isEmpty()) {
             Vector4i position = toDePropagate.removeFirst();
@@ -176,17 +174,26 @@ public class LightLogic {
         setSkyLight(toPlaceLights);
     }
 
-    public static void setChunkColumnSkyLight(final int x, final int y, final int z) {
+    public static void setChunkColumnSkyLight(final int x, int playerY, final int z) {
         LinkedList<Vector4i> toPlaceLights = new LinkedList<>();
         int[] heightMap = Chunk.getHeightMap(x >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS);
 
+        int highestChunkY = Integer.MIN_VALUE;
+        for (int y = playerY + RENDER_DISTANCE_Y + 2; y >= playerY - RENDER_DISTANCE_Y - 2; y--) {
+            Chunk currentChunk = Chunk.getChunk(x >> CHUNK_SIZE_BITS, y, z >> CHUNK_SIZE_BITS);
+            if (currentChunk == null) continue;
+            if (currentChunk.getY() > highestChunkY) highestChunkY = currentChunk.getY();
+        }
+
+        int totalY = (highestChunkY << CHUNK_SIZE_BITS) + CHUNK_SIZE - 1;
+
         for (int totalX = x, maxX = x + CHUNK_SIZE; totalX < maxX; totalX++)
             for (int totalZ = z, maxZ = z + CHUNK_SIZE; totalZ < maxZ; totalZ++) {
-                if (y < heightMap[(totalX & CHUNK_SIZE_MASK) << CHUNK_SIZE_BITS | totalZ & CHUNK_SIZE_MASK]) continue;
+                if (totalY < heightMap[(totalX & CHUNK_SIZE_MASK) << CHUNK_SIZE_BITS | totalZ & CHUNK_SIZE_MASK]) continue;
 
-                if (Chunk.getSkyLightInWorld(totalX, y, totalZ) == MAX_SKY_LIGHT_VALUE) continue;
+                if (Chunk.getSkyLightInWorld(totalX, totalY, totalZ) == MAX_SKY_LIGHT_VALUE) continue;
 
-                toPlaceLights.add(new Vector4i(totalX, y, totalZ, MAX_SKY_LIGHT_VALUE));
+                toPlaceLights.add(new Vector4i(totalX, totalY, totalZ, MAX_SKY_LIGHT_VALUE));
             }
 
         setSkyLight(toPlaceLights);
@@ -255,17 +262,16 @@ public class LightLogic {
     }
 
     public static void dePropagateSkyLight(int x, int y, int z) {
-        ArrayList<Vector4i> toRePropagate = new ArrayList<>();
+        LinkedList<Vector4i> toRePropagate = new LinkedList<>();
         LinkedList<Vector4i> toDePropagate = new LinkedList<>();
         toDePropagate.add(new Vector4i(x, y, z, Chunk.getSkyLightInWorld(x, y, z) + 1));
 
         dePropagateSkyLight(toRePropagate, toDePropagate);
 
-        for (Vector4i vec : toRePropagate)
-            setSkyLight(vec.x, vec.y, vec.z, vec.w);
+        setSkyLight(toRePropagate);
     }
 
-    public static void dePropagateSkyLight(ArrayList<Vector4i> toRePropagate, LinkedList<Vector4i> toDePropagate) {
+    public static void dePropagateSkyLight(LinkedList<Vector4i> toRePropagate, LinkedList<Vector4i> toDePropagate) {
         boolean onFirstIteration = true;
         while (!toDePropagate.isEmpty()) {
             Vector4i position = toDePropagate.removeFirst();
@@ -346,7 +352,7 @@ public class LightLogic {
     }
 
 
-    private static boolean notContainsToRePropagatePosition(ArrayList<Vector4i> toRePropagate, Vector4i position) {
+    private static boolean notContainsToRePropagatePosition(LinkedList<Vector4i> toRePropagate, Vector4i position) {
         for (Vector4i vec2 : toRePropagate)
             if (position.equals(vec2.x, vec2.y, vec2.z, vec2.w))
                 return false;

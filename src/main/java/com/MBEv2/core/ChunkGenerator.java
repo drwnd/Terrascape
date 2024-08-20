@@ -297,7 +297,7 @@ public class ChunkGenerator {
         }
 
         private void submitChunkColumnMeshing(int x, int playerY, int z) {
-            LightLogic.setChunkColumnSkyLight(x << CHUNK_SIZE_BITS, ((playerY + RENDER_DISTANCE_Y + 1) << CHUNK_SIZE_BITS) - 1, z << CHUNK_SIZE_BITS);
+            LightLogic.setChunkColumnSkyLight(x << CHUNK_SIZE_BITS, playerY, z << CHUNK_SIZE_BITS);
 
             for (int y = RENDER_DISTANCE_Y + playerY; y >= -RENDER_DISTANCE_Y + playerY && shouldFinish; y--) {
                 Chunk chunk = Chunk.getChunk(x, y, z);

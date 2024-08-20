@@ -10,6 +10,9 @@ public class Constants {
     public static final float GUI_SIZE = 1.0f;
     public static final float MOUSE_SENSITIVITY = 0.040f;
     public static final float REACH = 5.0f;
+    public static final int TEXT_CHAR_SIZE_X = 16;
+    public static final int TEXT_CHAR_SIZE_Y = 24;
+    public static final int TEXT_ROW_SPACING = 28;
 
     //Recommended to not change, but I can't stop you
     public static final String TITLE = "Minecräft Bad Edition v2";
@@ -30,7 +33,7 @@ public class Constants {
     public static final float MOVEMENT_SPEED = 0.098f;
     public static final float IN_AIR_SPEED = 0.2f;
     public static final float[] MOVEMENT_STATE_SPEED = new float[]{MOVEMENT_SPEED, 0.0294f, MOVEMENT_SPEED * 0.25f};
-    public static final float FLY_SPEED = 0.06f;
+    public static final float FLY_SPEED = 0.6f;
 
     public static final float JUMP_STRENGTH = 0.42f;
     public static final float SWIM_STRENGTH = 0.26f;

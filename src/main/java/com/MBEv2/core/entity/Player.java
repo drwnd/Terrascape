@@ -39,6 +39,7 @@ public class Player {
     //Debug
     private boolean noClip, gKeyPressed;
     private boolean isFling, vKeyPressed;
+    private boolean debugScreenOpen, F3Pressed;
     private boolean usingOcclusionCulling = true, cKeyPressed;
     private boolean inInventory, ePressed;
     private boolean tPressed, zPressed, xPressed, oPressed;
@@ -378,6 +379,10 @@ public class Player {
             if (!usingOcclusionCulling)
                 Arrays.fill(visibleChunks, -1);
         }
+        if (window.isKeyPressed(GLFW.GLFW_KEY_F3) && !F3Pressed) {
+            F3Pressed = true;
+            debugScreenOpen = !debugScreenOpen;
+        }
 
         if (gKeyPressed && !window.isKeyPressed(GLFW.GLFW_KEY_G)) gKeyPressed = false;
         if (tPressed && !window.isKeyPressed(GLFW.GLFW_KEY_T)) tPressed = false;
@@ -386,6 +391,7 @@ public class Player {
         if (xPressed && !window.isKeyPressed(GLFW.GLFW_KEY_X)) xPressed = false;
         if (oPressed && !window.isKeyPressed(GLFW.GLFW_KEY_O)) oPressed = false;
         if (cKeyPressed && !window.isKeyPressed(GLFW.GLFW_KEY_C)) cKeyPressed = false;
+        if (F3Pressed && !window.isKeyPressed(GLFW.GLFW_KEY_F3)) F3Pressed = false;
     }
 
     private void handleInventoryHotkeys() {
@@ -656,7 +662,7 @@ public class Player {
         return requiredStepHeight;
     }
 
-    private Vector3f getTarget(int action, Vector3f cameraDirection) {
+    public Vector3f getTarget(int action, Vector3f cameraDirection) {
         final int placing = 1;
 
         Vector3f cameraPosition = camera.getPosition();     //cameraPosition
@@ -890,5 +896,9 @@ public class Player {
 
     public void addToInventoryScroll(float value) {
         inventoryScroll += value;
+    }
+
+    public boolean isDebugScreenOpen() {
+        return debugScreenOpen;
     }
 }

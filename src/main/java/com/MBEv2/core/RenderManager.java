@@ -8,21 +8,20 @@ import com.MBEv2.core.utils.Transformation;
 import com.MBEv2.core.utils.Utils;
 import com.MBEv2.test.Launcher;
 import org.joml.Matrix4f;
+import org.joml.Vector2i;
 import org.joml.Vector3f;
 import org.joml.Vector3i;
 import org.lwjgl.opengl.*;
 
 import java.nio.IntBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
 public class RenderManager {
 
     private final WindowManager window;
-    private ShaderManager blockShader;
-    private ShaderManager skyBoxShader;
-    private ShaderManager GUIShader;
-    private ShaderManager waterShader;
+    private ShaderManager blockShader, waterShader, skyBoxShader, GUIShader, textShader;
 
     private final List<Model> chunkModels = new ArrayList<>();
     private final List<Model> waterModels = new ArrayList<>();
@@ -35,9 +34,11 @@ public class RenderManager {
     private float time = 1.0f;
 
     private int modelIndexBuffer;
+    private int textRowVertexArray;
 
     private Texture xRayAtlas;
     private Texture atlas;
+    private Texture textAtlas;
     private boolean xRay;
 
     public RenderManager(Player player) {
@@ -49,6 +50,7 @@ public class RenderManager {
 
         xRayAtlas = new Texture(ObjectLoader.loadTexture("textures/XRayAtlas.png"));
         atlas = new Texture(ObjectLoader.loadTexture("textures/atlas256.png"));
+        textAtlas = new Texture(ObjectLoader.loadTexture("textures/textAtlas.png"));
 
         blockShader = new ShaderManager();
         blockShader.createVertexShader(Utils.loadResources("/shaders/blockVertex.glsl"));
@@ -93,7 +95,17 @@ public class RenderManager {
         GUIShader.createUniform("textureSampler");
         GUIShader.createUniform("position");
 
-        int[] indices = new int[786432];
+        textShader = new ShaderManager();
+        textShader.createVertexShader(Utils.loadResources("/shaders/textVertex.glsl"));
+        textShader.createFragmentShader(Utils.loadResources("/shaders/textFragment.glsl"));
+        textShader.link();
+        textShader.createUniform("screenSize");
+        textShader.createUniform("charSize");
+        textShader.createUniform("string");
+        textShader.createUniform("yOffset");
+        textShader.createUniform("textureSampler");
+
+        int[] indices = new int[393216];
         int index = 0;
         for (int i = 0; i < indices.length; i += 6) {
             indices[i] = index;
@@ -109,6 +121,8 @@ public class RenderManager {
         GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, modelIndexBuffer);
         IntBuffer buffer = Utils.storeDateInIntBuffer(indices);
         GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, buffer, GL15.GL_STATIC_DRAW);
+
+        textRowVertexArray = ObjectLoader.loadTextRow();
     }
 
     public void bindModel(Model model) {
@@ -180,6 +194,8 @@ public class RenderManager {
         renderWaterChunks(projectionMatrix, viewMatrix);
 
         renderGUIElements();
+
+        renderDebugText();
 
         unbind();
     }
@@ -263,6 +279,59 @@ public class RenderManager {
         }
         GUIElements.clear();
         GUIShader.unBind();
+    }
+
+    public void renderDebugText() {
+        if (!player.isDebugScreenOpen()) return;
+
+        textShader.bind();
+        GL11.glDisable(GL11.GL_DEPTH_TEST);
+        GL11.glDisable(GL11.GL_CULL_FACE);
+        GL11.glEnable(GL11.GL_BLEND);
+        GL11.glBindTexture(GL11.GL_TEXTURE_2D, textAtlas.id());
+
+        textShader.setUniform("screenSize", new Vector2i(Launcher.getWindow().getWidth() / 2, Launcher.getWindow().getHeight() / 2));
+        textShader.setUniform("charSize", new Vector2i(TEXT_CHAR_SIZE_X, TEXT_CHAR_SIZE_Y));
+        int rowCount = -1;
+        Vector3f position = player.getCamera().getPosition();
+        Vector3f direction = player.getCamera().getDirection();
+        Vector3f target = player.getTarget(0, direction);
+        int x = Utils.floor(position.x), y = Utils.floor(position.y), z = Utils.floor(position.z);
+
+        renderTextRow("Coordinates: X:" + Utils.floor(position.x * 10) / 10f + " Y:" + Utils.floor(position.y * 10) / 10f + " Z:" + Utils.floor(position.z * 10) / 10f, ++rowCount);
+        renderTextRow("Chunk coordinates: X:" + (x >> CHUNK_SIZE_BITS) + " Y:" + (y >> CHUNK_SIZE_BITS) + " Z:" + (z >> CHUNK_SIZE_BITS), ++rowCount);
+        renderTextRow("BlockLight:" + Chunk.getBlockLightInWorld(x, y, z) + " SkyLight:" + Chunk.getSkyLightInWorld(x, y, z), ++rowCount);
+        renderTextRow("Looking at: X:" + Utils.floor(direction.x * 1000) / 1000f + " Y:" + Utils.floor(direction.y * 1000) / 1000f + " Z:" + Utils.floor(direction.z * 1000) / 1000f, ++rowCount);
+        if (target != null) {
+            short targetedBlock = Chunk.getBlockInWorld(Utils.floor(target.x), Utils.floor(target.y), Utils.floor(target.z));
+            renderTextRow("Looking at block: X:" + Utils.floor(target.x) + " Y:" + Utils.floor(target.y) + " Z:" + Utils.floor(target.z), ++rowCount);
+            renderTextRow("Targeted block: " + targetedBlock + " blockType: " + Block.getBlockType(targetedBlock), ++rowCount);
+        }
+        renderTextRow("HeightMap: " + Chunk.getHeightMap(x >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS)[(x & CHUNK_SIZE_MASK) << CHUNK_SIZE_BITS | z & CHUNK_SIZE_MASK], ++rowCount);
+
+        textShader.unBind();
+    }
+
+    public void renderTextRow(String text, int rowCount) {
+        textShader.setUniform("string", toIntFormat(text));
+        textShader.setUniform("yOffset", rowCount * TEXT_ROW_SPACING);
+
+        GL30.glBindVertexArray(textRowVertexArray);
+        GL20.glEnableVertexAttribArray(0);
+        GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, modelIndexBuffer);
+
+        GL11.glDrawElements(GL11.GL_TRIANGLES, 384, GL11.GL_UNSIGNED_INT, 0);
+    }
+
+    private int[] toIntFormat(String text) {
+        int[] array = new int[64];
+
+        byte[] stringBytes = text.getBytes(StandardCharsets.UTF_8);
+
+        for (int index = 0, max = Math.min(text.length(), 64); index < max; index++) {
+            array[index] = stringBytes[index];
+        }
+        return array;
     }
 
     public void processModel(Model model) {

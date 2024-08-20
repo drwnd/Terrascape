@@ -34,8 +34,7 @@ public class WindowManager {
     public void init() {
         GLFWErrorCallback.createPrint(System.err).set();
 
-        if (!GLFW.glfwInit())
-            throw new IllegalStateException("Unable to initialize GLFW");
+        if (!GLFW.glfwInit()) throw new IllegalStateException("Unable to initialize GLFW");
 
         GLFW.glfwDefaultWindowHints();
         GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, GL11.GL_FALSE);
@@ -54,8 +53,7 @@ public class WindowManager {
         }
 
         window = GLFW.glfwCreateWindow(width, height, title, MemoryUtil.NULL, MemoryUtil.NULL);
-        if (window == MemoryUtil.NULL)
-            throw new RuntimeException("Failed to create GLFW window");
+        if (window == MemoryUtil.NULL) throw new RuntimeException("Failed to create GLFW window");
 
         GLFW.glfwSetFramebufferSizeCallback(window, (window, width, height) -> {
             this.width = width;
@@ -81,8 +79,7 @@ public class WindowManager {
 
         GLFW.glfwMakeContextCurrent(window);
 
-        if (isvSync())
-            GLFW.glfwSwapInterval(1);
+        if (isvSync()) GLFW.glfwSwapInterval(1);
 
         GLFW.glfwShowWindow(window);
 
@@ -90,7 +87,6 @@ public class WindowManager {
 
         GL11.glClearColor(0, 0, 0, 1);
         GL11.glEnable(GL11.GL_DEPTH_TEST);
-        GL11.glEnable(GL11.GL_STENCIL_TEST);
         GL11.glEnable(GL11.GL_CULL_FACE);
         GL11.glCullFace(GL11.GL_BACK);
         GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);

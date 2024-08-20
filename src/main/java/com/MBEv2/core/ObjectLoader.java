@@ -27,7 +27,7 @@ public class ObjectLoader {
 
     public static Model loadModel(int[] vertices, Vector3i position) {
         int vao = createVAO();
-        int vbo = storeDateInAttributeList(vertices);
+        int vbo = storeDateInAttributeList(2, vertices);
         unbind();
         return new Model(vao, vertices.length, position, vbo);
     }
@@ -77,6 +77,22 @@ public class ObjectLoader {
         return id;
     }
 
+    public static int loadTextRow() {
+        int vao = createVAO();
+
+        int[] textData = new int[256];
+        for (int i = 0; i < textData.length; i += 4) {
+            textData[i] = i >> 2;
+            textData[i + 1] = i >> 2 | 128;
+            textData[i + 2] = i >> 2 | 256;
+            textData[i + 3] = i >> 2 | 384;
+        }
+        storeDateInAttributeList(1, textData);
+        unbind();
+
+        return vao;
+    }
+
     private static int createVAO() {
         int vao = GL30.glGenVertexArrays();
         VAOs.add(vao);
@@ -91,23 +107,23 @@ public class ObjectLoader {
         GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, buffer, GL15.GL_STATIC_DRAW);
     }
 
-    private static int storeDateInAttributeList(int attributeNo, int vertexCount, float[] data) {
+    private static int storeDateInAttributeList(int attributeNo, int size, float[] data) {
         int vbo = GL15.glGenBuffers();
         VBOs.add(vbo);
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
         FloatBuffer buffer = Utils.storeDateInFloatBuffer(data);
         GL15.glBufferData(GL15.GL_ARRAY_BUFFER, buffer, GL15.GL_STATIC_DRAW);
-        GL20.glVertexAttribPointer(attributeNo, vertexCount, GL15.GL_FLOAT, false, 0, 0);
+        GL20.glVertexAttribPointer(attributeNo, size, GL15.GL_FLOAT, false, 0, 0);
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
         return vbo;
     }
 
-    private static int storeDateInAttributeList(int[] data) {
+    private static int storeDateInAttributeList(int size, int[] data) {
         int vbo = GL15.glGenBuffers();
         VBOs.add(vbo);
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
         GL15.glBufferData(GL15.GL_ARRAY_BUFFER, data, GL15.GL_STATIC_DRAW);
-        GL30.glVertexAttribIPointer(0, 2, GL15.GL_INT, 0, 0);
+        GL30.glVertexAttribIPointer(0, size, GL15.GL_INT, 0, 0);
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
         return vbo;
     }
