@@ -17,7 +17,7 @@ public class LightLogic {
     }
 
     public static void setBlockLight(LinkedList<Vector4i> toPlaceLights) {
-        boolean onFirstIteration = true;
+        int ignoreChecksCounter = toPlaceLights.size();
         while (!toPlaceLights.isEmpty()) {
             Vector4i toPlaceLight = toPlaceLights.removeFirst();
             int x = toPlaceLight.x;
@@ -30,7 +30,7 @@ public class LightLogic {
 
             int index = (x & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS * 2 | (z & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS | (y & CHUNK_SIZE - 1);
 
-            if (chunk.getSaveBlockLight(index) >= currentBlockLight && !onFirstIteration) continue;
+            if (chunk.getSaveBlockLight(index) >= currentBlockLight && ignoreChecksCounter <= 0) continue;
 
             chunk.storeSaveBlockLight(index, currentBlockLight);
             chunk.setMeshed(false);
@@ -62,7 +62,7 @@ public class LightLogic {
             if (Chunk.getBlockLightInWorld(x, y, z - 1) < nextBlockLight && canLightTravel(nextBlock, FRONT, currentBlock, BACK))
                 toPlaceLights.add(new Vector4i(x, y, z - 1, nextBlockLight));
 
-            onFirstIteration = false;
+            ignoreChecksCounter--;
         }
     }
 
@@ -158,45 +158,48 @@ public class LightLogic {
     }
 
 
-    public static void propagateChunkSkyLight(final int x, final int y, final int z) {
+    public static void propagateChunkSkyLight(final int chunkX, final int chunkY, final int chunkZ) {
         LinkedList<Vector4i> toPlaceLights = new LinkedList<>();
 
-        for (int totalX = x, maxX = x + CHUNK_SIZE; totalX < maxX; totalX++)
-            for (int totalZ = z, maxZ = z + CHUNK_SIZE; totalZ < maxZ; totalZ++) {
-                short block = Chunk.getBlockInWorld(totalX, y, totalZ);
-                short blockAbove = Chunk.getBlockInWorld(totalX, y + 1, totalZ);
-                if (!canLightTravel(block, TOP, blockAbove, BOTTOM))
-                    continue;
+        int x = chunkX << CHUNK_SIZE_BITS;
+        int y = (chunkY << CHUNK_SIZE_BITS) + CHUNK_SIZE - 1;
+        int z = chunkZ << CHUNK_SIZE_BITS;
 
-                toPlaceLights.add(new Vector4i(totalX, y, totalZ, Chunk.getSkyLightInWorld(totalX, y + 1, totalZ)));
-            }
+        for (int totalY = y + (RENDERED_WORLD_HEIGHT << CHUNK_SIZE_BITS); totalY >= y; totalY -= CHUNK_SIZE) {
+            for (int totalX = x, maxX = x + CHUNK_SIZE; totalX < maxX; totalX++)
+                for (int totalZ = z, maxZ = z + CHUNK_SIZE; totalZ < maxZ; totalZ++) {
+                    short block = Chunk.getBlockInWorld(totalX, totalY, totalZ);
+                    short blockAbove = Chunk.getBlockInWorld(totalX, totalY + 1, totalZ);
+                    if (!canLightTravel(block, TOP, blockAbove, BOTTOM)) continue;
 
-        setSkyLight(toPlaceLights);
+                    toPlaceLights.add(new Vector4i(totalX, totalY, totalZ, Chunk.getSkyLightInWorld(totalX, totalY + 1, totalZ)));
+                }
+
+            setSkyLight(toPlaceLights);
+        }
     }
 
-    public static void setChunkColumnSkyLight(final int x, int playerY, final int z) {
+    public static void setChunkColumnSkyLight(final int chunkX, int chunkY, final int chunkZ) {
         LinkedList<Vector4i> toPlaceLights = new LinkedList<>();
-        int[] heightMap = Chunk.getHeightMap(x >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS);
+        int[] heightMap = Chunk.getHeightMap(chunkX, chunkZ);
 
-        int highestChunkY = Integer.MIN_VALUE;
-        for (int y = playerY + RENDER_DISTANCE_Y + 2; y >= playerY - RENDER_DISTANCE_Y - 2; y--) {
-            Chunk currentChunk = Chunk.getChunk(x >> CHUNK_SIZE_BITS, y, z >> CHUNK_SIZE_BITS);
-            if (currentChunk == null) continue;
-            if (currentChunk.getY() > highestChunkY) highestChunkY = currentChunk.getY();
+        int x = chunkX << CHUNK_SIZE_BITS;
+        int y = (chunkY << CHUNK_SIZE_BITS) + CHUNK_SIZE - 1;
+        int z = chunkZ << CHUNK_SIZE_BITS;
+
+        for (int totalY = y; totalY > y - (RENDERED_WORLD_HEIGHT << CHUNK_SIZE_BITS); totalY -= CHUNK_SIZE) {
+            for (int totalX = x, maxX = (x) + CHUNK_SIZE; totalX < maxX; totalX++)
+                for (int totalZ = z, maxZ = z + CHUNK_SIZE; totalZ < maxZ; totalZ++) {
+                    if (totalY < heightMap[(totalX & CHUNK_SIZE_MASK) << CHUNK_SIZE_BITS | totalZ & CHUNK_SIZE_MASK])
+                        continue;
+
+                    if (Chunk.getSkyLightInWorld(totalX, totalY, totalZ) == MAX_SKY_LIGHT_VALUE) continue;
+
+                    toPlaceLights.add(new Vector4i(totalX, totalY, totalZ, MAX_SKY_LIGHT_VALUE));
+                }
+
+            setSkyLight(toPlaceLights);
         }
-
-        int totalY = (highestChunkY << CHUNK_SIZE_BITS) + CHUNK_SIZE - 1;
-
-        for (int totalX = x, maxX = x + CHUNK_SIZE; totalX < maxX; totalX++)
-            for (int totalZ = z, maxZ = z + CHUNK_SIZE; totalZ < maxZ; totalZ++) {
-                if (totalY < heightMap[(totalX & CHUNK_SIZE_MASK) << CHUNK_SIZE_BITS | totalZ & CHUNK_SIZE_MASK]) continue;
-
-                if (Chunk.getSkyLightInWorld(totalX, totalY, totalZ) == MAX_SKY_LIGHT_VALUE) continue;
-
-                toPlaceLights.add(new Vector4i(totalX, totalY, totalZ, MAX_SKY_LIGHT_VALUE));
-            }
-
-        setSkyLight(toPlaceLights);
     }
 
     public static void setSkyLight(int x, int y, int z, int skyLight) {
@@ -208,7 +211,7 @@ public class LightLogic {
     }
 
     public static void setSkyLight(LinkedList<Vector4i> toPlaceLights) {
-        boolean onFirstIteration = toPlaceLights.size() == 1;
+        int ignoreChecksCounter = toPlaceLights.size();
         while (!toPlaceLights.isEmpty()) {
             Vector4i toPlaceLight = toPlaceLights.removeFirst();
             int x = toPlaceLight.x;
@@ -224,7 +227,7 @@ public class LightLogic {
 
             int index = (x & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS * 2 | (z & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS | (y & CHUNK_SIZE - 1);
 
-            if (chunk.getSaveSkyLight(index) >= currentSkyLight && !onFirstIteration) continue;
+            if (chunk.getSaveSkyLight(index) >= currentSkyLight && ignoreChecksCounter <= 0) continue;
 
             chunk.storeSaveSkyLight(index, currentSkyLight);
             chunk.setMeshed(false);
@@ -257,7 +260,7 @@ public class LightLogic {
             if (Chunk.getSkyLightInWorld(x, y, z - 1) < nextSkyLight && canLightTravel(nextBlock, FRONT, currentBlock, BACK))
                 toPlaceLights.add(new Vector4i(x, y, z - 1, nextSkyLight));
 
-            onFirstIteration = false;
+            ignoreChecksCounter--;
         }
     }
 
@@ -353,8 +356,8 @@ public class LightLogic {
 
 
     private static boolean notContainsToRePropagatePosition(LinkedList<Vector4i> toRePropagate, Vector4i position) {
-        for (Vector4i vec2 : toRePropagate)
-            if (position.equals(vec2.x, vec2.y, vec2.z, vec2.w))
+        for (Vector4i vec : toRePropagate)
+            if (vec.x == position.x && vec.y == position.y && vec.z == position.z && vec.w >= position.w)
                 return false;
         return true;
     }

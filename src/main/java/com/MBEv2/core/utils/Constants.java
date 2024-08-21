@@ -33,7 +33,7 @@ public class Constants {
     public static final float MOVEMENT_SPEED = 0.098f;
     public static final float IN_AIR_SPEED = 0.2f;
     public static final float[] MOVEMENT_STATE_SPEED = new float[]{MOVEMENT_SPEED, 0.0294f, MOVEMENT_SPEED * 0.25f};
-    public static final float FLY_SPEED = 0.6f;
+    public static final float FLY_SPEED = 0.06f;
 
     public static final float JUMP_STRENGTH = 0.42f;
     public static final float SWIM_STRENGTH = 0.26f;

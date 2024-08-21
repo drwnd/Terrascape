@@ -8,7 +8,6 @@ import com.MBEv2.core.utils.Transformation;
 import com.MBEv2.core.utils.Utils;
 import com.MBEv2.test.Launcher;
 import org.joml.Matrix4f;
-import org.joml.Vector2i;
 import org.joml.Vector3f;
 import org.joml.Vector3i;
 import org.lwjgl.opengl.*;
@@ -195,7 +194,7 @@ public class RenderManager {
 
         renderGUIElements();
 
-        renderDebugText();
+        if (player.isDebugScreenOpen()) renderDebugText();
 
         unbind();
     }
@@ -282,16 +281,14 @@ public class RenderManager {
     }
 
     public void renderDebugText() {
-        if (!player.isDebugScreenOpen()) return;
-
         textShader.bind();
         GL11.glDisable(GL11.GL_DEPTH_TEST);
         GL11.glDisable(GL11.GL_CULL_FACE);
         GL11.glEnable(GL11.GL_BLEND);
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, textAtlas.id());
 
-        textShader.setUniform("screenSize", new Vector2i(Launcher.getWindow().getWidth() / 2, Launcher.getWindow().getHeight() / 2));
-        textShader.setUniform("charSize", new Vector2i(TEXT_CHAR_SIZE_X, TEXT_CHAR_SIZE_Y));
+        textShader.setUniform("screenSize", Launcher.getWindow().getWidth() / 2, Launcher.getWindow().getHeight() / 2);
+        textShader.setUniform("charSize", TEXT_CHAR_SIZE_X, TEXT_CHAR_SIZE_Y);
         int rowCount = -1;
         Vector3f position = player.getCamera().getPosition();
         Vector3f direction = player.getCamera().getDirection();
@@ -300,6 +297,7 @@ public class RenderManager {
 
         renderTextRow("Coordinates: X:" + Utils.floor(position.x * 10) / 10f + " Y:" + Utils.floor(position.y * 10) / 10f + " Z:" + Utils.floor(position.z * 10) / 10f, ++rowCount);
         renderTextRow("Chunk coordinates: X:" + (x >> CHUNK_SIZE_BITS) + " Y:" + (y >> CHUNK_SIZE_BITS) + " Z:" + (z >> CHUNK_SIZE_BITS), ++rowCount);
+        renderTextRow("In Chunk coordinates: X:" + (x & CHUNK_SIZE_MASK) + " Y:" + (y & CHUNK_SIZE_MASK) + " Z:" + (z & CHUNK_SIZE_MASK), ++rowCount);
         renderTextRow("BlockLight:" + Chunk.getBlockLightInWorld(x, y, z) + " SkyLight:" + Chunk.getSkyLightInWorld(x, y, z), ++rowCount);
         renderTextRow("Looking at: X:" + Utils.floor(direction.x * 1000) / 1000f + " Y:" + Utils.floor(direction.y * 1000) / 1000f + " Z:" + Utils.floor(direction.z * 1000) / 1000f, ++rowCount);
         if (target != null) {

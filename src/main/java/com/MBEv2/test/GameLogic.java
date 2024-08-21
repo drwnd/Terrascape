@@ -348,33 +348,33 @@ public class GameLogic {
                 sizeX * GUI_SIZE / width, -0.5f};
     }
 
-    public static long getChunkId(int x, int y, int z) {
-        return (long) (x & MAX_CHUNKS_XZ) << 37 | (long) (y & MAX_CHUNKS_Y) << 27 | (z & MAX_CHUNKS_XZ);
+    public static long getChunkId(int chunkX, int chunkY, int chunkZ) {
+        return (long) (chunkX & MAX_CHUNKS_XZ) << 37 | (long) (chunkY & MAX_CHUNKS_Y) << 27 | (chunkZ & MAX_CHUNKS_XZ);
     }
 
-    public static int getChunkIndex(int x, int y, int z) {
+    public static int getChunkIndex(int chunkX, int chunkY, int chunkZ) {
 
-        x = (x % RENDERED_WORLD_WIDTH);
-        if (x < 0) x += RENDERED_WORLD_WIDTH;
+        chunkX = (chunkX % RENDERED_WORLD_WIDTH);
+        if (chunkX < 0) chunkX += RENDERED_WORLD_WIDTH;
 
-        y = (y % RENDERED_WORLD_HEIGHT);
-        if (y < 0) y += RENDERED_WORLD_HEIGHT;
+        chunkY = (chunkY % RENDERED_WORLD_HEIGHT);
+        if (chunkY < 0) chunkY += RENDERED_WORLD_HEIGHT;
 
-        z = (z % RENDERED_WORLD_WIDTH);
-        if (z < 0) z += RENDERED_WORLD_WIDTH;
+        chunkZ = (chunkZ % RENDERED_WORLD_WIDTH);
+        if (chunkZ < 0) chunkZ += RENDERED_WORLD_WIDTH;
 
-        return (x * RENDERED_WORLD_HEIGHT + y) * RENDERED_WORLD_WIDTH + z;
+        return (chunkX * RENDERED_WORLD_HEIGHT + chunkY) * RENDERED_WORLD_WIDTH + chunkZ;
     }
 
-    public static int getHeightMapIndex(int x, int z) {
+    public static int getHeightMapIndex(int chunkX, int chunkZ) {
 
-        x = (x % RENDERED_WORLD_WIDTH);
-        if (x < 0) x += RENDERED_WORLD_WIDTH;
+        chunkX = (chunkX % RENDERED_WORLD_WIDTH);
+        if (chunkX < 0) chunkX += RENDERED_WORLD_WIDTH;
 
-        z = (z % RENDERED_WORLD_WIDTH);
-        if (z < 0) z += RENDERED_WORLD_WIDTH;
+        chunkZ = (chunkZ % RENDERED_WORLD_WIDTH);
+        if (chunkZ < 0) chunkZ += RENDERED_WORLD_WIDTH;
 
-        return x * RENDERED_WORLD_WIDTH + z;
+        return chunkX * RENDERED_WORLD_WIDTH + chunkZ;
     }
 
     public static Player getPlayer() {
