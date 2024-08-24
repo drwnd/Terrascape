@@ -9,11 +9,8 @@ public class Launcher {
     private static WindowManager window;
 
     public static void main(String[] args) {
-        EngineManager engine;
         window = new WindowManager(TITLE, 0, 0, true);
-        engine = new EngineManager();
-
-        System.out.println("Seed: " + SEED);
+        EngineManager engine = new EngineManager();
 
         try {
             engine.start();

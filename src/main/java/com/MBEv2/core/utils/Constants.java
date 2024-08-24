@@ -1,7 +1,5 @@
 package com.MBEv2.core.utils;
 
-import java.util.Random;
-
 public class Constants {
 
     //Change to whatever you want
@@ -12,39 +10,12 @@ public class Constants {
     public static final float REACH = 5.0f;
     public static final int TEXT_CHAR_SIZE_X = 16;
     public static final int TEXT_CHAR_SIZE_Y = 24;
-    public static final int TEXT_ROW_SPACING = 28;
+    public static final int TEXT_LINE_SPACING = 28;
 
     //Recommended to not change, but I can't stop you
     public static final String TITLE = "Minecräft Bad Edition v2";
     public static final float Z_NEAR = 0.01f;
     public static final float Z_FAR = 1000.0f;
-
-    public static final float HALF_PLAYER_WIDTH = 0.23f;
-    public static final float PLAYER_HEAD_OFFSET = 0.08f;
-    public static final float[] PLAYER_FEET_OFFSETS = new float[]{1.65f, 1.4f, 0.4f, 0.4f};
-
-    //Player movement
-    public static final float AIR_FRICTION = 0.91f;
-    public static final float FALL_FRICTION = 0.98f;
-    public static final float WATER_FRICTION = 0.4f;
-    public static final float GROUND_FRICTION = 0.546f;
-    public static final float FLY_FRICTION = 0.8f;
-
-    public static final float MOVEMENT_SPEED = 0.098f;
-    public static final float IN_AIR_SPEED = 0.2f;
-    public static final float[] MOVEMENT_STATE_SPEED = new float[]{MOVEMENT_SPEED, 0.0294f, MOVEMENT_SPEED * 0.25f};
-    public static final float FLY_SPEED = 0.06f;
-
-    public static final float JUMP_STRENGTH = 0.42f;
-    public static final float SWIM_STRENGTH = 0.26f;
-    public static final float GRAVITY_ACCELERATION = 0.08f;
-    public static final float MAX_STEP_HEIGHT = 0.6f;
-
-    //Movement state indices
-    public static final int WALKING = 0;
-    public static final int CROUCHING = 1;
-    public static final int CRAWLING = 2;
-    public static final int SWIMMING = 3;
 
     //DO NOT CHANGE THESE VALUES (like really, it will crash)
     public static final int CHUNK_SIZE_BITS = 5;
@@ -67,57 +38,6 @@ public class Constants {
 
     public static final int NUMBER_OF_GENERATION_THREADS = 4;
     public static final int MAX_OCCLUSION_CULLING_DAMPER = 6;
-
-    //World generation
-    public static final long SEED = new Random().nextLong();
-//        public static final long SEED = 0;
-    public static final int WATER_LEVEL = 96;
-    public static final int SNOW_LEVEL = 187;
-    public static final int ICE_LEVEL = 237;
-    public static final double PLAINS_TREE_THRESHOLD = 0.998;
-    public static final double FOREST_TREE_THRESHOLD = 0.95;
-    public static final double CACTUS_THRESHOLD = 0.992;
-    public static final double WASTELAND_FEATURE_THRESHOLD = 0.999;
-    public static final double HEIGHT_MAP_FREQUENCY = 0.01;
-    public static final double TEMPERATURE_FREQUENCY = 0.001;
-    public static final double HUMIDITY_FREQUENCY = TEMPERATURE_FREQUENCY;
-    public static final double EROSION_FREQUENCY = 0.001;
-
-    public static final double MAX_TERRAIN_HEIGHT_DIFFERENCE = 50;
-
-    public static final double MOUNTAIN_THRESHOLD = 0.3;
-    public static final double OCEAN_THRESHOLD = -0.3;
-
-    public static final double BLOB_CAVE_CAVE_HEIGHT_BIAS = 0.008;
-    public static final double BLOB_CAVE_FREQUENCY = 0.008;
-    public static final double BLOB_CAVE_THRESHOLD = 0.3;
-    public static final double BLOB_CAVE_MAX_Y = (1 - BLOB_CAVE_THRESHOLD) / BLOB_CAVE_CAVE_HEIGHT_BIAS;
-
-    public static final double NOODLE_CAVE_FREQUENCY = 0.01;
-    public static final double NOODLE_CAVE_THRESHOLD = 0.01;
-    public static final double NOODLE_CAVE_HEIGHT_BIAS = 0.004;
-    public static final double NOODLE_CAVE_MAX_Y = (Math.sqrt(0.5 * NOODLE_CAVE_THRESHOLD) + 1) / NOODLE_CAVE_HEIGHT_BIAS;
-
-    public static final double STONE_TYPE_FREQUENCY = 0.02;
-    public static final double ANDESITE_THRESHOLD = 0.1;
-    public static final double SLATE_THRESHOLD = 0.7;
-
-    public static final double MUD_TYPE_FREQUENCY = 0.04;
-    public static final double GRAVEL_THRESHOLD = 0.1;
-    public static final double CLAY_THRESHOLD = 0.5;
-    public static final double SAND_THRESHOLD = -0.5;
-    public static final double MUD_THRESHOLD = -0.5;
-
-    public static final double DIRT_TYPE_FREQUENCY = 0.05;
-    public static final double COURSE_DIRT_THRESHOLD = 0.15;
-
-    public static final double ICE_BERG_FREQUENCY = 0.025;
-    public static final double ICE_BERG_THRESHOLD = 0.35;
-    public static final double ICE_BERG_HEIGHT = 30;
-    public static final double ICE_PLANE_THRESHOLD = 0.0;
-
-    public static final double ICE_TYPE_FREQUENCY = 0.08;
-    public static final double HEAVY_ICE_THRESHOLD = 0.6;
 
     //Indices for the sides of blocks
     public static final int FRONT = 0;

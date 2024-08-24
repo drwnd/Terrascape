@@ -345,7 +345,29 @@ public class GameLogic {
                 sizeX * GUI_SIZE / width, -0.5f,
                 -sizeX * GUI_SIZE / width, sizeY * GUI_SIZE / height - 0.5f,
                 sizeX * GUI_SIZE / width, sizeY * GUI_SIZE / height - 0.5f,
-                sizeX * GUI_SIZE / width, -0.5f};
+                sizeX * GUI_SIZE / width, -0.5f
+        };
+    }
+
+    public static float[] getHotBarSelectionIndicatorVertices() {
+        WindowManager window = Launcher.getWindow();
+
+        int width = window.getWidth();
+        int height = window.getHeight();
+
+        float sizeX = 24;
+        float sizeY = 48;
+
+        float yOffset = 4 * GUI_SIZE / height;
+
+        return new float[]{
+                -sizeX * GUI_SIZE / width, -0.5f - yOffset,
+                -sizeX * GUI_SIZE / width, sizeY * GUI_SIZE / height - 0.5f - yOffset,
+                sizeX * GUI_SIZE / width, -0.5f - yOffset,
+                -sizeX * GUI_SIZE / width, sizeY * GUI_SIZE / height - 0.5f - yOffset,
+                sizeX * GUI_SIZE / width, sizeY * GUI_SIZE / height - 0.5f - yOffset,
+                sizeX * GUI_SIZE / width, -0.5f - yOffset
+        };
     }
 
     public static long getChunkId(int chunkX, int chunkY, int chunkZ) {

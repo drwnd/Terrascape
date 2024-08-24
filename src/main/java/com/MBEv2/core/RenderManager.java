@@ -2,6 +2,7 @@ package com.MBEv2.core;
 
 import com.MBEv2.core.entity.*;
 
+import static com.MBEv2.core.WorldGeneration.SEED;
 import static com.MBEv2.core.utils.Constants.*;
 
 import com.MBEv2.core.utils.Transformation;
@@ -196,6 +197,10 @@ public class RenderManager {
 
         if (player.isDebugScreenOpen()) renderDebugText();
 
+        chunkModels.clear();
+        waterModels.clear();
+        GUIElements.clear();
+
         unbind();
     }
 
@@ -219,7 +224,6 @@ public class RenderManager {
             GL11.glDrawElements(GL11.GL_TRIANGLES, (int) (model.getVertexCount() * 0.75), GL11.GL_UNSIGNED_INT, 0);
         }
         blockShader.unBind();
-        chunkModels.clear();
     }
 
     public void renderWaterChunks(Matrix4f projectionMatrix, Matrix4f viewMatrix) {
@@ -245,7 +249,6 @@ public class RenderManager {
             GL11.glDrawElements(GL11.GL_TRIANGLES, (int) (waterModel.getVertexCount() * 0.75), GL11.GL_UNSIGNED_INT, 0);
         }
         GL11.glDisable(GL11.GL_BLEND);
-        waterModels.clear();
         waterShader.unBind();
     }
 
@@ -276,7 +279,6 @@ public class RenderManager {
 
             GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, element.getVertexCount());
         }
-        GUIElements.clear();
         GUIShader.unBind();
     }
 
@@ -289,30 +291,41 @@ public class RenderManager {
 
         textShader.setUniform("screenSize", Launcher.getWindow().getWidth() / 2, Launcher.getWindow().getHeight() / 2);
         textShader.setUniform("charSize", TEXT_CHAR_SIZE_X, TEXT_CHAR_SIZE_Y);
-        int rowCount = -1;
+
+        int line = -1;
         Vector3f position = player.getCamera().getPosition();
         Vector3f direction = player.getCamera().getDirection();
         Vector3f target = player.getTarget(0, direction);
         int x = Utils.floor(position.x), y = Utils.floor(position.y), z = Utils.floor(position.z);
+        int chunkX = x >> CHUNK_SIZE_BITS, chunkY = y >> CHUNK_SIZE_BITS, chunkZ = z >> CHUNK_SIZE_BITS;
+        Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
 
-        renderTextRow("Coordinates: X:" + Utils.floor(position.x * 10) / 10f + " Y:" + Utils.floor(position.y * 10) / 10f + " Z:" + Utils.floor(position.z * 10) / 10f, ++rowCount);
-        renderTextRow("Chunk coordinates: X:" + (x >> CHUNK_SIZE_BITS) + " Y:" + (y >> CHUNK_SIZE_BITS) + " Z:" + (z >> CHUNK_SIZE_BITS), ++rowCount);
-        renderTextRow("In Chunk coordinates: X:" + (x & CHUNK_SIZE_MASK) + " Y:" + (y & CHUNK_SIZE_MASK) + " Z:" + (z & CHUNK_SIZE_MASK), ++rowCount);
-        renderTextRow("BlockLight:" + Chunk.getBlockLightInWorld(x, y, z) + " SkyLight:" + Chunk.getSkyLightInWorld(x, y, z), ++rowCount);
-        renderTextRow("Looking at: X:" + Utils.floor(direction.x * 1000) / 1000f + " Y:" + Utils.floor(direction.y * 1000) / 1000f + " Z:" + Utils.floor(direction.z * 1000) / 1000f, ++rowCount);
+        renderTextLine("Coordinates: X:" + Utils.floor(position.x * 10) / 10f + " Y:" + Utils.floor(position.y * 10) / 10f + " Z:" + Utils.floor(position.z * 10) / 10f, ++line);
+        renderTextLine("Chunk coordinates: X:" + chunkX + " Y:" + chunkY + " Z:" + chunkZ, ++line);
+        renderTextLine("In Chunk coordinates: X:" + (x & CHUNK_SIZE_MASK) + " Y:" + (y & CHUNK_SIZE_MASK) + " Z:" + (z & CHUNK_SIZE_MASK), ++line);
+        renderTextLine("Looking at: X:" + Utils.floor(direction.x * 100) / 100f + " Y:" + Utils.floor(direction.y * 100) / 100f + " Z:" + Utils.floor(direction.z * 100) / 100f, ++line);
+        if (chunk != null) {
+            renderTextLine("OcclusionCullingData:" + Integer.toBinaryString(chunk.getOcclusionCullingData() & 0xFFFF) + " Damping:" + (chunk.getOcclusionCullingDamper() == 0 ? "false" : "true"), ++line);
+            renderTextLine("Block optimized:" + (chunk.isBlockOptimized() ? "true" : "false") + " Light optimized:" + (chunk.isLightOptimized() ? "true" : "false"), ++line);
+            renderTextLine("HeightMap:" + Chunk.getHeightMap(chunkX, chunkZ)[(x & CHUNK_SIZE_MASK) << CHUNK_SIZE_BITS | z & CHUNK_SIZE_MASK], ++line);
+            renderTextLine("BlockLight:" + Chunk.getBlockLightInWorld(x, y, z) + " SkyLight:" + Chunk.getSkyLightInWorld(x, y, z), ++line);
+        }
         if (target != null) {
             short targetedBlock = Chunk.getBlockInWorld(Utils.floor(target.x), Utils.floor(target.y), Utils.floor(target.z));
-            renderTextRow("Looking at block: X:" + Utils.floor(target.x) + " Y:" + Utils.floor(target.y) + " Z:" + Utils.floor(target.z), ++rowCount);
-            renderTextRow("Targeted block: " + targetedBlock + " blockType: " + Block.getBlockType(targetedBlock), ++rowCount);
+            renderTextLine("Looking at block: X:" + Utils.floor(target.x) + " Y:" + Utils.floor(target.y) + " Z:" + Utils.floor(target.z), ++line);
+            renderTextLine("Targeted block:" + targetedBlock + " blockType:" + Block.getBlockType(targetedBlock) + " Standard block:" + (targetedBlock >= STANDARD_BLOCKS_THRESHOLD ? "true" : "false"), ++line);
         }
-        renderTextRow("HeightMap: " + Chunk.getHeightMap(x >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS)[(x & CHUNK_SIZE_MASK) << CHUNK_SIZE_BITS | z & CHUNK_SIZE_MASK], ++rowCount);
+        renderTextLine("Seed:" + SEED, ++line);
+        renderTextLine("Rendered chunk models:" + chunkModels.size(), ++line);
+        renderTextLine("Rendered water models:" + waterModels.size(), ++line);
+        renderTextLine("Rendered GUIElements:" + GUIElements.size(), ++line);
 
         textShader.unBind();
     }
 
-    public void renderTextRow(String text, int rowCount) {
+    public void renderTextLine(String text, int textLine) {
         textShader.setUniform("string", toIntFormat(text));
-        textShader.setUniform("yOffset", rowCount * TEXT_ROW_SPACING);
+        textShader.setUniform("yOffset", textLine * TEXT_LINE_SPACING);
 
         GL30.glBindVertexArray(textRowVertexArray);
         GL20.glEnableVertexAttribArray(0);

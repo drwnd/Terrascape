@@ -4,18 +4,16 @@ import com.MBEv2.core.entity.Model;
 import com.MBEv2.test.GameLogic;
 import org.joml.Vector3i;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.*;
 
 import static com.MBEv2.core.utils.Constants.*;
 
 public class Chunk {
 
     private static final Chunk[] world = new Chunk[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
-    private static final HashMap<Long, Chunk> savedChunks = new HashMap<>();
     private static final int[][] heightMap = new int[RENDERED_WORLD_WIDTH * RENDERED_WORLD_WIDTH][CHUNK_SIZE * CHUNK_SIZE];
+    private static final HashMap<Long, Chunk> savedChunks = new HashMap<>();
+    private static final HashMap<Long, ArrayList<Long>> toGenerateBlocks = new HashMap<>();
 
     private short[] blocks;
     private byte[] light;
@@ -637,14 +635,44 @@ public class Chunk {
         blocks[x << CHUNK_SIZE_BITS * 2 | z << CHUNK_SIZE_BITS | y] = block;
     }
 
-    public void storeTreeBlock(int x, int y, int z, short block) {
-        int index = x << CHUNK_SIZE_BITS * 2 | z << CHUNK_SIZE_BITS | y;
-        if (block == AIR || blocks[index] != AIR && Block.isLeaveType(block))
-            return;
-        blocks[index] = block;
+    public void storeTreeBlock(int inChunkX, int inChunkY, int inChunkZ, short block) {
+        if (block == AIR) return;
 
-        int[] heightMap = Chunk.heightMap[GameLogic.getHeightMapIndex(X, Z)];
-        if (y > heightMap[x << CHUNK_SIZE_BITS | z]) heightMap[x << CHUNK_SIZE_BITS | z] = y;
+        int x = worldCoordinate.x + inChunkX;
+        int y = worldCoordinate.y + inChunkY;
+        int z = worldCoordinate.z + inChunkZ;
+
+        Chunk chunk = getChunk(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS);
+
+        inChunkX = x & CHUNK_SIZE_MASK;
+        inChunkY = y & CHUNK_SIZE_MASK;
+        inChunkZ = z & CHUNK_SIZE_MASK;
+
+        if (chunk == this) {
+            int index = inChunkX << CHUNK_SIZE_BITS * 2 | inChunkZ << CHUNK_SIZE_BITS | inChunkY;
+            if (blocks[index] != AIR && Block.isLeaveType(block))
+                return;
+            blocks[index] = block;
+
+            int[] heightMap = getHeightMap(X, Z);
+            if (y > heightMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ])
+                heightMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ] = y;
+        } else if (chunk == null) {
+
+            long id = GameLogic.getChunkId(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS);
+            synchronized (toGenerateBlocks) {
+                ArrayList<Long> toPlaceBlocks = toGenerateBlocks.computeIfAbsent(id, k -> new ArrayList<>());
+                toPlaceBlocks.add((long) block << 48 | inChunkX << CHUNK_SIZE_BITS * 2 | inChunkY << CHUNK_SIZE_BITS | inChunkZ);
+            }
+        } else {
+            if (chunk.getSaveBlock(inChunkX, inChunkY, inChunkZ) != AIR && Block.isLeaveType(block))
+                return;
+            chunk.storeSave(inChunkX, inChunkY, inChunkZ, block);
+
+            int[] heightMap = getHeightMap(chunk.getChunkX(), chunk.getChunkZ());
+            if (y > heightMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ])
+                heightMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ] = y;
+        }
     }
 
     public static byte getBlockLightInWorld(int x, int y, int z) {
@@ -737,8 +765,8 @@ public class Chunk {
         return max;
     }
 
-    public static Chunk getChunk(int x, int y, int z) {
-        return world[GameLogic.getChunkIndex(x, y, z)];
+    public static Chunk getChunk(int chunkX, int chunkY, int chunkZ) {
+        return world[GameLogic.getChunkIndex(chunkX, chunkY, chunkZ)];
     }
 
     public static Chunk getChunk(int index) {
@@ -827,27 +855,39 @@ public class Chunk {
     }
 
     public static boolean containsSavedChunk(long id) {
-        return savedChunks.containsKey(id);
+        synchronized (savedChunks) {
+            return savedChunks.containsKey(id);
+        }
     }
 
     public static void putSavedChunk(Chunk chunk) {
-        savedChunks.put(chunk.getId(), chunk);
+        synchronized (savedChunks) {
+            savedChunks.put(chunk.getId(), chunk);
+        }
         chunk.setMeshed(false);
     }
 
     public static Chunk removeSavedChunk(long id) {
-        return savedChunks.remove(id);
+        synchronized (savedChunks) {
+            return savedChunks.remove(id);
+        }
     }
 
-    public int getX() {
+    public static ArrayList<Long> removeToGenerateBlocks(long id) {
+        synchronized (toGenerateBlocks) {
+            return toGenerateBlocks.remove(id);
+        }
+    }
+
+    public int getChunkX() {
         return X;
     }
 
-    public int getY() {
+    public int getChunkY() {
         return Y;
     }
 
-    public int getZ() {
+    public int getChunkZ() {
         return Z;
     }
 
@@ -859,15 +899,23 @@ public class Chunk {
         hasPropagatedBlockLight = true;
     }
 
-    public short getOcclusionCullingData() {
-        return occlusionCullingData;
-    }
-
     public void setOcclusionCullingDataOutdated() {
         occlusionCullingData = (short) (occlusionCullingData & 0b111111111111111);
     }
 
     public byte getOcclusionCullingDamper() {
         return occlusionCullingDamper;
+    }
+
+    public short getOcclusionCullingData() {
+        return occlusionCullingData;
+    }
+
+    public boolean isBlockOptimized() {
+        return blocks.length == 1;
+    }
+
+    public boolean isLightOptimized() {
+        return light.length == 1;
     }
 }

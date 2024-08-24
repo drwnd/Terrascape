@@ -3,42 +3,96 @@ package com.MBEv2.core;
 import com.MBEv2.core.utils.Utils;
 import com.MBEv2.test.GameLogic;
 
+import java.util.ArrayList;
 import java.util.Random;
 
 import static com.MBEv2.core.utils.Constants.*;
 
 public class WorldGeneration {
 
+    //World generation
+    public static final long SEED = new Random().nextLong();
+    //        public static final long SEED = 0;
+    public static final int WATER_LEVEL = 96;
+    public static final int SNOW_LEVEL = 187;
+    public static final int ICE_LEVEL = 237;
+    public static final double PLAINS_TREE_THRESHOLD = 0.998;
+    public static final double FOREST_TREE_THRESHOLD = 0.95;
+    public static final double CACTUS_THRESHOLD = 0.992;
+    public static final double WASTELAND_FEATURE_THRESHOLD = 0.999;
+    public static final double HEIGHT_MAP_FREQUENCY = 0.01;
+    public static final double TEMPERATURE_FREQUENCY = 0.001;
+    public static final double HUMIDITY_FREQUENCY = TEMPERATURE_FREQUENCY;
+    public static final double EROSION_FREQUENCY = 0.001;
+
+    public static final double MAX_TERRAIN_HEIGHT_DIFFERENCE = 50;
+
+    public static final double MOUNTAIN_THRESHOLD = 0.3;
+    public static final double OCEAN_THRESHOLD = -0.3;
+
+    public static final double BLOB_CAVE_CAVE_HEIGHT_BIAS = 0.008;
+    public static final double BLOB_CAVE_FREQUENCY = 0.008;
+    public static final double BLOB_CAVE_THRESHOLD = 0.3;
+    public static final double BLOB_CAVE_MAX_Y = (1 - BLOB_CAVE_THRESHOLD) / BLOB_CAVE_CAVE_HEIGHT_BIAS;
+
+    public static final double NOODLE_CAVE_FREQUENCY = 0.01;
+    public static final double NOODLE_CAVE_THRESHOLD = 0.01;
+    public static final double NOODLE_CAVE_HEIGHT_BIAS = 0.004;
+    public static final double NOODLE_CAVE_MAX_Y = (Math.sqrt(0.5 * NOODLE_CAVE_THRESHOLD) + 1) / NOODLE_CAVE_HEIGHT_BIAS;
+
+    public static final double STONE_TYPE_FREQUENCY = 0.02;
+    public static final double ANDESITE_THRESHOLD = 0.1;
+    public static final double SLATE_THRESHOLD = 0.7;
+
+    public static final double MUD_TYPE_FREQUENCY = 0.04;
+    public static final double GRAVEL_THRESHOLD = 0.1;
+    public static final double CLAY_THRESHOLD = 0.5;
+    public static final double SAND_THRESHOLD = -0.5;
+    public static final double MUD_THRESHOLD = -0.5;
+
+    public static final double DIRT_TYPE_FREQUENCY = 0.05;
+    public static final double COURSE_DIRT_THRESHOLD = 0.15;
+
+    public static final double ICE_BERG_FREQUENCY = 0.025;
+    public static final double ICE_BERG_THRESHOLD = 0.35;
+    public static final double ICE_BERG_HEIGHT = 30;
+    public static final double ICE_PLANE_THRESHOLD = 0.0;
+
+    public static final double ICE_TYPE_FREQUENCY = 0.08;
+    public static final double HEAVY_ICE_THRESHOLD = 0.6;
+
     public static void generate(Chunk chunk) {
         if (chunk.isGenerated())
             return;
-        double[][] heightMap = WorldGeneration.heightMap(chunk.getX(), chunk.getZ());
-        double[][] temperatureMap = WorldGeneration.temperatureMap(chunk.getX(), chunk.getZ());
-        double[][] humidityMap = WorldGeneration.humidityMap(chunk.getX(), chunk.getZ());
-        double[][] erosionMap = WorldGeneration.erosionMap(chunk.getX(), chunk.getZ());
-        double[][] featureMap = WorldGeneration.featureMap(chunk.getX(), chunk.getZ());
-        generate(chunk, heightMap, temperatureMap, humidityMap, erosionMap, featureMap);
+        double[][] heightMap = WorldGeneration.heightMap(chunk.getChunkX(), chunk.getChunkZ());
+        double[][] temperatureMap = WorldGeneration.temperatureMap(chunk.getChunkX(), chunk.getChunkZ());
+        double[][] humidityMap = WorldGeneration.humidityMap(chunk.getChunkX(), chunk.getChunkZ());
+        double[][] erosionMap = WorldGeneration.erosionMap(chunk.getChunkX(), chunk.getChunkZ());
+        double[][] featureMap = WorldGeneration.featureMap(chunk.getChunkX(), chunk.getChunkZ());
+
+        int[][] resultingHeightMap = new int[CHUNK_SIZE][CHUNK_SIZE];
+        for (int x = 0; x < CHUNK_SIZE; x++)
+            for (int z = 0; z < CHUNK_SIZE; z++)
+                resultingHeightMap[x][z] = getHeight(heightMap[x][z], erosionMap[x][z]);
+
+        generate(chunk, resultingHeightMap, temperatureMap, humidityMap, erosionMap, featureMap);
     }
 
-    public static void generate(Chunk chunk, double[][] heightMap, double[][] temperatureMap, double[][] humidityMap, double[][] erosionMap, double[][] featureMap) {
+    public static void generate(Chunk chunk, int[][] heightMap, double[][] temperatureMap, double[][] humidityMap, double[][] erosionMap, double[][] featureMap) {
         if (chunk.isGenerated())
             return;
         chunk.setGenerated();
 
         int[] caveBitMap = generateCaveBitMap(chunk);
-        int[] intHeightMap = Chunk.getHeightMap(chunk.getX(), chunk.getZ());
 
         for (int inChunkX = 0; inChunkX < CHUNK_SIZE; inChunkX++)
             for (int inChunkZ = 0; inChunkZ < CHUNK_SIZE; inChunkZ++) {
-                double height = heightMap[inChunkX][inChunkZ];
                 double temperature = temperatureMap[inChunkX][inChunkZ];
                 double humidity = humidityMap[inChunkX][inChunkZ];
                 double erosion = erosionMap[inChunkX][inChunkZ];
                 double feature = featureMap[inChunkX][inChunkZ];
 
-                int resultingHeight = getHeight(height, erosion);
-                if (Math.max(resultingHeight, WATER_LEVEL) > intHeightMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ])
-                    intHeightMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ] = Math.max(resultingHeight, WATER_LEVEL);
+                int resultingHeight = heightMap[inChunkX][inChunkZ];
 
                 if (resultingHeight <= WATER_LEVEL)
                     generateOceans(chunk, inChunkX, inChunkZ, resultingHeight, feature, temperature, caveBitMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ]);
@@ -63,6 +117,27 @@ public class WorldGeneration {
                 else
                     generatePlains(chunk, inChunkX, inChunkZ, resultingHeight, feature, caveBitMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ]);
             }
+
+        ArrayList<Long> toGenerateBlocks = Chunk.removeToGenerateBlocks(chunk.getId());
+        if (toGenerateBlocks != null) {
+            int[] intHeightMap = Chunk.getHeightMap(chunk.getChunkX(), chunk.getChunkZ());
+            for (long data : toGenerateBlocks) {
+                short block = (short) (data >> 48 & 0xFFFF);
+                int inChunkX = (int) (data >> CHUNK_SIZE_BITS * 2 & CHUNK_SIZE_MASK);
+                int inChunkY = (int) (data >> CHUNK_SIZE_BITS & CHUNK_SIZE_MASK);
+                int inChunkZ = (int) (data & CHUNK_SIZE_MASK);
+
+                int index = inChunkX << CHUNK_SIZE_BITS * 2 | inChunkZ << CHUNK_SIZE_BITS | inChunkY;
+                if (chunk.getSaveBlock(index) != AIR && Block.isLeaveType(block))
+                    continue;
+                chunk.storeSave(inChunkX, inChunkY, inChunkZ, block);
+
+                int y = inChunkY | chunk.getChunkY() << CHUNK_SIZE_BITS;
+                if (y > intHeightMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ])
+                    intHeightMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ] = y;
+            }
+        }
+
         chunk.optimizeBlockStorage();
     }
 
@@ -80,12 +155,12 @@ public class WorldGeneration {
 
 
     private static void generatePlains(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature, int caveBits) {
-        int totalX = chunk.getX() << CHUNK_SIZE_BITS | inChunkX;
-        int totalZ = chunk.getZ() << CHUNK_SIZE_BITS | inChunkZ;
+        int totalX = chunk.getChunkX() << CHUNK_SIZE_BITS | inChunkX;
+        int totalZ = chunk.getChunkZ() << CHUNK_SIZE_BITS | inChunkZ;
 
         int sandHeight = Utils.floor(Math.abs(feature * 4)) + WATER_LEVEL - 1;
         for (int inChunkY = 0; inChunkY < CHUNK_SIZE; inChunkY++) {
-            int totalY = inChunkY + (chunk.getY() << CHUNK_SIZE_BITS);
+            int totalY = inChunkY + (chunk.getChunkY() << CHUNK_SIZE_BITS);
 
             if (totalY <= height && (caveBits & 1 << inChunkY) == 0) {
                 if (totalY < height - 5)
@@ -103,12 +178,12 @@ public class WorldGeneration {
     }
 
     private static void generateOakForest(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature, int caveBits) {
-        int totalX = chunk.getX() << CHUNK_SIZE_BITS | inChunkX;
-        int totalZ = chunk.getZ() << CHUNK_SIZE_BITS | inChunkZ;
+        int totalX = chunk.getChunkX() << CHUNK_SIZE_BITS | inChunkX;
+        int totalZ = chunk.getChunkZ() << CHUNK_SIZE_BITS | inChunkZ;
 
         int sandHeight = Utils.floor(Math.abs(feature * 4)) + WATER_LEVEL - 1;
         for (int inChunkY = 0; inChunkY < CHUNK_SIZE; inChunkY++) {
-            int totalY = inChunkY + (chunk.getY() << CHUNK_SIZE_BITS);
+            int totalY = inChunkY + (chunk.getChunkY() << CHUNK_SIZE_BITS);
 
             if (totalY <= height && (caveBits & 1 << inChunkY) == 0) {
                 if (totalY < height - 5)
@@ -126,12 +201,12 @@ public class WorldGeneration {
     }
 
     private static void generateSpruceForest(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature, int caveBits) {
-        int totalX = chunk.getX() << CHUNK_SIZE_BITS | inChunkX;
-        int totalZ = chunk.getZ() << CHUNK_SIZE_BITS | inChunkZ;
+        int totalX = chunk.getChunkX() << CHUNK_SIZE_BITS | inChunkX;
+        int totalZ = chunk.getChunkZ() << CHUNK_SIZE_BITS | inChunkZ;
 
         int sandHeight = Utils.floor(Math.abs(feature * 4)) + WATER_LEVEL - 1;
         for (int inChunkY = 0; inChunkY < CHUNK_SIZE; inChunkY++) {
-            int totalY = inChunkY + (chunk.getY() << CHUNK_SIZE_BITS);
+            int totalY = inChunkY + (chunk.getChunkY() << CHUNK_SIZE_BITS);
 
             if (totalY <= height && (caveBits & 1 << inChunkY) == 0) {
                 if (totalY < height - 5)
@@ -149,12 +224,12 @@ public class WorldGeneration {
     }
 
     private static void generateDarkOakForest(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature, int caveBits) {
-        int totalX = chunk.getX() << CHUNK_SIZE_BITS | inChunkX;
-        int totalZ = chunk.getZ() << CHUNK_SIZE_BITS | inChunkZ;
+        int totalX = chunk.getChunkX() << CHUNK_SIZE_BITS | inChunkX;
+        int totalZ = chunk.getChunkZ() << CHUNK_SIZE_BITS | inChunkZ;
 
         int sandHeight = Utils.floor(Math.abs(feature * 4)) + WATER_LEVEL - 1;
         for (int inChunkY = 0; inChunkY < CHUNK_SIZE; inChunkY++) {
-            int totalY = inChunkY + (chunk.getY() << CHUNK_SIZE_BITS);
+            int totalY = inChunkY + (chunk.getChunkY() << CHUNK_SIZE_BITS);
 
             if (totalY <= height && (caveBits & 1 << inChunkY) == 0) {
                 if (totalY < height - 5)
@@ -172,11 +247,11 @@ public class WorldGeneration {
     }
 
     private static void generateDesert(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature, int caveBits) {
-        int totalX = chunk.getX() << CHUNK_SIZE_BITS | inChunkX;
-        int totalZ = chunk.getZ() << CHUNK_SIZE_BITS | inChunkZ;
+        int totalX = chunk.getChunkX() << CHUNK_SIZE_BITS | inChunkX;
+        int totalZ = chunk.getChunkZ() << CHUNK_SIZE_BITS | inChunkZ;
 
         for (int inChunkY = 0; inChunkY < CHUNK_SIZE; inChunkY++) {
-            int totalY = inChunkY + (chunk.getY() << CHUNK_SIZE_BITS);
+            int totalY = inChunkY + (chunk.getChunkY() << CHUNK_SIZE_BITS);
 
             if (totalY <= height && (caveBits & 1 << inChunkY) == 0) {
                 if (totalY < height - 5)
@@ -185,17 +260,16 @@ public class WorldGeneration {
                     chunk.storeSave(inChunkX, inChunkY, inChunkZ, height <= WATER_LEVEL ? getWarmOceanFloorBlocK(totalX, totalY, totalZ) : SAND);
             } else if (totalY <= WATER_LEVEL) chunk.storeSave(inChunkX, inChunkY, inChunkZ, WATER);
 
-            if (feature > CACTUS_THRESHOLD && height > WATER_LEVEL && totalY > height && totalY < height + 1 + (feature - CACTUS_THRESHOLD) * 500 && (caveBits & 1 << (height & CHUNK_SIZE_MASK)) == 0)
-                chunk.storeSave(inChunkX, inChunkY, inChunkZ, CACTUS);
+            generateCactus(chunk, height, inChunkX, inChunkY, inChunkZ, totalY, feature, caveBits);
         }
     }
 
     private static void generateWasteLand(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature, int caveBits) {
-        int totalX = chunk.getX() << CHUNK_SIZE_BITS | inChunkX;
-        int totalZ = chunk.getZ() << CHUNK_SIZE_BITS | inChunkZ;
+        int totalX = chunk.getChunkX() << CHUNK_SIZE_BITS | inChunkX;
+        int totalZ = chunk.getChunkZ() << CHUNK_SIZE_BITS | inChunkZ;
 
         for (int inChunkY = 0; inChunkY < CHUNK_SIZE; inChunkY++) {
-            int totalY = inChunkY + (chunk.getY() << CHUNK_SIZE_BITS);
+            int totalY = inChunkY + (chunk.getChunkY() << CHUNK_SIZE_BITS);
 
             if (totalY <= height && (caveBits & 1 << inChunkY) == 0) {
                 if (totalY < height - 5)
@@ -204,20 +278,19 @@ public class WorldGeneration {
                     chunk.storeSave(inChunkX, inChunkY, inChunkZ, height <= WATER_LEVEL ? getWarmOceanFloorBlocK(totalX, totalY, totalZ) : getGeneratingDirtType(totalX, totalY, totalZ));
             } else if (totalY <= WATER_LEVEL) chunk.storeSave(inChunkX, inChunkY, inChunkZ, WATER);
 
-            if (feature > WASTELAND_FEATURE_THRESHOLD && height > WATER_LEVEL && totalY > height && totalY < height + 1 + (feature - CACTUS_THRESHOLD) * 250 && (caveBits & 1 << (height & CHUNK_SIZE_MASK)) == 0)
-                chunk.storeSave(inChunkX, inChunkY, inChunkZ, CACTUS);
+            generateCactus(chunk, height, inChunkX, inChunkY, inChunkZ, totalY, feature, caveBits);
 
             genOakTree(chunk, height, inChunkX, inChunkY, inChunkZ, totalY, feature, WASTELAND_FEATURE_THRESHOLD, caveBits);
         }
     }
 
     private static void generateSnowyPlains(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature, int caveBits) {
-        int totalX = chunk.getX() << CHUNK_SIZE_BITS | inChunkX;
-        int totalZ = chunk.getZ() << CHUNK_SIZE_BITS | inChunkZ;
+        int totalX = chunk.getChunkX() << CHUNK_SIZE_BITS | inChunkX;
+        int totalZ = chunk.getChunkZ() << CHUNK_SIZE_BITS | inChunkZ;
 
         int sandHeight = Utils.floor(Math.abs(feature * 4)) + WATER_LEVEL - 1;
         for (int inChunkY = 0; inChunkY < CHUNK_SIZE; inChunkY++) {
-            int totalY = inChunkY + (chunk.getY() << CHUNK_SIZE_BITS);
+            int totalY = inChunkY + (chunk.getChunkY() << CHUNK_SIZE_BITS);
 
             if (totalY <= height && (caveBits & 1 << inChunkY) == 0) {
                 if (totalY < height - 5)
@@ -235,12 +308,12 @@ public class WorldGeneration {
     }
 
     private static void generateSnowySpruceForest(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature, int caveBits) {
-        int totalX = chunk.getX() << CHUNK_SIZE_BITS | inChunkX;
-        int totalZ = chunk.getZ() << CHUNK_SIZE_BITS | inChunkZ;
+        int totalX = chunk.getChunkX() << CHUNK_SIZE_BITS | inChunkX;
+        int totalZ = chunk.getChunkZ() << CHUNK_SIZE_BITS | inChunkZ;
 
         int sandHeight = Utils.floor(Math.abs(feature * 4)) + WATER_LEVEL - 1;
         for (int inChunkY = 0; inChunkY < CHUNK_SIZE; inChunkY++) {
-            int totalY = inChunkY + (chunk.getY() << CHUNK_SIZE_BITS);
+            int totalY = inChunkY + (chunk.getChunkY() << CHUNK_SIZE_BITS);
 
             if (totalY <= height && (caveBits & 1 << inChunkY) == 0) {
                 if (totalY < height - 5)
@@ -258,13 +331,13 @@ public class WorldGeneration {
     }
 
     private static void generateOcean(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature, int caveBits) {
-        int totalX = chunk.getX() << CHUNK_SIZE_BITS | inChunkX;
-        int totalZ = chunk.getZ() << CHUNK_SIZE_BITS | inChunkZ;
+        int totalX = chunk.getChunkX() << CHUNK_SIZE_BITS | inChunkX;
+        int totalZ = chunk.getChunkZ() << CHUNK_SIZE_BITS | inChunkZ;
 
         int sandHeight = Utils.floor(Math.abs(feature * 4)) + WATER_LEVEL - 5;
 
         for (int inChunkY = 0; inChunkY < CHUNK_SIZE; inChunkY++) {
-            int totalY = inChunkY + (chunk.getY() << CHUNK_SIZE_BITS);
+            int totalY = inChunkY + (chunk.getChunkY() << CHUNK_SIZE_BITS);
 
             if (totalY <= height && (caveBits & 1 << inChunkY) == 0) {
                 if (totalY > sandHeight)
@@ -278,13 +351,13 @@ public class WorldGeneration {
     }
 
     private static void generateWarmOcean(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature, int caveBits) {
-        int totalX = chunk.getX() << CHUNK_SIZE_BITS | inChunkX;
-        int totalZ = chunk.getZ() << CHUNK_SIZE_BITS | inChunkZ;
+        int totalX = chunk.getChunkX() << CHUNK_SIZE_BITS | inChunkX;
+        int totalZ = chunk.getChunkZ() << CHUNK_SIZE_BITS | inChunkZ;
 
         int sandHeight = Utils.floor(Math.abs(feature * 4)) + WATER_LEVEL - 5;
 
         for (int inChunkY = 0; inChunkY < CHUNK_SIZE; inChunkY++) {
-            int totalY = inChunkY + (chunk.getY() << CHUNK_SIZE_BITS);
+            int totalY = inChunkY + (chunk.getChunkY() << CHUNK_SIZE_BITS);
 
             if (totalY <= height && (caveBits & 1 << inChunkY) == 0) {
                 if (totalY > sandHeight)
@@ -298,14 +371,14 @@ public class WorldGeneration {
     }
 
     private static void generateColdOcean(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature, int caveBits) {
-        int totalX = chunk.getX() << CHUNK_SIZE_BITS | inChunkX;
-        int totalZ = chunk.getZ() << CHUNK_SIZE_BITS | inChunkZ;
+        int totalX = chunk.getChunkX() << CHUNK_SIZE_BITS | inChunkX;
+        int totalZ = chunk.getChunkZ() << CHUNK_SIZE_BITS | inChunkZ;
 
         int sandHeight = Utils.floor(Math.abs(feature * 4)) + WATER_LEVEL - 5;
         int iceHeight = Math.min(getIceHeight(totalX, totalZ, feature), WATER_LEVEL - height);
 
         for (int inChunkY = 0; inChunkY < CHUNK_SIZE; inChunkY++) {
-            int totalY = inChunkY + (chunk.getY() << CHUNK_SIZE_BITS);
+            int totalY = inChunkY + (chunk.getChunkY() << CHUNK_SIZE_BITS);
 
             if (totalY <= height && (caveBits & 1 << inChunkY) == 0) {
                 if (totalY > sandHeight)
@@ -322,14 +395,14 @@ public class WorldGeneration {
     }
 
     private static void generateMountain(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature, int caveBits) {
-        int totalX = chunk.getX() << CHUNK_SIZE_BITS | inChunkX;
-        int totalZ = chunk.getZ() << CHUNK_SIZE_BITS | inChunkZ;
+        int totalX = chunk.getChunkX() << CHUNK_SIZE_BITS | inChunkX;
+        int totalZ = chunk.getChunkZ() << CHUNK_SIZE_BITS | inChunkZ;
 
         int snowHeight = Utils.floor(feature * 32 + SNOW_LEVEL);
         int grassHeight = Utils.floor(feature * 32) + WATER_LEVEL;
 
         for (int inChunkY = 0; inChunkY < CHUNK_SIZE; inChunkY++) {
-            int totalY = inChunkY + (chunk.getY() << CHUNK_SIZE_BITS);
+            int totalY = inChunkY + (chunk.getChunkY() << CHUNK_SIZE_BITS);
 
             if (totalY <= height && (caveBits & 1 << inChunkY) == 0) {
                 if (totalY > snowHeight && totalY > height - 5)
@@ -345,13 +418,13 @@ public class WorldGeneration {
     }
 
     private static void generateSnowyMountain(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature, int caveBits) {
-        int totalX = chunk.getX() << CHUNK_SIZE_BITS | inChunkX;
-        int totalZ = chunk.getZ() << CHUNK_SIZE_BITS | inChunkZ;
+        int totalX = chunk.getChunkX() << CHUNK_SIZE_BITS | inChunkX;
+        int totalZ = chunk.getChunkZ() << CHUNK_SIZE_BITS | inChunkZ;
 
         int iceHeight = Utils.floor(feature * 32 + ICE_LEVEL);
 
         for (int inChunkY = 0; inChunkY < CHUNK_SIZE; inChunkY++) {
-            int totalY = inChunkY + (chunk.getY() << CHUNK_SIZE_BITS);
+            int totalY = inChunkY + (chunk.getChunkY() << CHUNK_SIZE_BITS);
 
             if (totalY <= height && (caveBits & 1 << inChunkY) == 0) {
                 if (totalY > iceHeight && totalY > height - 5)
@@ -365,13 +438,13 @@ public class WorldGeneration {
     }
 
     private static void generateDryMountain(Chunk chunk, int inChunkX, int inChunkZ, int height, double feature, int caveBits) {
-        int totalX = chunk.getX() << CHUNK_SIZE_BITS | inChunkX;
-        int totalZ = chunk.getZ() << CHUNK_SIZE_BITS | inChunkZ;
+        int totalX = chunk.getChunkX() << CHUNK_SIZE_BITS | inChunkX;
+        int totalZ = chunk.getChunkZ() << CHUNK_SIZE_BITS | inChunkZ;
 
         int dirtHeight = Utils.floor(feature * 32 + WATER_LEVEL);
 
         for (int inChunkY = 0; inChunkY < CHUNK_SIZE; inChunkY++) {
-            int totalY = inChunkY + (chunk.getY() << CHUNK_SIZE_BITS);
+            int totalY = inChunkY + (chunk.getChunkY() << CHUNK_SIZE_BITS);
 
             if (totalY <= height && (caveBits & 1 << inChunkY) == 0) {
                 if (totalY > height - 5 && height <= dirtHeight)
@@ -384,28 +457,31 @@ public class WorldGeneration {
 
 
     public static void genOakTree(Chunk chunk, int height, int inChunkX, int inChunkY, int inChunkZ, int totalY, double feature, double threshold, int caveBits) {
-        if (feature > threshold && totalY < height + OAK_TREE.length && totalY >= height && height > WATER_LEVEL &&
-                inChunkX >= 2 && inChunkZ >= 2 && inChunkX < CHUNK_SIZE - 2 && inChunkZ < CHUNK_SIZE - 2 && (caveBits & 1 << (height & CHUNK_SIZE_MASK)) == 0)
+        if (feature > threshold && totalY < height + OAK_TREE.length && totalY >= height && height > WATER_LEVEL && (caveBits & 1 << (height & CHUNK_SIZE_MASK)) == 0)
             for (int i = 0; i < 5; i++)
                 for (int j = 0; j < 5; j++)
                     chunk.storeTreeBlock(inChunkX + j - 2, inChunkY, inChunkZ + i - 2, OAK_TREE[totalY - height][i][j]);
     }
 
     public static void genSpruceTree(Chunk chunk, int height, int inChunkX, int inChunkY, int inChunkZ, int totalY, double feature, double threshold, int caveBits) {
-        if (feature > threshold && totalY < height + SPRUCE_TREE.length && totalY >= height && height > WATER_LEVEL &&
-                inChunkX >= 3 && inChunkZ >= 3 && inChunkX < CHUNK_SIZE - 3 && inChunkZ < CHUNK_SIZE - 3 && (caveBits & 1 << (height & CHUNK_SIZE_MASK)) == 0)
+        if (feature > threshold && totalY < height + SPRUCE_TREE.length && totalY >= height && height > WATER_LEVEL && (caveBits & 1 << (height & CHUNK_SIZE_MASK)) == 0)
             for (int i = 0; i < 7; i++)
                 for (int j = 0; j < 7; j++)
                     chunk.storeTreeBlock(inChunkX + j - 3, inChunkY, inChunkZ + i - 3, SPRUCE_TREE[totalY - height][i][j]);
     }
 
     public static void genDarkOakTree(Chunk chunk, int height, int inChunkX, int inChunkY, int inChunkZ, int totalY, double feature, double threshold, int caveBits) {
-        if (feature > threshold && totalY < height + DARK_OAK_TREE.length && totalY >= height && height > WATER_LEVEL &&
-                inChunkX >= 3 && inChunkZ >= 3 && inChunkX < CHUNK_SIZE - 3 && inChunkZ < CHUNK_SIZE - 3 && (caveBits & 1 << (height & CHUNK_SIZE_MASK)) == 0)
+        if (feature > threshold && totalY < height + DARK_OAK_TREE.length && totalY >= height && height > WATER_LEVEL && (caveBits & 1 << (height & CHUNK_SIZE_MASK)) == 0)
             for (int i = 0; i < 7; i++)
                 for (int j = 0; j < 7; j++)
                     chunk.storeTreeBlock(inChunkX + j - 3, inChunkY, inChunkZ + i - 3, DARK_OAK_TREE[totalY - height][i][j]);
     }
+
+    public static void generateCactus(Chunk chunk, int height, int inChunkX, int inChunkY, int inChunkZ, int totalY, double feature, int caveBits) {
+        if (feature > CACTUS_THRESHOLD && height > WATER_LEVEL && totalY > height && totalY < height + 1 + (feature - CACTUS_THRESHOLD) * 500 && (caveBits & 1 << (height & CHUNK_SIZE_MASK)) == 0)
+            chunk.storeSave(inChunkX, inChunkY, inChunkZ, CACTUS);
+    }
+
 
     public static int getHeightMapValue(int totalX, int totalZ) {
         double height;
@@ -515,9 +591,9 @@ public class WorldGeneration {
 
     private static int[] generateCaveBitMap(Chunk chunk) {
         int[] bitMap = new int[CHUNK_SIZE * CHUNK_SIZE];
-        int chunkX = chunk.getX() << CHUNK_SIZE_BITS;
-        int chunkY = chunk.getY() << CHUNK_SIZE_BITS;
-        int chunkZ = chunk.getZ() << CHUNK_SIZE_BITS;
+        int chunkX = chunk.getChunkX() << CHUNK_SIZE_BITS;
+        int chunkY = chunk.getChunkY() << CHUNK_SIZE_BITS;
+        int chunkZ = chunk.getChunkZ() << CHUNK_SIZE_BITS;
 
         for (int x = chunkX; x < CHUNK_SIZE + chunkX; x += 4)
             for (int y = chunkY; y < CHUNK_SIZE + chunkY; y += 4)
@@ -604,7 +680,7 @@ public class WorldGeneration {
         return feature > 0.9 ? 1 : 0;
     }
 
-    private static int getHeight(double height, double erosion) {
+    public static int getHeight(double height, double erosion) {
         height = height * 0.5 + 0.5;
 
         double modifier = 0.0;

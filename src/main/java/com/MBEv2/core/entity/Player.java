@@ -17,6 +17,35 @@ import java.util.Arrays;
 
 public class Player {
 
+    //Movement
+    public static final float AIR_FRICTION = 0.91f;
+    public static final float FALL_FRICTION = 0.98f;
+    public static final float WATER_FRICTION = 0.4f;
+    public static final float GROUND_FRICTION = 0.546f;
+    public static final float FLY_FRICTION = 0.8f;
+
+    public static final float MOVEMENT_SPEED = 0.098f;
+    public static final float IN_AIR_SPEED = 0.2f;
+    public static final float[] MOVEMENT_STATE_SPEED = new float[]{MOVEMENT_SPEED, 0.0294f, MOVEMENT_SPEED * 0.25f};
+    public static final float FLY_SPEED = 0.06f;
+
+    public static final float JUMP_STRENGTH = 0.42f;
+    public static final float SWIM_STRENGTH = 0.26f;
+    public static final float GRAVITY_ACCELERATION = 0.08f;
+    public static final float MAX_STEP_HEIGHT = 0.6f;
+
+    //Movement state indices
+    public static final int WALKING = 0;
+    public static final int CROUCHING = 1;
+    public static final int CRAWLING = 2;
+    public static final int SWIMMING = 3;
+
+    //Collision box size
+    public static final float HALF_PLAYER_WIDTH = 0.23f;
+    public static final float PLAYER_HEAD_OFFSET = 0.08f;
+    public static final float[] PLAYER_FEET_OFFSETS = new float[]{1.65f, 1.4f, 0.4f, 0.4f};
+
+
     private final RenderManager renderer;
     private final WindowManager window;
     private final Camera camera;
@@ -28,23 +57,23 @@ public class Player {
     private final ArrayList<GUIElement> GUIElements = new ArrayList<>();
     private final ArrayList<GUIElement> hotBarElements = new ArrayList<>();
     private final ArrayList<GUIElement> inventoryElements = new ArrayList<>();
+    private GUIElement hotBarSelectionIndicator;
     private final Texture atlas;
 
     private long spaceButtonPressTime;
-    private boolean UPArrowPressed, DOWNArrowPressed;
-    private boolean LEFTArrowPressed, RIGHTArrowPressed;
+    private boolean spaceButtonPressed = false;
 
     private float inventoryScroll;
 
     //Debug
-    private boolean noClip, gKeyPressed;
-    private boolean isFling, vKeyPressed;
     private boolean debugScreenOpen, F3Pressed;
+    private boolean noClip, gKeyPressed;
     private boolean usingOcclusionCulling = true, cKeyPressed;
-    private boolean inInventory, ePressed;
-    private boolean tPressed, zPressed, xPressed, oPressed;
+    private boolean tPressed, zPressed, xPressed;
     private final Vector3i pos1, pos2;
 
+    private boolean isFling;
+    private boolean inInventory, ePressed;
     private final short[] hotBar = new short[9];
     private int selectedHotBarSlot = 0;
 
@@ -84,6 +113,10 @@ public class Player {
         inventoryOverlay.setTexture(new Texture(ObjectLoader.loadTexture("textures/InventoryOverlay.png")));
         renderer.setInventoryOverlay(inventoryOverlay);
 
+        hotBarSelectionIndicator = ObjectLoader.loadGUIElement(GameLogic.getHotBarSelectionIndicatorVertices(), GUI_ELEMENT_TEXTURE_COORDINATES, new Vector2f(0, 0));
+        hotBarSelectionIndicator.setTexture(new Texture(ObjectLoader.loadTexture("textures/HotBarSelectionIndicator.png")));
+        setSelectedHotBarSlot(0);
+
         updateHotBarElements();
         generateInventoryElements(inventoryElements);
 
@@ -111,6 +144,7 @@ public class Player {
         Vector3f velocity = new Vector3f(0.0f, 0.0f, 0.0f);
 
         handleInputMovementStateChange(position);
+        handleIsFlyingChange();
 
         if (isFling) handleInputFling(velocity);
         else if (isInWater) handleInputSwimming(velocity);
@@ -125,79 +159,86 @@ public class Player {
         handleMouseInput();
     }
 
-    private void handleMouseInput() {
-        long rightButtonPressTime = mouseInput.getRightButtonPressTime();
-        long leftButtonPressTime = mouseInput.getLeftButtonPressTime();
-        boolean rightButtonWasJustPressed = mouseInput.wasRightButtonJustPressed();
-        boolean leftButtonWasJustPressed = mouseInput.wasLeftButtonJustPressed();
-        long currentTime = System.nanoTime();
+    private void handleInputMovementStateChange(Vector3f position) {
+        if (inInventory) return;
 
-        if (!inInventory && leftButtonPressTime != -1 && (currentTime - leftButtonPressTime > 300_000_000 || leftButtonWasJustPressed)) {
-            Vector3f target = getTarget(0, camera.getDirection());
-            if (target != null)
-                GameLogic.placeBlock(AIR, new Vector3i(Utils.floor(target.x), Utils.floor(target.y), Utils.floor(target.z)));
-        }
-
-        if (!inInventory && rightButtonPressTime != -1 && (currentTime - rightButtonPressTime > 300_000_000 || rightButtonWasJustPressed) && hotBar[selectedHotBarSlot] != AIR) {
-
-            Vector3f cameraDirection = camera.getDirection();
-            Vector3f target = getTarget(1, cameraDirection);
-            if (target != null) {
-                short selectedBlock = hotBar[selectedHotBarSlot];
-                short toPlaceBlock = Block.getToPlaceBlock(selectedBlock, camera.getPrimaryDirection(cameraDirection), camera.getPrimaryXZDirection(cameraDirection), target);
-
-                GameLogic.placeBlock(toPlaceBlock, new Vector3i(Utils.floor(target.x), Utils.floor(target.y), Utils.floor(target.z)));
+        if (window.isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT)) {
+            if (movementState == WALKING) {
+                camera.movePosition(0.0f, -0.25f, 0.0f);
+                movementState = CROUCHING;
             }
+
+        } else if (movementState == CROUCHING) {
+            if (!collidesWithBlock(position.x, position.y + 0.25f, position.z, WALKING)) {
+                camera.movePosition(0.0f, 0.25f, 0.0f);
+                movementState = WALKING;
+            } else if (!collidesWithBlock(position.x, position.y, position.z, WALKING)) movementState = WALKING;
         }
+
+        if (window.isKeyPressed(GLFW.GLFW_KEY_CAPS_LOCK)) {
+            if (movementState == WALKING) camera.movePosition(0.0f, -1.25f, 0.0f);
+            else if (movementState == CROUCHING) camera.movePosition(0.0f, -1.0f, 0.0f);
+            movementState = CRAWLING;
+
+        } else if (movementState == CRAWLING) {
+            if (!collidesWithBlock(position.x, position.y + 1.25f, position.z, WALKING)) {
+                camera.movePosition(0.0f, 1.25f, 0.0f);
+                movementState = WALKING;
+            } else if (!collidesWithBlock(position.x, position.y + 1.0f, position.z, CROUCHING)) {
+                camera.movePosition(0.0f, 1.0f, 0.0f);
+                movementState = CROUCHING;
+            } else if (!collidesWithBlock(position.x, position.y, position.z, WALKING)) movementState = WALKING;
+            else if (!collidesWithBlock(position.x, position.y, position.z, CROUCHING)) movementState = CROUCHING;
+        }
+
+        if (movementState == SWIMMING && !window.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL)) movementState = CRAWLING;
+        else if (movementState == SWIMMING && !collidesWithBlock(position.x, position.y, position.z, SWIMMING, WATER))
+            movementState = CRAWLING;
     }
 
-    private void handleInputWalking(Vector3f velocity) {
+    private void handleIsFlyingChange() {
+        long currentTime = System.nanoTime();
+        if (window.isKeyPressed(GLFW.GLFW_KEY_SPACE)) {
+            if (!spaceButtonPressed) {
+                spaceButtonPressed = true;
+                if (currentTime - spaceButtonPressTime < 300_000_000) isFling = !isFling;
+                spaceButtonPressTime = currentTime;
+            }
+        } else if (spaceButtonPressed)
+            spaceButtonPressed = false;
+
+    }
+
+    private void handleInputFling(Vector3f velocity) {
         if (inInventory) {
-            float friction = isGrounded ? GROUND_FRICTION : AIR_FRICTION;
-            applyGravity();
-            this.velocity.mul(friction, FALL_FRICTION, friction);
+            this.velocity.mul(FLY_FRICTION);
             return;
         }
 
         float movementSpeedModifier = 1.0f;
-        float accelerationModifier = isGrounded ? 1.0f : IN_AIR_SPEED;
-        float jumpingAddend = 0.0f;
-        long currentTime = System.nanoTime();
 
-        if (movementState == WALKING && window.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL)) {
-            movementSpeedModifier *= 1.3f;
-            if (window.isKeyPressed(GLFW.GLFW_KEY_SPACE) && isGrounded && currentTime - spaceButtonPressTime > 300_000_000) {
-                jumpingAddend = 0.04f;
-            }
-        }
+        if (window.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL)) movementSpeedModifier *= 2.5f;
+        if (window.isKeyPressed(GLFW.GLFW_KEY_TAB)) movementSpeedModifier *= 5.0f;
 
         if (window.isKeyPressed(GLFW.GLFW_KEY_W)) {
-            float acceleration = (MOVEMENT_STATE_SPEED[movementState] + jumpingAddend) * movementSpeedModifier * accelerationModifier;
-            velocity.z -= acceleration;
+            velocity.z -= FLY_SPEED * movementSpeedModifier;
         }
         if (window.isKeyPressed(GLFW.GLFW_KEY_S)) {
-            float acceleration = MOVEMENT_STATE_SPEED[movementState] * accelerationModifier;
-            velocity.z += acceleration;
+            velocity.z += FLY_SPEED;
         }
 
         if (window.isKeyPressed(GLFW.GLFW_KEY_A)) {
-            float acceleration = MOVEMENT_STATE_SPEED[movementState] * accelerationModifier;
-            velocity.x -= acceleration;
+            velocity.x -= FLY_SPEED;
         }
         if (window.isKeyPressed(GLFW.GLFW_KEY_D)) {
-            float acceleration = MOVEMENT_STATE_SPEED[movementState] * accelerationModifier;
-            velocity.x += acceleration;
+            velocity.x += FLY_SPEED;
         }
 
-        float friction = isGrounded ? GROUND_FRICTION : AIR_FRICTION;
-        applyGravity();
-        this.velocity.mul(friction, FALL_FRICTION, friction);
+        if (window.isKeyPressed(GLFW.GLFW_KEY_SPACE)) velocity.y += FLY_SPEED;
 
-        if (window.isKeyPressed(GLFW.GLFW_KEY_SPACE) && isGrounded && currentTime - spaceButtonPressTime > 300_000_000) {
-            this.velocity.y = JUMP_STRENGTH;
-            isGrounded = false;
-            spaceButtonPressTime = currentTime;
-        }
+        if (window.isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT)) velocity.y -= FLY_SPEED;
+
+        this.velocity.mul(FLY_FRICTION);
     }
 
     private void handleInputSwimming(Vector3f velocity) {
@@ -243,60 +284,111 @@ public class Player {
 
         long currentTime = System.nanoTime();
         if (window.isKeyPressed(GLFW.GLFW_KEY_SPACE))
-            if (isGrounded && currentTime - spaceButtonPressTime > 300_000_000) {
+            if (isGrounded) {
                 this.velocity.y = JUMP_STRENGTH;
                 isGrounded = false;
                 spaceButtonPressTime = currentTime;
-            } else {
+            } else
                 velocity.y += SWIM_STRENGTH * 0.65f;
-                isGrounded = false;
-            }
 
         if (window.isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT)) velocity.y -= SWIM_STRENGTH * 0.65f;
     }
 
-    private void handleInputFling(Vector3f velocity) {
+    private void handleInputWalking(Vector3f velocity) {
         if (inInventory) {
-            this.velocity.mul(FLY_FRICTION);
+            float friction = isGrounded ? GROUND_FRICTION : AIR_FRICTION;
+            applyGravity();
+            this.velocity.mul(friction, FALL_FRICTION, friction);
             return;
         }
 
         float movementSpeedModifier = 1.0f;
+        float accelerationModifier = isGrounded ? 1.0f : IN_AIR_SPEED;
+        float jumpingAddend = 0.0f;
+        long currentTime = System.nanoTime();
 
-        if (window.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL)) movementSpeedModifier *= 2.5f;
-        if (window.isKeyPressed(GLFW.GLFW_KEY_TAB)) movementSpeedModifier *= 5.0f;
+        if (movementState == WALKING && window.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL)) {
+            movementSpeedModifier *= 1.3f;
+            if (window.isKeyPressed(GLFW.GLFW_KEY_SPACE) && isGrounded && currentTime - spaceButtonPressTime > 300_000_000) {
+                jumpingAddend = 0.04f;
+            }
+        }
 
         if (window.isKeyPressed(GLFW.GLFW_KEY_W)) {
-            velocity.z -= FLY_SPEED * movementSpeedModifier;
+            float acceleration = (MOVEMENT_STATE_SPEED[movementState] + jumpingAddend) * movementSpeedModifier * accelerationModifier;
+            velocity.z -= acceleration;
         }
         if (window.isKeyPressed(GLFW.GLFW_KEY_S)) {
-            velocity.z += FLY_SPEED;
+            float acceleration = MOVEMENT_STATE_SPEED[movementState] * accelerationModifier;
+            velocity.z += acceleration;
         }
 
         if (window.isKeyPressed(GLFW.GLFW_KEY_A)) {
-            velocity.x -= FLY_SPEED;
+            float acceleration = MOVEMENT_STATE_SPEED[movementState] * accelerationModifier;
+            velocity.x -= acceleration;
         }
         if (window.isKeyPressed(GLFW.GLFW_KEY_D)) {
-            velocity.x += FLY_SPEED;
+            float acceleration = MOVEMENT_STATE_SPEED[movementState] * accelerationModifier;
+            velocity.x += acceleration;
         }
 
-        if (window.isKeyPressed(GLFW.GLFW_KEY_SPACE)) velocity.y += FLY_SPEED;
+        float friction = isGrounded ? GROUND_FRICTION : AIR_FRICTION;
+        applyGravity();
+        this.velocity.mul(friction, FALL_FRICTION, friction);
 
-        if (window.isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT)) velocity.y -= FLY_SPEED;
+        if (window.isKeyPressed(GLFW.GLFW_KEY_SPACE) && isGrounded) {
+            this.velocity.y = JUMP_STRENGTH;
+            isGrounded = false;
+            spaceButtonPressTime = currentTime;
+        }
+    }
 
-        this.velocity.mul(FLY_FRICTION);
+    private void handleInventoryHotkeys() {
+        if (window.isKeyPressed(GLFW.GLFW_KEY_Q)) hotBar[0] = getHoveredOverInventoryBlock();
+        else if (window.isKeyPressed(GLFW.GLFW_KEY_2)) hotBar[1] = getHoveredOverInventoryBlock();
+        else if (window.isKeyPressed(GLFW.GLFW_KEY_3)) hotBar[2] = getHoveredOverInventoryBlock();
+        else if (window.isKeyPressed(GLFW.GLFW_KEY_4)) hotBar[3] = getHoveredOverInventoryBlock();
+        else if (window.isKeyPressed(GLFW.GLFW_KEY_5)) hotBar[4] = getHoveredOverInventoryBlock();
+        else if (window.isKeyPressed(GLFW.GLFW_KEY_R)) hotBar[5] = getHoveredOverInventoryBlock();
+        else if (window.isKeyPressed(GLFW.GLFW_KEY_F)) hotBar[6] = getHoveredOverInventoryBlock();
+        else if (mouseInput.isMouseButton5IsPressed()) hotBar[7] = getHoveredOverInventoryBlock();
+        else if (mouseInput.isMouseButton4IsPressed()) hotBar[8] = getHoveredOverInventoryBlock();
+        updateHotBarElements();
+    }
+
+    private void normalizeVelocity(Vector3f velocity) {
+        float maxSpeed = Math.max(Math.abs(velocity.x), Math.abs(velocity.z));
+        float normalizer = maxSpeed / (float) Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
+        if (isGrounded && !Float.isNaN(normalizer) && Float.isFinite(normalizer)) {
+            velocity.x *= normalizer;
+            velocity.z *= normalizer;
+        }
+    }
+
+    private void addVelocityChange(Vector3f velocity) {
+        Vector2f rotation = camera.getRotation();
+
+        if (velocity.z != 0) {
+            this.velocity.x -= (float) Math.sin(Math.toRadians(rotation.y)) * velocity.z;
+            this.velocity.z += (float) Math.cos(Math.toRadians(rotation.y)) * velocity.z;
+        }
+        if (velocity.x != 0) {
+            this.velocity.x -= (float) Math.sin(Math.toRadians(rotation.y - 90)) * velocity.x;
+            this.velocity.z += (float) Math.cos(Math.toRadians(rotation.y - 90)) * velocity.x;
+        }
+        this.velocity.y += velocity.y;
     }
 
     private void handleInputHotkeys() {
-        if (window.isKeyPressed(GLFW.GLFW_KEY_Q)) selectedHotBarSlot = 0;
-        else if (window.isKeyPressed(GLFW.GLFW_KEY_2)) selectedHotBarSlot = 1;
-        else if (window.isKeyPressed(GLFW.GLFW_KEY_3)) selectedHotBarSlot = 2;
-        else if (window.isKeyPressed(GLFW.GLFW_KEY_4)) selectedHotBarSlot = 3;
-        else if (window.isKeyPressed(GLFW.GLFW_KEY_5)) selectedHotBarSlot = 4;
-        else if (window.isKeyPressed(GLFW.GLFW_KEY_R)) selectedHotBarSlot = 5;
-        else if (window.isKeyPressed(GLFW.GLFW_KEY_F)) selectedHotBarSlot = 6;
-        else if (mouseInput.isMouseButton5IsPressed()) selectedHotBarSlot = 7;
-        else if (mouseInput.isMouseButton4IsPressed()) selectedHotBarSlot = 8;
+        if (window.isKeyPressed(GLFW.GLFW_KEY_Q)) setSelectedHotBarSlot(0);
+        else if (window.isKeyPressed(GLFW.GLFW_KEY_2)) setSelectedHotBarSlot(1);
+        else if (window.isKeyPressed(GLFW.GLFW_KEY_3)) setSelectedHotBarSlot(2);
+        else if (window.isKeyPressed(GLFW.GLFW_KEY_4)) setSelectedHotBarSlot(3);
+        else if (window.isKeyPressed(GLFW.GLFW_KEY_5)) setSelectedHotBarSlot(4);
+        else if (window.isKeyPressed(GLFW.GLFW_KEY_R)) setSelectedHotBarSlot(5);
+        else if (window.isKeyPressed(GLFW.GLFW_KEY_F)) setSelectedHotBarSlot(6);
+        else if (mouseInput.isMouseButton5IsPressed()) setSelectedHotBarSlot(7);
+        else if (mouseInput.isMouseButton4IsPressed()) setSelectedHotBarSlot(8);
 
         if (window.isKeyPressed(GLFW.GLFW_KEY_E) && !ePressed) {
             ePressed = true;
@@ -304,10 +396,6 @@ public class Player {
             GLFW.glfwSetInputMode(window.getWindow(), GLFW.GLFW_CURSOR, inInventory ? GLFW.GLFW_CURSOR_NORMAL : GLFW.GLFW_CURSOR_DISABLED);
         }
 
-        if (UPArrowPressed && !window.isKeyPressed(GLFW.GLFW_KEY_UP)) UPArrowPressed = false;
-        if (DOWNArrowPressed && !window.isKeyPressed(GLFW.GLFW_KEY_DOWN)) DOWNArrowPressed = false;
-        if (LEFTArrowPressed && !window.isKeyPressed(GLFW.GLFW_KEY_LEFT)) LEFTArrowPressed = false;
-        if (RIGHTArrowPressed && !window.isKeyPressed(GLFW.GLFW_KEY_RIGHT)) RIGHTArrowPressed = false;
         if (ePressed && !window.isKeyPressed(GLFW.GLFW_KEY_E)) ePressed = false;
     }
 
@@ -318,16 +406,16 @@ public class Player {
         }
         if (window.isKeyPressed(GLFW.GLFW_KEY_T) && !tPressed) {
             Vector3f cameraPosition = camera.getPosition();
-            pos1.x = (int) Math.floor(cameraPosition.x);
-            pos1.y = (int) Math.floor(cameraPosition.y);
-            pos1.z = (int) Math.floor(cameraPosition.z);
+            pos1.x = Utils.floor(cameraPosition.x);
+            pos1.y = Utils.floor(cameraPosition.y);
+            pos1.z = Utils.floor(cameraPosition.z);
             tPressed = true;
         }
         if (window.isKeyPressed(GLFW.GLFW_KEY_Y) && !zPressed) {
             Vector3f cameraPosition = camera.getPosition();
-            pos2.x = (int) Math.floor(cameraPosition.x);
-            pos2.y = (int) Math.floor(cameraPosition.y);
-            pos2.z = (int) Math.floor(cameraPosition.z);
+            pos2.x = Utils.floor(cameraPosition.x);
+            pos2.y = Utils.floor(cameraPosition.y);
+            pos2.z = Utils.floor(cameraPosition.z);
             zPressed = true;
 
             int x = Math.abs(pos1.x - pos2.x) + 1;
@@ -355,23 +443,9 @@ public class Player {
             }
             System.out.print("}");
         }
-        if (window.isKeyPressed(GLFW.GLFW_KEY_V) && !vKeyPressed) {
-            isFling = !isFling;
-            vKeyPressed = true;
-            if (movementState == SWIMMING) movementState = CRAWLING;
-        }
         if (window.isKeyPressed(GLFW.GLFW_KEY_X) && !xPressed) {
             xPressed = true;
             renderer.setXRay(!renderer.isxRay());
-        }
-        if (window.isKeyPressed(GLFW.GLFW_KEY_O) && !oPressed) {
-            oPressed = true;
-            Vector3f position = camera.getPosition();
-            int x = Utils.floor(position.x) >> CHUNK_SIZE_BITS;
-            int y = Utils.floor(position.y) >> CHUNK_SIZE_BITS;
-            int z = Utils.floor(position.z) >> CHUNK_SIZE_BITS;
-            Chunk chunk = Chunk.getChunk(x, y, z);
-            System.out.println(Integer.toBinaryString(Short.toUnsignedInt(chunk.getOcclusionCullingData())));
         }
         if (window.isKeyPressed(GLFW.GLFW_KEY_C) && !cKeyPressed) {
             cKeyPressed = true;
@@ -387,24 +461,40 @@ public class Player {
         if (gKeyPressed && !window.isKeyPressed(GLFW.GLFW_KEY_G)) gKeyPressed = false;
         if (tPressed && !window.isKeyPressed(GLFW.GLFW_KEY_T)) tPressed = false;
         if (zPressed && !window.isKeyPressed(GLFW.GLFW_KEY_Y)) zPressed = false;
-        if (vKeyPressed && !window.isKeyPressed(GLFW.GLFW_KEY_V)) vKeyPressed = false;
         if (xPressed && !window.isKeyPressed(GLFW.GLFW_KEY_X)) xPressed = false;
-        if (oPressed && !window.isKeyPressed(GLFW.GLFW_KEY_O)) oPressed = false;
         if (cKeyPressed && !window.isKeyPressed(GLFW.GLFW_KEY_C)) cKeyPressed = false;
         if (F3Pressed && !window.isKeyPressed(GLFW.GLFW_KEY_F3)) F3Pressed = false;
     }
 
-    private void handleInventoryHotkeys() {
-        if (window.isKeyPressed(GLFW.GLFW_KEY_Q)) hotBar[0] = getHoveredOverInventoryBlock();
-        else if (window.isKeyPressed(GLFW.GLFW_KEY_2)) hotBar[1] = getHoveredOverInventoryBlock();
-        else if (window.isKeyPressed(GLFW.GLFW_KEY_3)) hotBar[2] = getHoveredOverInventoryBlock();
-        else if (window.isKeyPressed(GLFW.GLFW_KEY_4)) hotBar[3] = getHoveredOverInventoryBlock();
-        else if (window.isKeyPressed(GLFW.GLFW_KEY_5)) hotBar[4] = getHoveredOverInventoryBlock();
-        else if (window.isKeyPressed(GLFW.GLFW_KEY_R)) hotBar[5] = getHoveredOverInventoryBlock();
-        else if (window.isKeyPressed(GLFW.GLFW_KEY_F)) hotBar[6] = getHoveredOverInventoryBlock();
-        else if (mouseInput.isMouseButton5IsPressed()) hotBar[7] = getHoveredOverInventoryBlock();
-        else if (mouseInput.isMouseButton4IsPressed()) hotBar[8] = getHoveredOverInventoryBlock();
-        updateHotBarElements();
+    private void handleMouseInput() {
+        long rightButtonPressTime = mouseInput.getRightButtonPressTime();
+        long leftButtonPressTime = mouseInput.getLeftButtonPressTime();
+        boolean rightButtonWasJustPressed = mouseInput.wasRightButtonJustPressed();
+        boolean leftButtonWasJustPressed = mouseInput.wasLeftButtonJustPressed();
+        long currentTime = System.nanoTime();
+
+        if (!inInventory && leftButtonPressTime != -1 && (currentTime - leftButtonPressTime > 300_000_000 || leftButtonWasJustPressed)) {
+            Vector3f target = getTarget(0, camera.getDirection());
+            if (target != null)
+                GameLogic.placeBlock(AIR, new Vector3i(Utils.floor(target.x), Utils.floor(target.y), Utils.floor(target.z)));
+        }
+
+        if (!inInventory && rightButtonPressTime != -1 && (currentTime - rightButtonPressTime > 300_000_000 || rightButtonWasJustPressed) && hotBar[selectedHotBarSlot] != AIR) {
+
+            Vector3f cameraDirection = camera.getDirection();
+            Vector3f target = getTarget(1, cameraDirection);
+            if (target != null) {
+                short selectedBlock = hotBar[selectedHotBarSlot];
+                short toPlaceBlock = Block.getToPlaceBlock(selectedBlock, camera.getPrimaryDirection(cameraDirection), camera.getPrimaryXZDirection(cameraDirection), target);
+
+                GameLogic.placeBlock(toPlaceBlock, new Vector3i(Utils.floor(target.x), Utils.floor(target.y), Utils.floor(target.z)));
+            }
+        }
+    }
+
+    private void setSelectedHotBarSlot(int slot) {
+        selectedHotBarSlot = slot;
+        hotBarSelectionIndicator.setPosition(new Vector2f((slot - 4) * 40 * GUI_SIZE / Launcher.getWindow().getWidth(), 0.0f));
     }
 
     private short getHoveredOverInventoryBlock() {
@@ -437,66 +527,6 @@ public class Player {
         valueY = Math.min(AMOUNT_OF_TO_PLACE_STANDARD_BLOCKS - 1, Math.max(valueY, 1));
 
         return (short) (valueY << BLOCK_TYPE_BITS | TO_PLACE_BLOCK_TYPES[valueX]);
-    }
-
-    private void handleInputMovementStateChange(Vector3f position) {
-        if (inInventory) return;
-
-        if (window.isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT)) {
-            if (movementState == WALKING) {
-                camera.movePosition(0.0f, -0.25f, 0.0f);
-                movementState = CROUCHING;
-            }
-
-        } else if (movementState == CROUCHING) {
-            if (!collidesWithBlock(position.x, position.y + 0.25f, position.z, WALKING)) {
-                camera.movePosition(0.0f, 0.25f, 0.0f);
-                movementState = WALKING;
-            } else if (!collidesWithBlock(position.x, position.y, position.z, WALKING)) movementState = WALKING;
-        }
-
-        if (window.isKeyPressed(GLFW.GLFW_KEY_CAPS_LOCK)) {
-            if (movementState == WALKING) camera.movePosition(0.0f, -1.25f, 0.0f);
-            else if (movementState == CROUCHING) camera.movePosition(0.0f, -1.0f, 0.0f);
-            movementState = CRAWLING;
-
-        } else if (movementState == CRAWLING) {
-            if (!collidesWithBlock(position.x, position.y + 1.25f, position.z, WALKING)) {
-                camera.movePosition(0.0f, 1.25f, 0.0f);
-                movementState = WALKING;
-            } else if (!collidesWithBlock(position.x, position.y + 1.0f, position.z, CROUCHING)) {
-                camera.movePosition(0.0f, 1.0f, 0.0f);
-                movementState = CROUCHING;
-            } else if (!collidesWithBlock(position.x, position.y, position.z, WALKING)) movementState = WALKING;
-            else if (!collidesWithBlock(position.x, position.y, position.z, CROUCHING)) movementState = CROUCHING;
-        }
-
-        if (movementState == SWIMMING && !window.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL)) movementState = CRAWLING;
-        else if (movementState == SWIMMING && !collidesWithBlock(position.x, position.y, position.z, SWIMMING, WATER))
-            movementState = CRAWLING;
-    }
-
-    private void normalizeVelocity(Vector3f velocity) {
-        float maxSpeed = Math.max(Math.abs(velocity.x), Math.abs(velocity.z));
-        float normalizer = maxSpeed / (float) Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
-        if (isGrounded && !Float.isNaN(normalizer) && Float.isFinite(normalizer)) {
-            velocity.x *= normalizer;
-            velocity.z *= normalizer;
-        }
-    }
-
-    private void addVelocityChange(Vector3f velocity) {
-        Vector2f rotation = camera.getRotation();
-
-        if (velocity.z != 0) {
-            this.velocity.x -= (float) Math.sin(Math.toRadians(rotation.y)) * velocity.z;
-            this.velocity.z += (float) Math.cos(Math.toRadians(rotation.y)) * velocity.z;
-        }
-        if (velocity.x != 0) {
-            this.velocity.x -= (float) Math.sin(Math.toRadians(rotation.y - 90)) * velocity.x;
-            this.velocity.z += (float) Math.cos(Math.toRadians(rotation.y - 90)) * velocity.x;
-        }
-        this.velocity.y += velocity.y;
     }
 
     private void applyGravity() {
@@ -735,10 +765,14 @@ public class Player {
 
         renderChunkColumn(chunkX, chunkZ, chunkX, chunkY, chunkZ, frustumIntersection);
         for (int ring = 1; ring <= RENDER_DISTANCE_XZ + 2; ring++) {
-            for (int x = -ring; x < ring; x++) renderChunkColumn(x + chunkX, ring + chunkZ, chunkX, chunkY, chunkZ, frustumIntersection);
-            for (int z = ring; z > -ring; z--) renderChunkColumn(ring + chunkX, z + chunkZ, chunkX, chunkY, chunkZ, frustumIntersection);
-            for (int x = ring; x > -ring; x--) renderChunkColumn(x + chunkX, -ring + chunkZ, chunkX, chunkY, chunkZ, frustumIntersection);
-            for (int z = -ring; z < ring; z++) renderChunkColumn(-ring + chunkX, z + chunkZ, chunkX, chunkY, chunkZ, frustumIntersection);
+            for (int x = -ring; x < ring; x++)
+                renderChunkColumn(x + chunkX, ring + chunkZ, chunkX, chunkY, chunkZ, frustumIntersection);
+            for (int z = ring; z > -ring; z--)
+                renderChunkColumn(ring + chunkX, z + chunkZ, chunkX, chunkY, chunkZ, frustumIntersection);
+            for (int x = ring; x > -ring; x--)
+                renderChunkColumn(x + chunkX, -ring + chunkZ, chunkX, chunkY, chunkZ, frustumIntersection);
+            for (int z = -ring; z < ring; z++)
+                renderChunkColumn(-ring + chunkX, z + chunkZ, chunkX, chunkY, chunkZ, frustumIntersection);
         }
 
         for (GUIElement GUIElement : GUIElements)
@@ -746,6 +780,8 @@ public class Player {
 
         for (GUIElement GUIElement : hotBarElements)
             renderer.processGUIElement(GUIElement);
+
+        renderer.processGUIElement(hotBarSelectionIndicator);
     }
 
     private void renderChunkColumn(int x, int z, int cameraX, int cameraY, int cameraZ, FrustumIntersection frustumIntersection) {
@@ -797,7 +833,7 @@ public class Player {
         if (chunk == null) return;
 
         if ((visibleChunks[chunkIndex >> 6] & 1L << (chunkIndex & 63)) != 0) return;
-        visibleChunks[chunkIndex >> 6] = visibleChunks[chunkIndex >> 6] | 1L << (chunkIndex & 63);
+        visibleChunks[chunkIndex >> 6] |= 1L << (chunkIndex & 63);
         damper += chunk.getOcclusionCullingDamper();
 
         if (chunk.readOcclusionCullingSidePair(entrySide, FRONT) && (traveledDirections & 1 << BACK) == 0)

@@ -376,14 +376,14 @@ public class LightLogic {
     }
 
     private static void unMeshNextChunkIfNecessary(int x, int y, int z, Chunk chunk) {
-        if (x == 0) unMeshChunk(chunk.getX() - 1, chunk.getY(), chunk.getZ());
-        else if (x == CHUNK_SIZE - 1) unMeshChunk(chunk.getX() + 1, chunk.getY(), chunk.getZ());
+        if (x == 0) unMeshChunk(chunk.getChunkX() - 1, chunk.getChunkY(), chunk.getChunkZ());
+        else if (x == CHUNK_SIZE - 1) unMeshChunk(chunk.getChunkX() + 1, chunk.getChunkY(), chunk.getChunkZ());
 
-        if (y == 0) unMeshChunk(chunk.getX(), chunk.getY() - 1, chunk.getZ());
-        else if (y == CHUNK_SIZE - 1) unMeshChunk(chunk.getX(), chunk.getY() + 1, chunk.getZ());
+        if (y == 0) unMeshChunk(chunk.getChunkX(), chunk.getChunkY() - 1, chunk.getChunkZ());
+        else if (y == CHUNK_SIZE - 1) unMeshChunk(chunk.getChunkX(), chunk.getChunkY() + 1, chunk.getChunkZ());
 
-        if (z == 0) unMeshChunk(chunk.getX(), chunk.getY(), chunk.getZ() - 1);
-        else if (z == CHUNK_SIZE - 1) unMeshChunk(chunk.getX(), chunk.getY(), chunk.getZ() + 1);
+        if (z == 0) unMeshChunk(chunk.getChunkX(), chunk.getChunkY(), chunk.getChunkZ() - 1);
+        else if (z == CHUNK_SIZE - 1) unMeshChunk(chunk.getChunkX(), chunk.getChunkY(), chunk.getChunkZ() + 1);
     }
 
     private static void unMeshChunk(int chunkX, int chunkY, int ChunkZ) {
