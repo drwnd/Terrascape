@@ -106,9 +106,7 @@ public class Block {
         z = fraction(z) * 16.0;
 
         for (int aabbIndex = 0; aabbIndex < XYZSubData.length; aabbIndex += 6)
-            if (x > XYZSubData[MIN_X + aabbIndex] && x < XYZSubData[MAX_X + aabbIndex] + 16 &&
-                    y > XYZSubData[MIN_Y + aabbIndex] && y < XYZSubData[MAX_Y + aabbIndex] + 16 &&
-                    z > XYZSubData[MIN_Z + aabbIndex] && z < XYZSubData[MAX_Z + aabbIndex] + 16)
+            if (x > XYZSubData[MIN_X + aabbIndex] && x < XYZSubData[MAX_X + aabbIndex] + 16 && y > XYZSubData[MIN_Y + aabbIndex] && y < XYZSubData[MAX_Y + aabbIndex] + 16 && z > XYZSubData[MIN_Z + aabbIndex] && z < XYZSubData[MAX_Z + aabbIndex] + 16)
                 return true;
 
         return false;
@@ -254,6 +252,43 @@ public class Block {
         return blockType;
     }
 
+    public static short getInInventoryBlockEquivalent(short block) {
+        if (block == AIR || block == OUT_OF_WORLD) return AIR;
+        if (block < STANDARD_BLOCKS_THRESHOLD) {
+            if (block >= FRONT_CREATOR_HEAD && block <= LEFT_CREATOR_HEAD) return FRONT_CREATOR_HEAD;
+            return block;
+        }
+        int blockType = block & BLOCK_TYPE_MASK;
+        int baseBlock = block & BASE_BLOCK_MASK;
+
+        switch (blockType) {
+            case FULL_BLOCK -> {
+                return (short) (baseBlock | FULL_BLOCK);
+            }
+            case PLAYER_HEAD -> {
+                return (short) (baseBlock | PLAYER_HEAD);
+            }
+            case FRONT_SLAB, TOP_SLAB, RIGHT_SLAB, BACK_SLAB, BOTTOM_SLAB, LEFT_SLAB -> {
+                return (short) (baseBlock | BOTTOM_SLAB);
+            }
+            case FRONT_PLATE, TOP_PLATE, RIGHT_PLATE, BACK_PLATE, BOTTOM_PLATE, LEFT_PLATE -> {
+                return (short) (baseBlock | BOTTOM_PLATE);
+            }
+            case FRONT_BACK_WALL, UP_DOWN_WALL, LEFT_RIGHT_WALL -> {
+                return (short) (baseBlock | FRONT_BACK_WALL);
+            }
+            case UP_DOWN_POST, FRONT_BACK_POST, LEFT_RIGHT_POST -> {
+                return (short) (baseBlock | UP_DOWN_POST);
+            }
+            case BOTTOM_FRONT_STAIR, BOTTOM_RIGHT_STAIR, BOTTOM_BACK_STAIR, BOTTOM_LEFT_STAIR,
+                 TOP_FRONT_STAIR, TOP_RIGHT_STAIR, TOP_BACK_STAIR, TOP_LEFT_STAIR,
+                 FRONT_RIGHT_STAIR, FRONT_LEFT_STAIR, BACK_RIGHT_STAIR, BACK_LEFT_STAIR -> {
+                return (short) (baseBlock | BOTTOM_BACK_STAIR);
+            }
+        }
+        return AIR;
+    }
+
     public static int getToPlaceBlockAddend(int primaryCameraDirection, Vector3f target) {
         if (primaryCameraDirection == FRONT) return fraction(target.z) > 0.5f ? 0 : 3;
         if (primaryCameraDirection == TOP) return fraction(target.y) > 0.5f ? 0 : 3;
@@ -270,6 +305,14 @@ public class Block {
         if (isLeaveType(block)) return BLOCK_TYPE_DATA[LEAVE_TYPE];
         if (isGlassType(block)) return BLOCK_TYPE_DATA[GLASS_TYPE];
         return BLOCK_TYPE_DATA[getBlockType(block)];
+    }
+
+    public static boolean hasAmbientOcclusion(short block, short referenceBlock) {
+        if (block == AIR) return false;
+        if (isLeaveType(block)) return false;
+        int blockType = block & BLOCK_TYPE_MASK;
+        if (blockType != FULL_BLOCK && blockType == (referenceBlock & BLOCK_TYPE_MASK)) return false;
+        return !isGlassType(block);
     }
 
     public static int getBlockProperties(short block) {

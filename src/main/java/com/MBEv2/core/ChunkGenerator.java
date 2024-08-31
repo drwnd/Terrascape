@@ -330,7 +330,7 @@ public class ChunkGenerator {
 
         private void submitTasks(int playerX, int playerY, int playerZ, int travelDirection) {
             if (shouldFinish && !executor.isShutdown()) executor.submit(new Generator(playerX, playerY, playerZ));
-            for (int ring = 1; ring <= RENDER_DISTANCE_XZ && shouldFinish; ring++) {
+            for (int ring = 1; ring <= RENDER_DISTANCE_XZ + 1 && shouldFinish; ring++) {
 
                 for (int chunkX = -ring; chunkX < ring && shouldFinish && !executor.isShutdown(); chunkX++)
                     executor.submit(new Generator(chunkX + playerX, playerY, ring + playerZ));

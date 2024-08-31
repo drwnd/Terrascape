@@ -55,7 +55,7 @@ public class Constants {
     public static final int OCCLUDES_DYNAMIC_SELF = 3;
 
     //BLOCK_DATA
-    public static final int SOLID_MASK = 64;
+//    public static final int SOLID_MASK = 64;
     public static final int DYNAMIC_SHAPE_MASK = 128;
 
     //BLOCK_XYZ_SUB_DATA
@@ -70,64 +70,63 @@ public class Constants {
     public static final int LIGHT_EMITTING_MASK = 1;
 
     //Indices for information on block types
-    private static int bT = 0;
-    public static final int FULL_BLOCK = bT++;
+    public static final int FULL_BLOCK = 0;
 
-    public static final int BOTTOM_SLAB = bT++;
-    public static final int TOP_SLAB = bT++;
-    public static final int FRONT_SLAB = bT++;
-    public static final int BACK_SLAB = bT++;
-    public static final int RIGHT_SLAB = bT++;
-    public static final int LEFT_SLAB = bT++;
+    public static final int BOTTOM_SLAB = 1;
+    public static final int TOP_SLAB = 2;
+    public static final int FRONT_SLAB = 3;
+    public static final int BACK_SLAB =4;
+    public static final int RIGHT_SLAB =5;
+    public static final int LEFT_SLAB = 6;
     public static final int[] SLABS = new int[]{FRONT_SLAB, TOP_SLAB, RIGHT_SLAB, BACK_SLAB, BOTTOM_SLAB, LEFT_SLAB};
 
-    public static final int UP_DOWN_POST = bT++;
-    public static final int FRONT_BACK_POST = bT++;
-    public static final int LEFT_RIGHT_POST = bT++;
+    public static final int UP_DOWN_POST =7;
+    public static final int FRONT_BACK_POST = 8;
+    public static final int LEFT_RIGHT_POST = 9;
     public static final int[] POSTS = new int[]{FRONT_BACK_POST, UP_DOWN_POST, LEFT_RIGHT_POST};
 
-    public static final int UP_DOWN_WALL = bT++;
-    public static final int FRONT_BACK_WALL = bT++;
-    public static final int LEFT_RIGHT_WALL = bT++;
+    public static final int UP_DOWN_WALL = 10;
+    public static final int FRONT_BACK_WALL = 11;
+    public static final int LEFT_RIGHT_WALL = 12;
     public static final int[] WALLS = new int[]{FRONT_BACK_WALL, UP_DOWN_WALL, LEFT_RIGHT_WALL};
 
-    public static final int FRONT_PLATE = bT++;
-    public static final int TOP_PLATE = bT++;
-    public static final int RIGHT_PLATE = bT++;
-    public static final int BACK_PLATE = bT++;
-    public static final int BOTTOM_PLATE = bT++;
-    public static final int LEFT_PLATE = bT++;
+    public static final int FRONT_PLATE = 13;
+    public static final int TOP_PLATE = 14;
+    public static final int RIGHT_PLATE =15;
+    public static final int BACK_PLATE = 16;
+    public static final int BOTTOM_PLATE =17;
+    public static final int LEFT_PLATE =18;
     public static final int[] PLATES = new int[]{FRONT_PLATE, TOP_PLATE, RIGHT_PLATE, BACK_PLATE, BOTTOM_PLATE, LEFT_PLATE};
 
-    public static final int BOTTOM_FRONT_STAIR = bT++;
-    public static final int BOTTOM_BACK_STAIR = bT++;
-    public static final int BOTTOM_RIGHT_STAIR = bT++;
-    public static final int BOTTOM_LEFT_STAIR = bT++;
-    public static final int TOP_FRONT_STAIR = bT++;
-    public static final int TOP_BACK_STAIR = bT++;
-    public static final int TOP_RIGHT_STAIR = bT++;
-    public static final int TOP_LEFT_STAIR = bT++;
-    public static final int FRONT_RIGHT_STAIR = bT++;
-    public static final int FRONT_LEFT_STAIR = bT++;
-    public static final int BACK_RIGHT_STAIR = bT++;
-    public static final int BACK_LEFT_STAIR = bT++;
+    public static final int BOTTOM_FRONT_STAIR = 19;
+    public static final int BOTTOM_BACK_STAIR = 20;
+    public static final int BOTTOM_RIGHT_STAIR = 21;
+    public static final int BOTTOM_LEFT_STAIR = 22;
+    public static final int TOP_FRONT_STAIR = 23;
+    public static final int TOP_BACK_STAIR = 24;
+    public static final int TOP_RIGHT_STAIR = 25;
+    public static final int TOP_LEFT_STAIR = 26;
+    public static final int FRONT_RIGHT_STAIR =27;
+    public static final int FRONT_LEFT_STAIR = 28;
+    public static final int BACK_RIGHT_STAIR = 29;
+    public static final int BACK_LEFT_STAIR = 30;
 
-    public static final int PLAYER_HEAD = bT++;
+    public static final int PLAYER_HEAD = 31;
 
     public static final int[] TO_PLACE_BLOCK_TYPES = new int[]{FULL_BLOCK, PLAYER_HEAD, BOTTOM_SLAB, BOTTOM_PLATE, FRONT_BACK_WALL, UP_DOWN_POST, BOTTOM_BACK_STAIR};
 
-    public static final int CACTUS_TYPE = bT++;
-    public static final int AIR_TYPE = bT++;
-    public static final int LIQUID_TYPE = bT++;
-    public static final int LEAVE_TYPE = bT++;
-    public static final int GLASS_TYPE = bT++;
+    public static final int CACTUS_TYPE = 32;
+    public static final int AIR_TYPE = 33;
+    public static final int LIQUID_TYPE = 34;
+    public static final int LEAVE_TYPE = 35;
+    public static final int GLASS_TYPE = 36;
 
     public static final int BLOCK_TYPE_BITS = 6;
     public static final int BLOCK_TYPE_MASK = (1 << BLOCK_TYPE_BITS) - 1;
     public static final int BASE_BLOCK_MASK = -1 << BLOCK_TYPE_BITS;
     public static final int STANDARD_BLOCKS_THRESHOLD = 1 << BLOCK_TYPE_BITS;
 
-    public static final int TOTAL_AMOUNT_OF_BLOCK_TYPES = bT;
+    public static final int TOTAL_AMOUNT_OF_BLOCK_TYPES = 37;
 
     //Non standard block, aka blocks without blockTypes
     public static final short AIR = 0;
@@ -142,7 +141,7 @@ public class Constants {
     public static final short[] TO_PLACE_NON_STANDARD_BLOCKS = new short[]{WATER, LAVA, CACTUS, FRONT_CREATOR_HEAD};
 
     //Standard blocks, aka blocks with blockTypes
-    private static short b = 1;
+    private static int b = 1;
     public static final short GRASS = (short) (b++ << BLOCK_TYPE_BITS);
     public static final short DIRT = (short) (b++ << BLOCK_TYPE_BITS);
     public static final short STONE = (short) (b++ << BLOCK_TYPE_BITS);
@@ -207,33 +206,34 @@ public class Constants {
     public static final short RED = (short) (b++ << BLOCK_TYPE_BITS);
 
     public static final int AMOUNT_OF_TO_PLACE_STANDARD_BLOCKS = b;
+    private static int b2 = 511;
 
-    public static final short FRONT_BACK_OAK_LOG = (short) (b++ << BLOCK_TYPE_BITS);
-    public static final short LEFT_RIGHT_OAK_LOG = (short) (b++ << BLOCK_TYPE_BITS);
-    public static final short FRONT_BACK_STRIPPED_OAK_LOG = (short) (b++ << BLOCK_TYPE_BITS);
-    public static final short LEFT_RIGHT_STRIPPED_OAK_LOG = (short) (b++ << BLOCK_TYPE_BITS);
-    public static final short FRONT_BACK_SPRUCE_LOG = (short) (b++ << BLOCK_TYPE_BITS);
-    public static final short LEFT_RIGHT_SPRUCE_LOG = (short) (b++ << BLOCK_TYPE_BITS);
-    public static final short FRONT_BACK_STRIPPED_SPRUCE_LOG = (short) (b++ << BLOCK_TYPE_BITS);
-    public static final short LEFT_RIGHT_STRIPPED_SPRUCE_LOG = (short) (b++ << BLOCK_TYPE_BITS);
-    public static final short FRONT_BACK_DARK_OAK_LOG = (short) (b++ << BLOCK_TYPE_BITS);
-    public static final short LEFT_RIGHT_DARK_OAK_LOG = (short) (b++ << BLOCK_TYPE_BITS);
-    public static final short FRONT_BACK_STRIPPED_DARK_OAK_LOG = (short) (b++ << BLOCK_TYPE_BITS);
-    public static final short LEFT_RIGHT_STRIPPED_DARK_OAK_LOG = (short) (b++ << BLOCK_TYPE_BITS);
-    public static final short FRONT_BACK_PINE_LOG = (short) (b++ << BLOCK_TYPE_BITS);
-    public static final short LEFT_RIGHT_PINE_LOG = (short) (b++ << BLOCK_TYPE_BITS);
-    public static final short FRONT_BACK_STRIPPED_PINE_LOG = (short) (b++ << BLOCK_TYPE_BITS);
-    public static final short LEFT_RIGHT_STRIPPED_PINE_LOG = (short) (b++ << BLOCK_TYPE_BITS);
-    public static final short FRONT_BACK_REDWOOD_LOG = (short) (b++ << BLOCK_TYPE_BITS);
-    public static final short LEFT_RIGHT_REDWOOD_LOG = (short) (b++ << BLOCK_TYPE_BITS);
-    public static final short FRONT_BACK_STRIPPED_REDWOOD_LOG = (short) (b++ << BLOCK_TYPE_BITS);
-    public static final short LEFT_RIGHT_STRIPPED_REDWOOD_LOG = (short) (b++ << BLOCK_TYPE_BITS);
-    public static final short FRONT_BACK_BLACK_WOOD_LOG = (short) (b++ << BLOCK_TYPE_BITS);
-    public static final short LEFT_RIGHT_BLACK_WOOD_LOG = (short) (b++ << BLOCK_TYPE_BITS);
-    public static final short FRONT_BACK_STRIPPED_BLACK_WOOD_LOG = (short) (b++ << BLOCK_TYPE_BITS);
-    public static final short LEFT_RIGHT_STRIPPED_BLACK_WOOD_LOG = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short FRONT_BACK_OAK_LOG = (short) (b2-- << BLOCK_TYPE_BITS);
+    public static final short LEFT_RIGHT_OAK_LOG = (short) (b2-- << BLOCK_TYPE_BITS);
+    public static final short FRONT_BACK_STRIPPED_OAK_LOG = (short) (b2-- << BLOCK_TYPE_BITS);
+    public static final short LEFT_RIGHT_STRIPPED_OAK_LOG = (short) (b2-- << BLOCK_TYPE_BITS);
+    public static final short FRONT_BACK_SPRUCE_LOG = (short) (b2-- << BLOCK_TYPE_BITS);
+    public static final short LEFT_RIGHT_SPRUCE_LOG = (short) (b2-- << BLOCK_TYPE_BITS);
+    public static final short FRONT_BACK_STRIPPED_SPRUCE_LOG = (short) (b2-- << BLOCK_TYPE_BITS);
+    public static final short LEFT_RIGHT_STRIPPED_SPRUCE_LOG = (short) (b2-- << BLOCK_TYPE_BITS);
+    public static final short FRONT_BACK_DARK_OAK_LOG = (short) (b2-- << BLOCK_TYPE_BITS);
+    public static final short LEFT_RIGHT_DARK_OAK_LOG = (short) (b2-- << BLOCK_TYPE_BITS);
+    public static final short FRONT_BACK_STRIPPED_DARK_OAK_LOG = (short) (b2-- << BLOCK_TYPE_BITS);
+    public static final short LEFT_RIGHT_STRIPPED_DARK_OAK_LOG = (short) (b2-- << BLOCK_TYPE_BITS);
+    public static final short FRONT_BACK_PINE_LOG = (short) (b2-- << BLOCK_TYPE_BITS);
+    public static final short LEFT_RIGHT_PINE_LOG = (short) (b2-- << BLOCK_TYPE_BITS);
+    public static final short FRONT_BACK_STRIPPED_PINE_LOG = (short) (b2-- << BLOCK_TYPE_BITS);
+    public static final short LEFT_RIGHT_STRIPPED_PINE_LOG = (short) (b2-- << BLOCK_TYPE_BITS);
+    public static final short FRONT_BACK_REDWOOD_LOG = (short) (b2-- << BLOCK_TYPE_BITS);
+    public static final short LEFT_RIGHT_REDWOOD_LOG = (short) (b2-- << BLOCK_TYPE_BITS);
+    public static final short FRONT_BACK_STRIPPED_REDWOOD_LOG = (short) (b2-- << BLOCK_TYPE_BITS);
+    public static final short LEFT_RIGHT_STRIPPED_REDWOOD_LOG = (short) (b2-- << BLOCK_TYPE_BITS);
+    public static final short FRONT_BACK_BLACK_WOOD_LOG = (short) (b2-- << BLOCK_TYPE_BITS);
+    public static final short LEFT_RIGHT_BLACK_WOOD_LOG = (short) (b2-- << BLOCK_TYPE_BITS);
+    public static final short FRONT_BACK_STRIPPED_BLACK_WOOD_LOG = (short) (b2-- << BLOCK_TYPE_BITS);
+    public static final short LEFT_RIGHT_STRIPPED_BLACK_WOOD_LOG = (short) (b2-- << BLOCK_TYPE_BITS);
 
-    public static final int AMOUNT_OF_STANDARD_BLOCKS = b;
+    public static final int AMOUNT_OF_STANDARD_BLOCKS = 1024;
 
 
     //Texture indices

@@ -17,6 +17,8 @@ public class Launcher {
         } catch (Exception e) {
             //noinspection CallToPrintStackTrace
             e.printStackTrace();
+            System.out.println(e.getMessage());
+            System.out.println(e.getCause().toString());
         }
     }
 

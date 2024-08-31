@@ -16,7 +16,7 @@ public class MouseInput {
 
     private long rightButtonPressTime = -1, leftButtonPressTime = -1;
     private boolean rightButtonWasJustPressed, leftButtonWasJustPressed;
-    private boolean mouseButton4IsPressed, mouseButton5IsPressed;
+    private boolean mouseButton4IsPressed, mouseButton5IsPressed, mouseButton3IsPressed;
 
     public MouseInput(Player player) {
         this.player = player;
@@ -33,32 +33,31 @@ public class MouseInput {
 
         GLFW.glfwSetMouseButtonCallback(Launcher.getWindow().getWindow(), (window, button, action, mods) -> {
             if (action == GLFW.GLFW_PRESS) {
-                if (button == GLFW.GLFW_MOUSE_BUTTON_1) {
+                if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
                     leftButtonPressTime = System.nanoTime();
                     leftButtonWasJustPressed = true;
-                } else if (button == GLFW.GLFW_MOUSE_BUTTON_2) {
+                } else if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
                     rightButtonPressTime = System.nanoTime();
                     rightButtonWasJustPressed = true;
                 }
             } else if (action == GLFW.GLFW_RELEASE) {
-                if (button == GLFW.GLFW_MOUSE_BUTTON_1) {
+                if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
                     leftButtonPressTime = -1;
                     leftButtonWasJustPressed = false;
-                } else if (button == GLFW.GLFW_MOUSE_BUTTON_2) {
+                } else if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
                     rightButtonPressTime = -1;
                     rightButtonWasJustPressed = false;
                 }
             }
 
-            if (button == GLFW.GLFW_MOUSE_BUTTON_5)
-                mouseButton5IsPressed = action == GLFW.GLFW_PRESS;
-            if (button == GLFW.GLFW_MOUSE_BUTTON_4)
-                mouseButton4IsPressed = action == GLFW.GLFW_PRESS;
+            if (button == GLFW.GLFW_MOUSE_BUTTON_5) mouseButton5IsPressed = action == GLFW.GLFW_PRESS;
+            if (button == GLFW.GLFW_MOUSE_BUTTON_4) mouseButton4IsPressed = action == GLFW.GLFW_PRESS;
+            if (button == GLFW.GLFW_MOUSE_BUTTON_3) mouseButton3IsPressed = action == GLFW.GLFW_PRESS;
+
         });
 
         GLFW.glfwSetScrollCallback(Launcher.getWindow().getWindow(), (window, xPos, yPos) -> {
-            if (!player.isInInventory())
-                return;
+            if (!player.isInInventory()) return;
             ArrayList<GUIElement> inventoryElements = player.getInventoryElements();
             float scrollValue = (float) yPos * -0.05f;
             player.addToInventoryScroll(scrollValue);
@@ -113,5 +112,9 @@ public class MouseInput {
 
     public boolean isMouseButton5IsPressed() {
         return mouseButton5IsPressed;
+    }
+
+    public boolean isMouseButton3IsPressed() {
+        return mouseButton3IsPressed;
     }
 }

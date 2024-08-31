@@ -2,7 +2,6 @@ package com.MBEv2.test;
 
 import com.MBEv2.core.*;
 import com.MBEv2.core.entity.*;
-import org.joml.Vector3i;
 import org.joml.Vector4i;
 import org.lwjgl.opengl.GL11;
 
@@ -34,17 +33,16 @@ public class GameLogic {
         generator.restart(direction);
     }
 
-    public static void placeBlock(short block, Vector3i position) {
-        if (position == null) return;
-        if (Chunk.getBlockInWorld(position.x, position.y, position.z) == block) return;
+    public static void placeBlock(short block, int x, int y, int z) {
+        if (Chunk.getBlockInWorld(x, y, z) == block) return;
 
-        int chunkX = position.x >> CHUNK_SIZE_BITS;
-        int chunkY = position.y >> CHUNK_SIZE_BITS;
-        int chunkZ = position.z >> CHUNK_SIZE_BITS;
+        int chunkX = x >> CHUNK_SIZE_BITS;
+        int chunkY = y >> CHUNK_SIZE_BITS;
+        int chunkZ = z >> CHUNK_SIZE_BITS;
 
-        int inChunkX = position.x & CHUNK_SIZE - 1;
-        int inChunkY = position.y & CHUNK_SIZE - 1;
-        int inChunkZ = position.z & CHUNK_SIZE - 1;
+        int inChunkX = x & CHUNK_SIZE - 1;
+        int inChunkY = y & CHUNK_SIZE - 1;
+        int inChunkZ = z & CHUNK_SIZE - 1;
 
         Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
         short previousBlock = chunk.getSaveBlock(inChunkX, inChunkY, inChunkZ);
@@ -74,12 +72,12 @@ public class GameLogic {
             else if (inChunkZ == CHUNK_SIZE - 1) maxZ = chunkZ + 1;
         }
 
-        generator.addBlockChange(new Vector4i(position.x, position.y, position.z, previousBlock));
+        generator.addBlockChange(new Vector4i(x, y, z, previousBlock));
 
-        for (int x = minX; x <= maxX; x++)
-            for (int y = minY; y <= maxY; y++)
-                for (int z = minZ; z <= maxZ; z++) {
-                    Chunk toMeshChunk = Chunk.getChunk(x, y, z);
+        for (chunkX = minX; chunkX <= maxX; chunkX++)
+            for (chunkY = minY; chunkY <= maxY; chunkY++)
+                for (chunkZ = minZ; chunkZ <= maxZ; chunkZ++) {
+                    Chunk toMeshChunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
                     if (toMeshChunk == null) continue;
                     toMeshChunk.setMeshed(false);
                 }

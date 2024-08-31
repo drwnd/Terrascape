@@ -319,6 +319,7 @@ public class RenderManager {
         renderTextLine("Rendered chunk models:" + chunkModels.size(), ++line);
         renderTextLine("Rendered water models:" + waterModels.size(), ++line);
         renderTextLine("Rendered GUIElements:" + GUIElements.size(), ++line);
+        renderTextLine("Time:" + time, ++line);
 
         textShader.unBind();
     }

@@ -54,8 +54,7 @@ public class Chunk {
     public void optimizeBlockStorage() {
         short firstBlock = blocks[0];
         for (short block : blocks)
-            if (block != firstBlock)
-                return;
+            if (block != firstBlock) return;
 
         blocks = new short[]{firstBlock};
 //        System.out.println("Optimized block Storage! Block: " + firstBlock);
@@ -64,8 +63,7 @@ public class Chunk {
     public void optimizeLightStorage() {
         byte firstLight = light[0];
         for (byte light : light)
-            if (light != firstLight)
-                return;
+            if (light != firstLight) return;
 
         light = new byte[]{firstLight};
 //        System.out.println("Optimized light Storage! + BlockLight: " + getSaveBlockLight(0) + " SkyLight: " + getSaveSkyLight(0));
@@ -95,8 +93,7 @@ public class Chunk {
         int maxLightValue = 0;
 
         if (blocks.length == 1) {
-            if (Block.getBlockType(blocks[0]) != FULL_BLOCK)
-                occlusionCullingData = -1;
+            if (Block.getBlockType(blocks[0]) != FULL_BLOCK) occlusionCullingData = -1;
             return;
         }
 
@@ -119,8 +116,7 @@ public class Chunk {
                 if ((light >> 4 & 15) > maxLightValue) maxLightValue = light >> 4 & 15;
 
                 int nextBlockIndex = floodFillBlockIndex - (1 << CHUNK_SIZE_BITS * 2);
-                if (floodFillBlockIndex >> CHUNK_SIZE_BITS * 2 == 0)
-                    visitedSides = (byte) (visitedSides | 1 << LEFT);
+                if (floodFillBlockIndex >> CHUNK_SIZE_BITS * 2 == 0) visitedSides = (byte) (visitedSides | 1 << LEFT);
                 else if ((visitedBlocks[nextBlockIndex >> CHUNK_SIZE_BITS] & (1 << (nextBlockIndex & CHUNK_SIZE_MASK))) == 0)
                     toVisitBlockIndexes.add(nextBlockIndex);
 
@@ -143,8 +139,7 @@ public class Chunk {
                     toVisitBlockIndexes.add(nextBlockIndex);
 
                 nextBlockIndex = floodFillBlockIndex - 1;
-                if ((floodFillBlockIndex & CHUNK_SIZE_MASK) == 0)
-                    visitedSides = (byte) (visitedSides | 1 << BOTTOM);
+                if ((floodFillBlockIndex & CHUNK_SIZE_MASK) == 0) visitedSides = (byte) (visitedSides | 1 << BOTTOM);
                 else if ((visitedBlocks[nextBlockIndex >> CHUNK_SIZE_BITS] & (1 << (nextBlockIndex & CHUNK_SIZE_MASK))) == 0)
                     toVisitBlockIndexes.add(nextBlockIndex);
 
@@ -156,11 +151,9 @@ public class Chunk {
             }
 
             for (int side1 = 0; side1 < 6; side1++) {
-                if ((visitedSides & 1 << side1) == 0)
-                    continue;
+                if ((visitedSides & 1 << side1) == 0) continue;
                 for (int side2 = side1 + 1; side2 < 6; side2++) {
-                    if ((visitedSides & 1 << side2) != 0)
-                        setOcclusionCullingSidePair(side1, side2);
+                    if ((visitedSides & 1 << side2) != 0) setOcclusionCullingSidePair(side1, side2);
                 }
             }
         }
@@ -178,23 +171,23 @@ public class Chunk {
         }
 
         generateSurroundingChunks();
-        if ((occlusionCullingData & 0x8000) == 0)
-            generateOcclusionCullingData();
+        if ((occlusionCullingData & 0x8000) == 0) generateOcclusionCullingData();
 
         if (light.length != 1) optimizeLightStorage();
 
-        for (int x = 0; x < CHUNK_SIZE; x++)
-            for (int z = 0; z < CHUNK_SIZE; z++)
-                for (int y = 0; y < CHUNK_SIZE; y++) {
+        for (int inChunkX = 0; inChunkX < CHUNK_SIZE; inChunkX++)
+            for (int inChunkZ = 0; inChunkZ < CHUNK_SIZE; inChunkZ++)
+                for (int inChunkY = 0; inChunkY < CHUNK_SIZE; inChunkY++) {
 
-                    short block = getSaveBlock(x, y, z);
+                    short block = getSaveBlock(inChunkX, inChunkY, inChunkZ);
 
                     if (Block.getBlockType(block) == AIR_TYPE) continue;
 
                     for (int side = 0; side < 6; side++) {
 
                         int[] normal = Block.NORMALS[side];
-                        if (Block.occludes(block, getBlock(x + normal[0], y + normal[1], z + normal[2]), side, worldCoordinate.x | x, worldCoordinate.y | y, worldCoordinate.z | z))
+                        short occludingBlock = getBlock(inChunkX + normal[0], inChunkY + normal[1], inChunkZ + normal[2]);
+                        if (Block.occludes(block, occludingBlock, side, worldCoordinate.x | inChunkX, worldCoordinate.y | inChunkY, worldCoordinate.z | inChunkZ))
                             continue;
 
                         int texture = Block.getTextureIndex(block, side) - 1;
@@ -202,8 +195,8 @@ public class Chunk {
                         int u = texture & 15;
                         int v = texture >> 4 & 15;
 
-                        if (block == WATER) addWaterSideToList(x, y, z, side, waterVerticesList);
-                        else addSideToList(x, y, z, u, v, side, verticesList.get(side), block);
+                        if (block == WATER) addWaterSideToList(inChunkX, inChunkY, inChunkZ, side, waterVerticesList);
+                        else addSideToList(inChunkX, inChunkY, inChunkZ, u, v, side, verticesList.get(side), block);
                     }
                 }
 
@@ -257,78 +250,77 @@ public class Chunk {
                 }
     }
 
-    public void addSideToList(int x, int y, int z, int u, int v, int side, ArrayList<Integer> verticesList, short block) {
+    public void addSideToList(int inChunkX, int inChunkY, int inChunkZ, int u, int v, int side, ArrayList<Integer> verticesList, short block) {
         byte[] blockXYZSubData;
 
         switch (side) {
             case FRONT:
                 blockXYZSubData = Block.getXYZSubData(block);
                 for (int aabbIndex = 0; aabbIndex < blockXYZSubData.length; aabbIndex += 6) {
-                    addVertexToList(verticesList, x + 1, y + 1, z + 1, u, v, side, block, 0, x, y, z, aabbIndex);
-                    addVertexToList(verticesList, x, y + 1, z + 1, u + 1, v, side, block, 1, x, y, z, aabbIndex);
-                    addVertexToList(verticesList, x + 1, y, z + 1, u, v + 1, side, block, 2, x, y, z, aabbIndex);
-                    addVertexToList(verticesList, x, y, z + 1, u + 1, v + 1, side, block, 3, x, y, z, aabbIndex);
+                    addVertexToList(verticesList, inChunkX + 1, inChunkY + 1, inChunkZ + 1, u, v, side, block, 0, inChunkX, inChunkY, inChunkZ, aabbIndex);
+                    addVertexToList(verticesList, inChunkX, inChunkY + 1, inChunkZ + 1, u + 1, v, side, block, 1, inChunkX, inChunkY, inChunkZ, aabbIndex);
+                    addVertexToList(verticesList, inChunkX + 1, inChunkY, inChunkZ + 1, u, v + 1, side, block, 2, inChunkX, inChunkY, inChunkZ, aabbIndex);
+                    addVertexToList(verticesList, inChunkX, inChunkY, inChunkZ + 1, u + 1, v + 1, side, block, 3, inChunkX, inChunkY, inChunkZ, aabbIndex);
                 }
                 break;
             case TOP:
                 blockXYZSubData = Block.getXYZSubData(block);
                 for (int aabbIndex = 0; aabbIndex < blockXYZSubData.length; aabbIndex += 6) {
-                    addVertexToList(verticesList, x, y + 1, z, u, v, side, block, 0, x, y, z, aabbIndex);
-                    addVertexToList(verticesList, x, y + 1, z + 1, u + 1, v, side, block, 1, x, y, z, aabbIndex);
-                    addVertexToList(verticesList, x + 1, y + 1, z, u, v + 1, side, block, 2, x, y, z, aabbIndex);
-                    addVertexToList(verticesList, x + 1, y + 1, z + 1, u + 1, v + 1, side, block, 3, x, y, z, aabbIndex);
+                    addVertexToList(verticesList, inChunkX, inChunkY + 1, inChunkZ, u, v, side, block, 0, inChunkX, inChunkY, inChunkZ, aabbIndex);
+                    addVertexToList(verticesList, inChunkX, inChunkY + 1, inChunkZ + 1, u + 1, v, side, block, 1, inChunkX, inChunkY, inChunkZ, aabbIndex);
+                    addVertexToList(verticesList, inChunkX + 1, inChunkY + 1, inChunkZ, u, v + 1, side, block, 2, inChunkX, inChunkY, inChunkZ, aabbIndex);
+                    addVertexToList(verticesList, inChunkX + 1, inChunkY + 1, inChunkZ + 1, u + 1, v + 1, side, block, 3, inChunkX, inChunkY, inChunkZ, aabbIndex);
                 }
                 break;
             case RIGHT:
                 blockXYZSubData = Block.getXYZSubData(block);
                 for (int aabbIndex = 0; aabbIndex < blockXYZSubData.length; aabbIndex += 6) {
-                    addVertexToList(verticesList, x + 1, y + 1, z, u, v, side, block, 0, x, y, z, aabbIndex);
-                    addVertexToList(verticesList, x + 1, y + 1, z + 1, u + 1, v, side, block, 1, x, y, z, aabbIndex);
-                    addVertexToList(verticesList, x + 1, y, z, u, v + 1, side, block, 2, x, y, z, aabbIndex);
-                    addVertexToList(verticesList, x + 1, y, z + 1, u + 1, v + 1, side, block, 3, x, y, z, aabbIndex);
+                    addVertexToList(verticesList, inChunkX + 1, inChunkY + 1, inChunkZ, u, v, side, block, 0, inChunkX, inChunkY, inChunkZ, aabbIndex);
+                    addVertexToList(verticesList, inChunkX + 1, inChunkY + 1, inChunkZ + 1, u + 1, v, side, block, 1, inChunkX, inChunkY, inChunkZ, aabbIndex);
+                    addVertexToList(verticesList, inChunkX + 1, inChunkY, inChunkZ, u, v + 1, side, block, 2, inChunkX, inChunkY, inChunkZ, aabbIndex);
+                    addVertexToList(verticesList, inChunkX + 1, inChunkY, inChunkZ + 1, u + 1, v + 1, side, block, 3, inChunkX, inChunkY, inChunkZ, aabbIndex);
                 }
                 break;
             case BACK:
                 blockXYZSubData = Block.getXYZSubData(block);
                 for (int aabbIndex = 0; aabbIndex < blockXYZSubData.length; aabbIndex += 6) {
-                    addVertexToList(verticesList, x, y + 1, z, u, v, side, block, 0, x, y, z, aabbIndex);
-                    addVertexToList(verticesList, x + 1, y + 1, z, u + 1, v, side, block, 1, x, y, z, aabbIndex);
-                    addVertexToList(verticesList, x, y, z, u, v + 1, side, block, 2, x, y, z, aabbIndex);
-                    addVertexToList(verticesList, x + 1, y, z, u + 1, v + 1, side, block, 3, x, y, z, aabbIndex);
+                    addVertexToList(verticesList, inChunkX, inChunkY + 1, inChunkZ, u, v, side, block, 0, inChunkX, inChunkY, inChunkZ, aabbIndex);
+                    addVertexToList(verticesList, inChunkX + 1, inChunkY + 1, inChunkZ, u + 1, v, side, block, 1, inChunkX, inChunkY, inChunkZ, aabbIndex);
+                    addVertexToList(verticesList, inChunkX, inChunkY, inChunkZ, u, v + 1, side, block, 2, inChunkX, inChunkY, inChunkZ, aabbIndex);
+                    addVertexToList(verticesList, inChunkX + 1, inChunkY, inChunkZ, u + 1, v + 1, side, block, 3, inChunkX, inChunkY, inChunkZ, aabbIndex);
                 }
                 break;
             case BOTTOM:
                 blockXYZSubData = Block.getXYZSubData(block);
                 for (int aabbIndex = 0; aabbIndex < blockXYZSubData.length; aabbIndex += 6) {
-                    addVertexToList(verticesList, x + 1, y, z + 1, u, v, side, block, 3, x, y, z, aabbIndex);
-                    addVertexToList(verticesList, x, y, z + 1, u + 1, v, side, block, 1, x, y, z, aabbIndex);
-                    addVertexToList(verticesList, x + 1, y, z, u, v + 1, side, block, 2, x, y, z, aabbIndex);
-                    addVertexToList(verticesList, x, y, z, u + 1, v + 1, side, block, 0, x, y, z, aabbIndex);
+                    addVertexToList(verticesList, inChunkX + 1, inChunkY, inChunkZ + 1, u, v, side, block, 3, inChunkX, inChunkY, inChunkZ, aabbIndex);
+                    addVertexToList(verticesList, inChunkX, inChunkY, inChunkZ + 1, u + 1, v, side, block, 1, inChunkX, inChunkY, inChunkZ, aabbIndex);
+                    addVertexToList(verticesList, inChunkX + 1, inChunkY, inChunkZ, u, v + 1, side, block, 2, inChunkX, inChunkY, inChunkZ, aabbIndex);
+                    addVertexToList(verticesList, inChunkX, inChunkY, inChunkZ, u + 1, v + 1, side, block, 0, inChunkX, inChunkY, inChunkZ, aabbIndex);
                 }
                 break;
             case LEFT:
                 blockXYZSubData = Block.getXYZSubData(block);
                 for (int aabbIndex = 0; aabbIndex < blockXYZSubData.length; aabbIndex += 6) {
-                    addVertexToList(verticesList, x, y + 1, z + 1, u, v, side, block, 1, x, y, z, aabbIndex);
-                    addVertexToList(verticesList, x, y + 1, z, u + 1, v, side, block, 0, x, y, z, aabbIndex);
-                    addVertexToList(verticesList, x, y, z + 1, u, v + 1, side, block, 3, x, y, z, aabbIndex);
-                    addVertexToList(verticesList, x, y, z, u + 1, v + 1, side, block, 2, x, y, z, aabbIndex);
+                    addVertexToList(verticesList, inChunkX, inChunkY + 1, inChunkZ + 1, u, v, side, block, 1, inChunkX, inChunkY, inChunkZ, aabbIndex);
+                    addVertexToList(verticesList, inChunkX, inChunkY + 1, inChunkZ, u + 1, v, side, block, 0, inChunkX, inChunkY, inChunkZ, aabbIndex);
+                    addVertexToList(verticesList, inChunkX, inChunkY, inChunkZ + 1, u, v + 1, side, block, 3, inChunkX, inChunkY, inChunkZ, aabbIndex);
+                    addVertexToList(verticesList, inChunkX, inChunkY, inChunkZ, u + 1, v + 1, side, block, 2, inChunkX, inChunkY, inChunkZ, aabbIndex);
                 }
                 break;
         }
     }
 
-    public void addVertexToList(ArrayList<Integer> list, int x, int y, int z, int u, int v, int side, short block, int corner, int blockX, int blockY, int blockZ, int subDataAddend) {
+    public void addVertexToList(ArrayList<Integer> list, int inChunkX, int inChunkY, int inChunkZ, int u, int v, int side, short block, int corner, int blockX, int blockY, int blockZ, int subDataAddend) {
+        int x = worldCoordinate.x + inChunkX;
+        int y = worldCoordinate.y + inChunkY;
+        int z = worldCoordinate.z + inChunkZ;
 
-        int totalX = worldCoordinate.x + x;
-        int totalY = worldCoordinate.y + y;
-        int totalZ = worldCoordinate.z + z;
-
-        int skyLight = getVertexSkyLightInWorld(totalX, totalY, totalZ);
-        int blockLight = getVertexBlockLightInWorld(totalX, totalY, totalZ);
+        int skyLight = getVertexSkyLightInWorld(x, y, z);
+        int blockLight = getVertexBlockLightInWorld(x, y, z);
 
         if ((Block.getBlockTypeData(block) & DYNAMIC_SHAPE_MASK) != 0) {
-            addVertexToListDynamic(list, x, y, z, u, v, side, skyLight, blockLight, block, corner, blockX, blockY, blockZ);
+            addVertexToListDynamic(list, inChunkX, inChunkY, inChunkZ, u, v, side, skyLight, blockLight, block, corner, blockX, blockY, blockZ);
             return;
         }
 
@@ -339,61 +331,62 @@ public class Chunk {
         int subU = Block.getSubU(blockType, side, corner, subDataAddend / 6);
         int subV = Block.getSubV(blockType, side, corner, subDataAddend / 6);
 
-        list.add(packData(getAmbientOcclusionLevel(x, y, z, side, subX, subY, subZ), (x << 4) + subX + 15, (y << 4) + subY + 15, (z << 4) + subZ + 15));
+        int ambientOcclusionLevel = getAmbientOcclusionLevel(inChunkX, inChunkY, inChunkZ, side, subX, subY, subZ, blockX, blockY, blockZ);
+        list.add(packData(ambientOcclusionLevel, (inChunkX << 4) + subX + 15, (inChunkY << 4) + subY + 15, (inChunkZ << 4) + subZ + 15));
         list.add(packData(side, skyLight, blockLight, (u << 4) + subU + 15, (v << 4) + subV + 15));
     }
 
-    public void addWaterSideToList(int x, int y, int z, int side, ArrayList<Integer> verticesList) {
+    public void addWaterSideToList(int inChunkX, int inChunkY, int inChunkZ, int side, ArrayList<Integer> verticesList) {
         int u = WATER_TEXTURE - 1 & 15;
         int v = WATER_TEXTURE - 1 >> 4 & 15;
 
         switch (side) {
             case FRONT:
-                addWaterVertexToList(verticesList, x + 1, y + 1, z + 1, u, v, side, 0, x, y, z);
-                addWaterVertexToList(verticesList, x, y + 1, z + 1, u + 1, v, side, 1, x, y, z);
-                addWaterVertexToList(verticesList, x + 1, y, z + 1, u, v + 1, side, 2, x, y, z);
-                addWaterVertexToList(verticesList, x, y, z + 1, u + 1, v + 1, side, 3, x, y, z);
+                addWaterVertexToList(verticesList, inChunkX + 1, inChunkY + 1, inChunkZ + 1, u, v, side, 0, inChunkX, inChunkY, inChunkZ);
+                addWaterVertexToList(verticesList, inChunkX, inChunkY + 1, inChunkZ + 1, u + 1, v, side, 1, inChunkX, inChunkY, inChunkZ);
+                addWaterVertexToList(verticesList, inChunkX + 1, inChunkY, inChunkZ + 1, u, v + 1, side, 2, inChunkX, inChunkY, inChunkZ);
+                addWaterVertexToList(verticesList, inChunkX, inChunkY, inChunkZ + 1, u + 1, v + 1, side, 3, inChunkX, inChunkY, inChunkZ);
                 break;
             case TOP:
-                addWaterVertexToList(verticesList, x, y + 1, z, u, v, side, 0, x, y, z);
-                addWaterVertexToList(verticesList, x, y + 1, z + 1, u + 1, v, side, 1, x, y, z);
-                addWaterVertexToList(verticesList, x + 1, y + 1, z, u, v + 1, side, 2, x, y, z);
-                addWaterVertexToList(verticesList, x + 1, y + 1, z + 1, u + 1, v + 1, side, 3, x, y, z);
+                addWaterVertexToList(verticesList, inChunkX, inChunkY + 1, inChunkZ, u, v, side, 0, inChunkX, inChunkY, inChunkZ);
+                addWaterVertexToList(verticesList, inChunkX, inChunkY + 1, inChunkZ + 1, u + 1, v, side, 1, inChunkX, inChunkY, inChunkZ);
+                addWaterVertexToList(verticesList, inChunkX + 1, inChunkY + 1, inChunkZ, u, v + 1, side, 2, inChunkX, inChunkY, inChunkZ);
+                addWaterVertexToList(verticesList, inChunkX + 1, inChunkY + 1, inChunkZ + 1, u + 1, v + 1, side, 3, inChunkX, inChunkY, inChunkZ);
                 break;
             case RIGHT:
-                addWaterVertexToList(verticesList, x + 1, y + 1, z, u, v, side, 0, x, y, z);
-                addWaterVertexToList(verticesList, x + 1, y + 1, z + 1, u + 1, v, side, 1, x, y, z);
-                addWaterVertexToList(verticesList, x + 1, y, z, u, v + 1, side, 2, x, y, z);
-                addWaterVertexToList(verticesList, x + 1, y, z + 1, u + 1, v + 1, side, 3, x, y, z);
+                addWaterVertexToList(verticesList, inChunkX + 1, inChunkY + 1, inChunkZ, u, v, side, 0, inChunkX, inChunkY, inChunkZ);
+                addWaterVertexToList(verticesList, inChunkX + 1, inChunkY + 1, inChunkZ + 1, u + 1, v, side, 1, inChunkX, inChunkY, inChunkZ);
+                addWaterVertexToList(verticesList, inChunkX + 1, inChunkY, inChunkZ, u, v + 1, side, 2, inChunkX, inChunkY, inChunkZ);
+                addWaterVertexToList(verticesList, inChunkX + 1, inChunkY, inChunkZ + 1, u + 1, v + 1, side, 3, inChunkX, inChunkY, inChunkZ);
                 break;
             case BACK:
-                addWaterVertexToList(verticesList, x, y + 1, z, u, v, side, 0, x, y, z);
-                addWaterVertexToList(verticesList, x + 1, y + 1, z, u + 1, v, side, 1, x, y, z);
-                addWaterVertexToList(verticesList, x, y, z, u, v + 1, side, 2, x, y, z);
-                addWaterVertexToList(verticesList, x + 1, y, z, u + 1, v + 1, side, 3, x, y, z);
+                addWaterVertexToList(verticesList, inChunkX, inChunkY + 1, inChunkZ, u, v, side, 0, inChunkX, inChunkY, inChunkZ);
+                addWaterVertexToList(verticesList, inChunkX + 1, inChunkY + 1, inChunkZ, u + 1, v, side, 1, inChunkX, inChunkY, inChunkZ);
+                addWaterVertexToList(verticesList, inChunkX, inChunkY, inChunkZ, u, v + 1, side, 2, inChunkX, inChunkY, inChunkZ);
+                addWaterVertexToList(verticesList, inChunkX + 1, inChunkY, inChunkZ, u + 1, v + 1, side, 3, inChunkX, inChunkY, inChunkZ);
                 break;
             case BOTTOM:
-                addWaterVertexToList(verticesList, x + 1, y, z + 1, u, v, side, 3, x, y, z);
-                addWaterVertexToList(verticesList, x, y, z + 1, u + 1, v, side, 1, x, y, z);
-                addWaterVertexToList(verticesList, x + 1, y, z, u, v + 1, side, 2, x, y, z);
-                addWaterVertexToList(verticesList, x, y, z, u + 1, v + 1, side, 0, x, y, z);
+                addWaterVertexToList(verticesList, inChunkX + 1, inChunkY, inChunkZ + 1, u, v, side, 3, inChunkX, inChunkY, inChunkZ);
+                addWaterVertexToList(verticesList, inChunkX, inChunkY, inChunkZ + 1, u + 1, v, side, 1, inChunkX, inChunkY, inChunkZ);
+                addWaterVertexToList(verticesList, inChunkX + 1, inChunkY, inChunkZ, u, v + 1, side, 2, inChunkX, inChunkY, inChunkZ);
+                addWaterVertexToList(verticesList, inChunkX, inChunkY, inChunkZ, u + 1, v + 1, side, 0, inChunkX, inChunkY, inChunkZ);
                 break;
             case LEFT:
-                addWaterVertexToList(verticesList, x, y + 1, z + 1, u, v, side, 1, x, y, z);
-                addWaterVertexToList(verticesList, x, y + 1, z, u + 1, v, side, 0, x, y, z);
-                addWaterVertexToList(verticesList, x, y, z + 1, u, v + 1, side, 3, x, y, z);
-                addWaterVertexToList(verticesList, x, y, z, u + 1, v + 1, side, 2, x, y, z);
+                addWaterVertexToList(verticesList, inChunkX, inChunkY + 1, inChunkZ + 1, u, v, side, 1, inChunkX, inChunkY, inChunkZ);
+                addWaterVertexToList(verticesList, inChunkX, inChunkY + 1, inChunkZ, u + 1, v, side, 0, inChunkX, inChunkY, inChunkZ);
+                addWaterVertexToList(verticesList, inChunkX, inChunkY, inChunkZ + 1, u, v + 1, side, 3, inChunkX, inChunkY, inChunkZ);
+                addWaterVertexToList(verticesList, inChunkX, inChunkY, inChunkZ, u + 1, v + 1, side, 2, inChunkX, inChunkY, inChunkZ);
                 break;
         }
     }
 
-    public void addWaterVertexToList(ArrayList<Integer> list, int x, int y, int z, int u, int v, int side, int corner, int blockX, int blockY, int blockZ) {
-        int totalX = worldCoordinate.x + x;
-        int totalY = worldCoordinate.y + y;
-        int totalZ = worldCoordinate.z + z;
+    public void addWaterVertexToList(ArrayList<Integer> list, int inChunkX, int inChunkY, int inChunkZ, int u, int v, int side, int corner, int blockX, int blockY, int blockZ) {
+        int x = worldCoordinate.x + inChunkX;
+        int y = worldCoordinate.y + inChunkY;
+        int z = worldCoordinate.z + inChunkZ;
 
-        int skyLight = getVertexSkyLightInWorld(totalX, totalY, totalZ);
-        int blockLight = getVertexBlockLightInWorld(totalX, totalY, totalZ);
+        int skyLight = getVertexSkyLightInWorld(x, y, z);
+        int blockLight = getVertexBlockLightInWorld(x, y, z);
 
         int subX = 0;
         int subY = 0;
@@ -424,14 +417,15 @@ public class Chunk {
         short blockBelow = getBlock(blockX, blockY - 1, blockZ);
         shouldSimulateWaves = shouldSimulateWaves || blockBelow == WATER;
 
-        if (x == 0 || x == CHUNK_SIZE || z == 0 || z == CHUNK_SIZE) shouldSimulateWaves = false;
+        if (inChunkX == 0 || inChunkX == CHUNK_SIZE || inChunkZ == 0 || inChunkZ == CHUNK_SIZE)
+            shouldSimulateWaves = false;
 
-        list.add(packData(getAmbientOcclusionLevel(x, y, z, side, subX, subY, subZ), (x << 4) + subX + 15, (y << 4) + subY + 15, (z << 4) + subZ + 15));
+        int ambientOcclusionLevel = getAmbientOcclusionLevel(inChunkX, inChunkY, inChunkZ, side, subX, subY, subZ, blockX, blockY, blockZ);
+        list.add(packData(ambientOcclusionLevel, (inChunkX << 4) + subX + 15, (inChunkY << 4) + subY + 15, (inChunkZ << 4) + subZ + 15));
         list.add(packWaterData(shouldSimulateWaves ? 1 : 0, side, skyLight, blockLight, (u << 4) + subU + 15, (v << 4) + subV + 15));
     }
 
-
-    public void addVertexToListDynamic(ArrayList<Integer> list, int x, int y, int z, int u, int v, int side, int skyLight, int blockLight, short block, int corner, int blockX, int blockY, int blockZ) {
+    public void addVertexToListDynamic(ArrayList<Integer> list, int inChunkX, int inChunkY, int inChunkZ, int u, int v, int side, int skyLight, int blockLight, short block, int corner, int blockX, int blockY, int blockZ) {
         int subX = 0;
         int subY = 0;
         int subZ = 0;
@@ -469,13 +463,13 @@ public class Chunk {
                 case RIGHT, LEFT -> subX = Block.getSubX(blockType, side, corner, 0);
             }
         }
-
-        list.add(packData(getAmbientOcclusionLevel(x, y, z, side, subX, subY, subZ), (x << 4) + subX + 15, (y << 4) + subY + 15, (z << 4) + subZ + 15));
+        int ambientOcclusionLevel = getAmbientOcclusionLevel(inChunkX, inChunkY, inChunkZ, side, subX, subY, subZ, blockX, blockY, blockZ);
+        list.add(packData(ambientOcclusionLevel, (inChunkX << 4) + subX + 15, (inChunkY << 4) + subY + 15, (inChunkZ << 4) + subZ + 15));
         list.add(packData(side, skyLight, blockLight, (u << 4) + subU + 15, (v << 4) + subV + 15));
     }
 
-    public int packData(int ambientOcclusionLevel, int x, int y, int z) {
-        return ambientOcclusionLevel << 30 | x << 20 | y << 10 | z;
+    public int packData(int ambientOcclusionLevel, int inChunkX, int inChunkY, int inChunkZ) {
+        return ambientOcclusionLevel << 30 | inChunkX << 20 | inChunkY << 10 | inChunkZ;
     }
 
     public int packData(int side, int skyLight, int blockLight, int u, int v) {
@@ -486,116 +480,96 @@ public class Chunk {
         return waveMultiplier << 29 | side << 26 | skyLight << 22 | blockLight << 18 | u << 9 | v;
     }
 
-    public int getAmbientOcclusionLevel(int x, int y, int z, int side, int subX, int subY, int subZ) {
-
+    public int getAmbientOcclusionLevel(int inChunkX, int inChunkY, int inChunkZ, int side, int subX, int subY, int subZ, int blockX, int blockY, int blockZ) {
         int level = 0;
+        int x = worldCoordinate.x + inChunkX;
+        int y = worldCoordinate.y + inChunkY;
+        int z = worldCoordinate.z + inChunkZ;
+        int startX = 0, startY = 0, startZ = 0;
+        short block = getSaveBlock(blockX, blockY, blockZ);
+        blockX |= worldCoordinate.x;
+        blockY |= worldCoordinate.y;
+        blockZ |= worldCoordinate.z;
+
         switch (side) {
-            case FRONT:
-                if (subZ != 0) z--;
-                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x, worldCoordinate.y + y, worldCoordinate.z + z)) & SOLID_MASK) != 0)
-                    level++;
-                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x - 1, worldCoordinate.y + y, worldCoordinate.z + z)) & SOLID_MASK) != 0)
-                    level++;
-                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x, worldCoordinate.y + y - 1, worldCoordinate.z + z)) & SOLID_MASK) != 0)
-                    level++;
-                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x - 1, worldCoordinate.y + y - 1, worldCoordinate.z + z)) & SOLID_MASK) != 0)
-                    level++;
-                break;
-            case TOP:
-                if (subY != 0) y--;
-                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x, worldCoordinate.y + y, worldCoordinate.z + z)) & SOLID_MASK) != 0)
-                    level++;
-                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x - 1, worldCoordinate.y + y, worldCoordinate.z + z)) & SOLID_MASK) != 0)
-                    level++;
-                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x, worldCoordinate.y + y, worldCoordinate.z + z - 1)) & SOLID_MASK) != 0)
-                    level++;
-                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x - 1, worldCoordinate.y + y, worldCoordinate.z + z - 1)) & SOLID_MASK) != 0)
-                    level++;
-                break;
-            case RIGHT:
-                if (subX != 0) x--;
-                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x, worldCoordinate.y + y, worldCoordinate.z + z)) & SOLID_MASK) != 0)
-                    level++;
-                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x, worldCoordinate.y + y - 1, worldCoordinate.z + z)) & SOLID_MASK) != 0)
-                    level++;
-                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x, worldCoordinate.y + y, worldCoordinate.z + z - 1)) & SOLID_MASK) != 0)
-                    level++;
-                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x, worldCoordinate.y + y - 1, worldCoordinate.z + z - 1)) & SOLID_MASK) != 0)
-                    level++;
-                break;
-            case BACK:
-                if (subZ != 0) z++;
-                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x, worldCoordinate.y + y, worldCoordinate.z + z - 1)) & SOLID_MASK) != 0)
-                    level++;
-                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x - 1, worldCoordinate.y + y, worldCoordinate.z + z - 1)) & SOLID_MASK) != 0)
-                    level++;
-                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x, worldCoordinate.y + y - 1, worldCoordinate.z + z - 1)) & SOLID_MASK) != 0)
-                    level++;
-                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x - 1, worldCoordinate.y + y - 1, worldCoordinate.z + z - 1)) & SOLID_MASK) != 0)
-                    level++;
-                break;
-            case BOTTOM:
-                if (subY != 0) y++;
-                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x, worldCoordinate.y + y - 1, worldCoordinate.z + z)) & SOLID_MASK) != 0)
-                    level++;
-                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x - 1, worldCoordinate.y + y - 1, worldCoordinate.z + z)) & SOLID_MASK) != 0)
-                    level++;
-                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x, worldCoordinate.y + y - 1, worldCoordinate.z + z - 1)) & SOLID_MASK) != 0)
-                    level++;
-                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x - 1, worldCoordinate.y + y - 1, worldCoordinate.z + z - 1)) & SOLID_MASK) != 0)
-                    level++;
-                break;
-            case LEFT:
-                if (subX != 0) x++;
-                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x - 1, worldCoordinate.y + y, worldCoordinate.z + z)) & SOLID_MASK) != 0)
-                    level++;
-                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x - 1, worldCoordinate.y + y - 1, worldCoordinate.z + z)) & SOLID_MASK) != 0)
-                    level++;
-                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x - 1, worldCoordinate.y + y, worldCoordinate.z + z - 1)) & SOLID_MASK) != 0)
-                    level++;
-                if ((Block.getBlockTypeData(getBlockInWorld(worldCoordinate.x + x - 1, worldCoordinate.y + y - 1, worldCoordinate.z + z - 1)) & SOLID_MASK) != 0)
-                    level++;
-                break;
+            case FRONT -> {
+                startX = subX == 0 ? x - 1 : subX < 0 ? --x : x;
+                startY = subY == 0 ? y - 1 : subY < 0 ? --y : y;
+                startZ = subZ != 0 ? --z : z;
+            }
+            case TOP -> {
+                startX = subX == 0 ? x - 1 : subX < 0 ? --x : x;
+                startY = subY != 0 ? --y : y;
+                startZ = subZ == 0 ? z - 1 : subZ < 0 ? --z : z;
+            }
+            case RIGHT -> {
+                startX = subX != 0 ? --x : x;
+                startY = subY == 0 ? y - 1 : subY < 0 ? --y : y;
+                startZ = subZ == 0 ? z - 1 : subZ < 0 ? --z : z;
+            }
+            case BACK -> {
+                startX = subX == 0 ? x - 1 : subX < 0 ? --x : x;
+                startY = subY == 0 ? y - 1 : subY < 0 ? --y : y;
+                startZ = subZ != 0 ? z : --z;
+            }
+            case BOTTOM -> {
+                startX = subX == 0 ? x - 1 : subX < 0 ? --x : x;
+                startY = subY != 0 ? y : --y;
+                startZ = subZ == 0 ? z - 1 : subZ < 0 ? --z : z;
+            }
+            case LEFT -> {
+                startX = subX != 0 ? x : --x;
+                startY = subY == 0 ? y - 1 : subY < 0 ? --y : y;
+                startZ = subZ == 0 ? z - 1 : subZ < 0 ? --z : z;
+            }
         }
-        return level & 3;
+
+        for (int totalX = startX; totalX <= x; totalX++)
+            for (int totalZ = startZ; totalZ <= z; totalZ++)
+                for (int totalY = startY; totalY <= y; totalY++) {
+                    if (totalX == blockX && totalY == blockY && totalZ == blockZ) continue;
+                    if (Block.hasAmbientOcclusion(getBlockInWorld(totalX, totalY, totalZ), block)) level++;
+                }
+
+        return Math.min(3, level);
     }
 
-    public short getBlock(int x, int y, int z) {
-        if (x < 0) {
+    public short getBlock(int inChunkX, int inChunkY, int inChunkZ) {
+        if (inChunkX < 0) {
             Chunk neighbor = getChunk(X - 1, Y, Z);
             if (neighbor == null) return OUT_OF_WORLD;
-            return neighbor.getSaveBlock(CHUNK_SIZE + x, y, z);
-        } else if (x >= CHUNK_SIZE) {
+            return neighbor.getSaveBlock(CHUNK_SIZE + inChunkX, inChunkY, inChunkZ);
+        } else if (inChunkX >= CHUNK_SIZE) {
             Chunk neighbor = getChunk(X + 1, Y, Z);
             if (neighbor == null) return OUT_OF_WORLD;
-            return neighbor.getSaveBlock(x - CHUNK_SIZE, y, z);
+            return neighbor.getSaveBlock(inChunkX - CHUNK_SIZE, inChunkY, inChunkZ);
         }
-        if (y < 0) {
+        if (inChunkY < 0) {
             Chunk neighbor = getChunk(X, Y - 1, Z);
             if (neighbor == null) return OUT_OF_WORLD;
-            return neighbor.getSaveBlock(x, CHUNK_SIZE + y, z);
-        } else if (y >= CHUNK_SIZE) {
+            return neighbor.getSaveBlock(inChunkX, CHUNK_SIZE + inChunkY, inChunkZ);
+        } else if (inChunkY >= CHUNK_SIZE) {
             Chunk neighbor = getChunk(X, Y + 1, Z);
             if (neighbor == null) {
                 return OUT_OF_WORLD;
             }
-            return neighbor.getSaveBlock(x, y - CHUNK_SIZE, z);
+            return neighbor.getSaveBlock(inChunkX, inChunkY - CHUNK_SIZE, inChunkZ);
         }
-        if (z < 0) {
+        if (inChunkZ < 0) {
             Chunk neighbor = getChunk(X, Y, Z - 1);
             if (neighbor == null) return OUT_OF_WORLD;
-            return neighbor.getSaveBlock(x, y, CHUNK_SIZE + z);
-        } else if (z >= CHUNK_SIZE) {
+            return neighbor.getSaveBlock(inChunkX, inChunkY, CHUNK_SIZE + inChunkZ);
+        } else if (inChunkZ >= CHUNK_SIZE) {
             Chunk neighbor = getChunk(X, Y, Z + 1);
             if (neighbor == null) return OUT_OF_WORLD;
-            return neighbor.getSaveBlock(x, y, z - CHUNK_SIZE);
+            return neighbor.getSaveBlock(inChunkX, inChunkY, inChunkZ - CHUNK_SIZE);
         }
 
-        return getSaveBlock(x, y, z);
+        return getSaveBlock(inChunkX, inChunkY, inChunkZ);
     }
 
-    public short getSaveBlock(int x, int y, int z) {
-        int index = x << CHUNK_SIZE_BITS * 2 | z << CHUNK_SIZE_BITS | y;
+    public short getSaveBlock(int inChunkX, int inChunkY, int inChunkZ) {
+        int index = inChunkX << CHUNK_SIZE_BITS * 2 | inChunkZ << CHUNK_SIZE_BITS | inChunkY;
         return blocks[blocks.length <= index ? 0 : index];
     }
 
@@ -606,33 +580,33 @@ public class Chunk {
     public static short getBlockInWorld(int x, int y, int z) {
         Chunk chunk = world[GameLogic.getChunkIndex(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS)];
         if (chunk == null || !chunk.isGenerated) return OUT_OF_WORLD;
-        return chunk.getSaveBlock(x & CHUNK_SIZE - 1, y & CHUNK_SIZE - 1, z & CHUNK_SIZE - 1);
+        return chunk.getSaveBlock(x & CHUNK_SIZE_MASK, y & CHUNK_SIZE_MASK, z & CHUNK_SIZE_MASK);
     }
 
-    public void placeBlock(int x, int y, int z, short block) {
+    public void placeBlock(int inChunkX, int inChunkY, int inChunkZ, short block) {
         if (blocks.length == 1 && blocks[0] == block) return;
         if (blocks.length == 1) {
             short oldBlock = blocks[0];
             blocks = new short[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
             Arrays.fill(blocks, oldBlock);
         }
-        blocks[x << CHUNK_SIZE_BITS * 2 | z << CHUNK_SIZE_BITS | y] = block;
+        blocks[inChunkX << CHUNK_SIZE_BITS * 2 | inChunkZ << CHUNK_SIZE_BITS | inChunkY] = block;
 
         int[] heightMap = Chunk.heightMap[GameLogic.getHeightMapIndex(X, Z)];
-        int totalY = worldCoordinate.y | y;
+        int totalY = worldCoordinate.y | inChunkY;
 
-        if (totalY > heightMap[x << CHUNK_SIZE_BITS | z]) heightMap[x << CHUNK_SIZE_BITS | z] = totalY;
+        if (totalY > heightMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ]) heightMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ] = totalY;
 
-        else if (totalY == heightMap[x << CHUNK_SIZE_BITS | z] && block == AIR) {
-            int totalX = worldCoordinate.x | x;
-            int totalZ = worldCoordinate.z | z;
+        else if (totalY == heightMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ] && block == AIR) {
+            int totalX = worldCoordinate.x | inChunkX;
+            int totalZ = worldCoordinate.z | inChunkZ;
             while (getBlockInWorld(totalX, totalY, totalZ) == AIR) totalY--;
-            heightMap[x << CHUNK_SIZE_BITS | z] = totalY;
+            heightMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ] = totalY;
         }
     }
 
-    public void storeSave(int x, int y, int z, short block) {
-        blocks[x << CHUNK_SIZE_BITS * 2 | z << CHUNK_SIZE_BITS | y] = block;
+    public void storeSave(int inChunkX, int inChunkY, int inChunkZ, short block) {
+        blocks[inChunkX << CHUNK_SIZE_BITS * 2 | inChunkZ << CHUNK_SIZE_BITS | inChunkY] = block;
     }
 
     public void storeTreeBlock(int inChunkX, int inChunkY, int inChunkZ, short block) {
@@ -650,8 +624,7 @@ public class Chunk {
 
         if (chunk == this) {
             int index = inChunkX << CHUNK_SIZE_BITS * 2 | inChunkZ << CHUNK_SIZE_BITS | inChunkY;
-            if (blocks[index] != AIR && Block.isLeaveType(block))
-                return;
+            if (blocks[index] != AIR && Block.isLeaveType(block)) return;
             blocks[index] = block;
 
             int[] heightMap = getHeightMap(X, Z);
@@ -665,8 +638,7 @@ public class Chunk {
                 toPlaceBlocks.add((long) block << 48 | inChunkX << CHUNK_SIZE_BITS * 2 | inChunkY << CHUNK_SIZE_BITS | inChunkZ);
             }
         } else {
-            if (chunk.getSaveBlock(inChunkX, inChunkY, inChunkZ) != AIR && Block.isLeaveType(block))
-                return;
+            if (chunk.getSaveBlock(inChunkX, inChunkY, inChunkZ) != AIR && Block.isLeaveType(block)) return;
             chunk.storeSave(inChunkX, inChunkY, inChunkZ, block);
 
             int[] heightMap = getHeightMap(chunk.getChunkX(), chunk.getChunkZ());
@@ -678,11 +650,11 @@ public class Chunk {
     public static byte getBlockLightInWorld(int x, int y, int z) {
         Chunk chunk = world[GameLogic.getChunkIndex(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS)];
         if (chunk == null || !chunk.isGenerated) return 0;
-        return chunk.getSaveBlockLight(x & CHUNK_SIZE - 1, y & CHUNK_SIZE - 1, z & CHUNK_SIZE - 1);
+        return chunk.getSaveBlockLight(x & CHUNK_SIZE_MASK, y & CHUNK_SIZE_MASK, z & CHUNK_SIZE_MASK);
     }
 
-    public byte getSaveBlockLight(int x, int y, int z) {
-        int index = x << CHUNK_SIZE_BITS * 2 | z << CHUNK_SIZE_BITS | y;
+    public byte getSaveBlockLight(int inChunkX, int inChunkY, int inChunkZ) {
+        int index = inChunkX << CHUNK_SIZE_BITS * 2 | inChunkZ << CHUNK_SIZE_BITS | inChunkY;
         return (byte) (light[light.length <= index ? 0 : index] & 15);
     }
 
@@ -712,11 +684,11 @@ public class Chunk {
     public static byte getSkyLightInWorld(int x, int y, int z) {
         Chunk chunk = world[GameLogic.getChunkIndex(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS)];
         if (chunk == null || !chunk.isGenerated) return 0;
-        return chunk.getSaveSkyLight(x & CHUNK_SIZE - 1, y & CHUNK_SIZE - 1, z & CHUNK_SIZE - 1);
+        return chunk.getSaveSkyLight(x & CHUNK_SIZE_MASK, y & CHUNK_SIZE_MASK, z & CHUNK_SIZE_MASK);
     }
 
-    public byte getSaveSkyLight(int x, int y, int z) {
-        int index = x << CHUNK_SIZE_BITS * 2 | z << CHUNK_SIZE_BITS | y;
+    public byte getSaveSkyLight(int inChunkX, int inChunkY, int inChunkZ) {
+        int index = inChunkX << CHUNK_SIZE_BITS * 2 | inChunkZ << CHUNK_SIZE_BITS | inChunkY;
         return (byte) (light[light.length <= index ? 0 : index] >> 4 & 15);
     }
 

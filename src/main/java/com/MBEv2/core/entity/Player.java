@@ -128,14 +128,7 @@ public class Player {
 
         mouseInput.input();
         Vector2f rotVec = mouseInput.getDisplayVec();
-        if (!inInventory)
-            camera.moveRotation(rotVec.x * MOUSE_SENSITIVITY, rotVec.y * MOUSE_SENSITIVITY);
-
-        Vector3f cP = camera.getPosition();
-        renderer.setHeadUnderWater(Chunk.getBlockInWorld(Utils.floor(cP.x), Utils.floor(cP.y), Utils.floor(cP.z)) == WATER);
-
-        if (inInventory)
-            for (GUIElement element : inventoryElements) renderer.processGUIElement(element);
+        if (!inInventory) camera.moveRotation(rotVec.x * MOUSE_SENSITIVITY, rotVec.y * MOUSE_SENSITIVITY);
     }
 
     public void input() {
@@ -467,19 +460,20 @@ public class Player {
     }
 
     private void handleMouseInput() {
+        if (inInventory) return;
         long rightButtonPressTime = mouseInput.getRightButtonPressTime();
         long leftButtonPressTime = mouseInput.getLeftButtonPressTime();
         boolean rightButtonWasJustPressed = mouseInput.wasRightButtonJustPressed();
         boolean leftButtonWasJustPressed = mouseInput.wasLeftButtonJustPressed();
         long currentTime = System.nanoTime();
 
-        if (!inInventory && leftButtonPressTime != -1 && (currentTime - leftButtonPressTime > 300_000_000 || leftButtonWasJustPressed)) {
+        if (leftButtonPressTime != -1 && (currentTime - leftButtonPressTime > 300_000_000 || leftButtonWasJustPressed)) {
             Vector3f target = getTarget(0, camera.getDirection());
             if (target != null)
-                GameLogic.placeBlock(AIR, new Vector3i(Utils.floor(target.x), Utils.floor(target.y), Utils.floor(target.z)));
+                GameLogic.placeBlock(AIR, Utils.floor(target.x), Utils.floor(target.y), Utils.floor(target.z));
         }
 
-        if (!inInventory && rightButtonPressTime != -1 && (currentTime - rightButtonPressTime > 300_000_000 || rightButtonWasJustPressed) && hotBar[selectedHotBarSlot] != AIR) {
+        if (rightButtonPressTime != -1 && (currentTime - rightButtonPressTime > 300_000_000 || rightButtonWasJustPressed) && hotBar[selectedHotBarSlot] != AIR) {
 
             Vector3f cameraDirection = camera.getDirection();
             Vector3f target = getTarget(1, cameraDirection);
@@ -487,8 +481,17 @@ public class Player {
                 short selectedBlock = hotBar[selectedHotBarSlot];
                 short toPlaceBlock = Block.getToPlaceBlock(selectedBlock, camera.getPrimaryDirection(cameraDirection), camera.getPrimaryXZDirection(cameraDirection), target);
 
-                GameLogic.placeBlock(toPlaceBlock, new Vector3i(Utils.floor(target.x), Utils.floor(target.y), Utils.floor(target.z)));
+                GameLogic.placeBlock(toPlaceBlock, Utils.floor(target.x), Utils.floor(target.y), Utils.floor(target.z));
             }
+        }
+
+        if (mouseInput.isMouseButton3IsPressed()) {
+            Vector3f target = getTarget(0, camera.getDirection());
+            if (target != null) {
+                short block = Chunk.getBlockInWorld(Utils.floor(target.x), Utils.floor(target.y), Utils.floor(target.z));
+                hotBar[selectedHotBarSlot] = Block.getInInventoryBlockEquivalent(block);
+            } else hotBar[selectedHotBarSlot] = AIR;
+            updateHotBarElements();
         }
     }
 
@@ -782,6 +785,10 @@ public class Player {
             renderer.processGUIElement(GUIElement);
 
         renderer.processGUIElement(hotBarSelectionIndicator);
+
+        renderer.setHeadUnderWater(Chunk.getBlockInWorld(Utils.floor(cameraPosition.x), Utils.floor(cameraPosition.y), Utils.floor(cameraPosition.z)) == WATER);
+
+        if (inInventory) for (GUIElement element : inventoryElements) renderer.processGUIElement(element);
     }
 
     private void renderChunkColumn(int x, int z, int cameraX, int cameraY, int cameraZ, FrustumIntersection frustumIntersection) {
