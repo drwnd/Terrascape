@@ -12,7 +12,7 @@ public class Chunk {
 
     private static final Chunk[] world = new Chunk[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
     private static final int[][] heightMap = new int[RENDERED_WORLD_WIDTH * RENDERED_WORLD_WIDTH][CHUNK_SIZE * CHUNK_SIZE];
-    private static final HashMap<Long, Chunk> savedChunks = new HashMap<>();
+    //private static final HashMap<Long, Chunk> savedChunks = new HashMap<>();
     private static final HashMap<Long, ArrayList<Long>> toGenerateBlocks = new HashMap<>();
 
     private short[] blocks;
@@ -45,6 +45,20 @@ public class Chunk {
 
         blocks = new short[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
         light = new byte[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
+
+        id = GameLogic.getChunkId(X, Y, Z);
+        index = GameLogic.getChunkIndex(X, Y, Z);
+        model = new Model[6];
+    }
+
+    public Chunk(int x, int y, int z, byte[] light, short[] blocks) {
+        this.X = x;
+        this.Y = y;
+        this.Z = z;
+        worldCoordinate = new Vector3i(X << CHUNK_SIZE_BITS, Y << CHUNK_SIZE_BITS, Z << CHUNK_SIZE_BITS);
+
+        this.blocks = blocks;
+        this.light = light;
 
         id = GameLogic.getChunkId(X, Y, Z);
         index = GameLogic.getChunkIndex(X, Y, Z);
@@ -213,11 +227,12 @@ public class Chunk {
     }
 
     public void propagateBlockLight() {
-        for (int x = 0; x < CHUNK_SIZE; x++)
-            for (int z = 0; z < CHUNK_SIZE; z++)
-                for (int y = 0; y < CHUNK_SIZE; y++)
-                    if ((Block.getBlockProperties(getSaveBlock(x, y, z)) & LIGHT_EMITTING_MASK) != 0)
-                        LightLogic.setBlockLight(worldCoordinate.x | x, worldCoordinate.y | y, worldCoordinate.z | z, MAX_BLOCK_LIGHT_VALUE);
+        for (int inChunkX = 0; inChunkX < CHUNK_SIZE; inChunkX++)
+            for (int inChunkZ = 0; inChunkZ < CHUNK_SIZE; inChunkZ++)
+                for (int inChunkY = 0; inChunkY < CHUNK_SIZE; inChunkY++)
+
+                    if ((Block.getBlockProperties(getSaveBlock(inChunkX, inChunkY, inChunkZ)) & LIGHT_EMITTING_MASK) != 0)
+                        LightLogic.setBlockLight(worldCoordinate.x | inChunkX, worldCoordinate.y | inChunkY, worldCoordinate.z | inChunkZ, MAX_BLOCK_LIGHT_VALUE);
     }
 
     public void generateSurroundingChunks() {
@@ -229,8 +244,8 @@ public class Chunk {
                     Chunk chunk = getChunk(index);
 
                     if (chunk == null) {
-                        if (containsSavedChunk(expectedId)) chunk = removeSavedChunk(expectedId);
-                        else chunk = new Chunk(x, y, z);
+                        chunk = FileManager.getChunk(expectedId);
+                        if (chunk == null) chunk = new Chunk(x, y, z);
 
                         storeChunk(chunk);
                         if (!chunk.isGenerated) WorldGeneration.generate(chunk);
@@ -238,10 +253,10 @@ public class Chunk {
                     } else if (chunk.getId() != expectedId) {
                         GameLogic.addToUnloadChunk(chunk);
 
-                        if (chunk.isModified) putSavedChunk(chunk);
+                        if (chunk.isModified) FileManager.saveChunk(chunk);
 
-                        if (containsSavedChunk(expectedId)) chunk = removeSavedChunk(expectedId);
-                        else chunk = new Chunk(x, y, z);
+                        chunk = FileManager.getChunk(expectedId);
+                        if (chunk == null) chunk = new Chunk(x, y, z);
 
                         Chunk.storeChunk(chunk);
                         if (!chunk.isGenerated) WorldGeneration.generate(chunk);
@@ -595,7 +610,8 @@ public class Chunk {
         int[] heightMap = Chunk.heightMap[GameLogic.getHeightMapIndex(X, Z)];
         int totalY = worldCoordinate.y | inChunkY;
 
-        if (totalY > heightMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ]) heightMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ] = totalY;
+        if (totalY > heightMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ])
+            heightMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ] = totalY;
 
         else if (totalY == heightMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ] && block == AIR) {
             int totalX = worldCoordinate.x | inChunkX;
@@ -826,25 +842,6 @@ public class Chunk {
         return world;
     }
 
-    public static boolean containsSavedChunk(long id) {
-        synchronized (savedChunks) {
-            return savedChunks.containsKey(id);
-        }
-    }
-
-    public static void putSavedChunk(Chunk chunk) {
-        synchronized (savedChunks) {
-            savedChunks.put(chunk.getId(), chunk);
-        }
-        chunk.setMeshed(false);
-    }
-
-    public static Chunk removeSavedChunk(long id) {
-        synchronized (savedChunks) {
-            return savedChunks.remove(id);
-        }
-    }
-
     public static ArrayList<Long> removeToGenerateBlocks(long id) {
         synchronized (toGenerateBlocks) {
             return toGenerateBlocks.remove(id);
@@ -889,5 +886,21 @@ public class Chunk {
 
     public boolean isLightOptimized() {
         return light.length == 1;
+    }
+
+    public int getLightLength() {
+        return light.length;
+    }
+
+    public int getBlockLength() {
+        return blocks.length;
+    }
+
+    public short[] getBlocks() {
+        return blocks;
+    }
+
+    public byte[] getLight() {
+        return light;
     }
 }

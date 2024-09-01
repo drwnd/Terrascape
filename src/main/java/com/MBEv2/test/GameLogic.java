@@ -405,5 +405,6 @@ public class GameLogic {
         player.getRenderer().cleanUp();
         ObjectLoader.cleanUp();
         generator.cleanUp();
+        FileManager.saveAllModifiedChunks();
     }
 }

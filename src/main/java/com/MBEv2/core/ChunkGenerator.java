@@ -89,32 +89,26 @@ public class ChunkGenerator {
                 for (int z = 0; z < CHUNK_SIZE; z++)
                     resultingHeightMap[x][z] = WorldGeneration.getHeight(heightMap[x][z], erosionMap[x][z]);
 
-            for (int chunkY = playerY + RENDER_DISTANCE_Y; chunkY >= playerY - RENDER_DISTANCE_Y; chunkY--) {
+            for (int chunkY = playerY + RENDER_DISTANCE_Y + 1; chunkY >= playerY - RENDER_DISTANCE_Y - 1; chunkY--) {
                 try {
                     final long expectedId = GameLogic.getChunkId(chunkX, chunkY, chunkZ);
                     Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
 
                     if (chunk == null) {
-                        if (Chunk.containsSavedChunk(expectedId))
-                            chunk = Chunk.removeSavedChunk(expectedId);
-                        else
-                            chunk = new Chunk(chunkX, chunkY, chunkZ);
+                        chunk = FileManager.getChunk(expectedId);
+                        if (chunk == null) chunk = new Chunk(chunkX, chunkY, chunkZ);
 
                         Chunk.storeChunk(chunk);
                         if (!chunk.isGenerated())
                             WorldGeneration.generate(chunk, resultingHeightMap, temperatureMap, humidityMap, erosionMap, featureMap);
                     } else if (chunk.getId() != expectedId) {
-                        System.out.println("expected: " + chunkX + " " + chunkY + " " + chunkZ);
-                        System.out.println("found:    " + chunk.getChunkX() + " " + chunk.getChunkY() + " " + chunk.getChunkZ());
                         GameLogic.addToUnloadChunk(chunk);
 
                         if (chunk.isModified())
-                            Chunk.putSavedChunk(chunk);
+                            FileManager.saveChunk(chunk);
 
-                        if (Chunk.containsSavedChunk(expectedId))
-                            chunk = Chunk.removeSavedChunk(expectedId);
-                        else
-                            chunk = new Chunk(chunkX, chunkY, chunkZ);
+                        chunk = FileManager.getChunk(expectedId);
+                        if (chunk == null) chunk = new Chunk(chunkX, chunkY, chunkZ);
 
                         Chunk.storeChunk(chunk);
                         if (!chunk.isGenerated())
@@ -124,7 +118,7 @@ public class ChunkGenerator {
                     }
                 } catch (Exception exception) {
                     System.out.println("Generator:");
-                    System.out.println(exception.getMessage());
+                    System.out.println(exception.getClass());
                     System.out.println(chunkX + " " + chunkY + " " + chunkZ);
                 }
             }
@@ -184,7 +178,9 @@ public class ChunkGenerator {
 
                 } catch (Exception exception) {
                     System.out.println("Mesher:");
-                    System.out.println(exception.getMessage());
+                    System.out.println(exception.getClass());
+                    //noinspection CallToPrintStackTrace
+                    exception.printStackTrace();
                     System.out.println(chunkX + " " + chunkY + " " + chunkZ);
                 }
             }
@@ -289,7 +285,7 @@ public class ChunkGenerator {
                 GameLogic.addToUnloadChunk(chunk);
 
                 if (chunk.isModified())
-                    Chunk.putSavedChunk(chunk);
+                    FileManager.saveChunk(chunk);
 
                 Chunk.setNull(chunk.getIndex());
             }

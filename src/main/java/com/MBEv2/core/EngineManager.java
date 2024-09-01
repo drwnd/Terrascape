@@ -22,7 +22,10 @@ public class EngineManager {
         GLFW.glfwSetErrorCallback(errorCallback = GLFWErrorCallback.createPrint(System.err));
         window = Launcher.getWindow();
         window.init();
+        Block.init();
         GameLogic.init();
+        FileManager.init();
+
         if (window.isvSync()) {
             GLFWVidMode vidMode = GLFW.glfwGetVideoMode(GLFW.glfwGetPrimaryMonitor());
             assert vidMode != null;
@@ -31,11 +34,11 @@ public class EngineManager {
     }
 
     public void start() throws Exception {
-        Block.init();
         init();
         if (isRunning)
             return;
         run();
+        cleanUp();
     }
 
     public void run() {
@@ -67,7 +70,6 @@ public class EngineManager {
                 input();
             }
         }
-        cleanUp();
     }
 
     public void stop() {
