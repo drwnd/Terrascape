@@ -479,7 +479,19 @@ public class Player {
             Vector3f target = getTarget(1, cameraDirection);
             if (target != null) {
                 short selectedBlock = hotBar[selectedHotBarSlot];
-                short toPlaceBlock = Block.getToPlaceBlock(selectedBlock, camera.getPrimaryDirection(cameraDirection), camera.getPrimaryXZDirection(cameraDirection), target);
+                short toPlaceBlock;
+
+                if (window.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL)) {
+                    Vector3f target2 = getTarget(0, cameraDirection);
+                    short targetedBlock = Chunk.getBlockInWorld(Utils.floor(target2.x), Utils.floor(target2.y), Utils.floor(target2.z));
+
+                    if ((Block.getInInventoryBlockEquivalent(targetedBlock) & BLOCK_TYPE_MASK) == (selectedBlock & BLOCK_TYPE_MASK)) {
+                        toPlaceBlock = (short) (selectedBlock & BASE_BLOCK_MASK | targetedBlock & BLOCK_TYPE_MASK);
+                    } else
+                        toPlaceBlock = Block.getToPlaceBlock(selectedBlock, camera.getPrimaryDirection(cameraDirection), camera.getPrimaryXZDirection(cameraDirection), target);
+
+                } else
+                    toPlaceBlock = Block.getToPlaceBlock(selectedBlock, camera.getPrimaryDirection(cameraDirection), camera.getPrimaryXZDirection(cameraDirection), target);
 
                 GameLogic.placeBlock(toPlaceBlock, Utils.floor(target.x), Utils.floor(target.y), Utils.floor(target.z));
             }
