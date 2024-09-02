@@ -11,8 +11,8 @@ import static com.MBEv2.core.utils.Constants.*;
 public class WorldGeneration {
 
     //World generation
-    public static final long SEED = new Random().nextLong();
-    //        public static final long SEED = 0;
+//    public static final long SEED = new Random().nextLong();
+            public static final long SEED = 0;
     public static final int WATER_LEVEL = 96;
     public static final int SNOW_LEVEL = 187;
     public static final int ICE_LEVEL = 237;

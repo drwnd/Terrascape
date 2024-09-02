@@ -23,8 +23,8 @@ public class EngineManager {
         window = Launcher.getWindow();
         window.init();
         Block.init();
-        GameLogic.init();
         FileManager.init();
+        GameLogic.init();
 
         if (window.isvSync()) {
             GLFWVidMode vidMode = GLFW.glfwGetVideoMode(GLFW.glfwGetPrimaryMonitor());

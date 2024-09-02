@@ -20,12 +20,10 @@ public class GameLogic {
 
     public static void init() throws Exception {
 
-        player = new Player();
+        player = FileManager.loadGameState();
 
         generator = new ChunkGenerator();
-        player.init();
 
-        player.getRenderer().init();
         generator.start();
     }
 
@@ -405,6 +403,7 @@ public class GameLogic {
         player.getRenderer().cleanUp();
         ObjectLoader.cleanUp();
         generator.cleanUp();
+        FileManager.saveGameState();
         FileManager.saveAllModifiedChunks();
     }
 }

@@ -77,6 +77,11 @@ public class Camera {
         rotation.x = Math.max(-90, Math.min(rotation.x, 90));
     }
 
+    public void setRotation(float x, float y) {
+        rotation.x = x;
+        rotation.y = y;
+    }
+
     public Vector3f getPosition() {
         return position;
     }

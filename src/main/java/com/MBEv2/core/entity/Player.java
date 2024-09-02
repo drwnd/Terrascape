@@ -74,7 +74,7 @@ public class Player {
 
     private boolean isFling;
     private boolean inInventory, ePressed;
-    private final short[] hotBar = new short[9];
+    private short[] hotBar = new short[9];
     private int selectedHotBarSlot = 0;
 
     private int movementState = WALKING;
@@ -495,7 +495,7 @@ public class Player {
         }
     }
 
-    private void setSelectedHotBarSlot(int slot) {
+    public void setSelectedHotBarSlot(int slot) {
         selectedHotBarSlot = slot;
         hotBarSelectionIndicator.setPosition(new Vector2f((slot - 4) * 40 * GUI_SIZE / Launcher.getWindow().getWidth(), 0.0f));
     }
@@ -943,5 +943,35 @@ public class Player {
 
     public boolean isDebugScreenOpen() {
         return debugScreenOpen;
+    }
+
+    public boolean isFling() {
+        return isFling;
+    }
+
+    public int getSelectedHotBarSlot() {
+        return selectedHotBarSlot;
+    }
+
+    public int getMovementState() {
+        return movementState;
+    }
+
+
+    public void setMovementState(int movementState) {
+        this.movementState = movementState;
+    }
+
+    public void setFling(boolean fling) {
+        isFling = fling;
+    }
+
+    public short[] getHotBar() {
+        return hotBar;
+    }
+
+    public void setHotBar(short[] hotBar) {
+        this.hotBar = hotBar;
+        updateHotBarElements();
     }
 }

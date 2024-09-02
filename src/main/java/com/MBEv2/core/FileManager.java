@@ -1,5 +1,10 @@
 package com.MBEv2.core;
 
+import com.MBEv2.core.entity.Player;
+import com.MBEv2.test.GameLogic;
+import org.joml.Vector2f;
+import org.joml.Vector3f;
+
 import java.io.*;
 
 import static com.MBEv2.core.WorldGeneration.SEED;
@@ -11,6 +16,16 @@ public class FileManager {
     private static final int CHUNK_Z = 2;
     private static final int LIGHT_LENGTH = 3;
     private static final int BLOCKS_LENGTH = 4;
+
+    private static final int TIME = 0;
+    private static final int PLAYER_X = 1;
+    private static final int PLAYER_Y = 2;
+    private static final int PLAYER_Z = 3;
+    private static final int PLAYER_PITCH = 4;
+    private static final int PLAYER_YAW = 5;
+    private static final int MOVEMENT_STATE = 0;
+    private static final int SELECTED_HOT_BAR_SLOT = 1;
+    private static final int IS_FLYING = 2;
 
     private static File seedFile;
 
@@ -57,14 +72,10 @@ public class FileManager {
             return null;
         }
 
-        int fileSize = (int) chunkFile.length();
-        byte[] data = new byte[fileSize];
+        byte[] data;
 
         try {
-            if (fileSize != reader.read(data)) {
-                System.out.println("Something went wrong reading the file");
-                return null;
-            }
+            data = reader.readAllBytes();
             reader.close();
         } catch (IOException e) {
             System.out.println("getChunk 2");
@@ -134,5 +145,99 @@ public class FileManager {
             if (chunk == null) continue;
             if (chunk.isModified()) saveChunk(chunk);
         }
+    }
+
+    public static void saveGameState() {
+        File stateFile = new File(seedFile.getPath() + "/gameState");
+
+        try {
+            if (!stateFile.exists())
+                //noinspection ResultOfMethodCallIgnored
+                stateFile.createNewFile();
+
+            FileOutputStream writer = new FileOutputStream(stateFile.getPath());
+
+            Player player = GameLogic.getPlayer();
+            writer.write(toByteArray(Float.floatToIntBits(player.getRenderer().getTime())));
+
+            Vector3f playerPosition = player.getCamera().getPosition();
+            Vector2f playerRotation = player.getCamera().getRotation();
+
+            writer.write(toByteArray(Float.floatToIntBits(playerPosition.x)));
+            writer.write(toByteArray(Float.floatToIntBits(playerPosition.y)));
+            writer.write(toByteArray(Float.floatToIntBits(playerPosition.z)));
+
+            writer.write(toByteArray(Float.floatToIntBits(playerRotation.x)));
+            writer.write(toByteArray(Float.floatToIntBits(playerRotation.y)));
+
+            writer.write(player.getMovementState());
+            writer.write(player.getSelectedHotBarSlot());
+            writer.write(player.isFling() ? 1 : 0);
+            writer.write(toByteArray(player.getHotBar()));
+
+            writer.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static Player loadGameState() throws Exception {
+        Player player;
+
+        player = new Player();
+        player.init();
+        player.getRenderer().init();
+
+        File stateFile = new File(seedFile.getPath() + "/gameState");
+        if (!stateFile.exists()) return player;
+
+        FileInputStream reader = new FileInputStream(stateFile.getPath());
+
+        byte[] data = reader.readAllBytes();
+        float[] floats = readGameState(data);
+        byte[] playerFlags = readPlayerFlags(data);
+        short[] hotBar = readHotBar(data);
+
+        player.getRenderer().setTime(floats[TIME]);
+        player.getCamera().setPosition(floats[PLAYER_X], floats[PLAYER_Y], floats[PLAYER_Z]);
+        player.getCamera().setRotation(floats[PLAYER_PITCH], floats[PLAYER_YAW]);
+        player.setHotBar(hotBar);
+        player.setMovementState(playerFlags[MOVEMENT_STATE]);
+        player.setSelectedHotBarSlot(playerFlags[SELECTED_HOT_BAR_SLOT]);
+        player.setFling(playerFlags[IS_FLYING] == 1);
+
+        return player;
+    }
+
+    private static float[] readGameState(byte[] bytes) {
+        float[] floats = new float[6];
+
+        for (int i = 0; i < floats.length; i++) {
+            int index = i << 2;
+            int intFloat = ((int) bytes[index] & 0xFF) << 24 | ((int) bytes[index + 1] & 0xFF) << 16 | ((int) bytes[index + 2] & 0xFF) << 8 | ((int) bytes[index + 3] & 0xFF);
+            floats[i] = Float.intBitsToFloat(intFloat);
+        }
+
+        return floats;
+    }
+
+    private static byte[] readPlayerFlags(byte[] bytes) {
+        byte[] flags = new byte[3];
+
+        System.arraycopy(bytes, 24, flags, 0, flags.length);
+
+        return flags;
+    }
+
+    private static short[] readHotBar(byte[] bytes) {
+        short[] hotBar = new short[9];
+
+        for (int i = 0; i < hotBar.length; i++) {
+            int index = i << 1;
+            short block = (short) (((int) bytes[27 + index] & 0xFF) << 8 | ((int) bytes[28 + index] & 0xFF));
+            hotBar[i] = block;
+        }
+
+        return hotBar;
     }
 }

@@ -392,4 +392,12 @@ public class RenderManager {
         time += TIME_SPEED;
         if (time > 1.0f) time -= 2.0f;
     }
+
+    public float getTime() {
+        return time;
+    }
+
+    public void setTime(float time) {
+        this.time = time;
+    }
 }
