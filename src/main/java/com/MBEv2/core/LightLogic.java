@@ -5,6 +5,7 @@ import org.joml.Vector4i;
 import java.util.LinkedList;
 
 import static com.MBEv2.core.utils.Constants.*;
+import static com.MBEv2.core.utils.Settings.*;
 
 public class LightLogic {
 

@@ -13,10 +13,16 @@ public class Launcher {
         EngineManager engine = new EngineManager();
 
         try {
-            engine.start();
+            engine.init();
+
+            engine.run();
+
+            engine.cleanUp();
+
         } catch (Exception e) {
             //noinspection CallToPrintStackTrace
             e.printStackTrace();
+            System.out.println(e.getClass());
             System.out.println(e.getMessage());
             System.out.println(e.getCause().toString());
         }

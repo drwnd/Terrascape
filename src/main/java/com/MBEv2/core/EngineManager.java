@@ -13,12 +13,12 @@ public class EngineManager {
     public static final float NANOSECONDS_PER_SECOND = 1_000_000_000;
     public static float FRAME_RATE;
 
-    public static boolean isRunning;
+    public static boolean isRunning = false;
 
     private WindowManager window;
     private GLFWErrorCallback errorCallback;
 
-    private void init() throws Exception {
+    public void init() throws Exception {
         GLFW.glfwSetErrorCallback(errorCallback = GLFWErrorCallback.createPrint(System.err));
         window = Launcher.getWindow();
         window.init();
@@ -28,17 +28,9 @@ public class EngineManager {
 
         if (window.isvSync()) {
             GLFWVidMode vidMode = GLFW.glfwGetVideoMode(GLFW.glfwGetPrimaryMonitor());
-            assert vidMode != null;
+            if (vidMode == null) throw new AssertionError();
             FRAME_RATE = vidMode.refreshRate();
         } else FRAME_RATE = Float.MAX_VALUE;
-    }
-
-    public void start() throws Exception {
-        init();
-        if (isRunning)
-            return;
-        run();
-        cleanUp();
     }
 
     public void run() {
@@ -93,7 +85,7 @@ public class EngineManager {
         GameLogic.updateGT();
     }
 
-    private void cleanUp() {
+    public void cleanUp() {
         GameLogic.cleanUp();
         window.cleanUp();
         errorCallback.free();

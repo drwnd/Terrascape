@@ -36,6 +36,7 @@ public class FileManager {
     }
 
     public static void saveChunk(Chunk chunk) {
+        chunk.setSaved();
         try {
             File chunkFile = new File(seedFile.getPath() + "/" + chunk.getId());
 
@@ -90,6 +91,8 @@ public class FileManager {
         Chunk chunk = new Chunk(ints[CHUNK_X], ints[CHUNK_Y], ints[CHUNK_Z], light, blocks);
         chunk.setGenerated();
         chunk.setHasPropagatedBlockLight();
+        chunk.setSaved();
+        Chunk.removeToGenerateBlocks(chunk.getId());
 
         return chunk;
     }
@@ -147,6 +150,7 @@ public class FileManager {
         }
     }
 
+
     public static void saveGameState() {
         File stateFile = new File(seedFile.getPath() + "/gameState");
 
@@ -192,8 +196,9 @@ public class FileManager {
         if (!stateFile.exists()) return player;
 
         FileInputStream reader = new FileInputStream(stateFile.getPath());
-
         byte[] data = reader.readAllBytes();
+        reader.close();
+
         float[] floats = readGameState(data);
         byte[] playerFlags = readPlayerFlags(data);
         short[] hotBar = readHotBar(data);
@@ -239,5 +244,23 @@ public class FileManager {
         }
 
         return hotBar;
+    }
+
+    public static long getSeedFileSize() {
+        return folderSize(seedFile);
+    }
+
+    public static long folderSize(File directory) {
+        File[] files = directory.listFiles();
+        if(files == null) return -1;
+
+        long length = 0;
+        for (File file : files) {
+            if (file.isFile())
+                length += file.length();
+            else
+                length += folderSize(file);
+        }
+        return length;
     }
 }

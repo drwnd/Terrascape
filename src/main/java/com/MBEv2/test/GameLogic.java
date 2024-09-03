@@ -9,6 +9,7 @@ import java.util.LinkedList;
 
 
 import static com.MBEv2.core.utils.Constants.*;
+import static com.MBEv2.core.utils.Settings.*;
 
 public class GameLogic {
 
@@ -109,7 +110,10 @@ public class GameLogic {
         synchronized (toUnloadChunks) {
             while (!toUnloadChunks.isEmpty()) {
                 Chunk chunk = toUnloadChunks.removeFirst();
-                if (chunk != null) deleteChunkMeshBuffers(chunk);
+                if (chunk != null) {
+                    deleteChunkMeshBuffers(chunk);
+                    Chunk.removeToGenerateBlocks(chunk.getId());
+                }
             }
         }
         player.update(passedTime);
@@ -122,19 +126,19 @@ public class GameLogic {
     public static void deleteChunkMeshBuffers(Chunk chunk) {
         for (int side = 0; side < 6; side++) {
             Model sideModel = chunk.getModel(side);
-            if (sideModel != null) {
-                ObjectLoader.removeVAO(sideModel.getVao());
-                ObjectLoader.removeVBO(sideModel.getVbo());
-                chunk.setModel(null, side);
-            }
-        }
-        Model waterModel = chunk.getWaterModel();
-        if (waterModel != null) {
-            ObjectLoader.removeVAO(waterModel.getVao());
-            ObjectLoader.removeVBO(waterModel.getVbo());
-            chunk.setWaterModel(null);
+            if (sideModel == null) continue;
+
+            ObjectLoader.removeVAO(sideModel.getVao());
+            ObjectLoader.removeVBO(sideModel.getVbo());
+            chunk.setModel(null, side);
         }
 
+        Model waterModel = chunk.getWaterModel();
+        if (waterModel == null) return;
+
+        ObjectLoader.removeVAO(waterModel.getVao());
+        ObjectLoader.removeVBO(waterModel.getVbo());
+        chunk.setWaterModel(null);
     }
 
     public static void input() {

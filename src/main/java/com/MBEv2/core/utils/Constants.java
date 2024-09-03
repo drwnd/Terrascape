@@ -2,20 +2,11 @@ package com.MBEv2.core.utils;
 
 public class Constants {
 
-    //Change to whatever you want
-    public static final float TIME_SPEED = 0.00008333f;
-    public static final float FOV = (float) Math.toRadians(90);
-    public static final float GUI_SIZE = 1.0f;
-    public static final float MOUSE_SENSITIVITY = 0.040f;
-    public static final float REACH = 5.0f;
-    public static final int TEXT_CHAR_SIZE_X = 16;
-    public static final int TEXT_CHAR_SIZE_Y = 24;
-    public static final int TEXT_LINE_SPACING = 28;
-
     //Recommended to not change, but I can't stop you
     public static final String TITLE = "Minecräft Bad Edition v2";
     public static final float Z_NEAR = 0.01f;
     public static final float Z_FAR = 1000.0f;
+    public static final float TIME_SPEED = 0.00008333f;
 
     //DO NOT CHANGE THESE VALUES (like really, it will crash)
     public static final int CHUNK_SIZE_BITS = 5;
@@ -29,12 +20,6 @@ public class Constants {
     //Change based on computing power
     public static final int REACH_ACCURACY = 100;
     public static final int MAX_CHUNKS_TO_BUFFER_PER_FRAME = 5;
-
-    public static final int RENDER_DISTANCE_XZ = 15;
-    public static final int RENDER_DISTANCE_Y = 5;
-
-    public static final int RENDERED_WORLD_WIDTH = RENDER_DISTANCE_XZ * 2 + 5;
-    public static final int RENDERED_WORLD_HEIGHT = RENDER_DISTANCE_Y * 2 + 5;
 
     public static final int NUMBER_OF_GENERATION_THREADS = 4;
     public static final int MAX_OCCLUSION_CULLING_DAMPER = 6;
@@ -234,7 +219,6 @@ public class Constants {
     public static final short LEFT_RIGHT_STRIPPED_BLACK_WOOD_LOG = (short) (b2-- << BLOCK_TYPE_BITS);
 
     public static final int AMOUNT_OF_STANDARD_BLOCKS = 1024;
-
 
     //Texture indices
     public static final byte GRASS_TOP_TEXTURE = 1;

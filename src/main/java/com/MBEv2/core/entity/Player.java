@@ -3,6 +3,7 @@ package com.MBEv2.core.entity;
 import com.MBEv2.core.*;
 
 import static com.MBEv2.core.utils.Constants.*;
+import static com.MBEv2.core.utils.Settings.*;
 
 import com.MBEv2.core.utils.Transformation;
 import com.MBEv2.core.utils.Utils;
@@ -16,7 +17,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 public class Player {
-
     //Movement
     public static final float AIR_FRICTION = 0.91f;
     public static final float FALL_FRICTION = 0.98f;
@@ -66,14 +66,14 @@ public class Player {
     private float inventoryScroll;
 
     //Debug
-    private boolean debugScreenOpen, F3Pressed;
-    private boolean noClip, gKeyPressed;
-    private boolean usingOcclusionCulling = true, cKeyPressed;
-    private boolean tPressed, zPressed, xPressed;
+    private boolean debugScreenOpen, openDebugMenuKeyPressed;
+    private boolean noClip, noClipKeyPressed;
+    private boolean usingOcclusionCulling = true, useOcclusionCullingKeyPressed;
+    private boolean setPosition1KeyPressed, setPosition2KeyPressed, toggleXRayKeyPressed;
     private final Vector3i pos1, pos2;
 
     private boolean isFling;
-    private boolean inInventory, ePressed;
+    private boolean inInventory, openInventoryKeyPressed;
     private short[] hotBar = new short[9];
     private int selectedHotBarSlot = 0;
 
@@ -155,7 +155,7 @@ public class Player {
     private void handleInputMovementStateChange(Vector3f position) {
         if (inInventory) return;
 
-        if (window.isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT)) {
+        if (window.isKeyPressed(SNEAK_BUTTON)) {
             if (movementState == WALKING) {
                 camera.movePosition(0.0f, -0.25f, 0.0f);
                 movementState = CROUCHING;
@@ -168,7 +168,7 @@ public class Player {
             } else if (!collidesWithBlock(position.x, position.y, position.z, WALKING)) movementState = WALKING;
         }
 
-        if (window.isKeyPressed(GLFW.GLFW_KEY_CAPS_LOCK)) {
+        if (window.isKeyPressed(CRAWL_BUTTON)) {
             if (movementState == WALKING) camera.movePosition(0.0f, -1.25f, 0.0f);
             else if (movementState == CROUCHING) camera.movePosition(0.0f, -1.0f, 0.0f);
             movementState = CRAWLING;
@@ -184,14 +184,14 @@ public class Player {
             else if (!collidesWithBlock(position.x, position.y, position.z, CROUCHING)) movementState = CROUCHING;
         }
 
-        if (movementState == SWIMMING && !window.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL)) movementState = CRAWLING;
+        if (movementState == SWIMMING && !window.isKeyPressed(SPRINT_BUTTON)) movementState = CRAWLING;
         else if (movementState == SWIMMING && !collidesWithBlock(position.x, position.y, position.z, SWIMMING, WATER))
             movementState = CRAWLING;
     }
 
     private void handleIsFlyingChange() {
         long currentTime = System.nanoTime();
-        if (window.isKeyPressed(GLFW.GLFW_KEY_SPACE)) {
+        if (window.isKeyPressed(JUMP_BUTTON)) {
             if (!spaceButtonPressed) {
                 spaceButtonPressed = true;
                 if (currentTime - spaceButtonPressTime < 300_000_000) isFling = !isFling;
@@ -210,26 +210,26 @@ public class Player {
 
         float movementSpeedModifier = 1.0f;
 
-        if (window.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL)) movementSpeedModifier *= 2.5f;
-        if (window.isKeyPressed(GLFW.GLFW_KEY_TAB)) movementSpeedModifier *= 5.0f;
+        if (window.isKeyPressed(SET_POSITION_1_BUTTON)) movementSpeedModifier *= 2.5f;
+        if (window.isKeyPressed(FLY_FAST_BUTTON)) movementSpeedModifier *= 5.0f;
 
-        if (window.isKeyPressed(GLFW.GLFW_KEY_W)) {
+        if (window.isKeyPressed(MOVE_FORWARD_BUTTON)) {
             velocity.z -= FLY_SPEED * movementSpeedModifier;
         }
-        if (window.isKeyPressed(GLFW.GLFW_KEY_S)) {
+        if (window.isKeyPressed(MOVE_BACK_BUTTON)) {
             velocity.z += FLY_SPEED;
         }
 
-        if (window.isKeyPressed(GLFW.GLFW_KEY_A)) {
+        if (window.isKeyPressed(MOVE_LEFT_BUTTON)) {
             velocity.x -= FLY_SPEED;
         }
-        if (window.isKeyPressed(GLFW.GLFW_KEY_D)) {
+        if (window.isKeyPressed(MOVE_RIGHT_BUTTON)) {
             velocity.x += FLY_SPEED;
         }
 
-        if (window.isKeyPressed(GLFW.GLFW_KEY_SPACE)) velocity.y += FLY_SPEED;
+        if (window.isKeyPressed(JUMP_BUTTON)) velocity.y += FLY_SPEED;
 
-        if (window.isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT)) velocity.y -= FLY_SPEED;
+        if (window.isKeyPressed(SNEAK_BUTTON)) velocity.y -= FLY_SPEED;
 
         this.velocity.mul(FLY_FRICTION);
     }
@@ -244,7 +244,7 @@ public class Player {
 
         float accelerationModifier = SWIM_STRENGTH;
 
-        if (window.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL) && window.isKeyPressed(GLFW.GLFW_KEY_W)) {
+        if (window.isKeyPressed(SPRINT_BUTTON) && window.isKeyPressed(MOVE_FORWARD_BUTTON)) {
             Vector2f cameraRotation = camera.getRotation();
             float acceleration = SWIM_STRENGTH * accelerationModifier * 2.5f;
             velocity.z -= (float) (acceleration * Math.cos(Math.toRadians(cameraRotation.x)));
@@ -255,20 +255,20 @@ public class Player {
                 movementState = SWIMMING;
             }
         } else {
-            if (window.isKeyPressed(GLFW.GLFW_KEY_W)) {
+            if (window.isKeyPressed(MOVE_FORWARD_BUTTON)) {
                 float acceleration = SWIM_STRENGTH * accelerationModifier;
                 velocity.z -= acceleration;
             }
-            if (window.isKeyPressed(GLFW.GLFW_KEY_S)) {
+            if (window.isKeyPressed(MOVE_BACK_BUTTON)) {
                 float acceleration = SWIM_STRENGTH * accelerationModifier;
                 velocity.z += acceleration;
             }
 
-            if (window.isKeyPressed(GLFW.GLFW_KEY_A)) {
+            if (window.isKeyPressed(MOVE_LEFT_BUTTON)) {
                 float acceleration = SWIM_STRENGTH * accelerationModifier;
                 velocity.x -= acceleration;
             }
-            if (window.isKeyPressed(GLFW.GLFW_KEY_D)) {
+            if (window.isKeyPressed(MOVE_RIGHT_BUTTON)) {
                 float acceleration = SWIM_STRENGTH * accelerationModifier;
                 velocity.x += acceleration;
             }
@@ -276,7 +276,7 @@ public class Player {
         }
 
         long currentTime = System.nanoTime();
-        if (window.isKeyPressed(GLFW.GLFW_KEY_SPACE))
+        if (window.isKeyPressed(JUMP_BUTTON))
             if (isGrounded) {
                 this.velocity.y = JUMP_STRENGTH;
                 isGrounded = false;
@@ -284,7 +284,7 @@ public class Player {
             } else
                 velocity.y += SWIM_STRENGTH * 0.65f;
 
-        if (window.isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT)) velocity.y -= SWIM_STRENGTH * 0.65f;
+        if (window.isKeyPressed(SNEAK_BUTTON)) velocity.y -= SWIM_STRENGTH * 0.65f;
     }
 
     private void handleInputWalking(Vector3f velocity) {
@@ -300,27 +300,27 @@ public class Player {
         float jumpingAddend = 0.0f;
         long currentTime = System.nanoTime();
 
-        if (movementState == WALKING && window.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL)) {
+        if (movementState == WALKING && window.isKeyPressed(SPRINT_BUTTON)) {
             movementSpeedModifier *= 1.3f;
-            if (window.isKeyPressed(GLFW.GLFW_KEY_SPACE) && isGrounded && currentTime - spaceButtonPressTime > 300_000_000) {
+            if (window.isKeyPressed(JUMP_BUTTON) && isGrounded && currentTime - spaceButtonPressTime > 300_000_000) {
                 jumpingAddend = 0.04f;
             }
         }
 
-        if (window.isKeyPressed(GLFW.GLFW_KEY_W)) {
+        if (window.isKeyPressed(MOVE_FORWARD_BUTTON)) {
             float acceleration = (MOVEMENT_STATE_SPEED[movementState] + jumpingAddend) * movementSpeedModifier * accelerationModifier;
             velocity.z -= acceleration;
         }
-        if (window.isKeyPressed(GLFW.GLFW_KEY_S)) {
+        if (window.isKeyPressed(MOVE_BACK_BUTTON)) {
             float acceleration = MOVEMENT_STATE_SPEED[movementState] * accelerationModifier;
             velocity.z += acceleration;
         }
 
-        if (window.isKeyPressed(GLFW.GLFW_KEY_A)) {
+        if (window.isKeyPressed(MOVE_LEFT_BUTTON)) {
             float acceleration = MOVEMENT_STATE_SPEED[movementState] * accelerationModifier;
             velocity.x -= acceleration;
         }
-        if (window.isKeyPressed(GLFW.GLFW_KEY_D)) {
+        if (window.isKeyPressed(MOVE_RIGHT_BUTTON)) {
             float acceleration = MOVEMENT_STATE_SPEED[movementState] * accelerationModifier;
             velocity.x += acceleration;
         }
@@ -329,7 +329,7 @@ public class Player {
         applyGravity();
         this.velocity.mul(friction, FALL_FRICTION, friction);
 
-        if (window.isKeyPressed(GLFW.GLFW_KEY_SPACE) && isGrounded) {
+        if (window.isKeyPressed(JUMP_BUTTON) && isGrounded) {
             this.velocity.y = JUMP_STRENGTH;
             isGrounded = false;
             spaceButtonPressTime = currentTime;
@@ -337,15 +337,15 @@ public class Player {
     }
 
     private void handleInventoryHotkeys() {
-        if (window.isKeyPressed(GLFW.GLFW_KEY_Q)) hotBar[0] = getHoveredOverInventoryBlock();
-        else if (window.isKeyPressed(GLFW.GLFW_KEY_2)) hotBar[1] = getHoveredOverInventoryBlock();
-        else if (window.isKeyPressed(GLFW.GLFW_KEY_3)) hotBar[2] = getHoveredOverInventoryBlock();
-        else if (window.isKeyPressed(GLFW.GLFW_KEY_4)) hotBar[3] = getHoveredOverInventoryBlock();
-        else if (window.isKeyPressed(GLFW.GLFW_KEY_5)) hotBar[4] = getHoveredOverInventoryBlock();
-        else if (window.isKeyPressed(GLFW.GLFW_KEY_R)) hotBar[5] = getHoveredOverInventoryBlock();
-        else if (window.isKeyPressed(GLFW.GLFW_KEY_F)) hotBar[6] = getHoveredOverInventoryBlock();
-        else if (mouseInput.isMouseButton5IsPressed()) hotBar[7] = getHoveredOverInventoryBlock();
-        else if (mouseInput.isMouseButton4IsPressed()) hotBar[8] = getHoveredOverInventoryBlock();
+        if (window.isKeyPressed(HOT_BAR_SLOT_1)) hotBar[0] = getHoveredOverInventoryBlock();
+        else if (window.isKeyPressed(HOT_BAR_SLOT_2)) hotBar[1] = getHoveredOverInventoryBlock();
+        else if (window.isKeyPressed(HOT_BAR_SLOT_3)) hotBar[2] = getHoveredOverInventoryBlock();
+        else if (window.isKeyPressed(HOT_BAR_SLOT_4)) hotBar[3] = getHoveredOverInventoryBlock();
+        else if (window.isKeyPressed(HOT_BAR_SLOT_5)) hotBar[4] = getHoveredOverInventoryBlock();
+        else if (window.isKeyPressed(HOT_BAR_SLOT_6)) hotBar[5] = getHoveredOverInventoryBlock();
+        else if (window.isKeyPressed(HOT_BAR_SLOT_7)) hotBar[6] = getHoveredOverInventoryBlock();
+        else if (window.isKeyPressed(HOT_BAR_SLOT_8)) hotBar[7] = getHoveredOverInventoryBlock();
+        else if (window.isKeyPressed(HOT_BAR_SLOT_9)) hotBar[8] = getHoveredOverInventoryBlock();
         updateHotBarElements();
     }
 
@@ -373,43 +373,43 @@ public class Player {
     }
 
     private void handleInputHotkeys() {
-        if (window.isKeyPressed(GLFW.GLFW_KEY_Q)) setSelectedHotBarSlot(0);
-        else if (window.isKeyPressed(GLFW.GLFW_KEY_2)) setSelectedHotBarSlot(1);
-        else if (window.isKeyPressed(GLFW.GLFW_KEY_3)) setSelectedHotBarSlot(2);
-        else if (window.isKeyPressed(GLFW.GLFW_KEY_4)) setSelectedHotBarSlot(3);
-        else if (window.isKeyPressed(GLFW.GLFW_KEY_5)) setSelectedHotBarSlot(4);
-        else if (window.isKeyPressed(GLFW.GLFW_KEY_R)) setSelectedHotBarSlot(5);
-        else if (window.isKeyPressed(GLFW.GLFW_KEY_F)) setSelectedHotBarSlot(6);
-        else if (mouseInput.isMouseButton5IsPressed()) setSelectedHotBarSlot(7);
-        else if (mouseInput.isMouseButton4IsPressed()) setSelectedHotBarSlot(8);
+        if (window.isKeyPressed(HOT_BAR_SLOT_1)) setSelectedHotBarSlot(0);
+        else if (window.isKeyPressed(HOT_BAR_SLOT_2)) setSelectedHotBarSlot(1);
+        else if (window.isKeyPressed(HOT_BAR_SLOT_3)) setSelectedHotBarSlot(2);
+        else if (window.isKeyPressed(HOT_BAR_SLOT_4)) setSelectedHotBarSlot(3);
+        else if (window.isKeyPressed(HOT_BAR_SLOT_5)) setSelectedHotBarSlot(4);
+        else if (window.isKeyPressed(HOT_BAR_SLOT_6)) setSelectedHotBarSlot(5);
+        else if (window.isKeyPressed(HOT_BAR_SLOT_7)) setSelectedHotBarSlot(6);
+        else if (window.isKeyPressed(HOT_BAR_SLOT_8)) setSelectedHotBarSlot(7);
+        else if (window.isKeyPressed(HOT_BAR_SLOT_9)) setSelectedHotBarSlot(8);
 
-        if (window.isKeyPressed(GLFW.GLFW_KEY_E) && !ePressed) {
-            ePressed = true;
+        if (window.isKeyPressed(OPEN_INVENTORY_BUTTON) && !openInventoryKeyPressed) {
+            openInventoryKeyPressed = true;
             inInventory = !inInventory;
             GLFW.glfwSetInputMode(window.getWindow(), GLFW.GLFW_CURSOR, inInventory ? GLFW.GLFW_CURSOR_NORMAL : GLFW.GLFW_CURSOR_DISABLED);
         }
 
-        if (ePressed && !window.isKeyPressed(GLFW.GLFW_KEY_E)) ePressed = false;
+        if (openInventoryKeyPressed && !window.isKeyPressed(OPEN_INVENTORY_BUTTON)) openInventoryKeyPressed = false;
     }
 
     private void handleInputDebugHotkeys() {
-        if (window.isKeyPressed(GLFW.GLFW_KEY_G) && !gKeyPressed) {
+        if (window.isKeyPressed(TOGGLE_NO_CLIP_BUTTON) && !noClipKeyPressed) {
             noClip = !noClip;
-            gKeyPressed = true;
+            noClipKeyPressed = true;
         }
-        if (window.isKeyPressed(GLFW.GLFW_KEY_T) && !tPressed) {
+        if (window.isKeyPressed(SET_POSITION_1_BUTTON) && !setPosition1KeyPressed) {
             Vector3f cameraPosition = camera.getPosition();
             pos1.x = Utils.floor(cameraPosition.x);
             pos1.y = Utils.floor(cameraPosition.y);
             pos1.z = Utils.floor(cameraPosition.z);
-            tPressed = true;
+            setPosition1KeyPressed = true;
         }
-        if (window.isKeyPressed(GLFW.GLFW_KEY_Y) && !zPressed) {
+        if (window.isKeyPressed(SET_POSITION_2_BUTTON) && !setPosition2KeyPressed) {
             Vector3f cameraPosition = camera.getPosition();
             pos2.x = Utils.floor(cameraPosition.x);
             pos2.y = Utils.floor(cameraPosition.y);
             pos2.z = Utils.floor(cameraPosition.z);
-            zPressed = true;
+            setPosition2KeyPressed = true;
 
             int x = Math.abs(pos1.x - pos2.x) + 1;
             int y = Math.abs(pos1.y - pos2.y) + 1;
@@ -436,27 +436,27 @@ public class Player {
             }
             System.out.print("}");
         }
-        if (window.isKeyPressed(GLFW.GLFW_KEY_X) && !xPressed) {
-            xPressed = true;
+        if (window.isKeyPressed(TOGGLE_X_RAY_BUTTON) && !toggleXRayKeyPressed) {
+            toggleXRayKeyPressed = true;
             renderer.setXRay(!renderer.isxRay());
         }
-        if (window.isKeyPressed(GLFW.GLFW_KEY_C) && !cKeyPressed) {
-            cKeyPressed = true;
+        if (window.isKeyPressed(USE_OCCLUSION_CULLING_BUTTON) && !useOcclusionCullingKeyPressed) {
+            useOcclusionCullingKeyPressed = true;
             usingOcclusionCulling = !usingOcclusionCulling;
             if (!usingOcclusionCulling)
                 Arrays.fill(visibleChunks, -1);
         }
-        if (window.isKeyPressed(GLFW.GLFW_KEY_F3) && !F3Pressed) {
-            F3Pressed = true;
+        if (window.isKeyPressed(OPEN_DEBUG_MENU_BUTTON) && !openDebugMenuKeyPressed) {
+            openDebugMenuKeyPressed = true;
             debugScreenOpen = !debugScreenOpen;
         }
 
-        if (gKeyPressed && !window.isKeyPressed(GLFW.GLFW_KEY_G)) gKeyPressed = false;
-        if (tPressed && !window.isKeyPressed(GLFW.GLFW_KEY_T)) tPressed = false;
-        if (zPressed && !window.isKeyPressed(GLFW.GLFW_KEY_Y)) zPressed = false;
-        if (xPressed && !window.isKeyPressed(GLFW.GLFW_KEY_X)) xPressed = false;
-        if (cKeyPressed && !window.isKeyPressed(GLFW.GLFW_KEY_C)) cKeyPressed = false;
-        if (F3Pressed && !window.isKeyPressed(GLFW.GLFW_KEY_F3)) F3Pressed = false;
+        if (noClipKeyPressed && !window.isKeyPressed(TOGGLE_NO_CLIP_BUTTON)) noClipKeyPressed = false;
+        if (setPosition1KeyPressed && !window.isKeyPressed(SET_POSITION_1_BUTTON)) setPosition1KeyPressed = false;
+        if (setPosition2KeyPressed && !window.isKeyPressed(SET_POSITION_2_BUTTON)) setPosition2KeyPressed = false;
+        if (toggleXRayKeyPressed && !window.isKeyPressed(TOGGLE_X_RAY_BUTTON)) toggleXRayKeyPressed = false;
+        if (useOcclusionCullingKeyPressed && !window.isKeyPressed(USE_OCCLUSION_CULLING_BUTTON)) useOcclusionCullingKeyPressed = false;
+        if (openDebugMenuKeyPressed && !window.isKeyPressed(OPEN_DEBUG_MENU_BUTTON)) openDebugMenuKeyPressed = false;
     }
 
     private void handleMouseInput() {
@@ -481,23 +481,13 @@ public class Player {
                 short selectedBlock = hotBar[selectedHotBarSlot];
                 short toPlaceBlock;
 
-                if (window.isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL)) {
-                    Vector3f target2 = getTarget(0, cameraDirection);
-                    short targetedBlock = Chunk.getBlockInWorld(Utils.floor(target2.x), Utils.floor(target2.y), Utils.floor(target2.z));
-
-                    if ((Block.getInInventoryBlockEquivalent(targetedBlock) & BLOCK_TYPE_MASK) == (selectedBlock & BLOCK_TYPE_MASK)) {
-                        toPlaceBlock = (short) (selectedBlock & BASE_BLOCK_MASK | targetedBlock & BLOCK_TYPE_MASK);
-                    } else
-                        toPlaceBlock = Block.getToPlaceBlock(selectedBlock, camera.getPrimaryDirection(cameraDirection), camera.getPrimaryXZDirection(cameraDirection), target);
-
-                } else
-                    toPlaceBlock = Block.getToPlaceBlock(selectedBlock, camera.getPrimaryDirection(cameraDirection), camera.getPrimaryXZDirection(cameraDirection), target);
+                toPlaceBlock = Block.getToPlaceBlock(selectedBlock, camera.getPrimaryDirection(cameraDirection), camera.getPrimaryXZDirection(cameraDirection), target, this);
 
                 GameLogic.placeBlock(toPlaceBlock, Utils.floor(target.x), Utils.floor(target.y), Utils.floor(target.z));
             }
         }
 
-        if (mouseInput.isMouseButton3IsPressed()) {
+        if (window.isKeyPressed(PICK_BLOCK_BUTTON)) {
             Vector3f target = getTarget(0, camera.getDirection());
             if (target != null) {
                 short block = Chunk.getBlockInWorld(Utils.floor(target.x), Utils.floor(target.y), Utils.floor(target.z));
@@ -756,10 +746,11 @@ public class Player {
         final float minZ = cameraPosition.z - HALF_PLAYER_WIDTH;
         final float maxZ = cameraPosition.z + HALF_PLAYER_WIDTH;
 
-        short toPlaceBlock = Block.getToPlaceBlock(hotBar[selectedHotBarSlot], camera.getPrimaryDirection(), camera.getPrimaryXZDirection(), target);
-
-        if (action == placing && Block.playerIntersectsBlock(minX, maxX, minY, maxY, minZ, maxZ, Utils.floor(target.x), Utils.floor(target.y), Utils.floor(target.z), toPlaceBlock, this))
-            return null;
+        if (action == placing) {
+            short toPlaceBlock = Block.getToPlaceBlock(hotBar[selectedHotBarSlot], camera.getPrimaryDirection(), camera.getPrimaryXZDirection(), target, this);
+            if (Block.playerIntersectsBlock(minX, maxX, minY, maxY, minZ, maxZ, Utils.floor(target.x), Utils.floor(target.y), Utils.floor(target.z), toPlaceBlock, this))
+                return null;
+        }
 
         return target;
     }

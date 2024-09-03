@@ -1,6 +1,7 @@
 package com.MBEv2.core;
 
 import static com.MBEv2.core.utils.Constants.*;
+import static com.MBEv2.core.utils.Settings.*;
 
 import com.MBEv2.test.GameLogic;
 import org.joml.Matrix4f;
@@ -104,7 +105,8 @@ public class WindowManager {
     }
 
     public boolean isKeyPressed(int keycode) {
-        return GLFW.glfwGetKey(window, keycode) == GLFW.GLFW_PRESS;
+        if ((keycode & IS_MOUSE_BUTTON) == 0) return GLFW.glfwGetKey(window, keycode & 0x7FFFFFFF) == GLFW.GLFW_PRESS;
+        else return GLFW.glfwGetMouseButton(window, keycode & 0x7FFFFFFF) == GLFW.GLFW_PRESS;
     }
 
     public boolean windowShouldClose() {

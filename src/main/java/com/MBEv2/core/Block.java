@@ -1,7 +1,10 @@
 package com.MBEv2.core;
 
 import com.MBEv2.core.entity.Player;
+import com.MBEv2.core.utils.Utils;
+import com.MBEv2.test.Launcher;
 import org.joml.Vector3f;
+import org.lwjgl.glfw.GLFW;
 
 import static com.MBEv2.core.utils.Constants.*;
 
@@ -112,7 +115,7 @@ public class Block {
         return false;
     }
 
-    public static short getToPlaceBlock(short toPlaceBlock, int primaryCameraDirection, int primaryXZDirection, Vector3f target) {
+    public static short getToPlaceBlock(short toPlaceBlock, int primaryCameraDirection, int primaryXZDirection, Vector3f target, Player player) {
         if (toPlaceBlock < STANDARD_BLOCKS_THRESHOLD) {
             if (toPlaceBlock == FRONT_CREATOR_HEAD) {
                 if (primaryXZDirection == BACK) return FRONT_CREATOR_HEAD;
@@ -124,6 +127,17 @@ public class Block {
         }
         int blockType = toPlaceBlock & BLOCK_TYPE_MASK;
         int baseBlock = toPlaceBlock & BASE_BLOCK_MASK;
+
+        if (Launcher.getWindow().isKeyPressed(GLFW.GLFW_KEY_LEFT_CONTROL)) {
+            Camera camera = player.getCamera();
+            Vector3f cameraDirection = camera.getDirection();
+
+            Vector3f target2 = player.getTarget(0, cameraDirection);
+            short targetedBlock = Chunk.getBlockInWorld(Utils.floor(target2.x), Utils.floor(target2.y), Utils.floor(target2.z));
+
+            if ((Block.getInInventoryBlockEquivalent(targetedBlock) & BLOCK_TYPE_MASK) == blockType)
+                return  (short) (baseBlock | targetedBlock & BLOCK_TYPE_MASK);
+        }
 
         int toPlaceBlockType = getToPlaceBlockType(blockType, primaryCameraDirection, target);
         primaryCameraDirection %= 3;

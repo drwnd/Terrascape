@@ -16,7 +16,6 @@ public class MouseInput {
 
     private long rightButtonPressTime = -1, leftButtonPressTime = -1;
     private boolean rightButtonWasJustPressed, leftButtonWasJustPressed;
-    private boolean mouseButton4IsPressed, mouseButton5IsPressed, mouseButton3IsPressed;
 
     public MouseInput(Player player) {
         this.player = player;
@@ -49,11 +48,6 @@ public class MouseInput {
                     rightButtonWasJustPressed = false;
                 }
             }
-
-            if (button == GLFW.GLFW_MOUSE_BUTTON_5) mouseButton5IsPressed = action == GLFW.GLFW_PRESS;
-            if (button == GLFW.GLFW_MOUSE_BUTTON_4) mouseButton4IsPressed = action == GLFW.GLFW_PRESS;
-            if (button == GLFW.GLFW_MOUSE_BUTTON_3) mouseButton3IsPressed = action == GLFW.GLFW_PRESS;
-
         });
 
         GLFW.glfwSetScrollCallback(Launcher.getWindow().getWindow(), (window, xPos, yPos) -> {
@@ -104,17 +98,5 @@ public class MouseInput {
         boolean returnValue = leftButtonWasJustPressed;
         leftButtonWasJustPressed = false;
         return returnValue;
-    }
-
-    public boolean isMouseButton4IsPressed() {
-        return mouseButton4IsPressed;
-    }
-
-    public boolean isMouseButton5IsPressed() {
-        return mouseButton5IsPressed;
-    }
-
-    public boolean isMouseButton3IsPressed() {
-        return mouseButton3IsPressed;
     }
 }

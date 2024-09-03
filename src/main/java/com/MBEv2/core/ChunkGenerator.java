@@ -11,6 +11,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import static com.MBEv2.core.utils.Constants.*;
+import static com.MBEv2.core.utils.Settings.*;
 
 public class ChunkGenerator {
 
@@ -97,6 +98,7 @@ public class ChunkGenerator {
                     if (chunk == null) {
                         chunk = FileManager.getChunk(expectedId);
                         if (chunk == null) chunk = new Chunk(chunkX, chunkY, chunkZ);
+                        else WorldGeneration.generateSurroundingChunkTreeBlocks(chunk, resultingHeightMap, temperatureMap, humidityMap, erosionMap, featureMap);
 
                         Chunk.storeChunk(chunk);
                         if (!chunk.isGenerated())
@@ -109,6 +111,7 @@ public class ChunkGenerator {
 
                         chunk = FileManager.getChunk(expectedId);
                         if (chunk == null) chunk = new Chunk(chunkX, chunkY, chunkZ);
+                        else WorldGeneration.generateSurroundingChunkTreeBlocks(chunk, resultingHeightMap, temperatureMap, humidityMap, erosionMap, featureMap);
 
                         Chunk.storeChunk(chunk);
                         if (!chunk.isGenerated())

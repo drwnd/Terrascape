@@ -4,6 +4,7 @@ import com.MBEv2.core.entity.*;
 
 import static com.MBEv2.core.WorldGeneration.SEED;
 import static com.MBEv2.core.utils.Constants.*;
+import static com.MBEv2.core.utils.Settings.*;
 
 import com.MBEv2.core.utils.Transformation;
 import com.MBEv2.core.utils.Utils;
@@ -320,6 +321,7 @@ public class RenderManager {
         renderTextLine("Rendered water models:" + waterModels.size(), ++line);
         renderTextLine("Rendered GUIElements:" + GUIElements.size(), ++line);
         renderTextLine("Time:" + time, ++line);
+        renderTextLine("Saved chunks memory:" + FileManager.getSeedFileSize(), ++line);
 
         textShader.unBind();
     }

@@ -7,6 +7,7 @@ import org.joml.Vector3i;
 import java.util.*;
 
 import static com.MBEv2.core.utils.Constants.*;
+import static com.MBEv2.core.utils.Settings.*;
 
 public class Chunk {
 
@@ -30,6 +31,7 @@ public class Chunk {
     private boolean isGenerated = false;
     private boolean isModified = false;
     private boolean hasPropagatedBlockLight = false;
+    private boolean saved = false;
 
     private final Model[] model;
     private Model waterModel;
@@ -180,9 +182,7 @@ public class Chunk {
         isMeshed = true;
         ArrayList<ArrayList<Integer>> verticesList = new ArrayList<>(6);
         ArrayList<Integer> waterVerticesList = new ArrayList<>();
-        for (int side = 0; side < 6; side++) {
-            verticesList.add(new ArrayList<>());
-        }
+        for (int side = 0; side < 6; side++) verticesList.add(new ArrayList<>());
 
         generateSurroundingChunks();
         if ((occlusionCullingData & 0x8000) == 0) generateOcclusionCullingData();
@@ -236,16 +236,18 @@ public class Chunk {
     }
 
     public void generateSurroundingChunks() {
-        for (int x = X - 1; x <= X + 1; x++)
-            for (int y = Y - 1; y <= Y + 1; y++)
-                for (int z = Z - 1; z <= Z + 1; z++) {
-                    long expectedId = GameLogic.getChunkId(x, y, z);
-                    int index = GameLogic.getChunkIndex(x, y, z);
+        for (int chunkX = X - 1; chunkX <= X + 1; chunkX++)
+            for (int chunkY = Y - 1; chunkY <= Y + 1; chunkY++)
+                for (int chunkZ = Z - 1; chunkZ <= Z + 1; chunkZ++) {
+
+                    long expectedId = GameLogic.getChunkId(chunkX, chunkY, chunkZ);
+                    int index = GameLogic.getChunkIndex(chunkX, chunkY, chunkZ);
                     Chunk chunk = getChunk(index);
 
                     if (chunk == null) {
                         chunk = FileManager.getChunk(expectedId);
-                        if (chunk == null) chunk = new Chunk(x, y, z);
+                        if (chunk == null) chunk = new Chunk(chunkX, chunkY, chunkZ);
+                        else WorldGeneration.generateSurroundingChunkTreeBlocks(chunk);
 
                         storeChunk(chunk);
                         if (!chunk.isGenerated) WorldGeneration.generate(chunk);
@@ -256,7 +258,8 @@ public class Chunk {
                         if (chunk.isModified) FileManager.saveChunk(chunk);
 
                         chunk = FileManager.getChunk(expectedId);
-                        if (chunk == null) chunk = new Chunk(x, y, z);
+                        if (chunk == null) chunk = new Chunk(chunkX, chunkY, chunkZ);
+                        else WorldGeneration.generateSurroundingChunkTreeBlocks(chunk);
 
                         Chunk.storeChunk(chunk);
                         if (!chunk.isGenerated) WorldGeneration.generate(chunk);
@@ -634,11 +637,11 @@ public class Chunk {
 
         Chunk chunk = getChunk(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS);
 
-        inChunkX = x & CHUNK_SIZE_MASK;
-        inChunkY = y & CHUNK_SIZE_MASK;
-        inChunkZ = z & CHUNK_SIZE_MASK;
-
         if (chunk == this) {
+            inChunkX = x & CHUNK_SIZE_MASK;
+            inChunkY = y & CHUNK_SIZE_MASK;
+            inChunkZ = z & CHUNK_SIZE_MASK;
+
             int index = inChunkX << CHUNK_SIZE_BITS * 2 | inChunkZ << CHUNK_SIZE_BITS | inChunkY;
             if (blocks[index] != AIR && Block.isLeaveType(block)) return;
             blocks[index] = block;
@@ -646,14 +649,31 @@ public class Chunk {
             int[] heightMap = getHeightMap(X, Z);
             if (y > heightMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ])
                 heightMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ] = y;
-        } else if (chunk == null) {
+        } else storeSurroundingChunkTreeBlock(inChunkX, inChunkY, inChunkZ, block);
+    }
 
+    public void storeSurroundingChunkTreeBlock(int inChunkX, int inChunkY, int inChunkZ, short block) {
+        if (block == AIR) return;
+
+        int x = worldCoordinate.x + inChunkX;
+        int y = worldCoordinate.y + inChunkY;
+        int z = worldCoordinate.z + inChunkZ;
+
+        inChunkX = x & CHUNK_SIZE_MASK;
+        inChunkY = y & CHUNK_SIZE_MASK;
+        inChunkZ = z & CHUNK_SIZE_MASK;
+
+        Chunk chunk = getChunk(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS);
+        if (chunk == this) return;
+
+        if (chunk == null) {
             long id = GameLogic.getChunkId(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS);
             synchronized (toGenerateBlocks) {
                 ArrayList<Long> toPlaceBlocks = toGenerateBlocks.computeIfAbsent(id, k -> new ArrayList<>());
                 toPlaceBlocks.add((long) block << 48 | inChunkX << CHUNK_SIZE_BITS * 2 | inChunkY << CHUNK_SIZE_BITS | inChunkZ);
             }
         } else {
+            if (chunk.saved) return;
             if (chunk.getSaveBlock(inChunkX, inChunkY, inChunkZ) != AIR && Block.isLeaveType(block)) return;
             chunk.storeSave(inChunkX, inChunkY, inChunkZ, block);
 
@@ -902,5 +922,9 @@ public class Chunk {
 
     public byte[] getLight() {
         return light;
+    }
+
+    public void setSaved() {
+        this.saved = true;
     }
 }
