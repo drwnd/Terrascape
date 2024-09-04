@@ -2,7 +2,6 @@ package com.MBEv2.core;
 
 import com.MBEv2.core.entity.*;
 
-import static com.MBEv2.core.WorldGeneration.SEED;
 import static com.MBEv2.core.utils.Constants.*;
 import static com.MBEv2.core.utils.Settings.*;
 
@@ -306,7 +305,7 @@ public class RenderManager {
         renderTextLine("In Chunk coordinates: X:" + (x & CHUNK_SIZE_MASK) + " Y:" + (y & CHUNK_SIZE_MASK) + " Z:" + (z & CHUNK_SIZE_MASK), ++line);
         renderTextLine("Looking at: X:" + Utils.floor(direction.x * 100) / 100f + " Y:" + Utils.floor(direction.y * 100) / 100f + " Z:" + Utils.floor(direction.z * 100) / 100f, ++line);
         if (chunk != null) {
-            renderTextLine("OcclusionCullingData:" + Integer.toBinaryString(chunk.getOcclusionCullingData() & 0xFFFF) + " Damping:" + (chunk.getOcclusionCullingDamper() == 0 ? "false" : "true"), ++line);
+            renderTextLine("OcclusionCullingData:" + Integer.toBinaryString(chunk.getOcclusionCullingData() & 0x7FFF) + " Damping:" + (chunk.getOcclusionCullingDamper() == 0 ? "false" : "true"), ++line);
             renderTextLine("Block optimized:" + (chunk.isBlockOptimized() ? "true" : "false") + " Light optimized:" + (chunk.isLightOptimized() ? "true" : "false"), ++line);
             renderTextLine("HeightMap:" + Chunk.getHeightMap(chunkX, chunkZ)[(x & CHUNK_SIZE_MASK) << CHUNK_SIZE_BITS | z & CHUNK_SIZE_MASK], ++line);
             renderTextLine("BlockLight:" + Chunk.getBlockLightInWorld(x, y, z) + " SkyLight:" + Chunk.getSkyLightInWorld(x, y, z), ++line);
@@ -321,7 +320,7 @@ public class RenderManager {
         renderTextLine("Rendered water models:" + waterModels.size(), ++line);
         renderTextLine("Rendered GUIElements:" + GUIElements.size(), ++line);
         renderTextLine("Time:" + time, ++line);
-        renderTextLine("Saved chunks memory:" + FileManager.getSeedFileSize(), ++line);
+        renderTextLine("Saved chunks memory:" + FileManager.getSeedFileSize() / 1_000_000 + "MB", ++line);
 
         textShader.unBind();
     }

@@ -7,13 +7,11 @@ import org.joml.Vector3i;
 import java.util.*;
 
 import static com.MBEv2.core.utils.Constants.*;
-import static com.MBEv2.core.utils.Settings.*;
 
 public class Chunk {
 
-    private static final Chunk[] world = new Chunk[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
-    private static final int[][] heightMap = new int[RENDERED_WORLD_WIDTH * RENDERED_WORLD_WIDTH][CHUNK_SIZE * CHUNK_SIZE];
-    //private static final HashMap<Long, Chunk> savedChunks = new HashMap<>();
+    private static Chunk[] world;
+    private static int[][] heightMap;
     private static final HashMap<Long, ArrayList<Long>> toGenerateBlocks = new HashMap<>();
 
     private short[] blocks;
@@ -25,7 +23,7 @@ public class Chunk {
     private final int X, Y, Z;
     private final Vector3i worldCoordinate;
     private final long id;
-    private final int index;
+    private int index;
 
     private boolean isMeshed = false;
     private boolean isGenerated = false;
@@ -37,7 +35,6 @@ public class Chunk {
     private Model waterModel;
 
     private short occlusionCullingData;
-    private byte occlusionCullingDamper;
 
     public Chunk(int x, int y, int z) {
         this.X = x;
@@ -102,14 +99,16 @@ public class Chunk {
     }
 
     public void generateOcclusionCullingData() {
-        occlusionCullingData = (short) 0x8000;
+        occlusionCullingData = 0;
 
         int[] visitedBlocks = new int[CHUNK_SIZE * CHUNK_SIZE];
-        LinkedList<Integer> toVisitBlockIndexes = new LinkedList<>();
-        int maxLightValue = 0;
+        ArrayList<Integer> toVisitBlockIndexes = new ArrayList<>();
 
         if (blocks.length == 1) {
-            if (Block.getBlockType(blocks[0]) != FULL_BLOCK) occlusionCullingData = -1;
+            if (Block.getBlockType(blocks[0]) != FULL_BLOCK) occlusionCullingData = 0x7FFF;
+            for (byte light : light)
+                if (light != 0) return;
+            occlusionCullingData |= (short) 0x8000;
             return;
         }
 
@@ -120,16 +119,13 @@ public class Chunk {
             byte visitedSides = 0;
 
             while (!toVisitBlockIndexes.isEmpty()) {
-                int floodFillBlockIndex = toVisitBlockIndexes.removeFirst();
+                int floodFillBlockIndex = toVisitBlockIndexes.removeLast();
 
                 if ((visitedBlocks[floodFillBlockIndex >> CHUNK_SIZE_BITS] & (1 << (floodFillBlockIndex & CHUNK_SIZE_MASK))) != 0)
                     continue;
                 visitedBlocks[floodFillBlockIndex >> CHUNK_SIZE_BITS] |= 1 << (floodFillBlockIndex & CHUNK_SIZE_MASK);
 
                 if (Block.getBlockType(blocks[floodFillBlockIndex]) == FULL_BLOCK) continue;
-                byte light = this.light[this.light.length <= floodFillBlockIndex ? 0 : floodFillBlockIndex];
-                if ((light & 15) > maxLightValue) maxLightValue = light & 15;
-                if ((light >> 4 & 15) > maxLightValue) maxLightValue = light >> 4 & 15;
 
                 int nextBlockIndex = floodFillBlockIndex - (1 << CHUNK_SIZE_BITS * 2);
                 if (floodFillBlockIndex >> CHUNK_SIZE_BITS * 2 == 0) visitedSides = (byte) (visitedSides | 1 << LEFT);
@@ -174,8 +170,9 @@ public class Chunk {
             }
         }
 
-        if (maxLightValue != 0) occlusionCullingDamper = 0;
-        else occlusionCullingDamper = 1;
+        for (byte light : light)
+            if (light != 0) return;
+        occlusionCullingData |= (short) 0x8000;
     }
 
     public void generateMesh() {
@@ -185,9 +182,8 @@ public class Chunk {
         for (int side = 0; side < 6; side++) verticesList.add(new ArrayList<>());
 
         generateSurroundingChunks();
-        if ((occlusionCullingData & 0x8000) == 0) generateOcclusionCullingData();
-
         if (light.length != 1) optimizeLightStorage();
+        generateOcclusionCullingData();
 
         for (int inChunkX = 0; inChunkX < CHUNK_SIZE; inChunkX++)
             for (int inChunkZ = 0; inChunkZ < CHUNK_SIZE; inChunkZ++)
@@ -412,14 +408,14 @@ public class Chunk {
         int subU = 0;
         int subV = 0;
 
-        boolean shouldSimulateWaves = false;
+        boolean shouldSimulateWaves;
 
         if (side == TOP) {
             subY = -2;
             shouldSimulateWaves = true;
         } else if (side != BOTTOM) {
-            shouldSimulateWaves = corner == 1 || corner == 0;
             short blockAbove = getBlock(blockX, blockY + 1, blockZ);
+            shouldSimulateWaves = corner == 1 || corner == 0;
             if ((corner == 0 || corner == 1) && blockAbove != WATER && Block.getBlockTypeOcclusionData(blockAbove, BOTTOM) == 0) {
                 subY = -2;
                 subV = 2;
@@ -431,9 +427,10 @@ public class Chunk {
                     subV = -14;
                 }
             }
-        }
+        } else shouldSimulateWaves = true;
+
         short blockBelow = getBlock(blockX, blockY - 1, blockZ);
-        shouldSimulateWaves = shouldSimulateWaves || blockBelow == WATER;
+        shouldSimulateWaves = shouldSimulateWaves || Block.getBlockTypeOcclusionData(blockBelow, TOP) == 0;
 
         if (inChunkX == 0 || inChunkX == CHUNK_SIZE || inChunkZ == 0 || inChunkZ == CHUNK_SIZE)
             shouldSimulateWaves = false;
@@ -675,6 +672,8 @@ public class Chunk {
         } else {
             if (chunk.saved) return;
             if (chunk.getSaveBlock(inChunkX, inChunkY, inChunkZ) != AIR && Block.isLeaveType(block)) return;
+            short[] blocks = chunk.blocks;
+            if (blocks.length == 1) chunk.blocks = new short[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
             chunk.storeSave(inChunkX, inChunkY, inChunkZ, block);
 
             int[] heightMap = getHeightMap(chunk.getChunkX(), chunk.getChunkZ());
@@ -888,12 +887,8 @@ public class Chunk {
         hasPropagatedBlockLight = true;
     }
 
-    public void setOcclusionCullingDataOutdated() {
-        occlusionCullingData = (short) (occlusionCullingData & 0b111111111111111);
-    }
-
-    public byte getOcclusionCullingDamper() {
-        return occlusionCullingDamper;
+    public int getOcclusionCullingDamper() {
+        return occlusionCullingData >> 15 & 1;
     }
 
     public short getOcclusionCullingData() {
@@ -926,5 +921,17 @@ public class Chunk {
 
     public void setSaved() {
         this.saved = true;
+    }
+
+    public void setIndex(int index) {
+        this.index = index;
+    }
+
+    public static void setWorld(Chunk[] world) {
+        Chunk.world = world;
+    }
+
+    public static void setHeightMap(int[][] heightMap) {
+        Chunk.heightMap = heightMap;
     }
 }

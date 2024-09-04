@@ -8,14 +8,13 @@ import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 
+import static com.MBEv2.core.utils.Settings.*;
+
 public class MouseInput {
 
     private final Vector2f previousPos, currentPos;
     private Vector2f displayVec;
     private final Player player;
-
-    private long rightButtonPressTime = -1, leftButtonPressTime = -1;
-    private boolean rightButtonWasJustPressed, leftButtonWasJustPressed;
 
     public MouseInput(Player player) {
         this.player = player;
@@ -30,25 +29,8 @@ public class MouseInput {
             currentPos.y = (float) yPos;
         });
 
-        GLFW.glfwSetMouseButtonCallback(Launcher.getWindow().getWindow(), (window, button, action, mods) -> {
-            if (action == GLFW.GLFW_PRESS) {
-                if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
-                    leftButtonPressTime = System.nanoTime();
-                    leftButtonWasJustPressed = true;
-                } else if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
-                    rightButtonPressTime = System.nanoTime();
-                    rightButtonWasJustPressed = true;
-                }
-            } else if (action == GLFW.GLFW_RELEASE) {
-                if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
-                    leftButtonPressTime = -1;
-                    leftButtonWasJustPressed = false;
-                } else if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
-                    rightButtonPressTime = -1;
-                    rightButtonWasJustPressed = false;
-                }
-            }
-        });
+        GLFW.glfwSetMouseButtonCallback(Launcher.getWindow().getWindow(), (window, button, action, mods) ->
+                player.handleNonMovementInputs(button | IS_MOUSE_BUTTON, action));
 
         GLFW.glfwSetScrollCallback(Launcher.getWindow().getWindow(), (window, xPos, yPos) -> {
             if (!player.isInInventory()) return;
@@ -78,25 +60,5 @@ public class MouseInput {
         Vector2f returns = displayVec;
         displayVec = new Vector2f();
         return returns;
-    }
-
-    public long getRightButtonPressTime() {
-        return rightButtonPressTime;
-    }
-
-    public long getLeftButtonPressTime() {
-        return leftButtonPressTime;
-    }
-
-    public boolean wasRightButtonJustPressed() {
-        boolean returnValue = rightButtonWasJustPressed;
-        rightButtonWasJustPressed = false;
-        return returnValue;
-    }
-
-    public boolean wasLeftButtonJustPressed() {
-        boolean returnValue = leftButtonWasJustPressed;
-        leftButtonWasJustPressed = false;
-        return returnValue;
     }
 }

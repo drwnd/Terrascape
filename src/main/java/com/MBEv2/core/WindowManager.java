@@ -3,7 +3,6 @@ package com.MBEv2.core;
 import static com.MBEv2.core.utils.Constants.*;
 import static com.MBEv2.core.utils.Settings.*;
 
-import com.MBEv2.test.GameLogic;
 import org.joml.Matrix4f;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;
@@ -61,12 +60,6 @@ public class WindowManager {
             this.height = height;
             this.setResize(true);
             updateProjectionMatrix();
-        });
-
-        GLFW.glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
-            if (key == GLFW.GLFW_KEY_ESCAPE && action == GLFW.GLFW_RELEASE)
-                if (!GameLogic.getPlayer().isInInventory())
-                    GLFW.glfwSetWindowShouldClose(window, true);
         });
 
         GLFWVidMode vidMode = GLFW.glfwGetVideoMode(GLFW.glfwGetPrimaryMonitor());

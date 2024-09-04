@@ -20,11 +20,12 @@ public class Launcher {
             engine.cleanUp();
 
         } catch (Exception e) {
-            //noinspection CallToPrintStackTrace
             e.printStackTrace();
             System.out.println(e.getClass());
             System.out.println(e.getMessage());
-            System.out.println(e.getCause().toString());
+
+            FileManager.saveAllModifiedChunks();
+            FileManager.saveGameState();
         }
     }
 

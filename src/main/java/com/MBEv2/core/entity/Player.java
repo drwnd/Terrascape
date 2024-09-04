@@ -52,7 +52,7 @@ public class Player {
     private final MouseInput mouseInput;
 
     private final Vector3f velocity;
-    private final long[] visibleChunks;
+    private long[] visibleChunks;
 
     private final ArrayList<GUIElement> GUIElements = new ArrayList<>();
     private final ArrayList<GUIElement> hotBarElements = new ArrayList<>();
@@ -62,18 +62,19 @@ public class Player {
 
     private long spaceButtonPressTime;
     private boolean spaceButtonPressed = false;
+    private long useButtonPressTime = -1, destroyButtonPressTime = -1;
+    private boolean useButtonWasJustPressed = false, destroyButtonWasJustPressed = false;
 
     private float inventoryScroll;
 
     //Debug
-    private boolean debugScreenOpen, openDebugMenuKeyPressed;
-    private boolean noClip, noClipKeyPressed;
-    private boolean usingOcclusionCulling = true, useOcclusionCullingKeyPressed;
-    private boolean setPosition1KeyPressed, setPosition2KeyPressed, toggleXRayKeyPressed;
+    private boolean debugScreenOpen;
+    private boolean noClip;
+    private boolean usingOcclusionCulling = true;
     private final Vector3i pos1, pos2;
 
     private boolean isFling;
-    private boolean inInventory, openInventoryKeyPressed;
+    private boolean inInventory;
     private short[] hotBar = new short[9];
     private int selectedHotBarSlot = 0;
 
@@ -101,26 +102,58 @@ public class Player {
         skyBox.setTexture(skyBoxTexture1, skyBoxTexture2);
         renderer.processSkyBox(skyBox);
 
-        GUIElement crossHair = ObjectLoader.loadGUIElement(GameLogic.getCrossHairVertices(), GUI_ELEMENT_TEXTURE_COORDINATES, new Vector2f(0.0f, 0.0f));
-        crossHair.setTexture(new Texture(ObjectLoader.loadTexture("textures/CrossHair.png")));
-        GUIElements.add(crossHair);
-
-        GUIElement hotBarGUIElement = ObjectLoader.loadGUIElement(GameLogic.getHotBarVertices(), GUI_ELEMENT_TEXTURE_COORDINATES, new Vector2f(0.0f, 0.0f));
-        hotBarGUIElement.setTexture(new Texture(ObjectLoader.loadTexture("textures/HotBar.png")));
-        GUIElements.add(hotBarGUIElement);
+        loadGUIElements();
 
         GUIElement inventoryOverlay = ObjectLoader.loadGUIElement(OVERLAY_VERTICES, GUI_ELEMENT_TEXTURE_COORDINATES, new Vector2f(0.0f, 0.0f));
         inventoryOverlay.setTexture(new Texture(ObjectLoader.loadTexture("textures/InventoryOverlay.png")));
         renderer.setInventoryOverlay(inventoryOverlay);
 
-        hotBarSelectionIndicator = ObjectLoader.loadGUIElement(GameLogic.getHotBarSelectionIndicatorVertices(), GUI_ELEMENT_TEXTURE_COORDINATES, new Vector2f(0, 0));
-        hotBarSelectionIndicator.setTexture(new Texture(ObjectLoader.loadTexture("textures/HotBarSelectionIndicator.png")));
-        setSelectedHotBarSlot(0);
-
         updateHotBarElements();
         generateInventoryElements(inventoryElements);
 
         mouseInput.init();
+
+        GLFW.glfwSetKeyCallback(window.getWindow(), (window, key, scancode, action, mods) -> {
+            if (key == GLFW.GLFW_KEY_ESCAPE && action == GLFW.GLFW_RELEASE) {
+                if (!isInInventory())
+                    GLFW.glfwSetWindowShouldClose(window, true);
+                else toggleInventory();
+                return;
+            }
+            handleNonMovementInputs(key | IS_KEYBOARD_BUTTON, action);
+        });
+    }
+
+    public void loadGUIElements() throws Exception {
+        GUIElement crossHair = ObjectLoader.loadGUIElement(GameLogic.getCrossHairVertices(), GUI_ELEMENT_TEXTURE_COORDINATES, new Vector2f(0.0f, 0.0f));
+        crossHair.setTexture(new Texture(ObjectLoader.loadTexture("textures/CrossHair.png")));
+        GUIElements.addFirst(crossHair);
+
+        GUIElement hotBarGUIElement = ObjectLoader.loadGUIElement(GameLogic.getHotBarVertices(), GUI_ELEMENT_TEXTURE_COORDINATES, new Vector2f(0.0f, 0.0f));
+        hotBarGUIElement.setTexture(new Texture(ObjectLoader.loadTexture("textures/HotBar.png")));
+        GUIElements.add(1, hotBarGUIElement);
+
+        hotBarSelectionIndicator = ObjectLoader.loadGUIElement(GameLogic.getHotBarSelectionIndicatorVertices(), GUI_ELEMENT_TEXTURE_COORDINATES, new Vector2f(0, 0));
+        hotBarSelectionIndicator.setTexture(new Texture(ObjectLoader.loadTexture("textures/HotBarSelectionIndicator.png")));
+        setSelectedHotBarSlot(0);
+    }
+
+    public void reloadGUIElements() throws Exception {
+        GUIElement crossHair = GUIElements.removeFirst();
+        ObjectLoader.removeVAO(crossHair.getVao());
+        ObjectLoader.removeVBO(crossHair.getVbo1());
+        ObjectLoader.removeVBO(crossHair.getVbo2());
+
+        GUIElement hotBar = GUIElements.removeFirst();
+        ObjectLoader.removeVAO(hotBar.getVao());
+        ObjectLoader.removeVBO(hotBar.getVbo1());
+        ObjectLoader.removeVBO(hotBar.getVbo2());
+
+        ObjectLoader.removeVAO(hotBarSelectionIndicator.getVao());
+        ObjectLoader.removeVBO(hotBarSelectionIndicator.getVbo1());
+        ObjectLoader.removeVBO(hotBarSelectionIndicator.getVbo2());
+
+        loadGUIElements();
     }
 
     public void update(float passedTime) {
@@ -147,9 +180,7 @@ public class Player {
         normalizeVelocity(velocity);
         addVelocityChange(velocity);
 
-        handleInputHotkeys();
-        handleInputDebugHotkeys();
-        handleMouseInput();
+        handleDestroyUsePickBlockInput();
     }
 
     private void handleInputMovementStateChange(Vector3f position) {
@@ -210,7 +241,7 @@ public class Player {
 
         float movementSpeedModifier = 1.0f;
 
-        if (window.isKeyPressed(SET_POSITION_1_BUTTON)) movementSpeedModifier *= 2.5f;
+        if (window.isKeyPressed(SPRINT_BUTTON)) movementSpeedModifier *= 2.5f;
         if (window.isKeyPressed(FLY_FAST_BUTTON)) movementSpeedModifier *= 5.0f;
 
         if (window.isKeyPressed(MOVE_FORWARD_BUTTON)) {
@@ -372,44 +403,86 @@ public class Player {
         this.velocity.y += velocity.y;
     }
 
-    private void handleInputHotkeys() {
-        if (window.isKeyPressed(HOT_BAR_SLOT_1)) setSelectedHotBarSlot(0);
-        else if (window.isKeyPressed(HOT_BAR_SLOT_2)) setSelectedHotBarSlot(1);
-        else if (window.isKeyPressed(HOT_BAR_SLOT_3)) setSelectedHotBarSlot(2);
-        else if (window.isKeyPressed(HOT_BAR_SLOT_4)) setSelectedHotBarSlot(3);
-        else if (window.isKeyPressed(HOT_BAR_SLOT_5)) setSelectedHotBarSlot(4);
-        else if (window.isKeyPressed(HOT_BAR_SLOT_6)) setSelectedHotBarSlot(5);
-        else if (window.isKeyPressed(HOT_BAR_SLOT_7)) setSelectedHotBarSlot(6);
-        else if (window.isKeyPressed(HOT_BAR_SLOT_8)) setSelectedHotBarSlot(7);
-        else if (window.isKeyPressed(HOT_BAR_SLOT_9)) setSelectedHotBarSlot(8);
+    private void handleDestroyUsePickBlockInput() {
+        if (inInventory) return;
+        boolean useButtonWasJustPressed = this.useButtonWasJustPressed;
+        boolean destroyButtonWasJustPressed = this.destroyButtonWasJustPressed;
+        this.useButtonWasJustPressed = false;
+        this.destroyButtonWasJustPressed = false;
+        long currentTime = System.nanoTime();
 
-        if (window.isKeyPressed(OPEN_INVENTORY_BUTTON) && !openInventoryKeyPressed) {
-            openInventoryKeyPressed = true;
-            inInventory = !inInventory;
-            GLFW.glfwSetInputMode(window.getWindow(), GLFW.GLFW_CURSOR, inInventory ? GLFW.GLFW_CURSOR_NORMAL : GLFW.GLFW_CURSOR_DISABLED);
+        if (destroyButtonPressTime != -1 && (currentTime - destroyButtonPressTime > 300_000_000 || destroyButtonWasJustPressed)) {
+            Vector3f target = getTarget(0, camera.getDirection());
+            if (target != null)
+                GameLogic.placeBlock(AIR, Utils.floor(target.x), Utils.floor(target.y), Utils.floor(target.z));
         }
 
-        if (openInventoryKeyPressed && !window.isKeyPressed(OPEN_INVENTORY_BUTTON)) openInventoryKeyPressed = false;
+        if (useButtonPressTime != -1 && (currentTime - useButtonPressTime > 300_000_000 || useButtonWasJustPressed) && hotBar[selectedHotBarSlot] != AIR) {
+
+            Vector3f cameraDirection = camera.getDirection();
+            Vector3f target = getTarget(1, cameraDirection);
+            if (target != null) {
+                short selectedBlock = hotBar[selectedHotBarSlot];
+                short toPlaceBlock;
+
+                toPlaceBlock = Block.getToPlaceBlock(selectedBlock, camera.getPrimaryDirection(cameraDirection), camera.getPrimaryXZDirection(cameraDirection), target, this);
+
+                GameLogic.placeBlock(toPlaceBlock, Utils.floor(target.x), Utils.floor(target.y), Utils.floor(target.z));
+            }
+        }
+
+        if (window.isKeyPressed(PICK_BLOCK_BUTTON)) {
+            Vector3f target = getTarget(0, camera.getDirection());
+            if (target != null) {
+                short block = Chunk.getBlockInWorld(Utils.floor(target.x), Utils.floor(target.y), Utils.floor(target.z));
+                hotBar[selectedHotBarSlot] = Block.getInInventoryBlockEquivalent(block);
+            } else hotBar[selectedHotBarSlot] = AIR;
+            updateHotBarElements();
+        }
     }
 
-    private void handleInputDebugHotkeys() {
-        if (window.isKeyPressed(TOGGLE_NO_CLIP_BUTTON) && !noClipKeyPressed) {
-            noClip = !noClip;
-            noClipKeyPressed = true;
-        }
-        if (window.isKeyPressed(SET_POSITION_1_BUTTON) && !setPosition1KeyPressed) {
+    public void handleNonMovementInputs(int button, int action) {
+        if (button == DESTROY_BUTTON)
+            if (action == GLFW.GLFW_PRESS) {
+                destroyButtonPressTime = System.nanoTime();
+                destroyButtonWasJustPressed = true;
+            } else {
+                destroyButtonPressTime = -1;
+                destroyButtonWasJustPressed = false;
+            }
+        else if (button == USE_BUTTON)
+            if (action == GLFW.GLFW_PRESS) {
+                useButtonPressTime = System.nanoTime();
+                useButtonWasJustPressed = true;
+            } else {
+                useButtonPressTime = -1;
+                useButtonWasJustPressed = false;
+            }
+        else if (button == HOT_BAR_SLOT_1 && action == GLFW.GLFW_PRESS) setSelectedHotBarSlot(0);
+        else if (button == HOT_BAR_SLOT_2 && action == GLFW.GLFW_PRESS) setSelectedHotBarSlot(1);
+        else if (button == HOT_BAR_SLOT_3 && action == GLFW.GLFW_PRESS) setSelectedHotBarSlot(2);
+        else if (button == HOT_BAR_SLOT_4 && action == GLFW.GLFW_PRESS) setSelectedHotBarSlot(3);
+        else if (button == HOT_BAR_SLOT_5 && action == GLFW.GLFW_PRESS) setSelectedHotBarSlot(4);
+        else if (button == HOT_BAR_SLOT_6 && action == GLFW.GLFW_PRESS) setSelectedHotBarSlot(5);
+        else if (button == HOT_BAR_SLOT_7 && action == GLFW.GLFW_PRESS) setSelectedHotBarSlot(6);
+        else if (button == HOT_BAR_SLOT_8 && action == GLFW.GLFW_PRESS) setSelectedHotBarSlot(7);
+        else if (button == HOT_BAR_SLOT_9 && action == GLFW.GLFW_PRESS) setSelectedHotBarSlot(8);
+
+        else if (button == OPEN_INVENTORY_BUTTON && action == GLFW.GLFW_PRESS) toggleInventory();
+        else if (button == OPEN_DEBUG_MENU_BUTTON && action == GLFW.GLFW_PRESS) debugScreenOpen = !debugScreenOpen;
+
+        else if (button == TOGGLE_NO_CLIP_BUTTON && action == GLFW.GLFW_PRESS) noClip = !noClip;
+        else if (button == TOGGLE_X_RAY_BUTTON && action == GLFW.GLFW_PRESS) renderer.setXRay(!renderer.isxRay());
+        else if (button == SET_POSITION_1_BUTTON && action == GLFW.GLFW_PRESS) {
             Vector3f cameraPosition = camera.getPosition();
             pos1.x = Utils.floor(cameraPosition.x);
             pos1.y = Utils.floor(cameraPosition.y);
             pos1.z = Utils.floor(cameraPosition.z);
-            setPosition1KeyPressed = true;
-        }
-        if (window.isKeyPressed(SET_POSITION_2_BUTTON) && !setPosition2KeyPressed) {
+        } else if (button == SET_POSITION_2_BUTTON && action == GLFW.GLFW_PRESS) {
             Vector3f cameraPosition = camera.getPosition();
             pos2.x = Utils.floor(cameraPosition.x);
             pos2.y = Utils.floor(cameraPosition.y);
             pos2.z = Utils.floor(cameraPosition.z);
-            setPosition2KeyPressed = true;
 
             int x = Math.abs(pos1.x - pos2.x) + 1;
             int y = Math.abs(pos1.y - pos2.y) + 1;
@@ -435,65 +508,16 @@ public class Player {
                 System.out.print("},");
             }
             System.out.print("}");
-        }
-        if (window.isKeyPressed(TOGGLE_X_RAY_BUTTON) && !toggleXRayKeyPressed) {
-            toggleXRayKeyPressed = true;
-            renderer.setXRay(!renderer.isxRay());
-        }
-        if (window.isKeyPressed(USE_OCCLUSION_CULLING_BUTTON) && !useOcclusionCullingKeyPressed) {
-            useOcclusionCullingKeyPressed = true;
+        } else if (button == USE_OCCLUSION_CULLING_BUTTON && action == GLFW.GLFW_PRESS) {
             usingOcclusionCulling = !usingOcclusionCulling;
             if (!usingOcclusionCulling)
                 Arrays.fill(visibleChunks, -1);
-        }
-        if (window.isKeyPressed(OPEN_DEBUG_MENU_BUTTON) && !openDebugMenuKeyPressed) {
-            openDebugMenuKeyPressed = true;
-            debugScreenOpen = !debugScreenOpen;
-        }
-
-        if (noClipKeyPressed && !window.isKeyPressed(TOGGLE_NO_CLIP_BUTTON)) noClipKeyPressed = false;
-        if (setPosition1KeyPressed && !window.isKeyPressed(SET_POSITION_1_BUTTON)) setPosition1KeyPressed = false;
-        if (setPosition2KeyPressed && !window.isKeyPressed(SET_POSITION_2_BUTTON)) setPosition2KeyPressed = false;
-        if (toggleXRayKeyPressed && !window.isKeyPressed(TOGGLE_X_RAY_BUTTON)) toggleXRayKeyPressed = false;
-        if (useOcclusionCullingKeyPressed && !window.isKeyPressed(USE_OCCLUSION_CULLING_BUTTON)) useOcclusionCullingKeyPressed = false;
-        if (openDebugMenuKeyPressed && !window.isKeyPressed(OPEN_DEBUG_MENU_BUTTON)) openDebugMenuKeyPressed = false;
-    }
-
-    private void handleMouseInput() {
-        if (inInventory) return;
-        long rightButtonPressTime = mouseInput.getRightButtonPressTime();
-        long leftButtonPressTime = mouseInput.getLeftButtonPressTime();
-        boolean rightButtonWasJustPressed = mouseInput.wasRightButtonJustPressed();
-        boolean leftButtonWasJustPressed = mouseInput.wasLeftButtonJustPressed();
-        long currentTime = System.nanoTime();
-
-        if (leftButtonPressTime != -1 && (currentTime - leftButtonPressTime > 300_000_000 || leftButtonWasJustPressed)) {
-            Vector3f target = getTarget(0, camera.getDirection());
-            if (target != null)
-                GameLogic.placeBlock(AIR, Utils.floor(target.x), Utils.floor(target.y), Utils.floor(target.z));
-        }
-
-        if (rightButtonPressTime != -1 && (currentTime - rightButtonPressTime > 300_000_000 || rightButtonWasJustPressed) && hotBar[selectedHotBarSlot] != AIR) {
-
-            Vector3f cameraDirection = camera.getDirection();
-            Vector3f target = getTarget(1, cameraDirection);
-            if (target != null) {
-                short selectedBlock = hotBar[selectedHotBarSlot];
-                short toPlaceBlock;
-
-                toPlaceBlock = Block.getToPlaceBlock(selectedBlock, camera.getPrimaryDirection(cameraDirection), camera.getPrimaryXZDirection(cameraDirection), target, this);
-
-                GameLogic.placeBlock(toPlaceBlock, Utils.floor(target.x), Utils.floor(target.y), Utils.floor(target.z));
+        } else if (button == RELOAD_SETTINGS_BUTTON && action == GLFW.GLFW_PRESS) {
+            try {
+                FileManager.loadSettings(false);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
-        }
-
-        if (window.isKeyPressed(PICK_BLOCK_BUTTON)) {
-            Vector3f target = getTarget(0, camera.getDirection());
-            if (target != null) {
-                short block = Chunk.getBlockInWorld(Utils.floor(target.x), Utils.floor(target.y), Utils.floor(target.z));
-                hotBar[selectedHotBarSlot] = Block.getInInventoryBlockEquivalent(block);
-            } else hotBar[selectedHotBarSlot] = AIR;
-            updateHotBarElements();
         }
     }
 
@@ -536,6 +560,11 @@ public class Player {
 
     private void applyGravity() {
         velocity.y -= GRAVITY_ACCELERATION;
+    }
+
+    private void toggleInventory() {
+        inInventory = !inInventory;
+        GLFW.glfwSetInputMode(window.getWindow(), GLFW.GLFW_CURSOR, inInventory ? GLFW.GLFW_CURSOR_NORMAL : GLFW.GLFW_CURSOR_DISABLED);
     }
 
     private void moveCameraHandleCollisions(float x, float y, float z) {
@@ -610,13 +639,13 @@ public class Player {
         if (position.y != oldPosition.y) isGrounded = false;
 
         if (Utils.floor(oldPosition.x) >> CHUNK_SIZE_BITS != Utils.floor(position.x) >> CHUNK_SIZE_BITS)
-            GameLogic.loadUnloadChunks(position.x > oldPosition.x ? FRONT : BACK);
+            GameLogic.restartGenerator(position.x > oldPosition.x ? FRONT : BACK);
 
         else if (Utils.floor(oldPosition.y) >> CHUNK_SIZE_BITS != Utils.floor(position.y) >> CHUNK_SIZE_BITS)
-            GameLogic.loadUnloadChunks(position.y > oldPosition.y ? TOP : BOTTOM);
+            GameLogic.restartGenerator(position.y > oldPosition.y ? TOP : BOTTOM);
 
         else if (Utils.floor(oldPosition.z) >> CHUNK_SIZE_BITS != Utils.floor(position.z) >> CHUNK_SIZE_BITS)
-            GameLogic.loadUnloadChunks(position.z > oldPosition.z ? RIGHT : LEFT);
+            GameLogic.restartGenerator(position.z > oldPosition.z ? RIGHT : LEFT);
 
         camera.setPosition(position.x, position.y, position.z);
     }
@@ -976,5 +1005,9 @@ public class Player {
     public void setHotBar(short[] hotBar) {
         this.hotBar = hotBar;
         updateHotBarElements();
+    }
+
+    public void setVisibleChunks(long[] visibleChunks) {
+        this.visibleChunks = visibleChunks;
     }
 }

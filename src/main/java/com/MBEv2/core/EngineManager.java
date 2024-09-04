@@ -20,10 +20,11 @@ public class EngineManager {
 
     public void init() throws Exception {
         GLFW.glfwSetErrorCallback(errorCallback = GLFWErrorCallback.createPrint(System.err));
+        FileManager.init();
+        FileManager.loadSettings(true);
         window = Launcher.getWindow();
         window.init();
         Block.init();
-        FileManager.init();
         GameLogic.init();
 
         if (window.isvSync()) {

@@ -136,7 +136,7 @@ public class Block {
             short targetedBlock = Chunk.getBlockInWorld(Utils.floor(target2.x), Utils.floor(target2.y), Utils.floor(target2.z));
 
             if ((Block.getInInventoryBlockEquivalent(targetedBlock) & BLOCK_TYPE_MASK) == blockType)
-                return  (short) (baseBlock | targetedBlock & BLOCK_TYPE_MASK);
+                return (short) (baseBlock | targetedBlock & BLOCK_TYPE_MASK);
         }
 
         int toPlaceBlockType = getToPlaceBlockType(blockType, primaryCameraDirection, target);
@@ -324,9 +324,11 @@ public class Block {
     public static boolean hasAmbientOcclusion(short block, short referenceBlock) {
         if (block == AIR) return false;
         if (isLeaveType(block)) return false;
-        int blockType = block & BLOCK_TYPE_MASK;
+        if (isGlassType(block)) return false;
+        int blockType = getBlockType(block);
+        if (blockType == LIQUID_TYPE) return false;
         if (blockType != FULL_BLOCK && blockType == (referenceBlock & BLOCK_TYPE_MASK)) return false;
-        return !isGlassType(block);
+        return (getBlockProperties(block) & LIGHT_EMITTING_MASK) == 0;
     }
 
     public static int getBlockProperties(short block) {

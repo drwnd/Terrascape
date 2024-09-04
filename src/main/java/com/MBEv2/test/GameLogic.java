@@ -2,9 +2,12 @@ package com.MBEv2.test;
 
 import com.MBEv2.core.*;
 import com.MBEv2.core.entity.*;
+import com.MBEv2.core.utils.Utils;
+import org.joml.Vector3f;
 import org.joml.Vector4i;
 import org.lwjgl.opengl.GL11;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 
 
@@ -23,13 +26,20 @@ public class GameLogic {
 
         player = FileManager.loadGameState();
 
-        generator = new ChunkGenerator();
+        startGenerator();
+    }
 
+    public static void restartGenerator(int direction) {
+        generator.restart(direction);
+    }
+
+    public static void startGenerator() {
+        generator = new ChunkGenerator();
         generator.start();
     }
 
-    public static void loadUnloadChunks(int direction) {
-        generator.restart(direction);
+    public static void haltChunkGenerator() {
+        generator.waitUntilHalt();
     }
 
     public static void placeBlock(short block, int x, int y, int z) {
@@ -48,8 +58,6 @@ public class GameLogic {
 
         chunk.placeBlock(inChunkX, inChunkY, inChunkZ, block);
         chunk.setModified();
-        if (Block.getBlockType(block) == FULL_BLOCK || Block.getBlockType(previousBlock) == FULL_BLOCK)
-            chunk.setOcclusionCullingDataOutdated();
 
         int minX = chunkX, maxX = chunkX;
         int minY = chunkY, maxY = chunkY;
@@ -121,6 +129,35 @@ public class GameLogic {
 
     public static void updateGT() {
         player.getRenderer().incrementTime();
+    }
+
+    public static void unloadChunks(int playerX, int playerY, int playerZ) {
+        for (Chunk chunk : Chunk.getWorld()) {
+            if (chunk == null)
+                continue;
+
+            if (Math.abs(chunk.getChunkX() - playerX) <= RENDER_DISTANCE_XZ + 2 && Math.abs(chunk.getChunkZ() - playerZ) <= RENDER_DISTANCE_XZ + 2 && Math.abs(chunk.getChunkY() - playerY) <= RENDER_DISTANCE_Y + 2)
+                continue;
+
+            if (Math.abs(chunk.getChunkY() - playerY) < RENDER_DISTANCE_Y + 2)
+                Arrays.fill(Chunk.getHeightMap(chunk.getChunkX(), chunk.getChunkZ()), Integer.MIN_VALUE);
+
+            chunk.clearMesh();
+            addToUnloadChunk(chunk);
+
+            if (chunk.isModified())
+                FileManager.saveChunk(chunk);
+
+            Chunk.setNull(chunk.getIndex());
+        }
+    }
+
+    public static void unloadChunks() {
+        Vector3f position = player.getCamera().getPosition();
+        int playerX = Utils.floor(position.x) >> CHUNK_SIZE_BITS;
+        int playerY = Utils.floor(position.y) >> CHUNK_SIZE_BITS;
+        int playerZ = Utils.floor(position.z) >> CHUNK_SIZE_BITS;
+        unloadChunks(playerX, playerY, playerZ);
     }
 
     public static void deleteChunkMeshBuffers(Chunk chunk) {

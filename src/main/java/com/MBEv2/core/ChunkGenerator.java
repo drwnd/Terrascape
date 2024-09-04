@@ -5,10 +5,10 @@ import com.MBEv2.test.GameLogic;
 import org.joml.Vector3f;
 import org.joml.Vector4i;
 
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import static com.MBEv2.core.utils.Constants.*;
 import static com.MBEv2.core.utils.Settings.*;
@@ -25,11 +25,10 @@ public class ChunkGenerator {
 
 
     public ChunkGenerator() {
-        executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(NUMBER_OF_GENERATION_THREADS);
         blockChanges = new LinkedList<>();
+        executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(NUMBER_OF_GENERATION_THREADS);
         generationStarter = new GenerationStarter(blockChanges, executor);
         starterThread = new Thread(generationStarter);
-        starterThread.start();
     }
 
     public void start() {
@@ -37,6 +36,7 @@ public class ChunkGenerator {
         int playerX = Utils.floor(playerPosition.x) >> CHUNK_SIZE_BITS;
         int playerY = Utils.floor(playerPosition.y) >> CHUNK_SIZE_BITS;
         int playerZ = Utils.floor(playerPosition.z) >> CHUNK_SIZE_BITS;
+        starterThread.start();
         generationStarter.restart(NONE, playerX, playerY, playerZ);
         synchronized (starterThread) {
             starterThread.notify();
@@ -51,6 +51,28 @@ public class ChunkGenerator {
         generationStarter.restart(direction, playerX, playerY, playerZ);
         synchronized (starterThread) {
             starterThread.notify();
+        }
+    }
+
+    public void waitUntilHalt() {
+        executor.getQueue().clear();
+        executor.shutdown();
+        generationStarter.halt();
+
+        try {
+            //noinspection ResultOfMethodCallIgnored
+            executor.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
+        } catch (InterruptedException e) {
+            System.out.println("Crashed when awaiting termination");
+            e.printStackTrace();
+        }
+        synchronized (starterThread) {
+            starterThread.notify();
+            try {
+                starterThread.join();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -98,7 +120,8 @@ public class ChunkGenerator {
                     if (chunk == null) {
                         chunk = FileManager.getChunk(expectedId);
                         if (chunk == null) chunk = new Chunk(chunkX, chunkY, chunkZ);
-                        else WorldGeneration.generateSurroundingChunkTreeBlocks(chunk, resultingHeightMap, temperatureMap, humidityMap, erosionMap, featureMap);
+                        else
+                            WorldGeneration.generateSurroundingChunkTreeBlocks(chunk, resultingHeightMap, temperatureMap, humidityMap, erosionMap, featureMap);
 
                         Chunk.storeChunk(chunk);
                         if (!chunk.isGenerated())
@@ -111,7 +134,8 @@ public class ChunkGenerator {
 
                         chunk = FileManager.getChunk(expectedId);
                         if (chunk == null) chunk = new Chunk(chunkX, chunkY, chunkZ);
-                        else WorldGeneration.generateSurroundingChunkTreeBlocks(chunk, resultingHeightMap, temperatureMap, humidityMap, erosionMap, featureMap);
+                        else
+                            WorldGeneration.generateSurroundingChunkTreeBlocks(chunk, resultingHeightMap, temperatureMap, humidityMap, erosionMap, featureMap);
 
                         Chunk.storeChunk(chunk);
                         if (!chunk.isGenerated())
@@ -120,6 +144,7 @@ public class ChunkGenerator {
                         WorldGeneration.generate(chunk, resultingHeightMap, temperatureMap, humidityMap, erosionMap, featureMap);
                     }
                 } catch (Exception exception) {
+                    exception.printStackTrace();
                     System.out.println("Generator:");
                     System.out.println(exception.getClass());
                     System.out.println(chunkX + " " + chunkY + " " + chunkZ);
@@ -165,11 +190,13 @@ public class ChunkGenerator {
                 try {
                     Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
                     if (chunk == null) {
-                        System.out.println("fuck");
+                        System.out.println("to mesh chunk is null");
+                        System.out.println(chunkX + " " + chunkY + " " + chunkZ);
                         continue;
                     }
                     if (!chunk.isGenerated()) {
-                        System.out.println("fuck2");
+                        System.out.println("to mesh chunk hasn't been generated");
+                        System.out.println(chunkX + " " + chunkY + " " + chunkZ);
                         WorldGeneration.generate(chunk);
                     }
                     if (!chunk.hasPropagatedBlockLight()) {
@@ -180,7 +207,7 @@ public class ChunkGenerator {
                     meshChunk(chunk);
 
                 } catch (Exception exception) {
-                    System.out.println("Mesher:");
+                    System.out.println("Meshing:");
                     System.out.println(exception.getClass());
                     //noinspection CallToPrintStackTrace
                     exception.printStackTrace();
@@ -252,6 +279,12 @@ public class ChunkGenerator {
             this.playerZ = playerZ;
         }
 
+        public void halt() {
+            shouldExecute = false;
+            shouldFinish = false;
+            shouldRestart = false;
+        }
+
         @Override
         public void run() {
             while (shouldExecute) {
@@ -267,30 +300,9 @@ public class ChunkGenerator {
                 shouldFinish = true;
 
                 executor.getQueue().clear();
-                unloadChunks(playerX, playerY, playerZ);
+                GameLogic.unloadChunks(playerX, playerY, playerZ);
                 handleBlockChanges();
                 submitTasks(playerX, playerY, playerZ, travelDirection);
-            }
-        }
-
-        private void unloadChunks(int playerX, int playerY, int playerZ) {
-            for (Chunk chunk : Chunk.getWorld()) {
-                if (chunk == null)
-                    continue;
-
-                if (Math.abs(chunk.getChunkX() - playerX) <= RENDER_DISTANCE_XZ + 2 && Math.abs(chunk.getChunkZ() - playerZ) <= RENDER_DISTANCE_XZ + 2 && Math.abs(chunk.getChunkY() - playerY) <= RENDER_DISTANCE_Y + 2)
-                    continue;
-
-                if (Math.abs(chunk.getChunkY() - playerY) < RENDER_DISTANCE_Y + 2)
-                    Arrays.fill(Chunk.getHeightMap(chunk.getChunkX(), chunk.getChunkZ()), Integer.MIN_VALUE);
-
-                chunk.clearMesh();
-                GameLogic.addToUnloadChunk(chunk);
-
-                if (chunk.isModified())
-                    FileManager.saveChunk(chunk);
-
-                Chunk.setNull(chunk.getIndex());
             }
         }
 
