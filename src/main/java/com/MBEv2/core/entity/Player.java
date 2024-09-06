@@ -823,9 +823,9 @@ public class Player {
         if (inInventory) for (GUIElement element : inventoryElements) renderer.processGUIElement(element);
     }
 
-    private void renderChunkColumn(int x, int z, int cameraX, int cameraY, int cameraZ, FrustumIntersection frustumIntersection) {
-        for (int y = RENDER_DISTANCE_Y + 2; y >= -RENDER_DISTANCE_Y - 2; y--) {
-            Chunk chunk = Chunk.getChunk(x, y + cameraY, z);
+    private void renderChunkColumn(int chunkX, int chunkZ, int cameraX, int cameraY, int cameraZ, FrustumIntersection frustumIntersection) {
+        for (int chunkY = cameraY + RENDER_DISTANCE_Y + 2; chunkY >= cameraY - RENDER_DISTANCE_Y - 2; chunkY--) {
+            Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
             if (chunk == null) continue;
             int chunkIndex = chunk.getIndex();
             if ((visibleChunks[chunkIndex >> 6] & 1L << (chunkIndex & 63)) == 0) continue;
@@ -835,17 +835,17 @@ public class Player {
             if (intersectionType != FrustumIntersection.INTERSECT && intersectionType != FrustumIntersection.INSIDE)
                 continue;
 
-            if (chunk.getWaterModel() != null)
-                renderer.processWaterModel(chunk.getWaterModel());
+            if (chunk.getWaterModel() != null) renderer.processWaterModel(chunk.getWaterModel());
+            if (chunk.getFoliageModel() != null) renderer.processFoliageModel(chunk.getFoliageModel());
 
-            if (x >= cameraX && chunk.getModel(LEFT) != null) renderer.processModel(chunk.getModel(LEFT));
-            if (x <= cameraX && chunk.getModel(RIGHT) != null) renderer.processModel(chunk.getModel(RIGHT));
+            if (chunk.getChunkX() >= cameraX && chunk.getModel(LEFT) != null) renderer.processModel(chunk.getModel(LEFT));
+            if (chunk.getChunkX() <= cameraX && chunk.getModel(RIGHT) != null) renderer.processModel(chunk.getModel(RIGHT));
 
-            if (y >= 0 && chunk.getModel(BOTTOM) != null) renderer.processModel(chunk.getModel(BOTTOM));
-            if (y <= 0 && chunk.getModel(TOP) != null) renderer.processModel(chunk.getModel(TOP));
+            if (chunk.getChunkY() >= cameraY && chunk.getModel(BOTTOM) != null) renderer.processModel(chunk.getModel(BOTTOM));
+            if (chunk.getChunkY() <= cameraY && chunk.getModel(TOP) != null) renderer.processModel(chunk.getModel(TOP));
 
-            if (z <= cameraZ && chunk.getModel(FRONT) != null) renderer.processModel(chunk.getModel(FRONT));
-            if (z >= cameraZ && chunk.getModel(BACK) != null) renderer.processModel(chunk.getModel(BACK));
+            if (chunk.getChunkZ() >= cameraZ && chunk.getModel(BACK) != null) renderer.processModel(chunk.getModel(BACK));
+            if (chunk.getChunkZ() <= cameraZ && chunk.getModel(FRONT) != null) renderer.processModel(chunk.getModel(FRONT));
         }
     }
 

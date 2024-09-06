@@ -7,7 +7,7 @@ public class Settings {
 
     //Change to whatever you want
     //    public static final long SEED = new Random().nextLong();
-    public static long SEED = 1;
+    public static long SEED = 2;
 
     public static float FOV;
     public static float GUI_SIZE;

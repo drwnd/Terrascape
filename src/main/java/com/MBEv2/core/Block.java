@@ -25,7 +25,10 @@ public class Block {
     public static final int[][] CORNERS_OF_SIDE = {{1, 0, 5, 4}, {2, 0, 3, 1}, {3, 1, 7, 5}, {2, 3, 6, 7}, {6, 4, 7, 5}, {2, 0, 6, 4}};
 
     public static boolean occludes(short toTestBlock, short occludingBlock, int side, int x, int y, int z) {
-        if (isLeaveType(occludingBlock)) return false;
+        if (isLeaveType(occludingBlock)) {
+            if (isLeaveType(toTestBlock)) return side > 2;
+            return false;
+        }
         if (isGlassType(occludingBlock)) return isGlassType(toTestBlock);
         byte occlusionData = BLOCK_TYPE_OCCLUSION_DATA[getBlockType(occludingBlock)];
         byte blockData = BLOCK_TYPE_DATA[getBlockType(toTestBlock)];

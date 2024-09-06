@@ -21,9 +21,10 @@ import java.util.List;
 public class RenderManager {
 
     private final WindowManager window;
-    private ShaderManager blockShader, waterShader, skyBoxShader, GUIShader, textShader;
+    private ShaderManager blockShader, waterShader, foliageShader, skyBoxShader, GUIShader, textShader;
 
     private final List<Model> chunkModels = new ArrayList<>();
+    private final List<Model> foliageModels = new ArrayList<>();
     private final List<Model> waterModels = new ArrayList<>();
     private final List<GUIElement> GUIElements = new ArrayList<>();
     private final Player player;
@@ -76,6 +77,19 @@ public class RenderManager {
         waterShader.createUniform("headUnderWater");
         waterShader.createUniform("cameraPosition");
         waterShader.createUniform("shouldSimulateWaves");
+
+        foliageShader = new ShaderManager();
+        foliageShader.createVertexShader(Utils.loadResources("/shaders/FoliageVertex.glsl"));
+        foliageShader.createFragmentShader(Utils.loadResources("/shaders/blockFragment.glsl"));
+        foliageShader.link();
+        foliageShader.createUniform("textureSampler");
+        foliageShader.createUniform("projectionMatrix");
+        foliageShader.createUniform("viewMatrix");
+        foliageShader.createUniform("worldPos");
+        foliageShader.createUniform("time");
+        foliageShader.createUniform("headUnderWater");
+        foliageShader.createUniform("cameraPosition");
+        foliageShader.createUniform("shouldSimulateWind");
 
         skyBoxShader = new ShaderManager();
         skyBoxShader.createVertexShader(Utils.loadResources("/shaders/skyBoxVertex.glsl"));
@@ -168,10 +182,26 @@ public class RenderManager {
         GL20.glEnableVertexAttribArray(0);
 
         Vector3i modelPosition = model.getPosition();
-        boolean shouldSimulateWaves = Math.abs(chunkX - (modelPosition.x >> CHUNK_SIZE_BITS)) < 2 && Math.abs(chunkY - (modelPosition.y >> CHUNK_SIZE_BITS)) < 2 && Math.abs(chunkZ - (modelPosition.z >> CHUNK_SIZE_BITS)) < 2;
+        boolean shouldSimulateWaves = Math.abs(chunkX - (modelPosition.x >> CHUNK_SIZE_BITS)) < 2 &&
+                Math.abs(chunkY - (modelPosition.y >> CHUNK_SIZE_BITS)) < 2 &&
+                Math.abs(chunkZ - (modelPosition.z >> CHUNK_SIZE_BITS)) < 2;
 
         waterShader.setUniform("shouldSimulateWaves", shouldSimulateWaves ? 1 : 0);
         waterShader.setUniform("worldPos", modelPosition);
+        GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, modelIndexBuffer);
+    }
+
+    public void bindFoliageModel(Model model, int chunkX, int chunkY, int chunkZ) {
+        GL30.glBindVertexArray(model.getVao());
+        GL20.glEnableVertexAttribArray(0);
+
+        Vector3i modelPosition = model.getPosition();
+        boolean shouldSimulateWind = Math.abs(chunkX - (modelPosition.x >> CHUNK_SIZE_BITS)) < 2 &&
+                Math.abs(chunkY - (modelPosition.y >> CHUNK_SIZE_BITS)) < 2 &&
+                Math.abs(chunkZ - (modelPosition.z >> CHUNK_SIZE_BITS)) < 2;
+
+        foliageShader.setUniform("shouldSimulateWind", shouldSimulateWind ? 1 : 0);
+        foliageShader.setUniform("worldPos", modelPosition);
         GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, modelIndexBuffer);
     }
 
@@ -191,6 +221,8 @@ public class RenderManager {
 
         renderOpaqueChunks(projectionMatrix, viewMatrix);
 
+        renderFoliageChunks(projectionMatrix, viewMatrix);
+
         renderWaterChunks(projectionMatrix, viewMatrix);
 
         renderGUIElements();
@@ -198,6 +230,7 @@ public class RenderManager {
         if (player.isDebugScreenOpen()) renderDebugText();
 
         chunkModels.clear();
+        foliageModels.clear();
         waterModels.clear();
         GUIElements.clear();
 
@@ -224,6 +257,30 @@ public class RenderManager {
             GL11.glDrawElements(GL11.GL_TRIANGLES, (int) (model.getVertexCount() * 0.75), GL11.GL_UNSIGNED_INT, 0);
         }
         blockShader.unBind();
+    }
+
+    public void renderFoliageChunks(Matrix4f projectionMatrix, Matrix4f viewMatrix) {
+        foliageShader.bind();
+        foliageShader.setUniform("projectionMatrix", projectionMatrix);
+        foliageShader.setUniform("viewMatrix", viewMatrix);
+        foliageShader.setUniform("textureSampler", 0);
+        foliageShader.setUniform("time", time);
+        foliageShader.setUniform("headUnderWater", headUnderWater ? 1 : 0);
+        foliageShader.setUniform("cameraPosition", player.getCamera().getPosition());
+
+        Vector3f playerPosition = player.getCamera().getPosition();
+        int chunkX = Utils.floor(playerPosition.x) >> CHUNK_SIZE_BITS;
+        int chunkY = Utils.floor(playerPosition.y) >> CHUNK_SIZE_BITS;
+        int chunkZ = Utils.floor(playerPosition.z) >> CHUNK_SIZE_BITS;
+
+        GL11.glDisable(GL11.GL_CULL_FACE);
+
+        for (Model foliageModel : foliageModels) {
+            bindFoliageModel(foliageModel, chunkX, chunkY, chunkZ);
+
+            GL11.glDrawElements(GL11.GL_TRIANGLES, (int) (foliageModel.getVertexCount() * 0.75), GL11.GL_UNSIGNED_INT, 0);
+        }
+        foliageShader.unBind();
     }
 
     public void renderWaterChunks(Matrix4f projectionMatrix, Matrix4f viewMatrix) {
@@ -318,6 +375,7 @@ public class RenderManager {
         renderTextLine("Seed:" + SEED, ++line);
         renderTextLine("Rendered chunk models:" + chunkModels.size(), ++line);
         renderTextLine("Rendered water models:" + waterModels.size(), ++line);
+        renderTextLine("Rendered foliage models:" + foliageModels.size(), ++line);
         renderTextLine("Rendered GUIElements:" + GUIElements.size(), ++line);
         renderTextLine("Time:" + time, ++line);
         renderTextLine("Saved chunks memory:" + FileManager.getSeedFileSize() / 1_000_000 + "MB", ++line);
@@ -349,6 +407,10 @@ public class RenderManager {
 
     public void processModel(Model model) {
         chunkModels.add(model);
+    }
+
+    public void processFoliageModel(Model foliageModel) {
+        foliageModels.add(foliageModel);
     }
 
     public void processWaterModel(Model waterModel) {

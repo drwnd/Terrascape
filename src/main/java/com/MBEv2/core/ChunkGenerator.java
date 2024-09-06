@@ -186,6 +186,8 @@ public class ChunkGenerator {
             if (travelDirection == BOTTOM) handleSkyLightBottom();
             else handleSkyLightTop();
 
+            MeshGenerator meshGenerator = new MeshGenerator();
+
             for (int chunkY = playerY + RENDER_DISTANCE_Y; chunkY >= playerY - RENDER_DISTANCE_Y; chunkY--) {
                 try {
                     Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
@@ -204,7 +206,7 @@ public class ChunkGenerator {
                         chunk.setHasPropagatedBlockLight();
                     }
                     if (chunk.isMeshed()) continue;
-                    meshChunk(chunk);
+                    meshChunk(meshGenerator, chunk);
 
                 } catch (Exception exception) {
                     System.out.println("Meshing:");
@@ -216,8 +218,9 @@ public class ChunkGenerator {
             }
         }
 
-        private void meshChunk(Chunk chunk) {
-            chunk.generateMesh();
+        private void meshChunk(MeshGenerator meshGenerator, Chunk chunk) {
+            meshGenerator.setChunk(chunk);
+            meshGenerator.generateMesh();
             boolean shouldBuffer = false;
             for (int side = 0; side < 6; side++) {
                 if (chunk.getVertices(side).length != 0) {
@@ -225,7 +228,7 @@ public class ChunkGenerator {
                     break;
                 }
             }
-            if (shouldBuffer || chunk.getWaterVertices().length != 0)
+            if (shouldBuffer || chunk.getWaterVertices().length != 0 || chunk.getFoliageVertices().length != 0)
                 GameLogic.addToBufferChunk(chunk);
         }
 

@@ -102,6 +102,10 @@ public class GameLogic {
             Model taterModel = ObjectLoader.loadModel(chunk.getWaterVertices(), chunk.getWorldCoordinate());
             chunk.setWaterModel(taterModel);
         } else chunk.setWaterModel(null);
+        if (chunk.getFoliageVertices() != null && chunk.getFoliageVertices().length != 0) {
+            Model foliageModel = ObjectLoader.loadModel(chunk.getFoliageVertices(), chunk.getWorldCoordinate());
+            chunk.setFoliageModel(foliageModel);
+        } else chunk.setFoliageModel(null);
 
         chunk.clearMesh();
     }
@@ -133,10 +137,11 @@ public class GameLogic {
 
     public static void unloadChunks(int playerX, int playerY, int playerZ) {
         for (Chunk chunk : Chunk.getWorld()) {
-            if (chunk == null)
-                continue;
+            if (chunk == null) continue;
 
-            if (Math.abs(chunk.getChunkX() - playerX) <= RENDER_DISTANCE_XZ + 2 && Math.abs(chunk.getChunkZ() - playerZ) <= RENDER_DISTANCE_XZ + 2 && Math.abs(chunk.getChunkY() - playerY) <= RENDER_DISTANCE_Y + 2)
+            if (Math.abs(chunk.getChunkX() - playerX) <= RENDER_DISTANCE_XZ + 2 &&
+                    Math.abs(chunk.getChunkZ() - playerZ) <= RENDER_DISTANCE_XZ + 2 &&
+                    Math.abs(chunk.getChunkY() - playerY) <= RENDER_DISTANCE_Y + 2)
                 continue;
 
             if (Math.abs(chunk.getChunkY() - playerY) < RENDER_DISTANCE_Y + 2)
@@ -145,8 +150,7 @@ public class GameLogic {
             chunk.clearMesh();
             addToUnloadChunk(chunk);
 
-            if (chunk.isModified())
-                FileManager.saveChunk(chunk);
+            if (chunk.isModified()) FileManager.saveChunk(chunk);
 
             Chunk.setNull(chunk.getIndex());
         }
@@ -171,11 +175,18 @@ public class GameLogic {
         }
 
         Model waterModel = chunk.getWaterModel();
-        if (waterModel == null) return;
+        if (waterModel != null) {
+            ObjectLoader.removeVAO(waterModel.getVao());
+            ObjectLoader.removeVBO(waterModel.getVbo());
+            chunk.setWaterModel(null);
+        }
 
-        ObjectLoader.removeVAO(waterModel.getVao());
-        ObjectLoader.removeVBO(waterModel.getVbo());
-        chunk.setWaterModel(null);
+        Model foliageModel = chunk.getFoliageModel();
+        if (foliageModel != null) {
+            ObjectLoader.removeVAO(foliageModel.getVao());
+            ObjectLoader.removeVBO(foliageModel.getVbo());
+            chunk.setFoliageModel(null);
+        }
     }
 
     public static void input() {
