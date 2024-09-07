@@ -321,8 +321,8 @@ public class ChunkGenerator {
 
                     short block = Chunk.getBlockInWorld(x, y, z);
 
-                    boolean blockEmitsLight = (Block.getBlockProperties(block) & LIGHT_EMITTING_MASK) != 0;
-                    boolean previousBlockEmitsLight = (Block.getBlockProperties(previousBlock) & LIGHT_EMITTING_MASK) != 0;
+                    boolean blockEmitsLight = (Block.getBlockProperties(block) & LIGHT_EMITTING) != 0;
+                    boolean previousBlockEmitsLight = (Block.getBlockProperties(previousBlock) & LIGHT_EMITTING) != 0;
 
                     if (blockEmitsLight && !previousBlockEmitsLight)
                         LightLogic.setBlockLight(x, y, z, MAX_BLOCK_LIGHT_VALUE);

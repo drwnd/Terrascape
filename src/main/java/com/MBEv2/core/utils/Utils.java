@@ -42,4 +42,9 @@ public class Utils {
         int addend = value < 0 ? -1 : 0;
         return (int) value + addend;
     }
+
+    public static float fraction(float number) {
+        int addend = number < 0 ? 1 : 0;
+        return (number - (int) number) + addend;
+    }
 }

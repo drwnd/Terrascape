@@ -63,7 +63,7 @@ public class GameLogic {
         int minY = chunkY, maxY = chunkY;
         int minZ = chunkZ, maxZ = chunkZ;
 
-        if ((Block.getBlockProperties(block) & LIGHT_EMITTING_MASK) != 0 || (Block.getBlockProperties(previousBlock) & LIGHT_EMITTING_MASK) != 0) {
+        if ((Block.getBlockProperties(block) & LIGHT_EMITTING) != 0 || (Block.getBlockProperties(previousBlock) & LIGHT_EMITTING) != 0) {
             if (inChunkX <= 15) minX = chunkX - 1;
             if (inChunkX >= CHUNK_SIZE - 16) maxX = chunkX + 1;
             if (inChunkY <= 15) minY = chunkY - 1;
@@ -318,15 +318,15 @@ public class GameLogic {
         final int textureFrontY = (textureIndexFront >> 4) & 15;
         final int textureTopX = textureIndexTop & 15;
         final int textureTopY = (textureIndexTop >> 4) & 15;
-        final int textureRightX = textureIndexRight & 15;
-        final int textureRightY = (textureIndexRight >> 4) & 15;
+        final int textureLeftX = textureIndexRight & 15;
+        final int textureLeftY = (textureIndexRight >> 4) & 15;
 
         for (int aabbIndex = 0; aabbIndex < XYZSubData.length; aabbIndex += 6) {
             int offset = aabbIndex * 6;
             int subDataIndex = aabbIndex / 6;
 
-            final float upperFrontX = (textureFrontX + Block.getSubU(blockType, FRONT, 0, subDataIndex) * 0.0625f) * 0.0625f;
-            final float lowerFrontX = (textureFrontX + 1 + Block.getSubU(blockType, FRONT, 1, subDataIndex) * 0.0625f) * 0.0625f;
+            final float upperFrontX = (textureFrontX + 1 + Block.getSubU(blockType, FRONT, 0, subDataIndex) * 0.0625f) * 0.0625f;
+            final float lowerFrontX = (textureFrontX + Block.getSubU(blockType, FRONT, 1, subDataIndex) * 0.0625f) * 0.0625f;
             final float upperFrontY = (textureFrontY + Block.getSubV(blockType, FRONT, 1, subDataIndex) * 0.0625f) * 0.0625f;
             final float lowerFrontY = (textureFrontY + 1 + Block.getSubV(blockType, FRONT, 2, subDataIndex) * 0.0625f) * 0.0625f;
             textureCoordinates[offset] = lowerFrontX;
@@ -342,8 +342,8 @@ public class GameLogic {
             textureCoordinates[offset + 10] = upperFrontX;
             textureCoordinates[offset + 11] = lowerFrontY;
 
-            final float upperTopX = (textureTopX + Block.getSubU(blockType, TOP, 0, subDataIndex) * 0.0625f) * 0.0625f;
-            final float lowerTopX = (textureTopX + 1 + Block.getSubU(blockType, TOP, 1, subDataIndex) * 0.0625f) * 0.0625f;
+            final float upperTopX = (textureTopX + 1 + Block.getSubU(blockType, TOP, 0, subDataIndex) * 0.0625f) * 0.0625f;
+            final float lowerTopX = (textureTopX + Block.getSubU(blockType, TOP, 1, subDataIndex) * 0.0625f) * 0.0625f;
             final float upperTopY = (textureTopY + Block.getSubV(blockType, TOP, 1, subDataIndex) * 0.0625f) * 0.0625f;
             final float lowerTopY = (textureTopY + 1 + Block.getSubV(blockType, TOP, 2, subDataIndex) * 0.0625f) * 0.0625f;
             textureCoordinates[offset + 12] = lowerTopX;
@@ -359,10 +359,10 @@ public class GameLogic {
             textureCoordinates[offset + 22] = upperTopX;
             textureCoordinates[offset + 23] = lowerTopY;
 
-            final float upperRightX = (textureRightX + Block.getSubU(blockType, RIGHT, 0, subDataIndex) * 0.0625f) * 0.0625f;
-            final float lowerRightX = (textureRightX + 1 + Block.getSubU(blockType, RIGHT, 1, subDataIndex) * 0.0625f) * 0.0625f;
-            final float upperRightY = (textureRightY + Block.getSubV(blockType, RIGHT, 1, subDataIndex) * 0.0625f) * 0.0625f;
-            final float lowerRightY = (textureRightY + 1 + Block.getSubV(blockType, RIGHT, 2, subDataIndex) * 0.0625f) * 0.0625f;
+            final float upperRightX = (textureLeftX + Block.getSubU(blockType, LEFT, 0, subDataIndex) * 0.0625f) * 0.0625f;
+            final float lowerRightX = (textureLeftX + 1 + Block.getSubU(blockType, LEFT, 1, subDataIndex) * 0.0625f) * 0.0625f;
+            final float upperRightY = (textureLeftY + Block.getSubV(blockType, LEFT, 1, subDataIndex) * 0.0625f) * 0.0625f;
+            final float lowerRightY = (textureLeftY + 1 + Block.getSubV(blockType, LEFT, 2, subDataIndex) * 0.0625f) * 0.0625f;
             textureCoordinates[offset + 24] = lowerRightX;
             textureCoordinates[offset + 25] = lowerRightY;
             textureCoordinates[offset + 26] = lowerRightX;

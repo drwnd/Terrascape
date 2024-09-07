@@ -115,8 +115,7 @@ public class Player {
 
         GLFW.glfwSetKeyCallback(window.getWindow(), (window, key, scancode, action, mods) -> {
             if (key == GLFW.GLFW_KEY_ESCAPE && action == GLFW.GLFW_RELEASE) {
-                if (!isInInventory())
-                    GLFW.glfwSetWindowShouldClose(window, true);
+                if (!isInInventory()) GLFW.glfwSetWindowShouldClose(window, true);
                 else toggleInventory();
                 return;
             }
@@ -228,8 +227,7 @@ public class Player {
                 if (currentTime - spaceButtonPressTime < 300_000_000) isFling = !isFling;
                 spaceButtonPressTime = currentTime;
             }
-        } else if (spaceButtonPressed)
-            spaceButtonPressed = false;
+        } else if (spaceButtonPressed) spaceButtonPressed = false;
 
     }
 
@@ -307,13 +305,11 @@ public class Player {
         }
 
         long currentTime = System.nanoTime();
-        if (window.isKeyPressed(JUMP_BUTTON))
-            if (isGrounded) {
-                this.velocity.y = JUMP_STRENGTH;
-                isGrounded = false;
-                spaceButtonPressTime = currentTime;
-            } else
-                velocity.y += SWIM_STRENGTH * 0.65f;
+        if (window.isKeyPressed(JUMP_BUTTON)) if (isGrounded) {
+            this.velocity.y = JUMP_STRENGTH;
+            isGrounded = false;
+            spaceButtonPressTime = currentTime;
+        } else velocity.y += SWIM_STRENGTH * 0.65f;
 
         if (window.isKeyPressed(SNEAK_BUTTON)) velocity.y -= SWIM_STRENGTH * 0.65f;
     }
@@ -411,53 +407,111 @@ public class Player {
         this.destroyButtonWasJustPressed = false;
         long currentTime = System.nanoTime();
 
-        if (destroyButtonPressTime != -1 && (currentTime - destroyButtonPressTime > 300_000_000 || destroyButtonWasJustPressed)) {
-            Vector3f target = getTarget(0, camera.getDirection());
-            if (target != null)
-                GameLogic.placeBlock(AIR, Utils.floor(target.x), Utils.floor(target.y), Utils.floor(target.z));
+        handleDestroy(currentTime, destroyButtonWasJustPressed);
+
+        handleUse(currentTime, useButtonWasJustPressed);
+
+        handlePickBlock();
+    }
+
+    private void handleDestroy(long currentTime, boolean destroyButtonWasJustPressed) {
+        if ((destroyButtonPressTime == -1 || currentTime - destroyButtonPressTime <= 300_000_000) && !destroyButtonWasJustPressed)
+            return;
+        Target target = Target.getTarget(camera.getPosition(), camera.getDirection());
+        if (target != null) GameLogic.placeBlock(AIR, target.position().x, target.position().y, target.position().z);
+    }
+
+    private void handleUse(long currentTime, boolean useButtonWasJustPressed) {
+        if (((useButtonPressTime == -1 || currentTime - useButtonPressTime <= 300_000_000) && !useButtonWasJustPressed) || hotBar[selectedHotBarSlot] == AIR)
+            return;
+
+        Vector3f cameraDirection = camera.getDirection();
+        Vector3f cameraPosition = camera.getPosition();
+        Target target = Target.getTarget(cameraPosition, cameraDirection);
+        if (target == null) return;
+
+        short selectedBlock = hotBar[selectedHotBarSlot];
+
+        if ((Block.getBlockProperties(target.block()) & INTERACTABLE) != 0) if (interactWithBlock(target)) return;
+
+        short toPlaceBlock;
+        short inventoryBlock = Block.getInInventoryBlockEquivalent(target.block());
+        if (window.isKeyPressed(SPRINT_BUTTON) && (inventoryBlock & BLOCK_TYPE_MASK) == (selectedBlock & BLOCK_TYPE_MASK)) {
+            toPlaceBlock = (short) (selectedBlock & BASE_BLOCK_MASK | target.block() & BLOCK_TYPE_MASK);
+        } else
+            toPlaceBlock = Block.getToPlaceBlock(selectedBlock, camera.getPrimaryDirection(cameraDirection), camera.getPrimaryXZDirection(cameraDirection), target);
+
+        final float minX = cameraPosition.x - HALF_PLAYER_WIDTH;
+        final float maxX = cameraPosition.x + HALF_PLAYER_WIDTH;
+        final float minY = cameraPosition.y - PLAYER_FEET_OFFSETS[movementState];
+        final float maxY = cameraPosition.y + PLAYER_HEAD_OFFSET;
+        final float minZ = cameraPosition.z - HALF_PLAYER_WIDTH;
+        final float maxZ = cameraPosition.z + HALF_PLAYER_WIDTH;
+        Vector3i position = target.position();
+        int[] normal = Block.NORMALS[target.side()];
+        int x = position.x + normal[0];
+        int y = position.y + normal[1];
+        int z = position.z + normal[2];
+        if (Block.playerIntersectsBlock(minX, maxX, minY, maxY, minZ, maxZ, x, y, z, toPlaceBlock, this)) return;
+
+        if ((Block.getBlockProperties(Chunk.getBlockInWorld(x, y, z)) & REPLACEABLE) != 0)
+            GameLogic.placeBlock(toPlaceBlock, x, y, z);
+    }
+
+    private boolean interactWithBlock(Target target) {
+        if (window.isKeyPressed(SNEAK_BUTTON)) return false;
+
+        if (target.block() == CRAFTING_TABLE) {
+            System.out.println("You interacted with a crafting table");
+            return true;
+        } else if (target.block() == TNT) {
+            System.out.println("You interacted with a TNT block");
+            return true;
         }
+        return false;
+    }
 
-        if (useButtonPressTime != -1 && (currentTime - useButtonPressTime > 300_000_000 || useButtonWasJustPressed) && hotBar[selectedHotBarSlot] != AIR) {
+    private void handlePickBlock() {
+        if (!window.isKeyPressed(PICK_BLOCK_BUTTON)) return;
 
-            Vector3f cameraDirection = camera.getDirection();
-            Vector3f target = getTarget(1, cameraDirection);
-            if (target != null) {
-                short selectedBlock = hotBar[selectedHotBarSlot];
-                short toPlaceBlock;
+        Target target = Target.getTarget(camera.getPosition(), camera.getDirection());
+        if (target == null) return;
 
-                toPlaceBlock = Block.getToPlaceBlock(selectedBlock, camera.getPrimaryDirection(cameraDirection), camera.getPrimaryXZDirection(cameraDirection), target, this);
+        short block = Chunk.getBlockInWorld(target.position().x, target.position().y, target.position().z);
+        short inInventoryBlock = Block.getInInventoryBlockEquivalent(block);
 
-                GameLogic.placeBlock(toPlaceBlock, Utils.floor(target.x), Utils.floor(target.y), Utils.floor(target.z));
-            }
+        boolean hasPlacedBlock = false;
+        for (int hotBarSlot = 0; hotBarSlot < hotBar.length; hotBarSlot++) {
+            if (hotBar[hotBarSlot] != inInventoryBlock) continue;
+            hasPlacedBlock = true;
+            setSelectedHotBarSlot(hotBarSlot);
+            break;
         }
-
-        if (window.isKeyPressed(PICK_BLOCK_BUTTON)) {
-            Vector3f target = getTarget(0, camera.getDirection());
-            if (target != null) {
-                short block = Chunk.getBlockInWorld(Utils.floor(target.x), Utils.floor(target.y), Utils.floor(target.z));
-                hotBar[selectedHotBarSlot] = Block.getInInventoryBlockEquivalent(block);
-            } else hotBar[selectedHotBarSlot] = AIR;
-            updateHotBarElements();
+        if (!hasPlacedBlock) for (int hotBarSlot = 0; hotBarSlot < hotBar.length; hotBarSlot++) {
+            if (hotBar[hotBarSlot] != AIR) continue;
+            hotBar[hotBarSlot] = inInventoryBlock;
+            setSelectedHotBarSlot(hotBarSlot);
+            hasPlacedBlock = true;
+            break;
         }
+        if (!hasPlacedBlock) hotBar[selectedHotBarSlot] = inInventoryBlock;
+
+        updateHotBarElements();
     }
 
     public void handleNonMovementInputs(int button, int action) {
-        if (button == DESTROY_BUTTON)
-            if (action == GLFW.GLFW_PRESS) {
-                destroyButtonPressTime = System.nanoTime();
-                destroyButtonWasJustPressed = true;
-            } else {
-                destroyButtonPressTime = -1;
-                destroyButtonWasJustPressed = false;
-            }
-        else if (button == USE_BUTTON)
-            if (action == GLFW.GLFW_PRESS) {
-                useButtonPressTime = System.nanoTime();
-                useButtonWasJustPressed = true;
-            } else {
-                useButtonPressTime = -1;
-                useButtonWasJustPressed = false;
-            }
+        if (button == DESTROY_BUTTON) if (action == GLFW.GLFW_PRESS) {
+            destroyButtonPressTime = System.nanoTime();
+            destroyButtonWasJustPressed = true;
+        } else {
+            destroyButtonPressTime = -1;
+        }
+        else if (button == USE_BUTTON) if (action == GLFW.GLFW_PRESS) {
+            useButtonPressTime = System.nanoTime();
+            useButtonWasJustPressed = true;
+        } else {
+            useButtonPressTime = -1;
+        }
         else if (button == HOT_BAR_SLOT_1 && action == GLFW.GLFW_PRESS) setSelectedHotBarSlot(0);
         else if (button == HOT_BAR_SLOT_2 && action == GLFW.GLFW_PRESS) setSelectedHotBarSlot(1);
         else if (button == HOT_BAR_SLOT_3 && action == GLFW.GLFW_PRESS) setSelectedHotBarSlot(2);
@@ -510,8 +564,7 @@ public class Player {
             System.out.print("}");
         } else if (button == USE_OCCLUSION_CULLING_BUTTON && action == GLFW.GLFW_PRESS) {
             usingOcclusionCulling = !usingOcclusionCulling;
-            if (!usingOcclusionCulling)
-                Arrays.fill(visibleChunks, -1);
+            if (!usingOcclusionCulling) Arrays.fill(visibleChunks, -1);
         } else if (button == RELOAD_SETTINGS_BUTTON && action == GLFW.GLFW_PRESS) {
             try {
                 FileManager.loadSettings(false);
@@ -536,18 +589,14 @@ public class Player {
         y += inventoryScroll;
 
         if (y < -0.5f + GUI_SIZE * 0.04f) {
-            if (y < -0.5)
-                return 0;
-            if (x < 0.5f - (TO_PLACE_NON_STANDARD_BLOCKS.length + 1) * 0.02f * GUI_SIZE)
-                return 0;
+            if (y < -0.5) return 0;
+            if (x < 0.5f - (TO_PLACE_NON_STANDARD_BLOCKS.length + 1) * 0.02f * GUI_SIZE) return 0;
             int value = (int) ((0.5 - 0.01 * GUI_SIZE - x) / (0.02 * GUI_SIZE));
             value = Math.min(TO_PLACE_NON_STANDARD_BLOCKS.length - 1, Math.max(value, 0));
             return TO_PLACE_NON_STANDARD_BLOCKS[value];
         }
-        if (x < 0.5f - (TO_PLACE_BLOCK_TYPES.length + 1) * 0.02f * GUI_SIZE)
-            return 0;
-        if (y > -0.5f + GUI_SIZE * 0.04f * (AMOUNT_OF_TO_PLACE_STANDARD_BLOCKS))
-            return 0;
+        if (x < 0.5f - (TO_PLACE_BLOCK_TYPES.length + 1) * 0.02f * GUI_SIZE) return 0;
+        if (y > -0.5f + GUI_SIZE * 0.04f * (AMOUNT_OF_TO_PLACE_STANDARD_BLOCKS)) return 0;
 
         int valueX = (int) ((0.5 - 0.01 * GUI_SIZE - x) / (0.02 * GUI_SIZE));
         valueX = Math.min(TO_PLACE_BLOCK_TYPES.length - 1, Math.max(valueX, 0));
@@ -726,64 +775,6 @@ public class Player {
         return requiredStepHeight;
     }
 
-    public Vector3f getTarget(int action, Vector3f cameraDirection) {
-        final int placing = 1;
-
-        Vector3f cameraPosition = camera.getPosition();     //cameraPosition
-        float interval = REACH / REACH_ACCURACY;
-        int i = 0;
-        short block = OUT_OF_WORLD, previousBlock = OUT_OF_WORLD;
-
-        for (; i < REACH_ACCURACY; i++) {
-            previousBlock = block;
-
-            float x = cameraPosition.x + i * interval * cameraDirection.x;
-            float y = cameraPosition.y + i * interval * cameraDirection.y;
-            float z = cameraPosition.z + i * interval * cameraDirection.z;
-
-            block = Chunk.getBlockInWorld(Utils.floor(x), Utils.floor(y), Utils.floor(z));
-            if (Block.intersectsBlock(x, y, z, block)) break;
-        }
-        if (Block.getBlockType(block) == AIR_TYPE || block == OUT_OF_WORLD || Block.getBlockType(block) == LIQUID_TYPE)
-            return null;
-
-        if (action == placing) {
-            i--;
-            if (previousBlock == block) {
-                while (previousBlock == block && i >= 0) {
-                    float x = cameraPosition.x + i * interval * cameraDirection.x;
-                    float y = cameraPosition.y + i * interval * cameraDirection.y;
-                    float z = cameraPosition.z + i * interval * cameraDirection.z;
-
-                    block = Chunk.getBlockInWorld((int) Math.floor(x), (int) Math.floor(y), (int) Math.floor(z));
-                    i--;
-                }
-                int blockType = Block.getBlockType(block);
-                if (blockType != AIR_TYPE && blockType != LIQUID_TYPE) return null;
-            } else if (Block.getBlockType(previousBlock) != AIR_TYPE && Block.getBlockType(previousBlock) != LIQUID_TYPE)
-                return null;
-        }
-        float x = cameraPosition.x + i * interval * cameraDirection.x;
-        float y = cameraPosition.y + i * interval * cameraDirection.y;
-        float z = cameraPosition.z + i * interval * cameraDirection.z;
-        Vector3f target = new Vector3f(x, y, z);
-
-        final float minX = cameraPosition.x - HALF_PLAYER_WIDTH;
-        final float maxX = cameraPosition.x + HALF_PLAYER_WIDTH;
-        final float minY = cameraPosition.y - PLAYER_FEET_OFFSETS[movementState];
-        final float maxY = cameraPosition.y + PLAYER_HEAD_OFFSET;
-        final float minZ = cameraPosition.z - HALF_PLAYER_WIDTH;
-        final float maxZ = cameraPosition.z + HALF_PLAYER_WIDTH;
-
-        if (action == placing) {
-            short toPlaceBlock = Block.getToPlaceBlock(hotBar[selectedHotBarSlot], camera.getPrimaryDirection(), camera.getPrimaryXZDirection(), target, this);
-            if (Block.playerIntersectsBlock(minX, maxX, minY, maxY, minZ, maxZ, Utils.floor(target.x), Utils.floor(target.y), Utils.floor(target.z), toPlaceBlock, this))
-                return null;
-        }
-
-        return target;
-    }
-
     public void render() {
         Vector3f cameraPosition = camera.getPosition();
         final int chunkX = Utils.floor(cameraPosition.x) >> CHUNK_SIZE_BITS;
@@ -838,14 +829,19 @@ public class Player {
             if (chunk.getWaterModel() != null) renderer.processWaterModel(chunk.getWaterModel());
             if (chunk.getFoliageModel() != null) renderer.processFoliageModel(chunk.getFoliageModel());
 
-            if (chunk.getChunkX() >= cameraX && chunk.getModel(LEFT) != null) renderer.processModel(chunk.getModel(LEFT));
-            if (chunk.getChunkX() <= cameraX && chunk.getModel(RIGHT) != null) renderer.processModel(chunk.getModel(RIGHT));
+            if (chunk.getChunkX() >= cameraX && chunk.getModel(LEFT) != null)
+                renderer.processModel(chunk.getModel(LEFT));
+            if (chunk.getChunkX() <= cameraX && chunk.getModel(RIGHT) != null)
+                renderer.processModel(chunk.getModel(RIGHT));
 
-            if (chunk.getChunkY() >= cameraY && chunk.getModel(BOTTOM) != null) renderer.processModel(chunk.getModel(BOTTOM));
+            if (chunk.getChunkY() >= cameraY && chunk.getModel(BOTTOM) != null)
+                renderer.processModel(chunk.getModel(BOTTOM));
             if (chunk.getChunkY() <= cameraY && chunk.getModel(TOP) != null) renderer.processModel(chunk.getModel(TOP));
 
-            if (chunk.getChunkZ() >= cameraZ && chunk.getModel(BACK) != null) renderer.processModel(chunk.getModel(BACK));
-            if (chunk.getChunkZ() <= cameraZ && chunk.getModel(FRONT) != null) renderer.processModel(chunk.getModel(FRONT));
+            if (chunk.getChunkZ() >= cameraZ && chunk.getModel(BACK) != null)
+                renderer.processModel(chunk.getModel(BACK));
+            if (chunk.getChunkZ() <= cameraZ && chunk.getModel(FRONT) != null)
+                renderer.processModel(chunk.getModel(FRONT));
         }
     }
 
@@ -891,7 +887,7 @@ public class Player {
             fillVisibleChunks(chunkX - 1, chunkY, chunkZ, RIGHT, traveledDirections | 1 << LEFT, damper);
     }
 
-    private void updateHotBarElements() {
+    public void updateHotBarElements() {
         for (GUIElement element : hotBarElements) {
             if (element == null) continue;
             ObjectLoader.removeVAO(element.getVao());
@@ -908,8 +904,8 @@ public class Player {
 
             int textureIndexFront = Block.getTextureIndex(block, FRONT) - 1;
             int textureIndexTop = Block.getTextureIndex(block, TOP) - 1;
-            int textureIndexRight = Block.getTextureIndex(block, RIGHT) - 1;
-            float[] textureCoordinates = GameLogic.getBlockDisplayTextureCoordinates(textureIndexFront, textureIndexTop, textureIndexRight, block);
+            int textureIndexLeft = Block.getTextureIndex(block, LEFT) - 1;
+            float[] textureCoordinates = GameLogic.getBlockDisplayTextureCoordinates(textureIndexFront, textureIndexTop, textureIndexLeft, block);
             float xOffset = (40.0f * i - 165 + 4) * GUI_SIZE / width;
             float yOffset = -0.5f + 4.0f * GUI_SIZE / height;
             GUIElement element = ObjectLoader.loadGUIElement(GameLogic.getBlockDisplayVertices(block), textureCoordinates, new Vector2f(xOffset, yOffset));
@@ -925,8 +921,8 @@ public class Player {
 
             int textureIndexFront = Block.getTextureIndex(block, FRONT) - 1;
             int textureIndexTop = Block.getTextureIndex(block, TOP) - 1;
-            int textureIndexRight = Block.getTextureIndex(block, RIGHT) - 1;
-            float[] textureCoordinates = GameLogic.getBlockDisplayTextureCoordinates(textureIndexFront, textureIndexTop, textureIndexRight, block);
+            int textureIndexLeft = Block.getTextureIndex(block, LEFT) - 1;
+            float[] textureCoordinates = GameLogic.getBlockDisplayTextureCoordinates(textureIndexFront, textureIndexTop, textureIndexLeft, block);
             GUIElement element = ObjectLoader.loadGUIElement(vertices, textureCoordinates, new Vector2f(0.5f - (i + 1) * 0.02f * GUI_SIZE, 0.5f - GUI_SIZE * 0.04f));
             element.setTexture(atlas);
             elements.add(element);
@@ -939,10 +935,9 @@ public class Player {
 
                 int textureIndexFront = Block.getTextureIndex(block, FRONT) - 1;
                 int textureIndexTop = Block.getTextureIndex(block, TOP) - 1;
-                int textureIndexRight = Block.getTextureIndex(block, RIGHT) - 1;
-                float[] textureCoordinates = GameLogic.getBlockDisplayTextureCoordinates(textureIndexFront, textureIndexTop, textureIndexRight, block);
-                GUIElement element = ObjectLoader.loadGUIElement(vertices, textureCoordinates,
-                        new Vector2f(0.5f - (blockTypeIndex + 1) * 0.02f * GUI_SIZE, 0.5f - GUI_SIZE * 0.04f * (1 + baseBlock)));
+                int textureIndexLeft = Block.getTextureIndex(block, LEFT) - 1;
+                float[] textureCoordinates = GameLogic.getBlockDisplayTextureCoordinates(textureIndexFront, textureIndexTop, textureIndexLeft, block);
+                GUIElement element = ObjectLoader.loadGUIElement(vertices, textureCoordinates, new Vector2f(0.5f - (blockTypeIndex + 1) * 0.02f * GUI_SIZE, 0.5f - GUI_SIZE * 0.04f * (1 + baseBlock)));
                 element.setTexture(atlas);
                 elements.add(element);
             }

@@ -85,50 +85,50 @@ public class MeshGenerator {
         switch (side) {
             case FRONT:
                 for (int aabbIndex = 0; aabbIndex < blockXYZSubData.length; aabbIndex += 6) {
-                    addVertexToList(blockX + 1, blockY + 1, blockZ + 1, u, v,  0, aabbIndex);
-                    addVertexToList(blockX, blockY + 1, blockZ + 1, u + 1, v,  1, aabbIndex);
-                    addVertexToList(blockX + 1, blockY, blockZ + 1, u, v + 1,  2, aabbIndex);
-                    addVertexToList(blockX, blockY, blockZ + 1, u + 1, v + 1,  3, aabbIndex);
+                    addVertexToList(blockX + 1, blockY + 1, blockZ + 1, u + 1, v,  0, aabbIndex);
+                    addVertexToList(blockX, blockY + 1, blockZ + 1, u, v,  1, aabbIndex);
+                    addVertexToList(blockX + 1, blockY, blockZ + 1, u + 1, v + 1,  2, aabbIndex);
+                    addVertexToList(blockX, blockY, blockZ + 1, u, v + 1,  3, aabbIndex);
                 }
                 break;
             case TOP:
                 for (int aabbIndex = 0; aabbIndex < blockXYZSubData.length; aabbIndex += 6) {
-                    addVertexToList(blockX, blockY + 1, blockZ, u, v,  0, aabbIndex);
-                    addVertexToList(blockX, blockY + 1, blockZ + 1, u + 1, v,  1, aabbIndex);
-                    addVertexToList(blockX + 1, blockY + 1, blockZ, u, v + 1,  2, aabbIndex);
-                    addVertexToList(blockX + 1, blockY + 1, blockZ + 1, u + 1, v + 1,  3, aabbIndex);
+                    addVertexToList(blockX, blockY + 1, blockZ, u + 1, v,  0, aabbIndex);
+                    addVertexToList(blockX, blockY + 1, blockZ + 1, u, v,  1, aabbIndex);
+                    addVertexToList(blockX + 1, blockY + 1, blockZ, u + 1, v + 1,  2, aabbIndex);
+                    addVertexToList(blockX + 1, blockY + 1, blockZ + 1, u, v + 1,  3, aabbIndex);
                 }
                 break;
             case RIGHT:
                 for (int aabbIndex = 0; aabbIndex < blockXYZSubData.length; aabbIndex += 6) {
-                    addVertexToList(blockX + 1, blockY + 1, blockZ, u, v,  0, aabbIndex);
-                    addVertexToList(blockX + 1, blockY + 1, blockZ + 1, u + 1, v,  1, aabbIndex);
-                    addVertexToList(blockX + 1, blockY, blockZ, u, v + 1,  2, aabbIndex);
-                    addVertexToList(blockX + 1, blockY, blockZ + 1, u + 1, v + 1,  3, aabbIndex);
+                    addVertexToList(blockX + 1, blockY + 1, blockZ, u + 1, v,  0, aabbIndex);
+                    addVertexToList(blockX + 1, blockY + 1, blockZ + 1, u, v,  1, aabbIndex);
+                    addVertexToList(blockX + 1, blockY, blockZ, u + 1, v + 1,  2, aabbIndex);
+                    addVertexToList(blockX + 1, blockY, blockZ + 1, u, v + 1,  3, aabbIndex);
                 }
                 break;
             case BACK:
                 for (int aabbIndex = 0; aabbIndex < blockXYZSubData.length; aabbIndex += 6) {
-                    addVertexToList(blockX, blockY + 1, blockZ, u, v,  0, aabbIndex);
-                    addVertexToList(blockX + 1, blockY + 1, blockZ, u + 1, v,  1, aabbIndex);
-                    addVertexToList(blockX, blockY, blockZ, u, v + 1,  2, aabbIndex);
-                    addVertexToList(blockX + 1, blockY, blockZ, u + 1, v + 1,  3, aabbIndex);
+                    addVertexToList(blockX, blockY + 1, blockZ, u + 1, v,  0, aabbIndex);
+                    addVertexToList(blockX + 1, blockY + 1, blockZ, u, v,  1, aabbIndex);
+                    addVertexToList(blockX, blockY, blockZ, u + 1, v + 1,  2, aabbIndex);
+                    addVertexToList(blockX + 1, blockY, blockZ, u, v + 1,  3, aabbIndex);
                 }
                 break;
             case BOTTOM:
                 for (int aabbIndex = 0; aabbIndex < blockXYZSubData.length; aabbIndex += 6) {
-                    addVertexToList(blockX + 1, blockY, blockZ + 1, u, v,  3, aabbIndex);
-                    addVertexToList(blockX, blockY, blockZ + 1, u + 1, v,  1, aabbIndex);
-                    addVertexToList(blockX + 1, blockY, blockZ, u, v + 1,  2, aabbIndex);
-                    addVertexToList(blockX, blockY, blockZ, u + 1, v + 1,  0, aabbIndex);
+                    addVertexToList(blockX + 1, blockY, blockZ + 1, u + 1, v,  3, aabbIndex);
+                    addVertexToList(blockX, blockY, blockZ + 1, u, v,  1, aabbIndex);
+                    addVertexToList(blockX + 1, blockY, blockZ, u + 1, v + 1,  2, aabbIndex);
+                    addVertexToList(blockX, blockY, blockZ, u, v + 1,  0, aabbIndex);
                 }
                 break;
             case LEFT:
                 for (int aabbIndex = 0; aabbIndex < blockXYZSubData.length; aabbIndex += 6) {
-                    addVertexToList(blockX, blockY + 1, blockZ + 1, u, v,  1, aabbIndex);
-                    addVertexToList(blockX, blockY + 1, blockZ, u + 1, v,  0, aabbIndex);
-                    addVertexToList(blockX, blockY, blockZ + 1, u, v + 1,  3, aabbIndex);
-                    addVertexToList(blockX, blockY, blockZ, u + 1, v + 1,  2, aabbIndex);
+                    addVertexToList(blockX, blockY + 1, blockZ + 1, u + 1, v,  1, aabbIndex);
+                    addVertexToList(blockX, blockY + 1, blockZ, u, v,  0, aabbIndex);
+                    addVertexToList(blockX, blockY, blockZ + 1, u + 1, v + 1,  3, aabbIndex);
+                    addVertexToList(blockX, blockY, blockZ, u, v + 1,  2, aabbIndex);
                 }
                 break;
         }
@@ -210,40 +210,40 @@ public class MeshGenerator {
 
         switch (side) {
             case FRONT:
-                addWaterVertexToList(blockX + 1, blockY + 1, blockZ + 1, u, v, 0);
-                addWaterVertexToList(blockX, blockY + 1, blockZ + 1, u + 1, v, 1);
-                addWaterVertexToList(blockX + 1, blockY, blockZ + 1, u, v + 1, 2);
-                addWaterVertexToList(blockX, blockY, blockZ + 1, u + 1, v + 1, 3);
+                addWaterVertexToList(blockX + 1, blockY + 1, blockZ + 1, u + 1, v, 0);
+                addWaterVertexToList(blockX, blockY + 1, blockZ + 1, u, v, 1);
+                addWaterVertexToList(blockX + 1, blockY, blockZ + 1, u + 1, v + 1, 2);
+                addWaterVertexToList(blockX, blockY, blockZ + 1, u, v + 1, 3);
                 break;
             case TOP:
-                addWaterVertexToList(blockX, blockY + 1, blockZ, u, v, 0);
-                addWaterVertexToList(blockX, blockY + 1, blockZ + 1, u + 1, v, 1);
-                addWaterVertexToList(blockX + 1, blockY + 1, blockZ, u, v + 1, 2);
-                addWaterVertexToList(blockX + 1, blockY + 1, blockZ + 1, u + 1, v + 1, 3);
+                addWaterVertexToList(blockX, blockY + 1, blockZ, u + 1, v, 0);
+                addWaterVertexToList(blockX, blockY + 1, blockZ + 1, u, v, 1);
+                addWaterVertexToList(blockX + 1, blockY + 1, blockZ, u + 1, v + 1, 2);
+                addWaterVertexToList(blockX + 1, blockY + 1, blockZ + 1, u, v + 1, 3);
                 break;
             case RIGHT:
-                addWaterVertexToList(blockX + 1, blockY + 1, blockZ, u, v, 0);
-                addWaterVertexToList(blockX + 1, blockY + 1, blockZ + 1, u + 1, v, 1);
-                addWaterVertexToList(blockX + 1, blockY, blockZ, u, v + 1, 2);
-                addWaterVertexToList(blockX + 1, blockY, blockZ + 1, u + 1, v + 1, 3);
+                addWaterVertexToList(blockX + 1, blockY + 1, blockZ, u + 1, v, 0);
+                addWaterVertexToList(blockX + 1, blockY + 1, blockZ + 1, u, v, 1);
+                addWaterVertexToList(blockX + 1, blockY, blockZ, u + 1, v + 1, 2);
+                addWaterVertexToList(blockX + 1, blockY, blockZ + 1, u, v + 1, 3);
                 break;
             case BACK:
-                addWaterVertexToList(blockX, blockY + 1, blockZ, u, v, 0);
-                addWaterVertexToList(blockX + 1, blockY + 1, blockZ, u + 1, v, 1);
-                addWaterVertexToList(blockX, blockY, blockZ, u, v + 1, 2);
-                addWaterVertexToList(blockX + 1, blockY, blockZ, u + 1, v + 1, 3);
+                addWaterVertexToList(blockX, blockY + 1, blockZ, u + 1, v, 0);
+                addWaterVertexToList(blockX + 1, blockY + 1, blockZ, u, v, 1);
+                addWaterVertexToList(blockX, blockY, blockZ, u + 1, v + 1, 2);
+                addWaterVertexToList(blockX + 1, blockY, blockZ, u, v + 1, 3);
                 break;
             case BOTTOM:
-                addWaterVertexToList(blockX + 1, blockY, blockZ + 1, u, v, 3);
-                addWaterVertexToList(blockX, blockY, blockZ + 1, u + 1, v, 1);
-                addWaterVertexToList(blockX + 1, blockY, blockZ, u, v + 1, 2);
-                addWaterVertexToList(blockX, blockY, blockZ, u + 1, v + 1, 0);
+                addWaterVertexToList(blockX + 1, blockY, blockZ + 1, u + 1, v, 3);
+                addWaterVertexToList(blockX, blockY, blockZ + 1, u, v, 1);
+                addWaterVertexToList(blockX + 1, blockY, blockZ, u + 1, v + 1, 2);
+                addWaterVertexToList(blockX, blockY, blockZ, u, v + 1, 0);
                 break;
             case LEFT:
-                addWaterVertexToList(blockX, blockY + 1, blockZ + 1, u, v, 1);
-                addWaterVertexToList(blockX, blockY + 1, blockZ, u + 1, v, 0);
-                addWaterVertexToList(blockX, blockY, blockZ + 1, u, v + 1, 3);
-                addWaterVertexToList(blockX, blockY, blockZ, u + 1, v + 1, 2);
+                addWaterVertexToList(blockX, blockY + 1, blockZ + 1, u + 1, v, 1);
+                addWaterVertexToList(blockX, blockY + 1, blockZ, u, v, 0);
+                addWaterVertexToList(blockX, blockY, blockZ + 1, u + 1, v + 1, 3);
+                addWaterVertexToList(blockX, blockY, blockZ, u, v + 1, 2);
                 break;
         }
     }
@@ -302,50 +302,50 @@ public class MeshGenerator {
         switch (side) {
             case FRONT:
                 for (int aabbIndex = 0; aabbIndex < blockXYZSubData.length; aabbIndex += 6) {
-                    addFoliageVertexToList(blockX + 1, blockY + 1, blockZ + 1, u, v, 0,  aabbIndex);
-                    addFoliageVertexToList(blockX, blockY + 1, blockZ + 1, u + 1, v, 1,  aabbIndex);
-                    addFoliageVertexToList(blockX + 1, blockY, blockZ + 1, u, v + 1, 2,  aabbIndex);
-                    addFoliageVertexToList(blockX, blockY, blockZ + 1, u + 1, v + 1, 3,  aabbIndex);
+                    addFoliageVertexToList(blockX + 1, blockY + 1, blockZ + 1, u + 1, v, 0,  aabbIndex);
+                    addFoliageVertexToList(blockX, blockY + 1, blockZ + 1, u, v, 1,  aabbIndex);
+                    addFoliageVertexToList(blockX + 1, blockY, blockZ + 1, u + 1, v + 1, 2,  aabbIndex);
+                    addFoliageVertexToList(blockX, blockY, blockZ + 1, u, v + 1, 3,  aabbIndex);
                 }
                 break;
             case TOP:
                 for (int aabbIndex = 0; aabbIndex < blockXYZSubData.length; aabbIndex += 6) {
-                    addFoliageVertexToList(blockX, blockY + 1, blockZ, u, v, 0,  aabbIndex);
-                    addFoliageVertexToList(blockX, blockY + 1, blockZ + 1, u + 1, v, 1,  aabbIndex);
-                    addFoliageVertexToList(blockX + 1, blockY + 1, blockZ, u, v + 1, 2,  aabbIndex);
-                    addFoliageVertexToList(blockX + 1, blockY + 1, blockZ + 1, u + 1, v + 1, 3,  aabbIndex);
+                    addFoliageVertexToList(blockX, blockY + 1, blockZ, u + 1, v, 0,  aabbIndex);
+                    addFoliageVertexToList(blockX, blockY + 1, blockZ + 1, u, v, 1,  aabbIndex);
+                    addFoliageVertexToList(blockX + 1, blockY + 1, blockZ, u + 1, v + 1, 2,  aabbIndex);
+                    addFoliageVertexToList(blockX + 1, blockY + 1, blockZ + 1, u, v + 1, 3,  aabbIndex);
                 }
                 break;
             case RIGHT:
                 for (int aabbIndex = 0; aabbIndex < blockXYZSubData.length; aabbIndex += 6) {
-                    addFoliageVertexToList(blockX + 1, blockY + 1, blockZ, u, v, 0,  aabbIndex);
-                    addFoliageVertexToList(blockX + 1, blockY + 1, blockZ + 1, u + 1, v, 1,  aabbIndex);
-                    addFoliageVertexToList(blockX + 1, blockY, blockZ, u, v + 1, 2,  aabbIndex);
-                    addFoliageVertexToList(blockX + 1, blockY, blockZ + 1, u + 1, v + 1, 3,  aabbIndex);
+                    addFoliageVertexToList(blockX + 1, blockY + 1, blockZ, u + 1, v, 0,  aabbIndex);
+                    addFoliageVertexToList(blockX + 1, blockY + 1, blockZ + 1, u, v, 1,  aabbIndex);
+                    addFoliageVertexToList(blockX + 1, blockY, blockZ, u + 1, v + 1, 2,  aabbIndex);
+                    addFoliageVertexToList(blockX + 1, blockY, blockZ + 1, u, v + 1, 3,  aabbIndex);
                 }
                 break;
             case BACK:
                 for (int aabbIndex = 0; aabbIndex < blockXYZSubData.length; aabbIndex += 6) {
-                    addFoliageVertexToList(blockX, blockY + 1, blockZ, u, v, 0,  aabbIndex);
-                    addFoliageVertexToList(blockX + 1, blockY + 1, blockZ, u + 1, v, 1,  aabbIndex);
-                    addFoliageVertexToList(blockX, blockY, blockZ, u, v + 1, 2,  aabbIndex);
-                    addFoliageVertexToList(blockX + 1, blockY, blockZ, u + 1, v + 1, 3,  aabbIndex);
+                    addFoliageVertexToList(blockX, blockY + 1, blockZ, u + 1, v, 0,  aabbIndex);
+                    addFoliageVertexToList(blockX + 1, blockY + 1, blockZ, u, v, 1,  aabbIndex);
+                    addFoliageVertexToList(blockX, blockY, blockZ, u + 1, v + 1, 2,  aabbIndex);
+                    addFoliageVertexToList(blockX + 1, blockY, blockZ, u, v + 1, 3,  aabbIndex);
                 }
                 break;
             case BOTTOM:
                 for (int aabbIndex = 0; aabbIndex < blockXYZSubData.length; aabbIndex += 6) {
-                    addFoliageVertexToList(blockX + 1, blockY, blockZ + 1, u, v, 3,  aabbIndex);
-                    addFoliageVertexToList(blockX, blockY, blockZ + 1, u + 1, v, 1,  aabbIndex);
-                    addFoliageVertexToList(blockX + 1, blockY, blockZ, u, v + 1, 2,  aabbIndex);
-                    addFoliageVertexToList(blockX, blockY, blockZ, u + 1, v + 1, 0,  aabbIndex);
+                    addFoliageVertexToList(blockX + 1, blockY, blockZ + 1, u + 1, v, 3,  aabbIndex);
+                    addFoliageVertexToList(blockX, blockY, blockZ + 1, u, v, 1,  aabbIndex);
+                    addFoliageVertexToList(blockX + 1, blockY, blockZ, u + 1, v + 1, 2,  aabbIndex);
+                    addFoliageVertexToList(blockX, blockY, blockZ, u, v + 1, 0,  aabbIndex);
                 }
                 break;
             case LEFT:
                 for (int aabbIndex = 0; aabbIndex < blockXYZSubData.length; aabbIndex += 6) {
-                    addFoliageVertexToList(blockX, blockY + 1, blockZ + 1, u, v, 1,  aabbIndex);
-                    addFoliageVertexToList(blockX, blockY + 1, blockZ, u + 1, v, 0,  aabbIndex);
-                    addFoliageVertexToList(blockX, blockY, blockZ + 1, u, v + 1, 3,  aabbIndex);
-                    addFoliageVertexToList(blockX, blockY, blockZ, u + 1, v + 1, 2,  aabbIndex);
+                    addFoliageVertexToList(blockX, blockY + 1, blockZ + 1, u + 1, v, 1,  aabbIndex);
+                    addFoliageVertexToList(blockX, blockY + 1, blockZ, u, v, 0,  aabbIndex);
+                    addFoliageVertexToList(blockX, blockY, blockZ + 1, u + 1, v + 1, 3,  aabbIndex);
+                    addFoliageVertexToList(blockX, blockY, blockZ, u, v + 1, 2,  aabbIndex);
                 }
                 break;
         }

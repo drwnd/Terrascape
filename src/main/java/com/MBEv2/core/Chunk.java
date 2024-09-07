@@ -182,7 +182,7 @@ public class Chunk {
             for (int inChunkZ = 0; inChunkZ < CHUNK_SIZE; inChunkZ++)
                 for (int inChunkY = 0; inChunkY < CHUNK_SIZE; inChunkY++)
 
-                    if ((Block.getBlockProperties(getSaveBlock(inChunkX, inChunkY, inChunkZ)) & LIGHT_EMITTING_MASK) != 0)
+                    if ((Block.getBlockProperties(getSaveBlock(inChunkX, inChunkY, inChunkZ)) & LIGHT_EMITTING) != 0)
                         LightLogic.setBlockLight(worldCoordinate.x | inChunkX, worldCoordinate.y | inChunkY, worldCoordinate.z | inChunkZ, MAX_BLOCK_LIGHT_VALUE);
     }
 

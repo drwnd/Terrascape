@@ -14,11 +14,12 @@ public class Constants {
     public static final int CHUNK_SIZE_MASK = CHUNK_SIZE - 1;
     public static final int MAX_CHUNKS_XZ = 0x7FFFFFF;
     public static final int MAX_CHUNKS_Y = 0x3FF;
+
+    //Other useful stuff
     public static final int MAX_BLOCK_LIGHT_VALUE = 15;
     public static final int MAX_SKY_LIGHT_VALUE = 15;
 
     //Change based on computing power
-    public static final int REACH_ACCURACY = 100;
     public static final int MAX_CHUNKS_TO_BUFFER_PER_FRAME = 5;
 
     public static final int NUMBER_OF_GENERATION_THREADS = 4;
@@ -52,7 +53,10 @@ public class Constants {
     public static final int MAX_Z = 5;
 
     //BLOCK_PROPERTIES
-    public static final int LIGHT_EMITTING_MASK = 1;
+    public static final int LIGHT_EMITTING = 1;
+    public static final int NO_COLLISION = 2;
+    public static final int INTERACTABLE = 4;
+    public static final int REPLACEABLE = 8;
 
     //Indices for information on block types
     public static final int FULL_BLOCK = 0;
@@ -60,12 +64,12 @@ public class Constants {
     public static final int BOTTOM_SLAB = 1;
     public static final int TOP_SLAB = 2;
     public static final int FRONT_SLAB = 3;
-    public static final int BACK_SLAB =4;
-    public static final int RIGHT_SLAB =5;
+    public static final int BACK_SLAB = 4;
+    public static final int RIGHT_SLAB = 5;
     public static final int LEFT_SLAB = 6;
     public static final int[] SLABS = new int[]{FRONT_SLAB, TOP_SLAB, RIGHT_SLAB, BACK_SLAB, BOTTOM_SLAB, LEFT_SLAB};
 
-    public static final int UP_DOWN_POST =7;
+    public static final int UP_DOWN_POST = 7;
     public static final int FRONT_BACK_POST = 8;
     public static final int LEFT_RIGHT_POST = 9;
     public static final int[] POSTS = new int[]{FRONT_BACK_POST, UP_DOWN_POST, LEFT_RIGHT_POST};
@@ -77,10 +81,10 @@ public class Constants {
 
     public static final int FRONT_PLATE = 13;
     public static final int TOP_PLATE = 14;
-    public static final int RIGHT_PLATE =15;
+    public static final int RIGHT_PLATE = 15;
     public static final int BACK_PLATE = 16;
-    public static final int BOTTOM_PLATE =17;
-    public static final int LEFT_PLATE =18;
+    public static final int BOTTOM_PLATE = 17;
+    public static final int LEFT_PLATE = 18;
     public static final int[] PLATES = new int[]{FRONT_PLATE, TOP_PLATE, RIGHT_PLATE, BACK_PLATE, BOTTOM_PLATE, LEFT_PLATE};
 
     public static final int BOTTOM_FRONT_STAIR = 19;
@@ -91,7 +95,7 @@ public class Constants {
     public static final int TOP_BACK_STAIR = 24;
     public static final int TOP_RIGHT_STAIR = 25;
     public static final int TOP_LEFT_STAIR = 26;
-    public static final int FRONT_RIGHT_STAIR =27;
+    public static final int FRONT_RIGHT_STAIR = 27;
     public static final int FRONT_LEFT_STAIR = 28;
     public static final int BACK_RIGHT_STAIR = 29;
     public static final int BACK_LEFT_STAIR = 30;
@@ -105,13 +109,14 @@ public class Constants {
     public static final int LIQUID_TYPE = 34;
     public static final int LEAVE_TYPE = 35;
     public static final int GLASS_TYPE = 36;
+    public static final int TORCH_TYPE = 37;
 
     public static final int BLOCK_TYPE_BITS = 6;
     public static final int BLOCK_TYPE_MASK = (1 << BLOCK_TYPE_BITS) - 1;
     public static final int BASE_BLOCK_MASK = -1 << BLOCK_TYPE_BITS;
     public static final int STANDARD_BLOCKS_THRESHOLD = 1 << BLOCK_TYPE_BITS;
 
-    public static final int TOTAL_AMOUNT_OF_BLOCK_TYPES = 37;
+    public static final int TOTAL_AMOUNT_OF_BLOCK_TYPES = 38;
 
     //Non standard block, aka blocks without blockTypes
     public static final short AIR = 0;
@@ -123,7 +128,8 @@ public class Constants {
     public static final short BACK_CREATOR_HEAD = 6;
     public static final short RIGHT_CREATOR_HEAD = 7;
     public static final short LEFT_CREATOR_HEAD = 8;
-    public static final short[] TO_PLACE_NON_STANDARD_BLOCKS = new short[]{WATER, LAVA, CACTUS, FRONT_CREATOR_HEAD};
+    public static final short TORCH = 9;
+    public static final short[] TO_PLACE_NON_STANDARD_BLOCKS = new short[]{WATER, LAVA, CACTUS, FRONT_CREATOR_HEAD, TORCH};
 
     //Standard blocks, aka blocks with blockTypes
     private static int b = 1;
@@ -189,6 +195,8 @@ public class Constants {
     public static final short BLUE = (short) (b++ << BLOCK_TYPE_BITS);
     public static final short GREEN = (short) (b++ << BLOCK_TYPE_BITS);
     public static final short RED = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short CRAFTING_TABLE = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short TNT = (short) (b++ << BLOCK_TYPE_BITS);
 
     public static final int AMOUNT_OF_TO_PLACE_STANDARD_BLOCKS = b;
     private static int b2 = 511;
@@ -270,9 +278,9 @@ public class Constants {
     public static final byte ROTATED_STRIPPED_DARK_OAK_LOG_TEXTURE = 118;
     public static final byte CHISELED_SLATE_TEXTURE = -127;
     public static final byte LAVA_TEXTURE = -126;
-    public static final byte CREATOR_HEAD_RIGHT_TEXTURE = -124;
+    public static final byte CREATOR_HEAD_RIGHT_TEXTURE = -122;
     public static final byte CREATOR_HEAD_FRONT_TEXTURE = -123;
-    public static final byte CREATOR_HEAD_LEFT_TEXTURE = -122;
+    public static final byte CREATOR_HEAD_LEFT_TEXTURE = -124;
     public static final byte COAL_ORE_TEXTURE = -111;
     public static final byte IRON_ORE_TEXTURE = -110;
     public static final byte DIAMOND_ORE_TEXTURE = -109;
@@ -319,6 +327,13 @@ public class Constants {
     public static final byte BLACK_WOOD_LEAVES_TEXTURE = 89;
     public static final byte ROTATED_BLACK_WOOD_LOG_TEXTURE = 105;
     public static final byte ROTATED_STRIPPED_BLACK_WOOD_LOG_TEXTURE = 121;
+    public static final byte TNT_TOP_TEXTURE = -121;
+    public static final byte TNT_SIDE_TEXTURE = -105;
+    public static final byte TNT_BOTTOM_TEXTURE = -89;
+    public static final byte TORCH_TEXTURE = -79;
+    public static final byte CRAFTING_TABLE_TOP_TEXTURE = -78;
+    public static final byte CRAFTING_TABLE_SIDE_TEXTURE_1 = -77;
+    public static final byte CRAFTING_TABLE_SIDE_TEXTURE_2 = -76;
 
     //Just pretend it doesn't exist
     public static final float[] SKY_BOX_VERTICES;

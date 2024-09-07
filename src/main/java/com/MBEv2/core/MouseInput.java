@@ -33,12 +33,15 @@ public class MouseInput {
                 player.handleNonMovementInputs(button | IS_MOUSE_BUTTON, action));
 
         GLFW.glfwSetScrollCallback(Launcher.getWindow().getWindow(), (window, xPos, yPos) -> {
-            if (!player.isInInventory()) return;
-            ArrayList<GUIElement> inventoryElements = player.getInventoryElements();
-            float scrollValue = (float) yPos * -0.05f;
-            player.addToInventoryScroll(scrollValue);
-            for (GUIElement element : inventoryElements) {
-                element.getPosition().add(0.0f, scrollValue);
+            if (player.isInInventory()) {
+                ArrayList<GUIElement> inventoryElements = player.getInventoryElements();
+                float scrollValue = (float) yPos * -0.05f;
+                player.addToInventoryScroll(scrollValue);
+                for (GUIElement element : inventoryElements) {
+                    element.getPosition().add(0.0f, scrollValue);
+                }
+            } else if (SCROLL_HOT_BAR) {
+                player.setSelectedHotBarSlot((player.getSelectedHotBarSlot() - (int) yPos + 9) % 9);
             }
         });
 

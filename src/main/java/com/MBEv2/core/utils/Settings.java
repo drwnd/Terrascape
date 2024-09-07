@@ -51,6 +51,8 @@ public class Settings {
     public static int SET_POSITION_2_BUTTON;
     public static int RELOAD_SETTINGS_BUTTON;
 
+    public static boolean SCROLL_HOT_BAR;
+
     public static int TEXT_CHAR_SIZE_X;
     public static int TEXT_CHAR_SIZE_Y;
     public static int TEXT_LINE_SPACING;

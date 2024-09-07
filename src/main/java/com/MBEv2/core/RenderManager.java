@@ -350,9 +350,11 @@ public class RenderManager {
         textShader.setUniform("charSize", TEXT_CHAR_SIZE_X, TEXT_CHAR_SIZE_Y);
 
         int line = -1;
-        Vector3f position = player.getCamera().getPosition();
-        Vector3f direction = player.getCamera().getDirection();
-        Vector3f target = player.getTarget(0, direction);
+        final Vector3f position = player.getCamera().getPosition();
+        final Vector3f direction = player.getCamera().getDirection();
+
+        Target target = Target.getTarget(position, direction);
+
         int x = Utils.floor(position.x), y = Utils.floor(position.y), z = Utils.floor(position.z);
         int chunkX = x >> CHUNK_SIZE_BITS, chunkY = y >> CHUNK_SIZE_BITS, chunkZ = z >> CHUNK_SIZE_BITS;
         Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
@@ -368,17 +370,24 @@ public class RenderManager {
             renderTextLine("BlockLight:" + Chunk.getBlockLightInWorld(x, y, z) + " SkyLight:" + Chunk.getSkyLightInWorld(x, y, z), ++line);
         }
         if (target != null) {
-            short targetedBlock = Chunk.getBlockInWorld(Utils.floor(target.x), Utils.floor(target.y), Utils.floor(target.z));
-            renderTextLine("Looking at block: X:" + Utils.floor(target.x) + " Y:" + Utils.floor(target.y) + " Z:" + Utils.floor(target.z), ++line);
-            renderTextLine("Targeted block:" + targetedBlock + " blockType:" + Block.getBlockType(targetedBlock) + " Standard block:" + (targetedBlock >= STANDARD_BLOCKS_THRESHOLD ? "true" : "false"), ++line);
+            renderTextLine("Looking at block: X:" + target.position().x + " Y:" + target.position().y + " Z:" + target.position().z, ++line);
+            renderTextLine("Intersection: X:" + target.inBlockPosition().x + " Y:" + target.inBlockPosition().y + " Z:" + target.inBlockPosition().z, ++line);
+            if (target.block() < STANDARD_BLOCKS_THRESHOLD)
+                renderTextLine("Non standard block:" + target.block(), ++line);
+            else
+                renderTextLine("Standard block:" + (target.block() >> BLOCK_TYPE_BITS), ++line);
+            renderTextLine("Block type:" + Block.getBlockType(target.block()), ++line);
+            renderTextLine("Intersected side:" + target.side(), ++line);
         }
         renderTextLine("Seed:" + SEED, ++line);
         renderTextLine("Rendered chunk models:" + chunkModels.size(), ++line);
         renderTextLine("Rendered water models:" + waterModels.size(), ++line);
         renderTextLine("Rendered foliage models:" + foliageModels.size(), ++line);
         renderTextLine("Rendered GUIElements:" + GUIElements.size(), ++line);
+        renderTextLine("Render distance XZ:" + RENDER_DISTANCE_XZ + " Render distance Y:" + RENDER_DISTANCE_Y, ++line);
         renderTextLine("Time:" + time, ++line);
         renderTextLine("Saved chunks memory:" + FileManager.getSeedFileSize() / 1_000_000 + "MB", ++line);
+
 
         textShader.unBind();
     }

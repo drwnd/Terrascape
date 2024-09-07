@@ -278,6 +278,8 @@ public class FileManager {
         byte[] data = reader.readAllBytes();
         reader.close();
 
+        if (data.length == 0) return player;
+
         float[] floats = readGameState(data);
         byte[] playerFlags = readPlayerFlags(data);
         short[] hotBar = readHotBar(data);
@@ -381,6 +383,7 @@ public class FileManager {
         SET_POSITION_1_BUTTON = keyCodes.get(getStingAfterColon(reader.readLine()));
         SET_POSITION_2_BUTTON = keyCodes.get(getStingAfterColon(reader.readLine()));
         RELOAD_SETTINGS_BUTTON = keyCodes.get(getStingAfterColon(reader.readLine()));
+        SCROLL_HOT_BAR = Boolean.parseBoolean(getStingAfterColon(reader.readLine()));
 
         reader.close();
 
@@ -420,7 +423,10 @@ public class FileManager {
         if (GUI_SIZE != newGUISize) {
             GUI_SIZE = newGUISize;
             Player player = GameLogic.getPlayer();
-            if (player != null) player.reloadGUIElements();
+            if (player != null) {
+                player.reloadGUIElements();
+                player.updateHotBarElements();
+            }
         }
     }
 
