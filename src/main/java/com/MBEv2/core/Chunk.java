@@ -352,6 +352,17 @@ public class Chunk {
         }
     }
 
+    public static byte getLightInWorld(int x, int y, int z) {
+        Chunk chunk = world[GameLogic.getChunkIndex(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS)];
+        if (chunk == null || !chunk.isGenerated) return 0;
+        return chunk.getSaveLight(x & CHUNK_SIZE_MASK, y & CHUNK_SIZE_MASK, z & CHUNK_SIZE_MASK);
+    }
+
+    public byte getSaveLight(int inChunkX, int inChunkY, int inChunkZ) {
+        int index = inChunkX << CHUNK_SIZE_BITS * 2 | inChunkZ << CHUNK_SIZE_BITS | inChunkY;
+        return light[light.length <= index ? 0 : index];
+    }
+
     public static byte getBlockLightInWorld(int x, int y, int z) {
         Chunk chunk = world[GameLogic.getChunkIndex(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS)];
         if (chunk == null || !chunk.isGenerated) return 0;

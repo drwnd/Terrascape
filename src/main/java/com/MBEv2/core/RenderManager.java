@@ -21,11 +21,12 @@ import java.util.List;
 public class RenderManager {
 
     private final WindowManager window;
-    private ShaderManager blockShader, waterShader, foliageShader, skyBoxShader, GUIShader, textShader;
+    private ShaderManager blockShader, waterShader, foliageShader, skyBoxShader, GUIShader, textShader, entityShader;
 
     private final List<Model> chunkModels = new ArrayList<>();
     private final List<Model> foliageModels = new ArrayList<>();
     private final List<Model> waterModels = new ArrayList<>();
+    private final List<Entity> entities = new ArrayList<>();
     private final List<GUIElement> GUIElements = new ArrayList<>();
     private final Player player;
     private GUIElement inventoryOverlay;
@@ -119,6 +120,17 @@ public class RenderManager {
         textShader.createUniform("yOffset");
         textShader.createUniform("textureSampler");
 
+        entityShader = new ShaderManager();
+        entityShader.createVertexShader(Utils.loadResources("/shaders/EntityVertex.glsl"));
+        entityShader.createFragmentShader(Utils.loadResources("/shaders/EntityFragment.glsl"));
+        entityShader.link();
+        entityShader.createUniform("projectionMatrix");
+        entityShader.createUniform("viewMatrix");
+        entityShader.createUniform("time");
+        entityShader.createUniform("textureSampler");
+        entityShader.createUniform("position");
+        entityShader.createUniform("lightLevel");
+
         int[] indices = new int[393216];
         int index = 0;
         for (int i = 0; i < indices.length; i += 6) {
@@ -205,13 +217,31 @@ public class RenderManager {
         GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, modelIndexBuffer);
     }
 
+    public void bindEntity(Entity entity, float timeSinceLastTick) {
+        GL30.glBindVertexArray(entity.getVAO());
+        GL20.glEnableVertexAttribArray(0);
+
+        Vector3f position = entity.getPosition();
+        Vector3f velocity = entity.getVelocity();
+        int x = Utils.floor(position.x);
+        int y = Utils.floor(position.y);
+        int z = Utils.floor(position.z);
+
+        entityShader.setUniform("position",
+                position.x - (0.05f + timeSinceLastTick) * velocity.x,
+                position.y - (0.05f + timeSinceLastTick) * velocity.y,
+                position.z - (0.05f + timeSinceLastTick) * velocity.z);
+        entityShader.setUniform("lightLevel", Chunk.getLightInWorld(x, y, z));
+        GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, modelIndexBuffer);
+    }
+
     public void unbind() {
         GL20.glDisableVertexAttribArray(0);
         GL20.glDisableVertexAttribArray(1);
         GL30.glBindVertexArray(0);
     }
 
-    public void render(Camera camera) {
+    public void render(Camera camera, float timeSinceLastTick) {
         Matrix4f projectionMatrix = window.getProjectionMatrix();
         Matrix4f viewMatrix = Transformation.getViewMatrix(camera);
 
@@ -223,6 +253,8 @@ public class RenderManager {
 
         renderFoliageChunks(projectionMatrix, viewMatrix);
 
+        renderEntities(projectionMatrix, viewMatrix, timeSinceLastTick);
+
         renderWaterChunks(projectionMatrix, viewMatrix);
 
         renderGUIElements();
@@ -233,8 +265,18 @@ public class RenderManager {
         foliageModels.clear();
         waterModels.clear();
         GUIElements.clear();
+        entities.clear();
 
         unbind();
+    }
+
+    public void renderSkyBox(Camera camera) {
+        skyBoxShader.bind();
+        bindSkyBox(skyBox, camera);
+
+        GL11.glDrawElements(GL11.GL_TRIANGLES, skyBox.getVertexCount(), GL11.GL_UNSIGNED_INT, 0);
+
+        skyBoxShader.unBind();
     }
 
     public void renderOpaqueChunks(Matrix4f projectionMatrix, Matrix4f viewMatrix) {
@@ -309,13 +351,25 @@ public class RenderManager {
         waterShader.unBind();
     }
 
-    public void renderSkyBox(Camera camera) {
-        skyBoxShader.bind();
-        bindSkyBox(skyBox, camera);
+    public void renderEntities(Matrix4f projectionMatrix, Matrix4f viewMatrix, float timeSinceLastTick) {
+        entityShader.bind();
+        entityShader.setUniform("projectionMatrix", projectionMatrix);
+        entityShader.setUniform("viewMatrix", viewMatrix);
+        entityShader.setUniform("time", time);
+        entityShader.setUniform("textureSampler", 0);
 
-        GL11.glDrawElements(GL11.GL_TRIANGLES, skyBox.getVertexCount(), GL11.GL_UNSIGNED_INT, 0);
+        GL13.glActiveTexture(GL13.GL_TEXTURE0);
+        GL11.glBindTexture(GL11.GL_TEXTURE_2D, atlas.id());
+        GL11.glEnable(GL11.GL_CULL_FACE);
 
-        skyBoxShader.unBind();
+        for (Entity entity : entities) {
+            bindEntity(entity, timeSinceLastTick);
+
+            GL11.glDrawElements(GL11.GL_TRIANGLES, entity.getVertexCount(), GL11.GL_UNSIGNED_INT, 0);
+        }
+
+        GL11.glDisable(GL11.GL_CULL_FACE);
+        entityShader.unBind();
     }
 
     public void renderGUIElements() {
@@ -383,11 +437,11 @@ public class RenderManager {
         renderTextLine("Rendered chunk models:" + chunkModels.size(), ++line);
         renderTextLine("Rendered water models:" + waterModels.size(), ++line);
         renderTextLine("Rendered foliage models:" + foliageModels.size(), ++line);
+        renderTextLine("Rendered entities:" + entities.size(), ++line);
         renderTextLine("Rendered GUIElements:" + GUIElements.size(), ++line);
         renderTextLine("Render distance XZ:" + RENDER_DISTANCE_XZ + " Render distance Y:" + RENDER_DISTANCE_Y, ++line);
         renderTextLine("Time:" + time, ++line);
         renderTextLine("Saved chunks memory:" + FileManager.getSeedFileSize() / 1_000_000 + "MB", ++line);
-
 
         textShader.unBind();
     }
@@ -412,6 +466,10 @@ public class RenderManager {
             array[index] = stringBytes[index];
         }
         return array;
+    }
+
+    public void processEntity(Entity entity) {
+        entities.add(entity);
     }
 
     public void processModel(Model model) {

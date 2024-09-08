@@ -28,7 +28,7 @@ void main(){
 
     textureCoordinates = vec2(u, v);
 
-    float blockLight = (data.y >> 18 & 15) * 0.0425;
+    float blockLight = (data.y >> 18 & 15) * 0.0625;
     float skyLight = (data.y >> 22 & 15) * 0.0625;
     float ambientOcclusionLevel = 1 - (data.x >> 30 & 3) * 0.22;
     int side = data.y >> 26 & 7;

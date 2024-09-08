@@ -1,6 +1,5 @@
 package com.MBEv2.core;
 
-import com.MBEv2.core.entity.Player;
 import com.MBEv2.core.entity.Target;
 import com.MBEv2.core.utils.Utils;
 import org.joml.Vector3f;
@@ -82,8 +81,7 @@ public class Block {
         return blockTextureIndices[side >= blockTextureIndices.length ? 0 : side];
     }
 
-    public static boolean playerIntersectsBlock(float minX, float maxX, float minY, float maxY, float minZ, float maxZ, int blockX, int blockY, int blockZ, short block, Player player) {
-        if (player.isNoClip()) return false;
+    public static boolean entityIntersectsBlock(float minX, float maxX, float minY, float maxY, float minZ, float maxZ, int blockX, int blockY, int blockZ, short block) {
 
         int blockProperties = getBlockProperties(block);
         if ((blockProperties & NO_COLLISION) != 0) return false;

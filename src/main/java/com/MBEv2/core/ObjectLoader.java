@@ -32,6 +32,13 @@ public class ObjectLoader {
         return new Model(vao, vertices.length, position, vbo);
     }
 
+    public static int loadVAO(int[] vertices) {
+        int vao = createVAO();
+        int vbo = storeDateInAttributeList(1, vertices);
+        unbind();
+        return vao;
+    }
+
     public static SkyBox loadSkyBox(float[] vertices, float[] textureCoordinates, int[] indices, Vector3f position) {
         int vao = createVAO();
         storeIndicesInBuffer(indices);

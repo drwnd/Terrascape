@@ -7,7 +7,9 @@ import org.joml.Vector3f;
 import org.joml.Vector4i;
 import org.lwjgl.opengl.GL11;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.LinkedList;
 
 
@@ -21,6 +23,10 @@ public class GameLogic {
     private static ChunkGenerator generator;
 
     private static Player player;
+    private static final LinkedList<Entity> entities = new LinkedList<>();
+    private static final ArrayList<Entity> toSpawnEntities = new ArrayList<>();
+
+    private static byte generatorRestartScheduled = 0;
 
     public static void init() throws Exception {
 
@@ -29,8 +35,12 @@ public class GameLogic {
         startGenerator();
     }
 
+    public static void spawnEntity(Entity entity) {
+        toSpawnEntities.add(entity);
+    }
+
     public static void restartGenerator(int direction) {
-        generator.restart(direction);
+        generatorRestartScheduled = (byte) (0x80 | direction);
     }
 
     public static void startGenerator() {
@@ -79,7 +89,7 @@ public class GameLogic {
             else if (inChunkZ == CHUNK_SIZE - 1) maxZ = chunkZ + 1;
         }
 
-        generator.addBlockChange(new Vector4i(x, y, z, previousBlock));
+        addBlockChange(x, y, z, previousBlock);
 
         for (chunkX = minX; chunkX <= maxX; chunkX++)
             for (chunkY = minY; chunkY <= maxY; chunkY++)
@@ -89,6 +99,10 @@ public class GameLogic {
                     toMeshChunk.setMeshed(false);
                 }
         generator.restart(NONE);
+    }
+
+    public static void addBlockChange(int x, int y, int z, short previousBlock) {
+        generator.addBlockChange(new Vector4i(x, y, z, previousBlock));
     }
 
     public static void bufferChunkMesh(Chunk chunk) {
@@ -133,6 +147,16 @@ public class GameLogic {
 
     public static void updateGT() {
         player.getRenderer().incrementTime();
+
+        entities.addAll(toSpawnEntities);
+        toSpawnEntities.clear();
+        for (Iterator<Entity> iterator = entities.iterator(); iterator.hasNext(); ) {
+            Entity entity = iterator.next();
+            entity.update();
+            if (entity.isDead()) iterator.remove();
+        }
+
+        if (generatorRestartScheduled != 0) generator.restart(generatorRestartScheduled & 0xF);
     }
 
     public static void unloadChunks(int playerX, int playerY, int playerZ) {
@@ -193,15 +217,17 @@ public class GameLogic {
         player.input();
     }
 
-    public static void render() {
+    public static void render(float timeSinceLastTick) {
         WindowManager window = Launcher.getWindow();
 
         if (window.isResize()) {
             GL11.glViewport(0, 0, window.getWidth(), window.getHeight());
             window.setResize(true);
         }
+        RenderManager renderer = player.getRenderer();
+        for (Entity entity : entities) renderer.processEntity(entity);
         player.render();
-        player.getRenderer().render(player.getCamera());
+        renderer.render(player.getCamera(), timeSinceLastTick);
     }
 
     public static void addToBufferChunk(Chunk chunk) {

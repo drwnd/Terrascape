@@ -5,6 +5,7 @@ import com.MBEv2.core.*;
 import static com.MBEv2.core.utils.Constants.*;
 import static com.MBEv2.core.utils.Settings.*;
 
+import com.MBEv2.core.entity.entities.TNT_Entity;
 import com.MBEv2.core.utils.Transformation;
 import com.MBEv2.core.utils.Utils;
 import com.MBEv2.test.GameLogic;
@@ -422,7 +423,7 @@ public class Player {
     }
 
     private void handleUse(long currentTime, boolean useButtonWasJustPressed) {
-        if (((useButtonPressTime == -1 || currentTime - useButtonPressTime <= 300_000_000) && !useButtonWasJustPressed) || hotBar[selectedHotBarSlot] == AIR)
+        if (((useButtonPressTime == -1 || currentTime - useButtonPressTime <= 300_000_000) && !useButtonWasJustPressed))
             return;
 
         Vector3f cameraDirection = camera.getDirection();
@@ -434,6 +435,7 @@ public class Player {
 
         if ((Block.getBlockProperties(target.block()) & INTERACTABLE) != 0) if (interactWithBlock(target)) return;
 
+        if (hotBar[selectedHotBarSlot] == AIR) return;
         short toPlaceBlock;
         short inventoryBlock = Block.getInInventoryBlockEquivalent(target.block());
         if (window.isKeyPressed(SPRINT_BUTTON) && (inventoryBlock & BLOCK_TYPE_MASK) == (selectedBlock & BLOCK_TYPE_MASK)) {
@@ -452,7 +454,8 @@ public class Player {
         int x = position.x + normal[0];
         int y = position.y + normal[1];
         int z = position.z + normal[2];
-        if (Block.playerIntersectsBlock(minX, maxX, minY, maxY, minZ, maxZ, x, y, z, toPlaceBlock, this)) return;
+        if (hasCollision() && Block.entityIntersectsBlock(minX, maxX, minY, maxY, minZ, maxZ, x, y, z, toPlaceBlock))
+            return;
 
         if ((Block.getBlockProperties(Chunk.getBlockInWorld(x, y, z)) & REPLACEABLE) != 0)
             GameLogic.placeBlock(toPlaceBlock, x, y, z);
@@ -460,12 +463,13 @@ public class Player {
 
     private boolean interactWithBlock(Target target) {
         if (window.isKeyPressed(SNEAK_BUTTON)) return false;
+        if (target.block() == hotBar[selectedHotBarSlot]) return false;
 
         if (target.block() == CRAFTING_TABLE) {
             System.out.println("You interacted with a crafting table");
             return true;
         } else if (target.block() == TNT) {
-            System.out.println("You interacted with a TNT block");
+            TNT_Entity.spawnTNTEntity(target.position(), 0);
             return true;
         }
         return false;
@@ -715,7 +719,7 @@ public class Player {
 
                     short block = Chunk.getBlockInWorld(blockX, blockY, blockZ);
 
-                    if (Block.playerIntersectsBlock(minX, maxX, minY, maxY, minZ, maxZ, blockX, blockY, blockZ, block, this))
+                    if (hasCollision() && Block.entityIntersectsBlock(minX, maxX, minY, maxY, minZ, maxZ, blockX, blockY, blockZ, block))
                         return true;
                 }
         return false;
@@ -952,8 +956,8 @@ public class Player {
         return camera;
     }
 
-    public boolean isNoClip() {
-        return noClip;
+    public boolean hasCollision() {
+        return !noClip;
     }
 
     public boolean isInInventory() {

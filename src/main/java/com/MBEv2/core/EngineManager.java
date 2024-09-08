@@ -2,6 +2,7 @@ package com.MBEv2.core;
 
 import static com.MBEv2.core.utils.Constants.*;
 
+import com.MBEv2.core.entity.Entity;
 import com.MBEv2.test.GameLogic;
 import com.MBEv2.test.Launcher;
 import org.lwjgl.glfw.GLFW;
@@ -25,6 +26,7 @@ public class EngineManager {
         window = Launcher.getWindow();
         window.init();
         Block.init();
+        Entity.init();
         GameLogic.init();
 
         if (window.isvSync()) {
@@ -38,7 +40,7 @@ public class EngineManager {
         isRunning = true;
         long lastTime = 0;
         long lastFrameRateUpdateTime = 0;
-        long lastInputTime = 0;
+        long lastGTTime = 0;
         int frames = 0;
 
         while (isRunning) {
@@ -47,7 +49,7 @@ public class EngineManager {
             lastTime = currentTime;
 
             update(20 * passedTime / NANOSECONDS_PER_SECOND);
-            render();
+            render((currentTime - lastGTTime) / NANOSECONDS_PER_SECOND);
             frames++;
             if (window.windowShouldClose())
                 stop();
@@ -57,8 +59,8 @@ public class EngineManager {
                 window.setTitle(TITLE + " FPS: " + frames * 4);
                 frames = 0;
             }
-            if (currentTime - lastInputTime > NANOSECONDS_PER_SECOND * 0.05f) {
-                lastInputTime = currentTime;
+            if (currentTime - lastGTTime > NANOSECONDS_PER_SECOND * 0.05f) {
+                lastGTTime = currentTime;
                 updateGT();
                 input();
             }
@@ -73,8 +75,8 @@ public class EngineManager {
         GameLogic.input();
     }
 
-    private void render() {
-        GameLogic.render();
+    private void render(float timeSinceLastTick) {
+        GameLogic.render(timeSinceLastTick);
         window.update();
     }
 
