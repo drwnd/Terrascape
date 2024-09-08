@@ -1,10 +1,6 @@
 package com.MBEv2.core.entity;
 
 import com.MBEv2.core.*;
-
-import static com.MBEv2.core.utils.Constants.*;
-import static com.MBEv2.core.utils.Settings.*;
-
 import com.MBEv2.core.entity.entities.TNT_Entity;
 import com.MBEv2.core.utils.Transformation;
 import com.MBEv2.core.utils.Utils;
@@ -16,6 +12,9 @@ import org.lwjgl.glfw.GLFW;
 import java.lang.Math;
 import java.util.ArrayList;
 import java.util.Arrays;
+
+import static com.MBEv2.core.utils.Constants.*;
+import static com.MBEv2.core.utils.Settings.*;
 
 public class Player {
     //Movement
@@ -121,6 +120,21 @@ public class Player {
                 return;
             }
             handleNonMovementInputs(key | IS_KEYBOARD_BUTTON, action);
+
+            if (key == GLFW.GLFW_KEY_H && action == GLFW.GLFW_PRESS) {
+                Vector3f pos = camera.getPosition();
+                Chunk chunk = Chunk.getChunk(Utils.floor(pos.x) >> CHUNK_SIZE_BITS, Utils.floor(pos.y) >> CHUNK_SIZE_BITS, Utils.floor(pos.z) >> CHUNK_SIZE_BITS);
+                if (chunk == null) return;
+                Arrays.fill(chunk.getBlocks(), TNT);
+
+                for (int chunkX = chunk.getChunkX() - 1; chunkX <= chunk.getChunkX() + 1; chunkX++)
+                    for (int chunkY = chunk.getChunkY() - 1; chunkY <= chunk.getChunkY() + 1; chunkY++)
+                        for (int chunkZ = chunk.getChunkZ() - 1; chunkZ <= chunk.getChunkZ() + 1; chunkZ++) {
+                            Chunk toMeshChunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
+                            if (toMeshChunk != null) toMeshChunk.setMeshed(false);
+                        }
+                GameLogic.restartGenerator(NONE);
+            }
         });
     }
 

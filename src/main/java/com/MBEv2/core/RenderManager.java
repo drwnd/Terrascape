@@ -441,7 +441,8 @@ public class RenderManager {
         renderTextLine("Rendered GUIElements:" + GUIElements.size(), ++line);
         renderTextLine("Render distance XZ:" + RENDER_DISTANCE_XZ + " Render distance Y:" + RENDER_DISTANCE_Y, ++line);
         renderTextLine("Time:" + time, ++line);
-        renderTextLine("Saved chunks memory:" + FileManager.getSeedFileSize() / 1_000_000 + "MB", ++line);
+        //This one line literally quarters the fps when debug screen is open
+//        renderTextLine("Saved chunks memory:" + FileManager.getSeedFileSize() / 1_000_000 + "MB", ++line);
 
         textShader.unBind();
     }

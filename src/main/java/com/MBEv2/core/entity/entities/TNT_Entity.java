@@ -51,28 +51,29 @@ public class TNT_Entity extends Entity {
     }
 
     public void explode() {
+
         //Corners
-        castExplosionRay(position, -1.7320508075688772, -1.7320508075688772, -1.7320508075688772, 5);
-        castExplosionRay(position, -1.7320508075688772, -1.7320508075688772, 1.7320508075688772, 5);
-        castExplosionRay(position, -1.7320508075688772, 1.7320508075688772, -1.7320508075688772, 5);
-        castExplosionRay(position, -1.7320508075688772, 1.7320508075688772, 1.7320508075688772, 5);
-        castExplosionRay(position, 1.7320508075688772, -1.7320508075688772, -1.7320508075688772, 5);
-        castExplosionRay(position, 1.7320508075688772, -1.7320508075688772, 1.7320508075688772, 5);
-        castExplosionRay(position, 1.7320508075688772, 1.7320508075688772, -1.7320508075688772, 5);
-        castExplosionRay(position, 1.7320508075688772, 1.7320508075688772, 1.7320508075688772, 5);
+        castExplosionRay(position, -0.5773502691896258, -0.5773502691896258, -0.5773502691896258, 5);
+        castExplosionRay(position, -0.5773502691896258, -0.5773502691896258, 0.5773502691896258, 5);
+        castExplosionRay(position, -0.5773502691896258, 0.5773502691896258, -0.5773502691896258, 5);
+        castExplosionRay(position, -0.5773502691896258, 0.5773502691896258, 0.5773502691896258, 5);
+        castExplosionRay(position, 0.5773502691896258, -0.5773502691896258, -0.5773502691896258, 5);
+        castExplosionRay(position, 0.5773502691896258, -0.5773502691896258, 0.5773502691896258, 5);
+        castExplosionRay(position, 0.5773502691896258, 0.5773502691896258, -0.5773502691896258, 5);
+        castExplosionRay(position, 0.5773502691896258, 0.5773502691896258, 0.5773502691896258, 5);
         //Edges
-        castExplosionRay(position, 1.4142135623730951, 1.4142135623730951, 0, 5);
-        castExplosionRay(position, 1.4142135623730951, -1.4142135623730951, 0, 5);
-        castExplosionRay(position, -1.4142135623730951, 1.4142135623730951, 0, 5);
-        castExplosionRay(position, -1.4142135623730951, -1.4142135623730951, 0, 5);
-        castExplosionRay(position, 1.4142135623730951, 0, 1.4142135623730951, 5);
-        castExplosionRay(position, 1.4142135623730951, 0, -1.4142135623730951, 5);
-        castExplosionRay(position, -1.4142135623730951, 0, 1.4142135623730951, 5);
-        castExplosionRay(position, -1.4142135623730951, 0, -1.4142135623730951, 5);
-        castExplosionRay(position, 0, 1.4142135623730951, 1.4142135623730951, 5);
-        castExplosionRay(position, 0, 1.4142135623730951, -1.4142135623730951, 5);
-        castExplosionRay(position, 0, -1.4142135623730951, 1.4142135623730951, 5);
-        castExplosionRay(position, 0, -1.4142135623730951, -1.4142135623730951, 5);
+        castExplosionRay(position, 0.7071067811865475, 0.7071067811865475, 0, 5);
+        castExplosionRay(position, 0.7071067811865475, -0.7071067811865475, 0, 5);
+        castExplosionRay(position, -0.7071067811865475, 0.7071067811865475, 0, 5);
+        castExplosionRay(position, -0.7071067811865475, -0.7071067811865475, 0, 5);
+        castExplosionRay(position, 0.7071067811865475, 0, 0.7071067811865475, 5);
+        castExplosionRay(position, 0.7071067811865475, 0, -0.7071067811865475, 5);
+        castExplosionRay(position, -0.7071067811865475, 0, 0.7071067811865475, 5);
+        castExplosionRay(position, -0.7071067811865475, 0, -0.7071067811865475, 5);
+        castExplosionRay(position, 0, 0.7071067811865475, 0.7071067811865475, 5);
+        castExplosionRay(position, 0, 0.7071067811865475, -0.7071067811865475, 5);
+        castExplosionRay(position, 0, -0.7071067811865475, 0.7071067811865475, 5);
+        castExplosionRay(position, 0, -0.7071067811865475, -0.7071067811865475, 5);
         //Middle
         castExplosionRay(position, 0, 0, 1, 5);
         castExplosionRay(position, 0, 0, -1, 5);
@@ -108,7 +109,8 @@ public class TNT_Entity extends Entity {
         while (blastResistance < blastStrength && length < 8.0) {
             short block = Chunk.getBlockInWorld(x, y, z);
             int blockType = Block.getBlockType(block);
-            if (blockType != AIR_TYPE && blockType != LIQUID_TYPE) {
+            if (blockType == LIQUID_TYPE) return;
+            if (blockType != AIR_TYPE) {
                 blastResistance++;
                 int inChunkX = x & CHUNK_SIZE_MASK;
                 int inChunkY = y & CHUNK_SIZE_MASK;
@@ -119,14 +121,22 @@ public class TNT_Entity extends Entity {
                 chunk.setModified();
                 GameLogic.addBlockChange(x, y, z, block);
                 GameLogic.restartGenerator(NONE);
-                if (block == TNT) spawnTNTEntity(new Vector3i(x, y, z), (int) (20 + Math.random() * 60));
+                if (block == TNT) {
+                    Vector3i targetPosition = new Vector3i(x, y, z);
+                    double distanceSquared = (x - origin.x) * (x - origin.x) + (y - origin.y) * (y - origin.y) + (z - origin.z) * (z - origin.z);
+                    Vector3f velocity = new Vector3f(
+                            (float) ((x - origin.x) / distanceSquared),
+                            (float) ((y - origin.y) / distanceSquared),
+                            (float) ((z - origin.z) / distanceSquared));
+                    spawnTNTEntity(targetPosition, velocity, 20 + (int) (Math.random() * 60));
+                }
             }
 
-            if (lengthX < lengthZ && lengthX < lengthY) {
+            if (lengthX <= lengthZ && lengthX <= lengthY) {
                 x += xDir;
                 length = lengthX;
                 lengthX += xUnit;
-            } else if (lengthZ < lengthX && lengthZ < lengthY) {
+            } else if (lengthZ <= lengthX && lengthZ <= lengthY) {
                 z += zDir;
                 length = lengthZ;
                 lengthZ += zUnit;
@@ -194,6 +204,13 @@ public class TNT_Entity extends Entity {
     public static void spawnTNTEntity(Vector3i targetPosition, int fuse) {
         Vector3f position = new Vector3f(targetPosition.x + 0.5f, targetPosition.y + 0.25f, targetPosition.z + 0.5f);
         Vector3f velocity = new Vector3f((float) (Math.random() * 0.3 - 0.15), (float) (Math.random() * 0.3 - 0.15), (float) (Math.random() * 0.3 - 0.15));
+        TNT_Entity entity = new TNT_Entity(fuse, position, velocity);
+        GameLogic.spawnEntity(entity);
+        GameLogic.placeBlock(AIR, targetPosition.x, targetPosition.y, targetPosition.z);
+    }
+
+    public static void spawnTNTEntity(Vector3i targetPosition, Vector3f velocity, int fuse) {
+        Vector3f position = new Vector3f(targetPosition.x + 0.5f, targetPosition.y + 0.25f, targetPosition.z + 0.5f);
         TNT_Entity entity = new TNT_Entity(fuse, position, velocity);
         GameLogic.spawnEntity(entity);
         GameLogic.placeBlock(AIR, targetPosition.x, targetPosition.y, targetPosition.z);

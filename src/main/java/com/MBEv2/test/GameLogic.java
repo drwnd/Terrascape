@@ -53,8 +53,6 @@ public class GameLogic {
     }
 
     public static void placeBlock(short block, int x, int y, int z) {
-        if (Chunk.getBlockInWorld(x, y, z) == block) return;
-
         int chunkX = x >> CHUNK_SIZE_BITS;
         int chunkY = y >> CHUNK_SIZE_BITS;
         int chunkZ = z >> CHUNK_SIZE_BITS;
@@ -64,7 +62,9 @@ public class GameLogic {
         int inChunkZ = z & CHUNK_SIZE - 1;
 
         Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
+        if (chunk == null) return;
         short previousBlock = chunk.getSaveBlock(inChunkX, inChunkY, inChunkZ);
+        if (previousBlock == block) return;
 
         chunk.placeBlock(inChunkX, inChunkY, inChunkZ, block);
         chunk.setModified();
@@ -156,7 +156,10 @@ public class GameLogic {
             if (entity.isDead()) iterator.remove();
         }
 
-        if (generatorRestartScheduled != 0) generator.restart(generatorRestartScheduled & 0xF);
+        if (generatorRestartScheduled != 0) {
+            generator.restart(generatorRestartScheduled & 0xF);
+            generatorRestartScheduled = 0;
+        }
     }
 
     public static void unloadChunks(int playerX, int playerY, int playerZ) {
