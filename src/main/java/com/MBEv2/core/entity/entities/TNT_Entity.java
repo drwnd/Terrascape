@@ -52,8 +52,6 @@ public class TNT_Entity extends Entity {
     @Override
     public void delete() {
         isDead = true;
-        ObjectLoader.removeVAO(vao);
-        ObjectLoader.removeVBO(vbo);
     }
 
     public static void init() {
