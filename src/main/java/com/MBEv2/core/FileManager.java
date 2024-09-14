@@ -117,15 +117,15 @@ public class FileManager {
     public static void saveChunk(Chunk chunk) {
         chunk.setSaved();
         try {
-            File chunkFile = new File(seedFile.getPath() + "/" + chunk.getId());
+            File chunkFile = new File(seedFile.getPath() + "/" + chunk.id);
 
             if (!chunkFile.exists()) //noinspection ResultOfMethodCallIgnored
                 chunkFile.createNewFile();
 
             FileOutputStream writer = new FileOutputStream(chunkFile.getPath());
-            writer.write(toByteArray(chunk.getChunkX()));
-            writer.write(toByteArray(chunk.getChunkY()));
-            writer.write(toByteArray(chunk.getChunkZ()));
+            writer.write(toByteArray(chunk.X));
+            writer.write(toByteArray(chunk.Y));
+            writer.write(toByteArray(chunk.Z));
 
             writer.write(toByteArray(chunk.getLightLength()));
             writer.write(toByteArray(chunk.getBlockLength()));
@@ -171,7 +171,7 @@ public class FileManager {
         chunk.setGenerated();
         chunk.setHasPropagatedBlockLight();
         chunk.setSaved();
-        Chunk.removeToGenerateBlocks(chunk.getId());
+        Chunk.removeToGenerateBlocks(chunk.id);
 
         return chunk;
     }
@@ -404,7 +404,7 @@ public class FileManager {
             Chunk[] newWorld = new Chunk[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
             for (Chunk chunk : Chunk.getWorld()) {
                 if (chunk == null) continue;
-                int newIndex = GameLogic.getChunkIndex(chunk.getChunkX(), chunk.getChunkY(), chunk.getChunkZ());
+                int newIndex = GameLogic.getChunkIndex(chunk.X, chunk.Y, chunk.Z);
                 chunk.setIndex(newIndex);
                 newWorld[newIndex] = chunk;
             }

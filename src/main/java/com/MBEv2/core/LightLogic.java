@@ -29,13 +29,13 @@ public class LightLogic {
             Chunk chunk = Chunk.getChunk(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS);
             if (chunk == null) continue;
 
-            int index = (x & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS * 2 | (z & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS | (y & CHUNK_SIZE - 1);
+            int index = (x & CHUNK_SIZE_MASK) << CHUNK_SIZE_BITS * 2 | (z & CHUNK_SIZE_MASK) << CHUNK_SIZE_BITS | (y & CHUNK_SIZE_MASK);
 
             if (chunk.getSaveBlockLight(index) >= currentBlockLight && ignoreChecksCounter <= 0) continue;
 
             chunk.storeSaveBlockLight(index, currentBlockLight);
             chunk.setMeshed(false);
-            unMeshNextChunkIfNecessary(x & CHUNK_SIZE - 1, y & CHUNK_SIZE - 1, z & CHUNK_SIZE - 1, chunk);
+            unMeshNextChunkIfNecessary(x & CHUNK_SIZE_MASK, y & CHUNK_SIZE_MASK, z & CHUNK_SIZE_MASK, chunk);
             chunk.setModified();
 
             byte nextBlockLight = (byte) (currentBlockLight - 1);
@@ -89,7 +89,7 @@ public class LightLogic {
             Chunk chunk = Chunk.getChunk(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS);
             if (chunk == null) continue;
 
-            byte currentBlockLight = chunk.getSaveBlockLight(x & CHUNK_SIZE - 1, y & CHUNK_SIZE - 1, z & CHUNK_SIZE - 1);
+            byte currentBlockLight = chunk.getSaveBlockLight(x & CHUNK_SIZE_MASK, y & CHUNK_SIZE_MASK, z & CHUNK_SIZE_MASK);
             if (currentBlockLight == 0) continue;
 
             if (currentBlockLight >= lastBlockLight) {
@@ -99,10 +99,10 @@ public class LightLogic {
                 continue;
             }
 
-            int index = (x & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS * 2 | (z & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS | (y & CHUNK_SIZE - 1);
+            int index = (x & CHUNK_SIZE_MASK) << CHUNK_SIZE_BITS * 2 | (z & CHUNK_SIZE_MASK) << CHUNK_SIZE_BITS | y & CHUNK_SIZE_MASK;
             chunk.removeBlockLight(index);
             chunk.setMeshed(false);
-            unMeshNextChunkIfNecessary(x & CHUNK_SIZE - 1, y & CHUNK_SIZE - 1, z & CHUNK_SIZE - 1, chunk);
+            unMeshNextChunkIfNecessary(x & CHUNK_SIZE_MASK, y & CHUNK_SIZE_MASK, z & CHUNK_SIZE_MASK, chunk);
             chunk.setModified();
             short currentBlock = onFirstIteration ? AIR : chunk.getSaveBlock(index);
 
@@ -189,7 +189,7 @@ public class LightLogic {
         int z = chunkZ << CHUNK_SIZE_BITS;
 
         for (int totalY = y; totalY > y - (RENDERED_WORLD_HEIGHT << CHUNK_SIZE_BITS); totalY -= CHUNK_SIZE) {
-            for (int totalX = x, maxX = (x) + CHUNK_SIZE; totalX < maxX; totalX++)
+            for (int totalX = x, maxX = x + CHUNK_SIZE; totalX < maxX; totalX++)
                 for (int totalZ = z, maxZ = z + CHUNK_SIZE; totalZ < maxZ; totalZ++) {
                     if (totalY < heightMap[(totalX & CHUNK_SIZE_MASK) << CHUNK_SIZE_BITS | totalZ & CHUNK_SIZE_MASK])
                         continue;
@@ -226,13 +226,13 @@ public class LightLogic {
             Chunk chunk = Chunk.getChunk(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS);
             if (chunk == null) continue;
 
-            int index = (x & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS * 2 | (z & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS | (y & CHUNK_SIZE - 1);
+            int index = (x & CHUNK_SIZE_MASK) << CHUNK_SIZE_BITS * 2 | (z & CHUNK_SIZE_MASK) << CHUNK_SIZE_BITS | y & CHUNK_SIZE_MASK;
 
             if (chunk.getSaveSkyLight(index) >= currentSkyLight && ignoreChecksCounter <= 0) continue;
 
             chunk.storeSaveSkyLight(index, currentSkyLight);
             chunk.setMeshed(false);
-            unMeshNextChunkIfNecessary(x & CHUNK_SIZE - 1, y & CHUNK_SIZE - 1, z & CHUNK_SIZE - 1, chunk);
+            unMeshNextChunkIfNecessary(x & CHUNK_SIZE_MASK, y & CHUNK_SIZE_MASK, z & CHUNK_SIZE_MASK, chunk);
 
             byte nextSkyLight = (byte) (currentSkyLight - 1);
             short currentBlock = chunk.getSaveBlock(index);
@@ -287,7 +287,7 @@ public class LightLogic {
             Chunk chunk = Chunk.getChunk(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS);
             if (chunk == null) continue;
 
-            byte currentSkyLight = chunk.getSaveSkyLight(x & CHUNK_SIZE - 1, y & CHUNK_SIZE - 1, z & CHUNK_SIZE - 1);
+            byte currentSkyLight = chunk.getSaveSkyLight(x & CHUNK_SIZE_MASK, y & CHUNK_SIZE_MASK, z & CHUNK_SIZE_MASK);
             if (currentSkyLight == 0) continue;
 
             if (currentSkyLight >= lastSkyLight) {
@@ -297,10 +297,10 @@ public class LightLogic {
                 continue;
             }
 
-            int index = (x & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS * 2 | (z & CHUNK_SIZE - 1) << CHUNK_SIZE_BITS | (y & CHUNK_SIZE - 1);
+            int index = (x & CHUNK_SIZE_MASK) << CHUNK_SIZE_BITS * 2 | (z & CHUNK_SIZE_MASK) << CHUNK_SIZE_BITS | (y & CHUNK_SIZE_MASK);
             chunk.removeSkyLight(index);
             chunk.setMeshed(false);
-            unMeshNextChunkIfNecessary(x & CHUNK_SIZE - 1, y & CHUNK_SIZE - 1, z & CHUNK_SIZE - 1, chunk);
+            unMeshNextChunkIfNecessary(x & CHUNK_SIZE_MASK, y & CHUNK_SIZE_MASK, z & CHUNK_SIZE_MASK, chunk);
             short currentBlock = onFirstIteration ? AIR : chunk.getSaveBlock(index);
 
             short nextBlock = Chunk.getBlockInWorld(x + 1, y, z);
@@ -376,15 +376,15 @@ public class LightLogic {
                 Block.isGlassType(destinationBlock) || Block.isLeaveType(destinationBlock);
     }
 
-    private static void unMeshNextChunkIfNecessary(int x, int y, int z, Chunk chunk) {
-        if (x == 0) unMeshChunk(chunk.getChunkX() - 1, chunk.getChunkY(), chunk.getChunkZ());
-        else if (x == CHUNK_SIZE - 1) unMeshChunk(chunk.getChunkX() + 1, chunk.getChunkY(), chunk.getChunkZ());
+    private static void unMeshNextChunkIfNecessary(int inChunkX, int inChunkY, int inChunkZ, Chunk chunk) {
+        if (inChunkX == 0) unMeshChunk(chunk.X - 1, chunk.Y, chunk.Z);
+        else if (inChunkX == CHUNK_SIZE - 1) unMeshChunk(chunk.X + 1, chunk.Y, chunk.Z);
 
-        if (y == 0) unMeshChunk(chunk.getChunkX(), chunk.getChunkY() - 1, chunk.getChunkZ());
-        else if (y == CHUNK_SIZE - 1) unMeshChunk(chunk.getChunkX(), chunk.getChunkY() + 1, chunk.getChunkZ());
+        if (inChunkY == 0) unMeshChunk(chunk.X, chunk.Y - 1, chunk.Z);
+        else if (inChunkY == CHUNK_SIZE - 1) unMeshChunk(chunk.X, chunk.Y + 1, chunk.Z);
 
-        if (z == 0) unMeshChunk(chunk.getChunkX(), chunk.getChunkY(), chunk.getChunkZ() - 1);
-        else if (z == CHUNK_SIZE - 1) unMeshChunk(chunk.getChunkX(), chunk.getChunkY(), chunk.getChunkZ() + 1);
+        if (inChunkZ == 0) unMeshChunk(chunk.X, chunk.Y, chunk.Z - 1);
+        else if (inChunkZ == CHUNK_SIZE - 1) unMeshChunk(chunk.X, chunk.Y, chunk.Z + 1);
     }
 
     private static void unMeshChunk(int chunkX, int chunkY, int ChunkZ) {

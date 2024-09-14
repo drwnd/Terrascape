@@ -1,5 +1,6 @@
 package com.MBEv2.core;
 
+import com.MBEv2.core.entity.Entity;
 import com.MBEv2.core.entity.Model;
 import com.MBEv2.test.GameLogic;
 import org.joml.Vector3i;
@@ -16,14 +17,15 @@ public class Chunk {
 
     private short[] blocks;
     private byte[] light;
+    private final LinkedList<Entity>[] entityClusters = new LinkedList[64];
 
     private int[][] vertices = new int[6][0];
-    private int[] waterVertices;
-    private int[] foliageVertices;
+    private int[] waterVertices = new int[0];
+    private int[] foliageVertices = new int[0];
 
-    private final int X, Y, Z;
+    public final int X, Y, Z;
+    public final long id;
     private final Vector3i worldCoordinate;
-    private final long id;
     private int index;
 
     private boolean isMeshed = false;
@@ -50,6 +52,8 @@ public class Chunk {
         id = GameLogic.getChunkId(X, Y, Z);
         index = GameLogic.getChunkIndex(X, Y, Z);
         model = new Model[6];
+
+        for (int i = 0; i < entityClusters.length; i++) entityClusters[i] = new LinkedList<>();
     }
 
     public Chunk(int x, int y, int z, byte[] light, short[] blocks) {
@@ -64,6 +68,8 @@ public class Chunk {
         id = GameLogic.getChunkId(X, Y, Z);
         index = GameLogic.getChunkIndex(X, Y, Z);
         model = new Model[6];
+
+        for (int i = 0; i < entityClusters.length; i++) entityClusters[i] = new LinkedList<>();
     }
 
     public void optimizeBlockStorage() {
@@ -84,12 +90,13 @@ public class Chunk {
 //        System.out.println("Optimized light Storage! + BlockLight: " + getSaveBlockLight(0) + " SkyLight: " + getSaveSkyLight(0));
     }
 
-    public void setOcclusionCullingSidePair(int side1, int side2) {
-        if (side1 == side2) return;
+    public short setOcclusionCullingSidePair(int side1, int side2, short occlusionCullingData) {
+        if (side1 == side2) return occlusionCullingData;
         int largerSide = Math.max(side1, side2);
         int smallerSide = Math.min(side1, side2);
 
         occlusionCullingData = (short) (occlusionCullingData | 1 << OCCLUSION_CULLING_LARGER_SIDE_OFFSETS[largerSide - 1] + smallerSide);
+        return occlusionCullingData;
     }
 
     public boolean readOcclusionCullingSidePair(int side1, int side2) {
@@ -101,7 +108,7 @@ public class Chunk {
     }
 
     public void generateOcclusionCullingData() {
-        occlusionCullingData = 0;
+        short occlusionCullingData = 0;
 
         int[] visitedBlocks = new int[CHUNK_SIZE * CHUNK_SIZE];
         ArrayList<Integer> toVisitBlockIndexes = new ArrayList<>();
@@ -109,8 +116,11 @@ public class Chunk {
         if (blocks.length == 1) {
             if (Block.getBlockType(blocks[0]) != FULL_BLOCK) occlusionCullingData = 0x7FFF;
             for (byte light : light)
-                if (light != 0) return;
-            occlusionCullingData |= (short) 0x8000;
+                if (light != 0) {
+                    this.occlusionCullingData = occlusionCullingData;
+                    return;
+                }
+            this.occlusionCullingData = (short) (occlusionCullingData | (short) 0x8000);
             return;
         }
 
@@ -167,14 +177,19 @@ public class Chunk {
             for (int side1 = 0; side1 < 6; side1++) {
                 if ((visitedSides & 1 << side1) == 0) continue;
                 for (int side2 = side1 + 1; side2 < 6; side2++) {
-                    if ((visitedSides & 1 << side2) != 0) setOcclusionCullingSidePair(side1, side2);
+                    if ((visitedSides & 1 << side2) != 0)
+                        occlusionCullingData = setOcclusionCullingSidePair(side1, side2, occlusionCullingData);
                 }
             }
         }
 
         for (byte light : light)
-            if (light != 0) return;
+            if (light != 0) {
+                this.occlusionCullingData = occlusionCullingData;
+                return;
+            }
         occlusionCullingData |= (short) 0x8000;
+        this.occlusionCullingData = occlusionCullingData;
     }
 
     public void propagateBlockLight() {
@@ -203,7 +218,7 @@ public class Chunk {
                         storeChunk(chunk);
                         if (!chunk.isGenerated) WorldGeneration.generate(chunk);
 
-                    } else if (chunk.getId() != expectedId) {
+                    } else if (chunk.id != expectedId) {
                         GameLogic.addToUnloadChunk(chunk);
 
                         if (chunk.isModified) FileManager.saveChunk(chunk);
@@ -346,7 +361,7 @@ public class Chunk {
             if (blocks.length == 1) chunk.blocks = new short[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
             chunk.storeSave(inChunkX, inChunkY, inChunkZ, block);
 
-            int[] heightMap = getHeightMap(chunk.getChunkX(), chunk.getChunkZ());
+            int[] heightMap = getHeightMap(chunk.X, chunk.Z);
             if (y > heightMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ])
                 heightMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ] = y;
         }
@@ -519,10 +534,6 @@ public class Chunk {
         this.waterModel = waterModel;
     }
 
-    public long getId() {
-        return id;
-    }
-
     public int getIndex() {
         return index;
     }
@@ -559,18 +570,6 @@ public class Chunk {
         synchronized (toGenerateBlocks) {
             return toGenerateBlocks.remove(id);
         }
-    }
-
-    public int getChunkX() {
-        return X;
-    }
-
-    public int getChunkY() {
-        return Y;
-    }
-
-    public int getChunkZ() {
-        return Z;
     }
 
     public boolean hasPropagatedBlockLight() {
@@ -639,5 +638,20 @@ public class Chunk {
 
     public void setVertices(int[] vertices, int side) {
         this.vertices[side] = vertices;
+    }
+
+    public LinkedList<Entity> getEntityCluster(int entityClusterIndex) {
+        return entityClusters[entityClusterIndex];
+    }
+
+    public LinkedList<Entity>[] getEntityClusters() {
+        return entityClusters;
+    }
+
+    public static LinkedList<Entity> getEntityCluster(int clusterX, int clusterY, int clusterZ) {
+        Chunk chunk = getChunk(clusterX >> ENTITY_CLUSTER_TO_CHUNK_BITS, clusterY >> ENTITY_CLUSTER_TO_CHUNK_BITS, clusterZ >> ENTITY_CLUSTER_TO_CHUNK_BITS);
+        if (chunk == null) return null;
+        int index = GameLogic.getEntityClusterIndex(clusterX & ENTITY_CLUSTER_SIZE_BITS, clusterY & ENTITY_CLUSTER_SIZE_BITS, clusterZ & ENTITY_CLUSTER_SIZE_BITS);
+        return chunk.getEntityCluster(index);
     }
 }

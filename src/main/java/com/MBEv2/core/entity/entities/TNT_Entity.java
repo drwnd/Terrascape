@@ -1,19 +1,24 @@
 package com.MBEv2.core.entity.entities;
 
-import com.MBEv2.core.Block;
-import com.MBEv2.core.Chunk;
+import com.MBEv2.core.*;
 import com.MBEv2.core.entity.Entity;
 import com.MBEv2.core.utils.Utils;
 import com.MBEv2.test.GameLogic;
 import org.joml.Vector3f;
 import org.joml.Vector3i;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL30;
+
+import java.util.LinkedList;
 
 import static com.MBEv2.core.utils.Constants.*;
-import static com.MBEv2.core.utils.Constants.CHUNK_SIZE_BITS;
 
 public class TNT_Entity extends Entity {
     private static final float[] TNT_AABB = new float[]{-0.5f, 0.5f, -0.25f, 0.75f, -0.5f, 0.5f};
-    public static int vao;
+    private static final int EXPLOSION_STRENGTH = 2;
+    public static int vao, vbo;
 
     private int fuse;
 
@@ -26,61 +31,94 @@ public class TNT_Entity extends Entity {
 
     @Override
     public void update() {
-        fuse++;
+        fuse--;
         move();
 
-        if (fuse >= 80) {
+        if (fuse <= 0) {
             explode();
             delete();
         }
     }
 
     @Override
-    public int getVAO() {
-        return vao;
-    }
+    protected void renderUnique(ShaderManager shader, RenderManager renderer, int modelIndexBuffer, float timeSinceLastTick) {
+        GL30.glBindVertexArray(vao);
+        GL20.glEnableVertexAttribArray(0);
+        GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, modelIndexBuffer);
 
-    @Override
-    public int getVertexCount() {
-        return 36;
+        GL11.glDrawElements(GL11.GL_TRIANGLES, 36, GL11.GL_UNSIGNED_INT, 0);
     }
 
     @Override
     public void delete() {
         isDead = true;
+        ObjectLoader.removeVAO(vao);
+        ObjectLoader.removeVBO(vbo);
+    }
+
+    public static void init() {
+        long vao_vbo = ObjectLoader.loadVAO_VBO(TNT_Entity.TNTEntityVertices());
+        vao = (int) (vao_vbo >> 32 & 0xFFFFFFFFL);
+        vbo = (int) (vao_vbo & 0xFFFFFFFFL);
     }
 
     public void explode() {
+        castExplosionRay(position, -0.8164965809277261, -0.4082482904638631, -0.4082482904638631, EXPLOSION_STRENGTH);
+        castExplosionRay(position, -0.8944271909999159, -0.4472135954999579, 0.0, EXPLOSION_STRENGTH);
+        castExplosionRay(position, -0.8164965809277261, -0.4082482904638631, 0.4082482904638631, EXPLOSION_STRENGTH);
+        castExplosionRay(position, -0.8944271909999159, 0.0, -0.4472135954999579, EXPLOSION_STRENGTH);
+        castExplosionRay(position, -1.0, 0.0, 0.0, EXPLOSION_STRENGTH);
+        castExplosionRay(position, -0.8944271909999159, 0.0, 0.4472135954999579, EXPLOSION_STRENGTH);
+        castExplosionRay(position, -0.8164965809277261, 0.4082482904638631, -0.4082482904638631, EXPLOSION_STRENGTH);
+        castExplosionRay(position, -0.8944271909999159, 0.4472135954999579, 0.0, EXPLOSION_STRENGTH);
+        castExplosionRay(position, -0.8164965809277261, 0.4082482904638631, 0.4082482904638631, EXPLOSION_STRENGTH);
+        castExplosionRay(position, -0.4082482904638631, -0.8164965809277261, -0.4082482904638631, EXPLOSION_STRENGTH);
+        castExplosionRay(position, -0.4472135954999579, -0.8944271909999159, 0.0, EXPLOSION_STRENGTH);
+        castExplosionRay(position, -0.4082482904638631, -0.8164965809277261, 0.4082482904638631, EXPLOSION_STRENGTH);
+        castExplosionRay(position, -0.4082482904638631, -0.4082482904638631, -0.8164965809277261, EXPLOSION_STRENGTH);
+        castExplosionRay(position, -0.4082482904638631, -0.4082482904638631, 0.8164965809277261, EXPLOSION_STRENGTH);
+        castExplosionRay(position, -0.4472135954999579, 0.0, -0.8944271909999159, EXPLOSION_STRENGTH);
+        castExplosionRay(position, -0.4472135954999579, 0.0, 0.8944271909999159, EXPLOSION_STRENGTH);
+        castExplosionRay(position, -0.4082482904638631, 0.4082482904638631, -0.8164965809277261, EXPLOSION_STRENGTH);
+        castExplosionRay(position, -0.4082482904638631, 0.4082482904638631, 0.8164965809277261, EXPLOSION_STRENGTH);
+        castExplosionRay(position, -0.4082482904638631, 0.8164965809277261, -0.4082482904638631, EXPLOSION_STRENGTH);
+        castExplosionRay(position, -0.4472135954999579, 0.8944271909999159, 0.0, EXPLOSION_STRENGTH);
+        castExplosionRay(position, -0.4082482904638631, 0.8164965809277261, 0.4082482904638631, EXPLOSION_STRENGTH);
+        castExplosionRay(position, 0.0, -0.8944271909999159, -0.4472135954999579, EXPLOSION_STRENGTH);
+        castExplosionRay(position, 0.0, -1.0, 0.0, EXPLOSION_STRENGTH);
+        castExplosionRay(position, 0.0, -0.8944271909999159, 0.4472135954999579, EXPLOSION_STRENGTH);
+        castExplosionRay(position, 0.0, -0.4472135954999579, -0.8944271909999159, EXPLOSION_STRENGTH);
+        castExplosionRay(position, 0.0, -0.4472135954999579, 0.8944271909999159, EXPLOSION_STRENGTH);
+        castExplosionRay(position, 0.0, 0.0, -1.0, EXPLOSION_STRENGTH);
+        castExplosionRay(position, 0.0, 0.0, 1.0, EXPLOSION_STRENGTH);
+        castExplosionRay(position, 0.0, 0.4472135954999579, -0.8944271909999159, EXPLOSION_STRENGTH);
+        castExplosionRay(position, 0.0, 0.4472135954999579, 0.8944271909999159, EXPLOSION_STRENGTH);
+        castExplosionRay(position, 0.0, 0.8944271909999159, -0.4472135954999579, EXPLOSION_STRENGTH);
+        castExplosionRay(position, 0.0, 1.0, 0.0, EXPLOSION_STRENGTH);
+        castExplosionRay(position, 0.0, 0.8944271909999159, 0.4472135954999579, EXPLOSION_STRENGTH);
+        castExplosionRay(position, 0.4082482904638631, -0.8164965809277261, -0.4082482904638631, EXPLOSION_STRENGTH);
+        castExplosionRay(position, 0.4472135954999579, -0.8944271909999159, 0.0, EXPLOSION_STRENGTH);
+        castExplosionRay(position, 0.4082482904638631, -0.8164965809277261, 0.4082482904638631, EXPLOSION_STRENGTH);
+        castExplosionRay(position, 0.4082482904638631, -0.4082482904638631, -0.8164965809277261, EXPLOSION_STRENGTH);
+        castExplosionRay(position, 0.4082482904638631, -0.4082482904638631, 0.8164965809277261, EXPLOSION_STRENGTH);
+        castExplosionRay(position, 0.4472135954999579, 0.0, -0.8944271909999159, EXPLOSION_STRENGTH);
+        castExplosionRay(position, 0.4472135954999579, 0.0, 0.8944271909999159, EXPLOSION_STRENGTH);
+        castExplosionRay(position, 0.4082482904638631, 0.4082482904638631, -0.8164965809277261, EXPLOSION_STRENGTH);
+        castExplosionRay(position, 0.4082482904638631, 0.4082482904638631, 0.8164965809277261, EXPLOSION_STRENGTH);
+        castExplosionRay(position, 0.4082482904638631, 0.8164965809277261, -0.4082482904638631, EXPLOSION_STRENGTH);
+        castExplosionRay(position, 0.4472135954999579, 0.8944271909999159, 0.0, EXPLOSION_STRENGTH);
+        castExplosionRay(position, 0.4082482904638631, 0.8164965809277261, 0.4082482904638631, EXPLOSION_STRENGTH);
+        castExplosionRay(position, 0.8164965809277261, -0.4082482904638631, -0.4082482904638631, EXPLOSION_STRENGTH);
+        castExplosionRay(position, 0.8944271909999159, -0.4472135954999579, 0.0, EXPLOSION_STRENGTH);
+        castExplosionRay(position, 0.8164965809277261, -0.4082482904638631, 0.4082482904638631, EXPLOSION_STRENGTH);
+        castExplosionRay(position, 0.8944271909999159, 0.0, -0.4472135954999579, EXPLOSION_STRENGTH);
+        castExplosionRay(position, 1.0, 0.0, 0.0, EXPLOSION_STRENGTH);
+        castExplosionRay(position, 0.8944271909999159, 0.0, 0.4472135954999579, EXPLOSION_STRENGTH);
+        castExplosionRay(position, 0.8164965809277261, 0.4082482904638631, -0.4082482904638631, EXPLOSION_STRENGTH);
+        castExplosionRay(position, 0.8944271909999159, 0.4472135954999579, 0.0, EXPLOSION_STRENGTH);
+        castExplosionRay(position, 0.8164965809277261, 0.4082482904638631, 0.4082482904638631, EXPLOSION_STRENGTH);
 
-        //Corners
-        castExplosionRay(position, -0.5773502691896258, -0.5773502691896258, -0.5773502691896258, 5);
-        castExplosionRay(position, -0.5773502691896258, -0.5773502691896258, 0.5773502691896258, 5);
-        castExplosionRay(position, -0.5773502691896258, 0.5773502691896258, -0.5773502691896258, 5);
-        castExplosionRay(position, -0.5773502691896258, 0.5773502691896258, 0.5773502691896258, 5);
-        castExplosionRay(position, 0.5773502691896258, -0.5773502691896258, -0.5773502691896258, 5);
-        castExplosionRay(position, 0.5773502691896258, -0.5773502691896258, 0.5773502691896258, 5);
-        castExplosionRay(position, 0.5773502691896258, 0.5773502691896258, -0.5773502691896258, 5);
-        castExplosionRay(position, 0.5773502691896258, 0.5773502691896258, 0.5773502691896258, 5);
-        //Edges
-        castExplosionRay(position, 0.7071067811865475, 0.7071067811865475, 0, 5);
-        castExplosionRay(position, 0.7071067811865475, -0.7071067811865475, 0, 5);
-        castExplosionRay(position, -0.7071067811865475, 0.7071067811865475, 0, 5);
-        castExplosionRay(position, -0.7071067811865475, -0.7071067811865475, 0, 5);
-        castExplosionRay(position, 0.7071067811865475, 0, 0.7071067811865475, 5);
-        castExplosionRay(position, 0.7071067811865475, 0, -0.7071067811865475, 5);
-        castExplosionRay(position, -0.7071067811865475, 0, 0.7071067811865475, 5);
-        castExplosionRay(position, -0.7071067811865475, 0, -0.7071067811865475, 5);
-        castExplosionRay(position, 0, 0.7071067811865475, 0.7071067811865475, 5);
-        castExplosionRay(position, 0, 0.7071067811865475, -0.7071067811865475, 5);
-        castExplosionRay(position, 0, -0.7071067811865475, 0.7071067811865475, 5);
-        castExplosionRay(position, 0, -0.7071067811865475, -0.7071067811865475, 5);
-        //Middle
-        castExplosionRay(position, 0, 0, 1, 5);
-        castExplosionRay(position, 0, 0, -1, 5);
-        castExplosionRay(position, 0, 1, 0, 5);
-        castExplosionRay(position, 0, -1, 0, 5);
-        castExplosionRay(position, 1, 0, 0, 5);
-        castExplosionRay(position, -1, 0, 0, 5);
+        pushEntities();
     }
 
     public static void castExplosionRay(Vector3f origin, double dirX, double dirY, double dirZ, int blastStrength) {
@@ -112,23 +150,15 @@ public class TNT_Entity extends Entity {
             if (blockType == LIQUID_TYPE) return;
             if (blockType != AIR_TYPE) {
                 blastResistance++;
-                int inChunkX = x & CHUNK_SIZE_MASK;
-                int inChunkY = y & CHUNK_SIZE_MASK;
-                int inChunkZ = z & CHUNK_SIZE_MASK;
-                Chunk chunk = Chunk.getChunk(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS);
-                chunk.placeBlock(inChunkX, inChunkY, inChunkZ, AIR);
-                chunk.setMeshed(false);
-                chunk.setModified();
-                GameLogic.addBlockChange(x, y, z, block);
-                GameLogic.restartGenerator(NONE);
+                GameLogic.placeBlock(AIR, x, y, z, false);
                 if (block == TNT) {
                     Vector3i targetPosition = new Vector3i(x, y, z);
-                    double distanceSquared = (x - origin.x) * (x - origin.x) + (y - origin.y) * (y - origin.y) + (z - origin.z) * (z - origin.z);
-                    Vector3f velocity = new Vector3f(
-                            (float) ((x - origin.x) / distanceSquared),
-                            (float) ((y - origin.y) / distanceSquared),
-                            (float) ((z - origin.z) / distanceSquared));
-                    spawnTNTEntity(targetPosition, velocity, 20 + (int) (Math.random() * 60));
+                    float deltaX = x + 0.5f - origin.x;
+                    float deltaY = y + 0.5f - origin.y;
+                    float deltaZ = z + 0.5f - origin.z;
+                    float modifier = Math.min(1.0f, 1.0f / (deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ));
+                    Vector3f velocity = new Vector3f(deltaX * modifier, deltaY * modifier, deltaZ * modifier);
+                    spawnTNTEntity(targetPosition, velocity, 10 + (int) (Math.random() * 70));
                 }
             }
 
@@ -148,6 +178,36 @@ public class TNT_Entity extends Entity {
         }
     }
 
+    public void pushEntities() {
+        int currentClusterX = Utils.floor(position.x) >> ENTITY_CLUSTER_SIZE_BITS;
+        int currentClusterY = Utils.floor(position.y) >> ENTITY_CLUSTER_SIZE_BITS;
+        int currentClusterZ = Utils.floor(position.z) >> ENTITY_CLUSTER_SIZE_BITS;
+
+        for (int clusterX = currentClusterX - 1; clusterX <= currentClusterX + 1; clusterX++)
+            for (int clusterZ = currentClusterZ - 1; clusterZ <= currentClusterZ + 1; clusterZ++)
+                for (int clusterY = currentClusterY - 1; clusterY <= currentClusterY + 1; clusterY++) {
+
+                    LinkedList<Entity> entityCluster = Chunk.getEntityCluster(clusterX, clusterY, clusterZ);
+                    if (entityCluster == null) continue;
+
+                    for (Entity entity : entityCluster) {
+
+                        Vector3f position = entity.getPosition();
+                        float deltaX = position.x - this.position.x;
+                        float deltaY = position.y - this.position.y;
+                        float deltaZ = position.z - this.position.z;
+
+                        float distanceSquared = deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ;
+                        if (distanceSquared < 0.01) continue;
+
+                        float modifier = Math.min(0.5f, 1.0f / distanceSquared);
+
+                        entity.addVelocity(deltaX * modifier, deltaY * modifier, deltaZ * modifier);
+                    }
+                }
+
+    }
+
     public static int[] TNTEntityVertices() {
         int sideTL = Byte.toUnsignedInt(TNT_SIDE_TEXTURE) - 1;
         int sideTR = Byte.toUnsignedInt(TNT_SIDE_TEXTURE);
@@ -165,40 +225,44 @@ public class TNT_Entity extends Entity {
         int bottomBR = Byte.toUnsignedInt(TNT_BOTTOM_TEXTURE) + 16;
 
         return new int[]{
-                packData(sideTL & 15, topTL >> 4, 4, 6, 4),
-                packData(sideBL & 15, topBL >> 4, 4, 6, -4),
-                packData(sideTR & 15, topTR >> 4, -4, 6, 4),
-                packData(sideBR & 15, topBR >> 4, -4, 6, -4),
+                packData((sideTL & 15) << 4, (topTL >> 4) << 4), packData(8, 12, 8),
+                packData((sideBL & 15) << 4, (topBL >> 4) << 4), packData(8, 12, -8),
+                packData((sideTR & 15) << 4, (topTR >> 4) << 4), packData(-8, 12, 8),
+                packData((sideBR & 15) << 4, (topBR >> 4) << 4), packData(-8, 12, -8),
 
-                packData(sideTL & 15, bottomTL >> 4, 4, -2, 4),
-                packData(sideTR & 15, bottomTR >> 4, -4, -2, 4),
-                packData(sideBL & 15, bottomBL >> 4, 4, -2, -4),
-                packData(sideBR & 15, bottomBR >> 4, -4, -2, -4),
+                packData((sideTL & 15) << 4, (bottomTL >> 4) << 4), packData(8, -4, 8),
+                packData((sideTR & 15) << 4, (bottomTR >> 4) << 4), packData(-8, -4, 8),
+                packData((sideBL & 15) << 4, (bottomBL >> 4) << 4), packData(8, -4, -8),
+                packData((sideBR & 15) << 4, (bottomBR >> 4) << 4), packData(-8, -4, -8),
 
-                packData(sideTL & 15, sideTL >> 4, 4, 6, 4),
-                packData(sideBL & 15, sideBL >> 4, 4, -2, 4),
-                packData(sideTR & 15, sideTR >> 4, 4, 6, -4),
-                packData(sideBR & 15, sideBR >> 4, 4, -2, -4),
+                packData((sideTL & 15) << 4, (sideTL >> 4) << 4), packData(8, 12, 8),
+                packData((sideBL & 15) << 4, (sideBL >> 4) << 4), packData(8, -4, 8),
+                packData((sideTR & 15) << 4, (sideTR >> 4) << 4), packData(8, 12, -8),
+                packData((sideBR & 15) << 4, (sideBR >> 4) << 4), packData(8, -4, -8),
 
-                packData(sideTL & 15, sideTL >> 4, -4, 6, 4),
-                packData(sideBL & 15, sideBL >> 4, -4, -2, 4),
-                packData(sideTR & 15, sideTR >> 4, 4, 6, 4),
-                packData(sideBR & 15, sideBR >> 4, 4, -2, 4),
+                packData((sideTL & 15) << 4, (sideTL >> 4) << 4), packData(-8, 12, 8),
+                packData((sideBL & 15) << 4, (sideBL >> 4) << 4), packData(-8, -4, 8),
+                packData((sideTR & 15) << 4, (sideTR >> 4) << 4), packData(8, 12, 8),
+                packData((sideBR & 15) << 4, (sideBR >> 4) << 4), packData(8, -4, 8),
 
-                packData(sideTL & 15, sideTL >> 4, -4, 6, -4),
-                packData(sideBL & 15, sideBL >> 4, -4, -2, -4),
-                packData(sideTR & 15, sideTR >> 4, -4, 6, 4),
-                packData(sideBR & 15, sideBR >> 4, -4, -2, 4),
+                packData((sideTL & 15) << 4, (sideTL >> 4) << 4), packData(-8, 12, -8),
+                packData((sideBL & 15) << 4, (sideBL >> 4) << 4), packData(-8, -4, -8),
+                packData((sideTR & 15) << 4, (sideTR >> 4) << 4), packData(-8, 12, 8),
+                packData((sideBR & 15) << 4, (sideBR >> 4) << 4), packData(-8, -4, 8),
 
-                packData(sideTL & 15, sideTL >> 4, 4, 6, -4),
-                packData(sideBL & 15, sideBL >> 4, 4, -2, -4),
-                packData(sideTR & 15, sideTR >> 4, -4, 6, -4),
-                packData(sideBR & 15, sideBR >> 4, -4, -2, -4),
+                packData((sideTL & 15) << 4, (sideTL >> 4) << 4), packData(8, 12, -8),
+                packData((sideBL & 15) << 4, (sideBL >> 4) << 4), packData(8, -4, -8),
+                packData((sideTR & 15) << 4, (sideTR >> 4) << 4), packData(-8, 12, -8),
+                packData((sideBR & 15) << 4, (sideBR >> 4) << 4), packData(-8, -4, -8),
         };
     }
 
-    private static int packData(int u, int v, int x, int y, int z) {
-        return u << 23 | v << 14 | (x + 7) << 8 | (y + 7) << 4 | (z + 7);
+    public static int packData(int x, int y, int z) {
+        return x + 511 << 20 | y + 511 << 10 | z + 511;
+    }
+
+    public static int packData(int u, int v) {
+        return u + 15 << 9 | v + 15;
     }
 
     public static void spawnTNTEntity(Vector3i targetPosition, int fuse) {
@@ -206,13 +270,12 @@ public class TNT_Entity extends Entity {
         Vector3f velocity = new Vector3f((float) (Math.random() * 0.3 - 0.15), (float) (Math.random() * 0.3 - 0.15), (float) (Math.random() * 0.3 - 0.15));
         TNT_Entity entity = new TNT_Entity(fuse, position, velocity);
         GameLogic.spawnEntity(entity);
-        GameLogic.placeBlock(AIR, targetPosition.x, targetPosition.y, targetPosition.z);
+        GameLogic.placeBlock(AIR, targetPosition.x, targetPosition.y, targetPosition.z, true);
     }
 
     public static void spawnTNTEntity(Vector3i targetPosition, Vector3f velocity, int fuse) {
         Vector3f position = new Vector3f(targetPosition.x + 0.5f, targetPosition.y + 0.25f, targetPosition.z + 0.5f);
         TNT_Entity entity = new TNT_Entity(fuse, position, velocity);
         GameLogic.spawnEntity(entity);
-        GameLogic.placeBlock(AIR, targetPosition.x, targetPosition.y, targetPosition.z);
     }
 }

@@ -14,6 +14,9 @@ public class Constants {
     public static final int CHUNK_SIZE_MASK = CHUNK_SIZE - 1;
     public static final int MAX_CHUNKS_XZ = 0x7FFFFFF;
     public static final int MAX_CHUNKS_Y = 0x3FF;
+    public static final int ENTITY_CLUSTER_SIZE_BITS = 3;
+    public static final int IN_CHUNK_ENTITY_CLUSTER_MASK = 3;
+    public static final int ENTITY_CLUSTER_TO_CHUNK_BITS = CHUNK_SIZE_BITS - ENTITY_CLUSTER_SIZE_BITS;
 
     //Other useful stuff
     public static final int MAX_BLOCK_LIGHT_VALUE = 15;
@@ -57,6 +60,7 @@ public class Constants {
     public static final int NO_COLLISION = 2;
     public static final int INTERACTABLE = 4;
     public static final int REPLACEABLE = 8;
+//    public static final int BLAST_RESISTANT = 16;
 
     //Indices for information on block types
     public static final int FULL_BLOCK = 0;

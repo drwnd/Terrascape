@@ -1,14 +1,11 @@
 package com.MBEv2.core.entity;
 
-import com.MBEv2.core.Block;
-import com.MBEv2.core.Chunk;
-import com.MBEv2.core.ObjectLoader;
+import com.MBEv2.core.*;
 import com.MBEv2.core.entity.entities.TNT_Entity;
 import com.MBEv2.core.utils.Utils;
 import org.joml.Vector3f;
 
 import static com.MBEv2.core.utils.Constants.*;
-
 
 public abstract class Entity {
 
@@ -17,17 +14,29 @@ public abstract class Entity {
     protected float[] aabb;
     protected boolean isDead = false;
 
-    public static void init() {
-        TNT_Entity.vao = ObjectLoader.loadVAO(TNT_Entity.TNTEntityVertices());
+    public static void initAll() {
+        TNT_Entity.init();
     }
 
     public abstract void update();
 
-    public abstract int getVAO();
-
-    public abstract int getVertexCount();
+    protected abstract void renderUnique(ShaderManager shader, RenderManager renderer, int modelIndexBuffer, float timeSinceLastTick);
 
     public abstract void delete();
+
+    public void render(ShaderManager shader, RenderManager renderer, int modelIndexBuffer, float timeSinceLastTick) {
+        int x = Utils.floor(position.x);
+        int y = Utils.floor(position.y);
+        int z = Utils.floor(position.z);
+
+        shader.setUniform("position",
+                position.x - (0.05f - timeSinceLastTick) * velocity.x,
+                position.y - (0.05f - timeSinceLastTick) * velocity.y,
+                position.z - (0.05f - timeSinceLastTick) * velocity.z);
+        shader.setUniform("lightLevel", Chunk.getLightInWorld(x, y, z));
+
+        renderUnique(shader, renderer, modelIndexBuffer, timeSinceLastTick);
+    }
 
     public void move() {
         velocity.mul(Player.AIR_FRICTION);
@@ -84,7 +93,7 @@ public abstract class Entity {
         return position;
     }
 
-    public Vector3f getVelocity() {
-        return velocity;
+    public void addVelocity(float x, float y, float z) {
+        velocity.add(x, y, z);
     }
 }

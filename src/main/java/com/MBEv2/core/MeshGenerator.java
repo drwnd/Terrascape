@@ -23,14 +23,17 @@ public class MeshGenerator {
 
     public void generateMesh() {
         chunk.setMeshed(true);
-        ArrayList<ArrayList<Integer>> verticesList = new ArrayList<>(6);
-        ArrayList<Integer> foliageVerticesList = new ArrayList<>();
-        ArrayList<Integer> waterVerticesList = new ArrayList<>();
-        for (int side = 0; side < 6; side++) verticesList.add(new ArrayList<>());
 
         chunk.generateSurroundingChunks();
         if (chunk.getLightLength() != 1) chunk.optimizeLightStorage();
         chunk.generateOcclusionCullingData();
+
+        if (chunk.getBlockLength() == 1 && chunk.getSaveBlock(0) == AIR) return;
+
+        ArrayList<Integer>[] verticesLists = new ArrayList[6];
+        ArrayList<Integer> foliageVerticesList = new ArrayList<>();
+        ArrayList<Integer> waterVerticesList = new ArrayList<>();
+        for (int side = 0; side < 6; side++) verticesLists[side] = new ArrayList<>();
 
         for (blockX = 0; blockX < CHUNK_SIZE; blockX++)
             for (blockZ = 0; blockZ < CHUNK_SIZE; blockZ++)
@@ -54,12 +57,12 @@ public class MeshGenerator {
 
                         if (block == WATER) addWaterSideToList(waterVerticesList);
                         else if (Block.isLeaveType(block)) addFoliageSideToList(foliageVerticesList, u, v);
-                        else addSideToList(u, v, verticesList.get(side));
+                        else addSideToList(u, v, verticesLists[side]);
                     }
                 }
 
         for (int side = 0; side < 6; side++) {
-            ArrayList<Integer> sideVertices = verticesList.get(side);
+            ArrayList<Integer> sideVertices = verticesLists[side];
             int[] vertices = new int[sideVertices.size()];
             for (int i = 0, size = sideVertices.size(); i < size; i++)
                 vertices[i] = sideVertices.get(i);

@@ -1,6 +1,6 @@
 #version 400 core
 
-in int data;
+in ivec2 data;
 
 out vec2 fragTextureCoordinates;
 out float fragLight;
@@ -13,11 +13,11 @@ uniform float time;
 
 void main() {
 
-    float u = (data >> 23 & 511) * 0.0625;
-    float v = (data >> 14 & 511) * 0.0625;
-    float x = ((data >> 8 & 15) - 7) * 0.125;
-    float y = ((data >> 4 & 15) - 7) * 0.125;
-    float z = ((data & 15) - 7) * 0.125;
+    float x = ((data.y >> 20 & 1023) - 511) * 0.0625;
+    float y = ((data.y >> 10 & 1023) - 511) * 0.0625;
+    float z = ((data.y & 1023) - 511) * 0.0625;
+    float u = (((data.x >> 9) & 511) - 15) * 0.00390625;
+    float v = ((data.x & 511) - 15) * 0.00390625;
 
     gl_Position = projectionMatrix * viewMatrix * vec4(position + vec3(x, y, z), 1.0);
     fragTextureCoordinates = vec2(u, v);

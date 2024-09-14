@@ -26,7 +26,7 @@ public class EngineManager {
         window = Launcher.getWindow();
         window.init();
         Block.init();
-        Entity.init();
+        Entity.initAll();
         GameLogic.init();
 
         if (window.isvSync()) {
@@ -51,8 +51,7 @@ public class EngineManager {
             update(20 * passedTime / NANOSECONDS_PER_SECOND);
             render((currentTime - lastGTTime) / NANOSECONDS_PER_SECOND);
             frames++;
-            if (window.windowShouldClose())
-                stop();
+            if (window.windowShouldClose()) stop();
 
             if (currentTime - lastFrameRateUpdateTime > NANOSECONDS_PER_SECOND * 0.25f) {
                 lastFrameRateUpdateTime = currentTime;
@@ -80,8 +79,8 @@ public class EngineManager {
         window.update();
     }
 
-    private void update(float passedTime) {
-        GameLogic.update(passedTime);
+    private void update(float passedTicks) {
+        GameLogic.update(passedTicks);
     }
 
     private void updateGT() {

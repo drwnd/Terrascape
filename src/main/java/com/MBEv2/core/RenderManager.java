@@ -35,7 +35,7 @@ public class RenderManager {
 
     private float time = 1.0f;
 
-    private int modelIndexBuffer;
+    public int modelIndexBuffer;
     private int textRowVertexArray;
 
     private Texture xRayAtlas;
@@ -217,24 +217,6 @@ public class RenderManager {
         GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, modelIndexBuffer);
     }
 
-    public void bindEntity(Entity entity, float timeSinceLastTick) {
-        GL30.glBindVertexArray(entity.getVAO());
-        GL20.glEnableVertexAttribArray(0);
-
-        Vector3f position = entity.getPosition();
-        Vector3f velocity = entity.getVelocity();
-        int x = Utils.floor(position.x);
-        int y = Utils.floor(position.y);
-        int z = Utils.floor(position.z);
-
-        entityShader.setUniform("position",
-                position.x - (0.05f + timeSinceLastTick) * velocity.x,
-                position.y - (0.05f + timeSinceLastTick) * velocity.y,
-                position.z - (0.05f + timeSinceLastTick) * velocity.z);
-        entityShader.setUniform("lightLevel", Chunk.getLightInWorld(x, y, z));
-        GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, modelIndexBuffer);
-    }
-
     public void unbind() {
         GL20.glDisableVertexAttribArray(0);
         GL20.glDisableVertexAttribArray(1);
@@ -362,11 +344,7 @@ public class RenderManager {
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, atlas.id());
         GL11.glEnable(GL11.GL_CULL_FACE);
 
-        for (Entity entity : entities) {
-            bindEntity(entity, timeSinceLastTick);
-
-            GL11.glDrawElements(GL11.GL_TRIANGLES, entity.getVertexCount(), GL11.GL_UNSIGNED_INT, 0);
-        }
+        for (Entity entity : entities) entity.render(entityShader, this, modelIndexBuffer, timeSinceLastTick);
 
         GL11.glDisable(GL11.GL_CULL_FACE);
         entityShader.unBind();

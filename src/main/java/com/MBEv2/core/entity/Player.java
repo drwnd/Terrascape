@@ -12,6 +12,7 @@ import org.lwjgl.glfw.GLFW;
 import java.lang.Math;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 
 import static com.MBEv2.core.utils.Constants.*;
 import static com.MBEv2.core.utils.Settings.*;
@@ -127,27 +128,27 @@ public class Player {
                 if (chunk == null) return;
                 Arrays.fill(chunk.getBlocks(), TNT);
 
-                for (int chunkX = chunk.getChunkX() - 1; chunkX <= chunk.getChunkX() + 1; chunkX++)
-                    for (int chunkY = chunk.getChunkY() - 1; chunkY <= chunk.getChunkY() + 1; chunkY++)
-                        for (int chunkZ = chunk.getChunkZ() - 1; chunkZ <= chunk.getChunkZ() + 1; chunkZ++) {
+                for (int chunkX = chunk.X - 1; chunkX <= chunk.X + 1; chunkX++)
+                    for (int chunkY = chunk.Y - 1; chunkY <= chunk.Y + 1; chunkY++)
+                        for (int chunkZ = chunk.Z - 1; chunkZ <= chunk.Z + 1; chunkZ++) {
                             Chunk toMeshChunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
                             if (toMeshChunk != null) toMeshChunk.setMeshed(false);
                         }
-                GameLogic.restartGenerator(NONE);
+                GameLogic.restartGeneratorNow(NONE);
             }
         });
     }
 
     public void loadGUIElements() throws Exception {
-        GUIElement crossHair = ObjectLoader.loadGUIElement(GameLogic.getCrossHairVertices(), GUI_ELEMENT_TEXTURE_COORDINATES, new Vector2f(0.0f, 0.0f));
+        GUIElement crossHair = ObjectLoader.loadGUIElement(GUIElement.getCrossHairVertices(), GUI_ELEMENT_TEXTURE_COORDINATES, new Vector2f(0.0f, 0.0f));
         crossHair.setTexture(new Texture(ObjectLoader.loadTexture("textures/CrossHair.png")));
         GUIElements.addFirst(crossHair);
 
-        GUIElement hotBarGUIElement = ObjectLoader.loadGUIElement(GameLogic.getHotBarVertices(), GUI_ELEMENT_TEXTURE_COORDINATES, new Vector2f(0.0f, 0.0f));
+        GUIElement hotBarGUIElement = ObjectLoader.loadGUIElement(GUIElement.getHotBarVertices(), GUI_ELEMENT_TEXTURE_COORDINATES, new Vector2f(0.0f, 0.0f));
         hotBarGUIElement.setTexture(new Texture(ObjectLoader.loadTexture("textures/HotBar.png")));
         GUIElements.add(1, hotBarGUIElement);
 
-        hotBarSelectionIndicator = ObjectLoader.loadGUIElement(GameLogic.getHotBarSelectionIndicatorVertices(), GUI_ELEMENT_TEXTURE_COORDINATES, new Vector2f(0, 0));
+        hotBarSelectionIndicator = ObjectLoader.loadGUIElement(GUIElement.getHotBarSelectionIndicatorVertices(), GUI_ELEMENT_TEXTURE_COORDINATES, new Vector2f(0, 0));
         hotBarSelectionIndicator.setTexture(new Texture(ObjectLoader.loadTexture("textures/HotBarSelectionIndicator.png")));
         setSelectedHotBarSlot(0);
     }
@@ -170,8 +171,8 @@ public class Player {
         loadGUIElements();
     }
 
-    public void update(float passedTime) {
-        moveCameraHandleCollisions(velocity.x * passedTime, velocity.y * passedTime, velocity.z * passedTime);
+    public void update(float passedTicks) {
+        moveCameraHandleCollisions(velocity.x * passedTicks, velocity.y * passedTicks, velocity.z * passedTicks);
 
         mouseInput.input();
         Vector2f rotVec = mouseInput.getDisplayVec();
@@ -433,7 +434,7 @@ public class Player {
         if ((destroyButtonPressTime == -1 || currentTime - destroyButtonPressTime <= 300_000_000) && !destroyButtonWasJustPressed)
             return;
         Target target = Target.getTarget(camera.getPosition(), camera.getDirection());
-        if (target != null) GameLogic.placeBlock(AIR, target.position().x, target.position().y, target.position().z);
+        if (target != null) GameLogic.placeBlock(AIR, target.position().x, target.position().y, target.position().z, true);
     }
 
     private void handleUse(long currentTime, boolean useButtonWasJustPressed) {
@@ -472,7 +473,7 @@ public class Player {
             return;
 
         if ((Block.getBlockProperties(Chunk.getBlockInWorld(x, y, z)) & REPLACEABLE) != 0)
-            GameLogic.placeBlock(toPlaceBlock, x, y, z);
+            GameLogic.placeBlock(toPlaceBlock, x, y, z, true);
     }
 
     private boolean interactWithBlock(Target target) {
@@ -483,7 +484,7 @@ public class Player {
             System.out.println("You interacted with a crafting table");
             return true;
         } else if (target.block() == TNT) {
-            TNT_Entity.spawnTNTEntity(target.position(), 0);
+            TNT_Entity.spawnTNTEntity(target.position(), 80);
             return true;
         }
         return false;
@@ -706,13 +707,13 @@ public class Player {
         if (position.y != oldPosition.y) isGrounded = false;
 
         if (Utils.floor(oldPosition.x) >> CHUNK_SIZE_BITS != Utils.floor(position.x) >> CHUNK_SIZE_BITS)
-            GameLogic.restartGenerator(position.x > oldPosition.x ? FRONT : BACK);
+            GameLogic.restartGeneratorNow(position.x > oldPosition.x ? FRONT : BACK);
 
         else if (Utils.floor(oldPosition.y) >> CHUNK_SIZE_BITS != Utils.floor(position.y) >> CHUNK_SIZE_BITS)
-            GameLogic.restartGenerator(position.y > oldPosition.y ? TOP : BOTTOM);
+            GameLogic.restartGeneratorNow(position.y > oldPosition.y ? TOP : BOTTOM);
 
         else if (Utils.floor(oldPosition.z) >> CHUNK_SIZE_BITS != Utils.floor(position.z) >> CHUNK_SIZE_BITS)
-            GameLogic.restartGenerator(position.z > oldPosition.z ? RIGHT : LEFT);
+            GameLogic.restartGeneratorNow(position.z > oldPosition.z ? RIGHT : LEFT);
 
         camera.setPosition(position.x, position.y, position.z);
     }
@@ -847,19 +848,22 @@ public class Player {
             if (chunk.getWaterModel() != null) renderer.processWaterModel(chunk.getWaterModel());
             if (chunk.getFoliageModel() != null) renderer.processFoliageModel(chunk.getFoliageModel());
 
-            if (chunk.getChunkX() >= cameraX && chunk.getModel(LEFT) != null)
+            if (chunk.X >= cameraX && chunk.getModel(LEFT) != null)
                 renderer.processModel(chunk.getModel(LEFT));
-            if (chunk.getChunkX() <= cameraX && chunk.getModel(RIGHT) != null)
+            if (chunk.X <= cameraX && chunk.getModel(RIGHT) != null)
                 renderer.processModel(chunk.getModel(RIGHT));
 
-            if (chunk.getChunkY() >= cameraY && chunk.getModel(BOTTOM) != null)
+            if (chunk.Y >= cameraY && chunk.getModel(BOTTOM) != null)
                 renderer.processModel(chunk.getModel(BOTTOM));
-            if (chunk.getChunkY() <= cameraY && chunk.getModel(TOP) != null) renderer.processModel(chunk.getModel(TOP));
+            if (chunk.Y <= cameraY && chunk.getModel(TOP) != null) renderer.processModel(chunk.getModel(TOP));
 
-            if (chunk.getChunkZ() >= cameraZ && chunk.getModel(BACK) != null)
+            if (chunk.Z >= cameraZ && chunk.getModel(BACK) != null)
                 renderer.processModel(chunk.getModel(BACK));
-            if (chunk.getChunkZ() <= cameraZ && chunk.getModel(FRONT) != null)
+            if (chunk.Z <= cameraZ && chunk.getModel(FRONT) != null)
                 renderer.processModel(chunk.getModel(FRONT));
+
+            for (LinkedList<Entity> entityCluster : chunk.getEntityClusters())
+                for (Entity entity : entityCluster) renderer.processEntity(entity);
         }
     }
 
@@ -923,10 +927,10 @@ public class Player {
             int textureIndexFront = Block.getTextureIndex(block, FRONT) - 1;
             int textureIndexTop = Block.getTextureIndex(block, TOP) - 1;
             int textureIndexLeft = Block.getTextureIndex(block, LEFT) - 1;
-            float[] textureCoordinates = GameLogic.getBlockDisplayTextureCoordinates(textureIndexFront, textureIndexTop, textureIndexLeft, block);
+            float[] textureCoordinates = GUIElement.getBlockDisplayTextureCoordinates(textureIndexFront, textureIndexTop, textureIndexLeft, block);
             float xOffset = (40.0f * i - 165 + 4) * GUI_SIZE / width;
             float yOffset = -0.5f + 4.0f * GUI_SIZE / height;
-            GUIElement element = ObjectLoader.loadGUIElement(GameLogic.getBlockDisplayVertices(block), textureCoordinates, new Vector2f(xOffset, yOffset));
+            GUIElement element = ObjectLoader.loadGUIElement(GUIElement.getBlockDisplayVertices(block), textureCoordinates, new Vector2f(xOffset, yOffset));
             element.setTexture(atlas);
             hotBarElements.add(element);
         }
@@ -935,12 +939,12 @@ public class Player {
     private void generateInventoryElements(ArrayList<GUIElement> elements) {
         for (int i = 0; i < TO_PLACE_NON_STANDARD_BLOCKS.length; i++) {
             short block = TO_PLACE_NON_STANDARD_BLOCKS[i];
-            float[] vertices = GameLogic.getBlockDisplayVertices(block);
+            float[] vertices = GUIElement.getBlockDisplayVertices(block);
 
             int textureIndexFront = Block.getTextureIndex(block, FRONT) - 1;
             int textureIndexTop = Block.getTextureIndex(block, TOP) - 1;
             int textureIndexLeft = Block.getTextureIndex(block, LEFT) - 1;
-            float[] textureCoordinates = GameLogic.getBlockDisplayTextureCoordinates(textureIndexFront, textureIndexTop, textureIndexLeft, block);
+            float[] textureCoordinates = GUIElement.getBlockDisplayTextureCoordinates(textureIndexFront, textureIndexTop, textureIndexLeft, block);
             GUIElement element = ObjectLoader.loadGUIElement(vertices, textureCoordinates, new Vector2f(0.5f - (i + 1) * 0.02f * GUI_SIZE, 0.5f - GUI_SIZE * 0.04f));
             element.setTexture(atlas);
             elements.add(element);
@@ -949,12 +953,12 @@ public class Player {
             for (int blockTypeIndex = 0; blockTypeIndex < TO_PLACE_BLOCK_TYPES.length; blockTypeIndex++) {
                 int blockType = TO_PLACE_BLOCK_TYPES[blockTypeIndex];
                 short block = (short) (baseBlock << BLOCK_TYPE_BITS | blockType);
-                float[] vertices = GameLogic.getBlockDisplayVertices(block);
+                float[] vertices = GUIElement.getBlockDisplayVertices(block);
 
                 int textureIndexFront = Block.getTextureIndex(block, FRONT) - 1;
                 int textureIndexTop = Block.getTextureIndex(block, TOP) - 1;
                 int textureIndexLeft = Block.getTextureIndex(block, LEFT) - 1;
-                float[] textureCoordinates = GameLogic.getBlockDisplayTextureCoordinates(textureIndexFront, textureIndexTop, textureIndexLeft, block);
+                float[] textureCoordinates = GUIElement.getBlockDisplayTextureCoordinates(textureIndexFront, textureIndexTop, textureIndexLeft, block);
                 GUIElement element = ObjectLoader.loadGUIElement(vertices, textureCoordinates, new Vector2f(0.5f - (blockTypeIndex + 1) * 0.02f * GUI_SIZE, 0.5f - GUI_SIZE * 0.04f * (1 + baseBlock)));
                 element.setTexture(atlas);
                 elements.add(element);

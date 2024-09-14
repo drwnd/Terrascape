@@ -23,6 +23,9 @@ public class ChunkGenerator {
 
     private final Thread starterThread;
 
+    private boolean shouldFinish = true;
+    private boolean shouldExecute = true;
+    private boolean shouldRestart = false;
 
     public ChunkGenerator() {
         blockChanges = new LinkedList<>();
@@ -77,7 +80,9 @@ public class ChunkGenerator {
     }
 
     public void addBlockChange(Vector4i blockChange) {
-        blockChanges.add(blockChange);
+        synchronized (blockChanges) {
+            blockChanges.add(blockChange);
+        }
     }
 
     public void cleanUp() {
@@ -89,7 +94,7 @@ public class ChunkGenerator {
         executor.shutdown();
     }
 
-    static class Generator implements Runnable {
+    class Generator implements Runnable {
 
         private final int chunkX, playerY, chunkZ;
 
@@ -112,7 +117,7 @@ public class ChunkGenerator {
                 for (int z = 0; z < CHUNK_SIZE; z++)
                     resultingHeightMap[x][z] = WorldGeneration.getHeight(heightMap[x][z], erosionMap[x][z]);
 
-            for (int chunkY = playerY + RENDER_DISTANCE_Y + 1; chunkY >= playerY - RENDER_DISTANCE_Y - 1; chunkY--) {
+            for (int chunkY = playerY + RENDER_DISTANCE_Y + 1; chunkY >= playerY - RENDER_DISTANCE_Y - 1 && shouldFinish; chunkY--) {
                 try {
                     final long expectedId = GameLogic.getChunkId(chunkX, chunkY, chunkZ);
                     Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
@@ -126,7 +131,7 @@ public class ChunkGenerator {
                         Chunk.storeChunk(chunk);
                         if (!chunk.isGenerated())
                             WorldGeneration.generate(chunk, resultingHeightMap, temperatureMap, humidityMap, erosionMap, featureMap);
-                    } else if (chunk.getId() != expectedId) {
+                    } else if (chunk.id != expectedId) {
                         GameLogic.addToUnloadChunk(chunk);
 
                         if (chunk.isModified())
@@ -170,7 +175,7 @@ public class ChunkGenerator {
 
     }
 
-    static class MeshHandler implements Runnable {
+    class MeshHandler implements Runnable {
 
         private final int chunkX, playerY, chunkZ, travelDirection;
 
@@ -188,7 +193,7 @@ public class ChunkGenerator {
 
             MeshGenerator meshGenerator = new MeshGenerator();
 
-            for (int chunkY = playerY + RENDER_DISTANCE_Y; chunkY >= playerY - RENDER_DISTANCE_Y; chunkY--) {
+            for (int chunkY = playerY + RENDER_DISTANCE_Y; chunkY >= playerY - RENDER_DISTANCE_Y && shouldFinish; chunkY--) {
                 try {
                     Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
                     if (chunk == null) {
@@ -221,15 +226,7 @@ public class ChunkGenerator {
         private void meshChunk(MeshGenerator meshGenerator, Chunk chunk) {
             meshGenerator.setChunk(chunk);
             meshGenerator.generateMesh();
-            boolean shouldBuffer = false;
-            for (int side = 0; side < 6; side++) {
-                if (chunk.getVertices(side).length != 0) {
-                    shouldBuffer = true;
-                    break;
-                }
-            }
-            if (shouldBuffer || chunk.getWaterVertices().length != 0 || chunk.getFoliageVertices().length != 0)
-                GameLogic.addToBufferChunk(chunk);
+            GameLogic.addToBufferChunk(chunk);
         }
 
         private void handleSkyLightBottom() {
@@ -237,7 +234,7 @@ public class ChunkGenerator {
             for (int chunkY = 0; chunkY < RENDERED_WORLD_HEIGHT; chunkY++) {
                 Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
                 if (chunk == null || !chunk.isGenerated()) continue;
-                if (chunk.getChunkY() < minY) minY = chunk.getChunkY();
+                if (chunk.Y < minY) minY = chunk.Y;
             }
             if (minY == Integer.MAX_VALUE) return;
 
@@ -249,7 +246,7 @@ public class ChunkGenerator {
             for (int chunkY = RENDERED_WORLD_HEIGHT; chunkY > 0; chunkY--) {
                 Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
                 if (chunk == null || !chunk.isGenerated()) continue;
-                if (chunk.getChunkY() > maxY) maxY = chunk.getChunkY();
+                if (chunk.Y > maxY) maxY = chunk.Y;
             }
             if (maxY == Integer.MIN_VALUE) return;
 
@@ -264,9 +261,6 @@ public class ChunkGenerator {
         private int travelDirection;
         private int playerX, playerY, playerZ;
 
-        private boolean shouldFinish = true;
-        private boolean shouldExecute = true;
-        private boolean shouldRestart = false;
 
         public GenerationStarter(LinkedList<Vector4i> changes, ThreadPoolExecutor executor) {
             this.changes = changes;
@@ -317,9 +311,8 @@ public class ChunkGenerator {
                     int x = blockChange.x;
                     int y = blockChange.y;
                     int z = blockChange.z;
-                    short previousBlock = (short) blockChange.w;
-
-                    short block = Chunk.getBlockInWorld(x, y, z);
+                    short previousBlock = (short) (blockChange.w >> 16 & 0xFFFF);
+                    short block = (short) (blockChange.w & 0xFFFF);
 
                     boolean blockEmitsLight = (Block.getBlockProperties(block) & LIGHT_EMITTING) != 0;
                     boolean previousBlockEmitsLight = (Block.getBlockProperties(previousBlock) & LIGHT_EMITTING) != 0;
