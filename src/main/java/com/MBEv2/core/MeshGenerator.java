@@ -26,6 +26,7 @@ public class MeshGenerator {
 
         chunk.generateSurroundingChunks();
         if (chunk.getLightLength() != 1) chunk.optimizeLightStorage();
+        if (chunk.getBlockLength() != 1) chunk.optimizeBlockStorage();
         chunk.generateOcclusionCullingData();
 
         if (chunk.getBlockLength() == 1 && chunk.getSaveBlock(0) == AIR) return;
@@ -154,8 +155,8 @@ public class MeshGenerator {
         int subX = Block.getSubX(blockType, side, corner, subDataAddend);
         int subY = Block.getSubY(blockType, side, corner, subDataAddend);
         int subZ = Block.getSubZ(blockType, side, corner, subDataAddend);
-        int subU = Block.getSubU(blockType, side, corner, subDataAddend / 6);
-        int subV = Block.getSubV(blockType, side, corner, subDataAddend / 6);
+        int subU = Block.getSubU(blockType, side, corner, subDataAddend);
+        int subV = Block.getSubV(blockType, side, corner, subDataAddend);
 
         int ambientOcclusionLevel = getAmbientOcclusionLevel(inChunkX, inChunkY, inChunkZ, subX, subY, subZ);
         list.add(packData1(ambientOcclusionLevel, (inChunkX << 4) + subX + 15, (inChunkY << 4) + subY + 15, (inChunkZ << 4) + subZ + 15));
@@ -371,8 +372,8 @@ public class MeshGenerator {
         int subX = Block.getSubX(blockType, side, corner, subDataAddend);
         int subY = Block.getSubY(blockType, side, corner, subDataAddend);
         int subZ = Block.getSubZ(blockType, side, corner, subDataAddend);
-        int subU = Block.getSubU(blockType, side, corner, subDataAddend / 6);
-        int subV = Block.getSubV(blockType, side, corner, subDataAddend / 6);
+        int subU = Block.getSubU(blockType, side, corner, subDataAddend);
+        int subV = Block.getSubV(blockType, side, corner, subDataAddend);
 
         int ambientOcclusionLevel = getAmbientOcclusionLevel(inChunkX, inChunkY, inChunkZ, subX, subY, subZ);
         list.add(packData1(ambientOcclusionLevel, (inChunkX << 4) + subX + 15, (inChunkY << 4) + subY + 15, (inChunkZ << 4) + subZ + 15));
@@ -398,7 +399,6 @@ public class MeshGenerator {
         int y = worldCoordinate.y + inChunkY;
         int z = worldCoordinate.z + inChunkZ;
         int startX = 0, startY = 0, startZ = 0;
-        short block = chunk.getSaveBlock(blockX, blockY, blockZ);
 
         switch (side) {
             case FRONT -> {

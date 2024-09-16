@@ -434,7 +434,8 @@ public class Player {
         if ((destroyButtonPressTime == -1 || currentTime - destroyButtonPressTime <= 300_000_000) && !destroyButtonWasJustPressed)
             return;
         Target target = Target.getTarget(camera.getPosition(), camera.getDirection());
-        if (target != null) GameLogic.placeBlock(AIR, target.position().x, target.position().y, target.position().z, true);
+        if (target != null)
+            GameLogic.placeBlock(AIR, target.position().x, target.position().y, target.position().z, true);
     }
 
     private void handleUse(long currentTime, boolean useButtonWasJustPressed) {
@@ -478,13 +479,21 @@ public class Player {
 
     private boolean interactWithBlock(Target target) {
         if (window.isKeyPressed(SNEAK_BUTTON)) return false;
-        if (target.block() == hotBar[selectedHotBarSlot]) return false;
+        short block = target.block();
 
-        if (target.block() == CRAFTING_TABLE) {
+        if (block == CRAFTING_TABLE) {
+            if (hotBar[selectedHotBarSlot] == CRAFTING_TABLE) return false;
             System.out.println("You interacted with a crafting table");
             return true;
-        } else if (target.block() == TNT) {
+        }
+        if (block == TNT) {
+            if (hotBar[selectedHotBarSlot] == TNT) return false;
             TNT_Entity.spawnTNTEntity(target.position(), 80);
+            return true;
+        }
+        if (block == FRONT_FURNACE || block == RIGHT_FURNACE || block == BACK_FURNACE || block == LEFT_FURNACE) {
+            if (hotBar[selectedHotBarSlot] == FRONT_FURNACE) return false;
+            System.out.println("You interacted with a furnace");
             return true;
         }
         return false;

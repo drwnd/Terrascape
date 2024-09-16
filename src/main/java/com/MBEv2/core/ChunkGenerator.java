@@ -51,6 +51,9 @@ public class ChunkGenerator {
         int playerX = Utils.floor(playerPosition.x) >> CHUNK_SIZE_BITS;
         int playerY = Utils.floor(playerPosition.y) >> CHUNK_SIZE_BITS;
         int playerZ = Utils.floor(playerPosition.z) >> CHUNK_SIZE_BITS;
+        synchronized (executor) {
+            executor.getQueue().clear();
+        }
         generationStarter.restart(direction, playerX, playerY, playerZ);
         synchronized (starterThread) {
             starterThread.notify();

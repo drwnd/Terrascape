@@ -173,7 +173,12 @@ public class LightLogic {
                     short blockAbove = Chunk.getBlockInWorld(totalX, totalY + 1, totalZ);
                     if (!canLightTravel(block, TOP, blockAbove, BOTTOM)) continue;
 
-                    toPlaceLights.add(new Vector4i(totalX, totalY, totalZ, Chunk.getSkyLightInWorld(totalX, totalY + 1, totalZ)));
+                    byte skyLightAbove = Chunk.getSkyLightInWorld(totalX, totalY + 1, totalZ);
+                    if (skyLightAbove == 0) continue;
+                    byte skyLight = Chunk.getSkyLightInWorld(totalX, totalY, totalZ);
+                    if (skyLightAbove == skyLight) continue;
+
+                    toPlaceLights.add(new Vector4i(totalX, totalY, totalZ, skyLightAbove));
                 }
 
             setSkyLight(toPlaceLights);
@@ -377,19 +382,31 @@ public class LightLogic {
     }
 
     private static void unMeshNextChunkIfNecessary(int inChunkX, int inChunkY, int inChunkZ, Chunk chunk) {
-        if (inChunkX == 0) unMeshChunk(chunk.X - 1, chunk.Y, chunk.Z);
-        else if (inChunkX == CHUNK_SIZE - 1) unMeshChunk(chunk.X + 1, chunk.Y, chunk.Z);
+        if (inChunkX == 0) {
+            Chunk chunk1 = Chunk.getChunk(chunk.X - 1, chunk.Y, chunk.Z);
+            if (chunk1 != null) chunk1.setMeshed(false);
+        }
+        else if (inChunkX == CHUNK_SIZE - 1) {
+            Chunk chunk1 = Chunk.getChunk(chunk.X + 1, chunk.Y, chunk.Z);
+            if (chunk1 != null) chunk1.setMeshed(false);
+        }
 
-        if (inChunkY == 0) unMeshChunk(chunk.X, chunk.Y - 1, chunk.Z);
-        else if (inChunkY == CHUNK_SIZE - 1) unMeshChunk(chunk.X, chunk.Y + 1, chunk.Z);
+        if (inChunkY == 0) {
+            Chunk chunk1 = Chunk.getChunk(chunk.X, chunk.Y - 1, chunk.Z);
+            if (chunk1 != null) chunk1.setMeshed(false);
+        }
+        else if (inChunkY == CHUNK_SIZE - 1) {
+            Chunk chunk1 = Chunk.getChunk(chunk.X, chunk.Y + 1, chunk.Z);
+            if (chunk1 != null) chunk1.setMeshed(false);
+        }
 
-        if (inChunkZ == 0) unMeshChunk(chunk.X, chunk.Y, chunk.Z - 1);
-        else if (inChunkZ == CHUNK_SIZE - 1) unMeshChunk(chunk.X, chunk.Y, chunk.Z + 1);
-    }
-
-    private static void unMeshChunk(int chunkX, int chunkY, int ChunkZ) {
-        Chunk chunk = Chunk.getChunk(chunkX, chunkY, ChunkZ);
-        if (chunk != null)
-            chunk.setMeshed(false);
+        if (inChunkZ == 0) {
+            Chunk chunk1 = Chunk.getChunk(chunk.X, chunk.Y, chunk.Z - 1);
+            if (chunk1 != null) chunk1.setMeshed(false);
+        }
+        else if (inChunkZ == CHUNK_SIZE - 1) {
+            Chunk chunk1 = Chunk.getChunk(chunk.X, chunk.Y, chunk.Z + 1);
+            if (chunk1 != null) chunk1.setMeshed(false);
+        }
     }
 }

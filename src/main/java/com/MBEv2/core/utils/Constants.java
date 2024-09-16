@@ -60,7 +60,7 @@ public class Constants {
     public static final int NO_COLLISION = 2;
     public static final int INTERACTABLE = 4;
     public static final int REPLACEABLE = 8;
-//    public static final int BLAST_RESISTANT = 16;
+    public static final int BLAST_RESISTANT = 16;
 
     //Indices for information on block types
     public static final int FULL_BLOCK = 0;
@@ -105,9 +105,6 @@ public class Constants {
     public static final int BACK_LEFT_STAIR = 30;
 
     public static final int PLAYER_HEAD = 31;
-
-    public static final int[] TO_PLACE_BLOCK_TYPES = new int[]{FULL_BLOCK, PLAYER_HEAD, BOTTOM_SLAB, BOTTOM_PLATE, FRONT_BACK_WALL, UP_DOWN_POST, BOTTOM_BACK_STAIR};
-
     public static final int CACTUS_TYPE = 32;
     public static final int AIR_TYPE = 33;
     public static final int LIQUID_TYPE = 34;
@@ -115,12 +112,47 @@ public class Constants {
     public static final int GLASS_TYPE = 36;
     public static final int TORCH_TYPE = 37;
 
-    public static final int BLOCK_TYPE_BITS = 6;
+    public static final int FRONT_SOCKET = 38;
+    public static final int TOP_SOCKET = 39;
+    public static final int RIGHT_SOCKET = 40;
+    public static final int BACK_SOCKET = 41;
+    public static final int BOTTOM_SOCKET = 42;
+    public static final int LEFT_SOCKET = 43;
+    public static final int[] SOCKETS = new int[]{FRONT_SOCKET, TOP_SOCKET, RIGHT_SOCKET, BACK_SOCKET, BOTTOM_SOCKET, LEFT_SOCKET};
+
+    public static final int THICK_BOTTOM_FRONT_STAIR = 44;
+    public static final int THICK_BOTTOM_BACK_STAIR = 45;
+    public static final int THICK_BOTTOM_RIGHT_STAIR = 46;
+    public static final int THICK_BOTTOM_LEFT_STAIR = 47;
+    public static final int THICK_TOP_FRONT_STAIR = 48;
+    public static final int THICK_TOP_BACK_STAIR = 49;
+    public static final int THICK_TOP_RIGHT_STAIR = 50;
+    public static final int THICK_TOP_LEFT_STAIR = 51;
+    public static final int THICK_FRONT_RIGHT_STAIR = 52;
+    public static final int THICK_FRONT_LEFT_STAIR = 53;
+    public static final int THICK_BACK_RIGHT_STAIR = 54;
+    public static final int THICK_BACK_LEFT_STAIR = 55;
+
+    public static final int THIN_BOTTOM_FRONT_STAIR = 56;
+    public static final int THIN_BOTTOM_BACK_STAIR = 57;
+    public static final int THIN_BOTTOM_RIGHT_STAIR = 58;
+    public static final int THIN_BOTTOM_LEFT_STAIR = 59;
+    public static final int THIN_TOP_FRONT_STAIR = 60;
+    public static final int THIN_TOP_BACK_STAIR = 61;
+    public static final int THIN_TOP_RIGHT_STAIR = 62;
+    public static final int THIN_TOP_LEFT_STAIR = 63;
+    public static final int THIN_FRONT_RIGHT_STAIR = 64;
+    public static final int THIN_FRONT_LEFT_STAIR = 65;
+    public static final int THIN_BACK_RIGHT_STAIR = 66;
+    public static final int THIN_BACK_LEFT_STAIR = 67;
+
+    public static final int[] TO_PLACE_BLOCK_TYPES = new int[]{FULL_BLOCK, PLAYER_HEAD, BOTTOM_SOCKET, BOTTOM_SLAB, BOTTOM_PLATE, FRONT_BACK_WALL, UP_DOWN_POST, THICK_BOTTOM_BACK_STAIR, BOTTOM_BACK_STAIR, THIN_BOTTOM_BACK_STAIR};
+    public static final int BLOCK_TYPE_BITS = 8;
     public static final int BLOCK_TYPE_MASK = (1 << BLOCK_TYPE_BITS) - 1;
     public static final int BASE_BLOCK_MASK = -1 << BLOCK_TYPE_BITS;
     public static final int STANDARD_BLOCKS_THRESHOLD = 1 << BLOCK_TYPE_BITS;
 
-    public static final int TOTAL_AMOUNT_OF_BLOCK_TYPES = 38;
+    public static final int TOTAL_AMOUNT_OF_BLOCK_TYPES = 68;
 
     //Non standard block, aka blocks without blockTypes
     public static final short AIR = 0;
@@ -201,6 +233,25 @@ public class Constants {
     public static final short RED = (short) (b++ << BLOCK_TYPE_BITS);
     public static final short CRAFTING_TABLE = (short) (b++ << BLOCK_TYPE_BITS);
     public static final short TNT = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short OBSIDIAN = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short MOSSY_STONE = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short MOSSY_ANDESITE = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short MOSSY_STONE_BRICK = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short MOSSY_POLISHED_STONE = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short MOSSY_CHISELED_POLISHED_STONE = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short MOSSY_CHISELED_STONE = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short MOSSY_SLATE = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short MOSSY_COBBLED_SLATE = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short MOSSY_SLATE_BRICKS = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short MOSSY_CHISELED_SLATE = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short MOSSY_POLISHED_SLATE = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short MOSSY_DIRT = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short MOSSY_GRAVEL = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short MOSSY_OBSIDIAN = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short MOSSY_CRACKED_ANDESITE = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short MOSSY_COBBLESTONE = (short) (b++ << BLOCK_TYPE_BITS);
+    public static final short FRONT_FURNACE = (short) (b++ << BLOCK_TYPE_BITS);
+
 
     public static final int AMOUNT_OF_TO_PLACE_STANDARD_BLOCKS = b;
     private static int b2 = 511;
@@ -229,8 +280,11 @@ public class Constants {
     public static final short LEFT_RIGHT_BLACK_WOOD_LOG = (short) (b2-- << BLOCK_TYPE_BITS);
     public static final short FRONT_BACK_STRIPPED_BLACK_WOOD_LOG = (short) (b2-- << BLOCK_TYPE_BITS);
     public static final short LEFT_RIGHT_STRIPPED_BLACK_WOOD_LOG = (short) (b2-- << BLOCK_TYPE_BITS);
+    public static final short BACK_FURNACE = (short) (b2-- << BLOCK_TYPE_BITS);
+    public static final short RIGHT_FURNACE = (short) (b2-- << BLOCK_TYPE_BITS);
+    public static final short LEFT_FURNACE = (short) (b2-- << BLOCK_TYPE_BITS);
 
-    public static final int AMOUNT_OF_STANDARD_BLOCKS = 1024;
+    public static final int AMOUNT_OF_STANDARD_BLOCKS = 512;
 
     //Texture indices
     public static final byte GRASS_TOP_TEXTURE = 1;
@@ -332,12 +386,34 @@ public class Constants {
     public static final byte ROTATED_BLACK_WOOD_LOG_TEXTURE = 105;
     public static final byte ROTATED_STRIPPED_BLACK_WOOD_LOG_TEXTURE = 121;
     public static final byte TNT_TOP_TEXTURE = -121;
+    public static final byte FURNACE_TOP_TEXTURE = -120;
     public static final byte TNT_SIDE_TEXTURE = -105;
+    public static final byte FURNACE_SIDE_TEXTURE = -104;
+    public static final byte FURNACE_FRONT_TEXTURE = -103;
     public static final byte TNT_BOTTOM_TEXTURE = -89;
+    public static final byte FURNACE_BOTTOM_TEXTURE = -88;
     public static final byte TORCH_TEXTURE = -79;
     public static final byte CRAFTING_TABLE_TOP_TEXTURE = -78;
     public static final byte CRAFTING_TABLE_SIDE_TEXTURE_1 = -77;
     public static final byte CRAFTING_TABLE_SIDE_TEXTURE_2 = -76;
+    public static final byte OBSIDIAN_TEXTURE = -75;
+    //    public static final byte WINE_TEXTURE = -74;
+    public static final byte MOSSY_COBBLESTONE_TEXTURE = -31;
+    public static final byte MOSSY_CRACKED_ANDESITE_TEXTURE = -30;
+    public static final byte MOSSY_OBSIDIAN_TEXTURE = -29;
+    public static final byte MOSSY_GRAVEL_TEXTURE = -28;
+    public static final byte MOSSY_DIRT_TEXTURE = -27;
+    public static final byte MOSSY_POLISHED_SLATE_TEXTURE = -26;
+    public static final byte MOSSY_CHISELED_SLATE_TEXTURE = -25;
+    public static final byte MOSSY_SLATE_BRICKS_TEXTURE = -24;
+    public static final byte MOSSY_COBBLED_SLATE_TEXTURE = -23;
+    public static final byte MOSSY_SLATE_TEXTURE = -22;
+    public static final byte MOSSY_CHISELED_STONE_TEXTURE = -21;
+    public static final byte MOSSY_CHISELED_POLISHED_STONE_TEXTURE = -20;
+    public static final byte MOSSY_POLISHED_STONE_TEXTURE = -19;
+    public static final byte MOSSY_STONE_BRICK_TEXTURE = -18;
+    public static final byte MOSSY_ANDESITE_TEXTURE = -17;
+    public static final byte MOSSY_STONE_TEXTURE = -16;
 
     //Just pretend it doesn't exist
     public static final float[] SKY_BOX_VERTICES;
@@ -364,293 +440,94 @@ public class Constants {
         //I WARNED YOU!!!
         //WHY DIDN'T YOU LISTEN!??!!?
 
-        OAK_TREE = new short[][][]{{
-                {AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, DIRT, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR}}, {
+        OAK_TREE = new short[][][]{{{AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, DIRT, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR}}, {
 
-                {AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, UP_DOWN_OAK_LOG, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR}}, {
+                {AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, UP_DOWN_OAK_LOG, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR}}, {
 
-                {AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, UP_DOWN_OAK_LOG, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR}}, {
+                {AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, UP_DOWN_OAK_LOG, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR}}, {
 
-                {AIR, OAK_LEAVES, OAK_LEAVES, OAK_LEAVES, AIR},
-                {OAK_LEAVES, OAK_LEAVES, OAK_LEAVES, OAK_LEAVES, OAK_LEAVES},
-                {OAK_LEAVES, OAK_LEAVES, UP_DOWN_OAK_LOG, OAK_LEAVES, OAK_LEAVES},
-                {OAK_LEAVES, OAK_LEAVES, OAK_LEAVES, OAK_LEAVES, OAK_LEAVES},
-                {AIR, OAK_LEAVES, OAK_LEAVES, OAK_LEAVES, AIR}}, {
+                {AIR, OAK_LEAVES, OAK_LEAVES, OAK_LEAVES, AIR}, {OAK_LEAVES, OAK_LEAVES, OAK_LEAVES, OAK_LEAVES, OAK_LEAVES}, {OAK_LEAVES, OAK_LEAVES, UP_DOWN_OAK_LOG, OAK_LEAVES, OAK_LEAVES}, {OAK_LEAVES, OAK_LEAVES, OAK_LEAVES, OAK_LEAVES, OAK_LEAVES}, {AIR, OAK_LEAVES, OAK_LEAVES, OAK_LEAVES, AIR}}, {
 
-                {AIR, OAK_LEAVES, OAK_LEAVES, OAK_LEAVES, AIR},
-                {AIR, OAK_LEAVES, OAK_LEAVES, OAK_LEAVES, OAK_LEAVES},
-                {OAK_LEAVES, OAK_LEAVES, UP_DOWN_OAK_LOG, OAK_LEAVES, OAK_LEAVES},
-                {OAK_LEAVES, OAK_LEAVES, OAK_LEAVES, OAK_LEAVES, AIR},
-                {AIR, OAK_LEAVES, OAK_LEAVES, OAK_LEAVES, AIR}}, {
+                {AIR, OAK_LEAVES, OAK_LEAVES, OAK_LEAVES, AIR}, {AIR, OAK_LEAVES, OAK_LEAVES, OAK_LEAVES, OAK_LEAVES}, {OAK_LEAVES, OAK_LEAVES, UP_DOWN_OAK_LOG, OAK_LEAVES, OAK_LEAVES}, {OAK_LEAVES, OAK_LEAVES, OAK_LEAVES, OAK_LEAVES, AIR}, {AIR, OAK_LEAVES, OAK_LEAVES, OAK_LEAVES, AIR}}, {
 
-                {AIR, AIR, OAK_LEAVES, AIR, AIR},
-                {AIR, OAK_LEAVES, OAK_LEAVES, OAK_LEAVES, AIR},
-                {OAK_LEAVES, OAK_LEAVES, UP_DOWN_OAK_LOG, OAK_LEAVES, AIR},
-                {AIR, OAK_LEAVES, OAK_LEAVES, OAK_LEAVES, AIR},
-                {AIR, AIR, AIR, AIR, AIR}}, {
+                {AIR, AIR, OAK_LEAVES, AIR, AIR}, {AIR, OAK_LEAVES, OAK_LEAVES, OAK_LEAVES, AIR}, {OAK_LEAVES, OAK_LEAVES, UP_DOWN_OAK_LOG, OAK_LEAVES, AIR}, {AIR, OAK_LEAVES, OAK_LEAVES, OAK_LEAVES, AIR}, {AIR, AIR, AIR, AIR, AIR}}, {
 
-                {AIR, AIR, AIR, AIR, AIR},
-                {AIR, OAK_LEAVES, OAK_LEAVES, AIR, AIR},
-                {AIR, OAK_LEAVES, OAK_LEAVES, OAK_LEAVES, AIR},
-                {AIR, AIR, OAK_LEAVES, OAK_LEAVES, AIR},
-                {AIR, AIR, AIR, AIR, AIR}}};
+                {AIR, AIR, AIR, AIR, AIR}, {AIR, OAK_LEAVES, OAK_LEAVES, AIR, AIR}, {AIR, OAK_LEAVES, OAK_LEAVES, OAK_LEAVES, AIR}, {AIR, AIR, OAK_LEAVES, OAK_LEAVES, AIR}, {AIR, AIR, AIR, AIR, AIR}}};
 
-        SPRUCE_TREE = new short[][][]{{
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, DIRT, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR}}, {
+        SPRUCE_TREE = new short[][][]{{{AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, DIRT, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}}, {
 
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, UP_DOWN_SPRUCE_LOG, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR}}, {
+                {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, UP_DOWN_SPRUCE_LOG, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}}, {
 
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, UP_DOWN_SPRUCE_LOG, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR}}, {
+                {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, UP_DOWN_SPRUCE_LOG, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}}, {
 
-                {AIR, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, AIR},
-                {SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES},
-                {SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES},
-                {SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, UP_DOWN_SPRUCE_LOG, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES},
-                {SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES},
-                {SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES},
-                {AIR, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, AIR}}, {
+                {AIR, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, AIR}, {SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES}, {SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES}, {SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, UP_DOWN_SPRUCE_LOG, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES}, {SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES}, {SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES}, {AIR, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, AIR}}, {
 
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, SPRUCE_LEAVES, AIR, AIR, AIR},
-                {AIR, AIR, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, AIR, AIR},
-                {AIR, SPRUCE_LEAVES, SPRUCE_LEAVES, UP_DOWN_SPRUCE_LOG, SPRUCE_LEAVES, SPRUCE_LEAVES, AIR},
-                {AIR, AIR, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, AIR, AIR},
-                {AIR, AIR, AIR, SPRUCE_LEAVES, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR}}, {
+                {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, SPRUCE_LEAVES, AIR, AIR, AIR}, {AIR, AIR, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, AIR, AIR}, {AIR, SPRUCE_LEAVES, SPRUCE_LEAVES, UP_DOWN_SPRUCE_LOG, SPRUCE_LEAVES, SPRUCE_LEAVES, AIR}, {AIR, AIR, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, AIR, AIR}, {AIR, AIR, AIR, SPRUCE_LEAVES, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}}, {
 
-                {AIR, AIR, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, AIR, AIR},
-                {AIR, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, AIR},
-                {SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES},
-                {SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, UP_DOWN_SPRUCE_LOG, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES},
-                {SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES},
-                {AIR, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, AIR},
-                {AIR, AIR, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, AIR, AIR}}, {
+                {AIR, AIR, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, AIR, AIR}, {AIR, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, AIR}, {SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES}, {SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, UP_DOWN_SPRUCE_LOG, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES}, {SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES}, {AIR, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, AIR}, {AIR, AIR, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, AIR, AIR}}, {
 
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, SPRUCE_LEAVES, AIR, AIR, AIR},
-                {AIR, AIR, SPRUCE_LEAVES, UP_DOWN_SPRUCE_LOG, SPRUCE_LEAVES, AIR, AIR},
-                {AIR, AIR, AIR, SPRUCE_LEAVES, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR}}, {
+                {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, SPRUCE_LEAVES, AIR, AIR, AIR}, {AIR, AIR, SPRUCE_LEAVES, UP_DOWN_SPRUCE_LOG, SPRUCE_LEAVES, AIR, AIR}, {AIR, AIR, AIR, SPRUCE_LEAVES, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}}, {
 
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, AIR, AIR},
-                {AIR, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, AIR},
-                {AIR, SPRUCE_LEAVES, SPRUCE_LEAVES, UP_DOWN_SPRUCE_LOG, SPRUCE_LEAVES, SPRUCE_LEAVES, AIR},
-                {AIR, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, AIR},
-                {AIR, AIR, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR}}, {
+                {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, AIR, AIR}, {AIR, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, AIR}, {AIR, SPRUCE_LEAVES, SPRUCE_LEAVES, UP_DOWN_SPRUCE_LOG, SPRUCE_LEAVES, SPRUCE_LEAVES, AIR}, {AIR, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, AIR}, {AIR, AIR, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}}, {
 
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, SPRUCE_LEAVES, AIR, AIR, AIR},
-                {AIR, AIR, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, AIR, AIR},
-                {AIR, AIR, AIR, SPRUCE_LEAVES, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR}}, {
+                {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, SPRUCE_LEAVES, AIR, AIR, AIR}, {AIR, AIR, SPRUCE_LEAVES, SPRUCE_LEAVES, SPRUCE_LEAVES, AIR, AIR}, {AIR, AIR, AIR, SPRUCE_LEAVES, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}}, {
 
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, SPRUCE_LEAVES, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR}}};
+                {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, SPRUCE_LEAVES, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}}};
 
-        DARK_OAK_TREE = new short[][][]{{
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, DIRT, DIRT, AIR, AIR, AIR},
-                {AIR, AIR, DIRT, DIRT, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR}}, {
+        DARK_OAK_TREE = new short[][][]{{{AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, DIRT, DIRT, AIR, AIR, AIR}, {AIR, AIR, DIRT, DIRT, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}}, {
 
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, UP_DOWN_DARK_OAK_LOG, UP_DOWN_DARK_OAK_LOG, AIR, AIR, AIR},
-                {AIR, AIR, UP_DOWN_DARK_OAK_LOG, UP_DOWN_DARK_OAK_LOG, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR}}, {
+                {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, UP_DOWN_DARK_OAK_LOG, UP_DOWN_DARK_OAK_LOG, AIR, AIR, AIR}, {AIR, AIR, UP_DOWN_DARK_OAK_LOG, UP_DOWN_DARK_OAK_LOG, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}}, {
 
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, UP_DOWN_DARK_OAK_LOG, UP_DOWN_DARK_OAK_LOG, UP_DOWN_DARK_OAK_LOG, AIR, AIR, AIR},
-                {AIR, AIR, UP_DOWN_DARK_OAK_LOG, UP_DOWN_DARK_OAK_LOG, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR}}, {
+                {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, UP_DOWN_DARK_OAK_LOG, UP_DOWN_DARK_OAK_LOG, UP_DOWN_DARK_OAK_LOG, AIR, AIR, AIR}, {AIR, AIR, UP_DOWN_DARK_OAK_LOG, UP_DOWN_DARK_OAK_LOG, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}}, {
 
-                {AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR, AIR},
-                {DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR},
-                {DARK_OAK_LEAVES, UP_DOWN_DARK_OAK_LOG, UP_DOWN_DARK_OAK_LOG, UP_DOWN_DARK_OAK_LOG, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR},
-                {DARK_OAK_LEAVES, DARK_OAK_LEAVES, UP_DOWN_DARK_OAK_LOG, UP_DOWN_DARK_OAK_LOG, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR},
-                {AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, UP_DOWN_DARK_OAK_LOG, DARK_OAK_LEAVES, AIR, AIR},
-                {AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR}}, {
+                {AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR, AIR}, {DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR}, {DARK_OAK_LEAVES, UP_DOWN_DARK_OAK_LOG, UP_DOWN_DARK_OAK_LOG, UP_DOWN_DARK_OAK_LOG, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR}, {DARK_OAK_LEAVES, DARK_OAK_LEAVES, UP_DOWN_DARK_OAK_LOG, UP_DOWN_DARK_OAK_LOG, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR}, {AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, UP_DOWN_DARK_OAK_LOG, DARK_OAK_LEAVES, AIR, AIR}, {AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}}, {
 
-                {AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR},
-                {DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, UP_DOWN_DARK_OAK_LOG, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR},
-                {DARK_OAK_LEAVES, UP_DOWN_DARK_OAK_LOG, UP_DOWN_DARK_OAK_LOG, UP_DOWN_DARK_OAK_LOG, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR},
-                {DARK_OAK_LEAVES, DARK_OAK_LEAVES, UP_DOWN_DARK_OAK_LOG, UP_DOWN_DARK_OAK_LOG, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR},
-                {DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, UP_DOWN_DARK_OAK_LOG, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR},
-                {AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR},
-                {AIR, AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR, AIR}}, {
+                {AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR}, {DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, UP_DOWN_DARK_OAK_LOG, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR}, {DARK_OAK_LEAVES, UP_DOWN_DARK_OAK_LOG, UP_DOWN_DARK_OAK_LOG, UP_DOWN_DARK_OAK_LOG, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR}, {DARK_OAK_LEAVES, DARK_OAK_LEAVES, UP_DOWN_DARK_OAK_LOG, UP_DOWN_DARK_OAK_LOG, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR}, {DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, UP_DOWN_DARK_OAK_LOG, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR}, {AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR}, {AIR, AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR, AIR}}, {
 
-                {AIR, AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR, AIR},
-                {AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, UP_DOWN_DARK_OAK_LOG, DARK_OAK_LEAVES, AIR, AIR},
-                {DARK_OAK_LEAVES, UP_DOWN_DARK_OAK_LOG, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR},
-                {DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR},
-                {AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, UP_DOWN_DARK_OAK_LOG, DARK_OAK_LEAVES, AIR, AIR},
-                {AIR, AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR}}, {
+                {AIR, AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR, AIR}, {AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, UP_DOWN_DARK_OAK_LOG, DARK_OAK_LEAVES, AIR, AIR}, {DARK_OAK_LEAVES, UP_DOWN_DARK_OAK_LOG, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR}, {DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR}, {AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, UP_DOWN_DARK_OAK_LOG, DARK_OAK_LEAVES, AIR, AIR}, {AIR, AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}}, {
 
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR, AIR},
-                {AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR},
-                {AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR},
-                {AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR},
-                {AIR, AIR, AIR, DARK_OAK_LEAVES, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR}}, {
+                {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR, AIR}, {AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR}, {AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR}, {AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR}, {AIR, AIR, AIR, DARK_OAK_LEAVES, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}}, {
 
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR, AIR},
-                {AIR, AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR},
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR}}};
+                {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR, AIR}, {AIR, AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}}};
 
-        SKY_BOX_VERTICES = new float[]{
-                -1.0f, -1.0f, -1.0f,
-                -1.0f, -1.0f, 1.0f,
-                -1.0f, 1.0f, -1.0f,
-                -1.0f, 1.0f, 1.0f,
+        SKY_BOX_VERTICES = new float[]{-1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f,
 
-                1.0f, -1.0f, -1.0f,
-                1.0f, -1.0f, 1.0f,
-                1.0f, 1.0f, -1.0f,
-                1.0f, 1.0f, 1.0f,
+                1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f,
 
-                -1.0f, -1.0f, -1.0f,
-                -1.0f, -1.0f, 1.0f,
-                1.0f, -1.0f, -1.0f,
-                1.0f, -1.0f, 1.0f,
+                -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f,
 
-                -1.0f, 1.0f, -1.0f,
-                -1.0f, 1.0f, 1.0f,
-                1.0f, 1.0f, -1.0f,
-                1.0f, 1.0f, 1.0f,
+                -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f,
 
-                -1.0f, -1.0f, -1.0f,
-                -1.0f, 1.0f, -1.0f,
-                1.0f, -1.0f, -1.0f,
-                1.0f, 1.0f, -1.0f,
+                -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f,
 
-                -1.0f, -1.0f, 1.0f,
-                -1.0f, 1.0f, 1.0f,
-                1.0f, -1.0f, 1.0f,
-                1.0f, 1.0f, 1.0f
-        };
-        SKY_BOX_INDICES = new int[]{
-                0, 2, 1,
-                3, 1, 2,
+                -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+        SKY_BOX_INDICES = new int[]{0, 2, 1, 3, 1, 2,
 
-                4, 5, 6,
-                7, 6, 5,
+                4, 5, 6, 7, 6, 5,
 
-                8, 9, 10,
-                11, 10, 9,
+                8, 9, 10, 11, 10, 9,
 
-                12, 14, 13,
-                15, 13, 14,
+                12, 14, 13, 15, 13, 14,
 
-                16, 18, 17,
-                19, 17, 18,
+                16, 18, 17, 19, 17, 18,
 
-                20, 21, 22,
-                23, 22, 21
-        };
-        SKY_BOX_TEXTURE_COORDINATES = new float[]{
-                1.0f, 2 / 3f,
-                0.75f, 2 / 3f,
-                1.0f, 1 / 3f,
-                0.75f, 1 / 3f,
+                20, 21, 22, 23, 22, 21};
+        SKY_BOX_TEXTURE_COORDINATES = new float[]{1.0f, 2 / 3f, 0.75f, 2 / 3f, 1.0f, 1 / 3f, 0.75f, 1 / 3f,
 
-                0.25f, 2 / 3f,
-                0.5f, 2 / 3f,
-                0.25f, 1 / 3f,
-                0.5f, 1 / 3f,
+                0.25f, 2 / 3f, 0.5f, 2 / 3f, 0.25f, 1 / 3f, 0.5f, 1 / 3f,
 
-                0.25f, 1.0f,
-                0.5f, 1.0f,
-                0.25f, 2 / 3f,
-                0.5f, 2 / 3f,
+                0.25f, 1.0f, 0.5f, 1.0f, 0.25f, 2 / 3f, 0.5f, 2 / 3f,
 
-                0.25f, 0.0f,
-                0.5f, 0.0f,
-                0.25f, 1 / 3f,
-                0.5f, 1 / 3f,
+                0.25f, 0.0f, 0.5f, 0.0f, 0.25f, 1 / 3f, 0.5f, 1 / 3f,
 
-                0.0f, 2 / 3f,
-                0.0f, 1 / 3f,
-                0.25f, 2 / 3f,
-                0.25f, 1 / 3f,
+                0.0f, 2 / 3f, 0.0f, 1 / 3f, 0.25f, 2 / 3f, 0.25f, 1 / 3f,
 
-                0.75f, 2 / 3f,
-                0.75f, 1 / 3f,
-                0.5f, 2 / 3f,
-                0.5f, 1 / 3f
-        };
-        GUI_ELEMENT_TEXTURE_COORDINATES = new float[]{
-                0.0f, 1.0f,
-                0.0f, 0.0f,
-                1.0f, 1.0f,
+                0.75f, 2 / 3f, 0.75f, 1 / 3f, 0.5f, 2 / 3f, 0.5f, 1 / 3f};
+        GUI_ELEMENT_TEXTURE_COORDINATES = new float[]{0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f,
 
-                0.0f, 0.0f,
-                1.0f, 0.0f,
-                1.0f, 1.0f
-        };
-        OVERLAY_VERTICES = new float[]{
-                -0.5f, 0.5f,
-                -0.5f, -0.5f,
-                0.5f, 0.5f,
+                0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f};
+        OVERLAY_VERTICES = new float[]{-0.5f, 0.5f, -0.5f, -0.5f, 0.5f, 0.5f,
 
-                -0.5f, -0.5f,
-                0.5f, -0.5f,
-                0.5f, 0.5f
-        };
+                -0.5f, -0.5f, 0.5f, -0.5f, 0.5f, 0.5f};
     }
 }

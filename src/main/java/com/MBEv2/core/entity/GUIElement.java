@@ -163,12 +163,11 @@ public class GUIElement {
 
         for (int aabbIndex = 0; aabbIndex < XYZSubData.length; aabbIndex += 6) {
             int offset = aabbIndex * 6;
-            int subDataIndex = aabbIndex / 6;
 
-            final float upperFrontX = (textureFrontX + 1 + Block.getSubU(blockType, FRONT, 0, subDataIndex) * 0.0625f) * 0.0625f;
-            final float lowerFrontX = (textureFrontX + Block.getSubU(blockType, FRONT, 1, subDataIndex) * 0.0625f) * 0.0625f;
-            final float upperFrontY = (textureFrontY + Block.getSubV(blockType, FRONT, 1, subDataIndex) * 0.0625f) * 0.0625f;
-            final float lowerFrontY = (textureFrontY + 1 + Block.getSubV(blockType, FRONT, 2, subDataIndex) * 0.0625f) * 0.0625f;
+            final float upperFrontX = (textureFrontX + 1 + Block.getSubU(blockType, FRONT, 0, aabbIndex) * 0.0625f) * 0.0625f;
+            final float lowerFrontX = (textureFrontX + Block.getSubU(blockType, FRONT, 1, aabbIndex) * 0.0625f) * 0.0625f;
+            final float upperFrontY = (textureFrontY + Block.getSubV(blockType, FRONT, 1, aabbIndex) * 0.0625f) * 0.0625f;
+            final float lowerFrontY = (textureFrontY + 1 + Block.getSubV(blockType, FRONT, 2, aabbIndex) * 0.0625f) * 0.0625f;
             textureCoordinates[offset] = lowerFrontX;
             textureCoordinates[offset + 1] = lowerFrontY;
             textureCoordinates[offset + 2] = lowerFrontX;
@@ -182,10 +181,10 @@ public class GUIElement {
             textureCoordinates[offset + 10] = upperFrontX;
             textureCoordinates[offset + 11] = lowerFrontY;
 
-            final float upperTopX = (textureTopX + 1 + Block.getSubU(blockType, TOP, 0, subDataIndex) * 0.0625f) * 0.0625f;
-            final float lowerTopX = (textureTopX + Block.getSubU(blockType, TOP, 1, subDataIndex) * 0.0625f) * 0.0625f;
-            final float upperTopY = (textureTopY + Block.getSubV(blockType, TOP, 1, subDataIndex) * 0.0625f) * 0.0625f;
-            final float lowerTopY = (textureTopY + 1 + Block.getSubV(blockType, TOP, 2, subDataIndex) * 0.0625f) * 0.0625f;
+            final float upperTopX = (textureTopX + 1 + Block.getSubU(blockType, TOP, 0, aabbIndex) * 0.0625f) * 0.0625f;
+            final float lowerTopX = (textureTopX + Block.getSubU(blockType, TOP, 1, aabbIndex) * 0.0625f) * 0.0625f;
+            final float upperTopY = (textureTopY + Block.getSubV(blockType, TOP, 1, aabbIndex) * 0.0625f) * 0.0625f;
+            final float lowerTopY = (textureTopY + 1 + Block.getSubV(blockType, TOP, 2, aabbIndex) * 0.0625f) * 0.0625f;
             textureCoordinates[offset + 12] = lowerTopX;
             textureCoordinates[offset + 13] = lowerTopY;
             textureCoordinates[offset + 14] = lowerTopX;
@@ -199,10 +198,10 @@ public class GUIElement {
             textureCoordinates[offset + 22] = upperTopX;
             textureCoordinates[offset + 23] = lowerTopY;
 
-            final float upperRightX = (textureLeftX + Block.getSubU(blockType, LEFT, 0, subDataIndex) * 0.0625f) * 0.0625f;
-            final float lowerRightX = (textureLeftX + 1 + Block.getSubU(blockType, LEFT, 1, subDataIndex) * 0.0625f) * 0.0625f;
-            final float upperRightY = (textureLeftY + Block.getSubV(blockType, LEFT, 1, subDataIndex) * 0.0625f) * 0.0625f;
-            final float lowerRightY = (textureLeftY + 1 + Block.getSubV(blockType, LEFT, 2, subDataIndex) * 0.0625f) * 0.0625f;
+            final float upperRightX = (textureLeftX + Block.getSubU(blockType, LEFT, 0, aabbIndex) * 0.0625f) * 0.0625f;
+            final float lowerRightX = (textureLeftX + 1 + Block.getSubU(blockType, LEFT, 1, aabbIndex) * 0.0625f) * 0.0625f;
+            final float upperRightY = (textureLeftY + Block.getSubV(blockType, LEFT, 1, aabbIndex) * 0.0625f) * 0.0625f;
+            final float lowerRightY = (textureLeftY + 1 + Block.getSubV(blockType, LEFT, 2, aabbIndex) * 0.0625f) * 0.0625f;
             textureCoordinates[offset + 24] = lowerRightX;
             textureCoordinates[offset + 25] = lowerRightY;
             textureCoordinates[offset + 26] = lowerRightX;
