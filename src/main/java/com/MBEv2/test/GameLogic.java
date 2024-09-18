@@ -80,17 +80,30 @@ public class GameLogic {
         int chunkY = y >> CHUNK_SIZE_BITS;
         int chunkZ = z >> CHUNK_SIZE_BITS;
 
-        int inChunkX = x & CHUNK_SIZE - 1;
-        int inChunkY = y & CHUNK_SIZE - 1;
-        int inChunkZ = z & CHUNK_SIZE - 1;
+        int inChunkX = x & CHUNK_SIZE_MASK;
+        int inChunkY = y & CHUNK_SIZE_MASK;
+        int inChunkZ = z & CHUNK_SIZE_MASK;
 
         Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
         if (chunk == null) return;
+
+        int baseBlock = block & BASE_BLOCK_MASK;
+        if ((Block.getBlockTypeData(block) & SMART_BLOCK_TYPE) != 0) {
+            block = (short) (baseBlock | Block.getSmartBlockType(block, x, y, z));
+        }
+
         short previousBlock = chunk.getSaveBlock(inChunkX, inChunkY, inChunkZ);
         if (previousBlock == block) return;
 
         chunk.placeBlock(inChunkX, inChunkY, inChunkZ, block);
         chunk.setModified();
+
+        Block.updateSmartBlock(x + 1, y, z);
+        Block.updateSmartBlock(x - 1, y, z);
+        Block.updateSmartBlock(x, y + 1, z);
+        Block.updateSmartBlock(x, y - 1, z);
+        Block.updateSmartBlock(x, y, z + 1);
+        Block.updateSmartBlock(x, y, z - 1);
 
         int minX = chunkX, maxX = chunkX;
         int minY = chunkY, maxY = chunkY;

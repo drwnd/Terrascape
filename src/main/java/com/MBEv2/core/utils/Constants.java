@@ -37,14 +37,13 @@ public class Constants {
     public static final int LEFT = 5;
     public static final int NONE = 6;
 
-    //OCCLUSION_DATA
+    //BLOCK_TYPE_OCCLUSION_DATA
     public static final int OCCLUDES_ALL = 0;
     public static final int OCCLUDES_SELF = 1;
-    public static final int OCCLUDES_DYNAMIC_ALL = 2;
     public static final int OCCLUDES_DYNAMIC_SELF = 3;
 
-    //BLOCK_DATA
-//    public static final int SOLID_MASK = 64;
+    //BLOCK_TYPE_DATA
+    public static final int SMART_BLOCK_TYPE = 64;
     public static final int DYNAMIC_SHAPE_MASK = 128;
 
     //BLOCK_XYZ_SUB_DATA
@@ -63,96 +62,148 @@ public class Constants {
     public static final int BLAST_RESISTANT = 16;
 
     //Indices for information on block types
-    public static final int FULL_BLOCK = 0;
+    public static final byte FULL_BLOCK = 0;
 
-    public static final int BOTTOM_SLAB = 1;
-    public static final int TOP_SLAB = 2;
-    public static final int FRONT_SLAB = 3;
-    public static final int BACK_SLAB = 4;
-    public static final int RIGHT_SLAB = 5;
-    public static final int LEFT_SLAB = 6;
-    public static final int[] SLABS = new int[]{FRONT_SLAB, TOP_SLAB, RIGHT_SLAB, BACK_SLAB, BOTTOM_SLAB, LEFT_SLAB};
+    public static final byte BOTTOM_SLAB = 1;
+    public static final byte TOP_SLAB = 2;
+    public static final byte FRONT_SLAB = 3;
+    public static final byte BACK_SLAB = 4;
+    public static final byte RIGHT_SLAB = 5;
+    public static final byte LEFT_SLAB = 6;
+    public static final byte[] SLABS = new byte[]{FRONT_SLAB, TOP_SLAB, RIGHT_SLAB, BACK_SLAB, BOTTOM_SLAB, LEFT_SLAB};
 
-    public static final int UP_DOWN_POST = 7;
-    public static final int FRONT_BACK_POST = 8;
-    public static final int LEFT_RIGHT_POST = 9;
-    public static final int[] POSTS = new int[]{FRONT_BACK_POST, UP_DOWN_POST, LEFT_RIGHT_POST};
+    public static final byte UP_DOWN_POST = 7;
+    public static final byte FRONT_BACK_POST = 8;
+    public static final byte LEFT_RIGHT_POST = 9;
+    public static final byte[] POSTS = new byte[]{FRONT_BACK_POST, UP_DOWN_POST, LEFT_RIGHT_POST};
 
-    public static final int UP_DOWN_WALL = 10;
-    public static final int FRONT_BACK_WALL = 11;
-    public static final int LEFT_RIGHT_WALL = 12;
-    public static final int[] WALLS = new int[]{FRONT_BACK_WALL, UP_DOWN_WALL, LEFT_RIGHT_WALL};
+    public static final byte UP_DOWN_WALL = 10;
+    public static final byte FRONT_BACK_WALL = 11;
+    public static final byte LEFT_RIGHT_WALL = 12;
+    public static final byte[] WALLS = new byte[]{FRONT_BACK_WALL, UP_DOWN_WALL, LEFT_RIGHT_WALL};
 
-    public static final int FRONT_PLATE = 13;
-    public static final int TOP_PLATE = 14;
-    public static final int RIGHT_PLATE = 15;
-    public static final int BACK_PLATE = 16;
-    public static final int BOTTOM_PLATE = 17;
-    public static final int LEFT_PLATE = 18;
-    public static final int[] PLATES = new int[]{FRONT_PLATE, TOP_PLATE, RIGHT_PLATE, BACK_PLATE, BOTTOM_PLATE, LEFT_PLATE};
+    public static final byte FRONT_PLATE = 13;
+    public static final byte TOP_PLATE = 14;
+    public static final byte RIGHT_PLATE = 15;
+    public static final byte BACK_PLATE = 16;
+    public static final byte BOTTOM_PLATE = 17;
+    public static final byte LEFT_PLATE = 18;
+    public static final byte[] PLATES = new byte[]{FRONT_PLATE, TOP_PLATE, RIGHT_PLATE, BACK_PLATE, BOTTOM_PLATE, LEFT_PLATE};
 
-    public static final int BOTTOM_FRONT_STAIR = 19;
-    public static final int BOTTOM_BACK_STAIR = 20;
-    public static final int BOTTOM_RIGHT_STAIR = 21;
-    public static final int BOTTOM_LEFT_STAIR = 22;
-    public static final int TOP_FRONT_STAIR = 23;
-    public static final int TOP_BACK_STAIR = 24;
-    public static final int TOP_RIGHT_STAIR = 25;
-    public static final int TOP_LEFT_STAIR = 26;
-    public static final int FRONT_RIGHT_STAIR = 27;
-    public static final int FRONT_LEFT_STAIR = 28;
-    public static final int BACK_RIGHT_STAIR = 29;
-    public static final int BACK_LEFT_STAIR = 30;
+    public static final byte BOTTOM_FRONT_STAIR = 19;
+    public static final byte BOTTOM_BACK_STAIR = 20;
+    public static final byte BOTTOM_RIGHT_STAIR = 21;
+    public static final byte BOTTOM_LEFT_STAIR = 22;
+    public static final byte TOP_FRONT_STAIR = 23;
+    public static final byte TOP_BACK_STAIR = 24;
+    public static final byte TOP_RIGHT_STAIR = 25;
+    public static final byte TOP_LEFT_STAIR = 26;
+    public static final byte FRONT_RIGHT_STAIR = 27;
+    public static final byte FRONT_LEFT_STAIR = 28;
+    public static final byte BACK_RIGHT_STAIR = 29;
+    public static final byte BACK_LEFT_STAIR = 30;
 
-    public static final int PLAYER_HEAD = 31;
-    public static final int CACTUS_TYPE = 32;
-    public static final int AIR_TYPE = 33;
-    public static final int LIQUID_TYPE = 34;
-    public static final int LEAVE_TYPE = 35;
-    public static final int GLASS_TYPE = 36;
-    public static final int TORCH_TYPE = 37;
+    public static final byte PLAYER_HEAD = 31;
+    public static final byte CACTUS_TYPE = 32;
+    public static final byte AIR_TYPE = 33;
+    public static final byte LIQUID_TYPE = 34;
+    public static final byte LEAVE_TYPE = 35;
+    public static final byte GLASS_TYPE = 36;
+    public static final byte TORCH_TYPE = 37;
 
-    public static final int FRONT_SOCKET = 38;
-    public static final int TOP_SOCKET = 39;
-    public static final int RIGHT_SOCKET = 40;
-    public static final int BACK_SOCKET = 41;
-    public static final int BOTTOM_SOCKET = 42;
-    public static final int LEFT_SOCKET = 43;
-    public static final int[] SOCKETS = new int[]{FRONT_SOCKET, TOP_SOCKET, RIGHT_SOCKET, BACK_SOCKET, BOTTOM_SOCKET, LEFT_SOCKET};
+    public static final byte FRONT_SOCKET = 38;
+    public static final byte TOP_SOCKET = 39;
+    public static final byte RIGHT_SOCKET = 40;
+    public static final byte BACK_SOCKET = 41;
+    public static final byte BOTTOM_SOCKET = 42;
+    public static final byte LEFT_SOCKET = 43;
+    public static final byte[] SOCKETS = new byte[]{FRONT_SOCKET, TOP_SOCKET, RIGHT_SOCKET, BACK_SOCKET, BOTTOM_SOCKET, LEFT_SOCKET};
 
-    public static final int THICK_BOTTOM_FRONT_STAIR = 44;
-    public static final int THICK_BOTTOM_BACK_STAIR = 45;
-    public static final int THICK_BOTTOM_RIGHT_STAIR = 46;
-    public static final int THICK_BOTTOM_LEFT_STAIR = 47;
-    public static final int THICK_TOP_FRONT_STAIR = 48;
-    public static final int THICK_TOP_BACK_STAIR = 49;
-    public static final int THICK_TOP_RIGHT_STAIR = 50;
-    public static final int THICK_TOP_LEFT_STAIR = 51;
-    public static final int THICK_FRONT_RIGHT_STAIR = 52;
-    public static final int THICK_FRONT_LEFT_STAIR = 53;
-    public static final int THICK_BACK_RIGHT_STAIR = 54;
-    public static final int THICK_BACK_LEFT_STAIR = 55;
+    public static final byte THICK_BOTTOM_FRONT_STAIR = 44;
+    public static final byte THICK_BOTTOM_BACK_STAIR = 45;
+    public static final byte THICK_BOTTOM_RIGHT_STAIR = 46;
+    public static final byte THICK_BOTTOM_LEFT_STAIR = 47;
+    public static final byte THICK_TOP_FRONT_STAIR = 48;
+    public static final byte THICK_TOP_BACK_STAIR = 49;
+    public static final byte THICK_TOP_RIGHT_STAIR = 50;
+    public static final byte THICK_TOP_LEFT_STAIR = 51;
+    public static final byte THICK_FRONT_RIGHT_STAIR = 52;
+    public static final byte THICK_FRONT_LEFT_STAIR = 53;
+    public static final byte THICK_BACK_RIGHT_STAIR = 54;
+    public static final byte THICK_BACK_LEFT_STAIR = 55;
 
-    public static final int THIN_BOTTOM_FRONT_STAIR = 56;
-    public static final int THIN_BOTTOM_BACK_STAIR = 57;
-    public static final int THIN_BOTTOM_RIGHT_STAIR = 58;
-    public static final int THIN_BOTTOM_LEFT_STAIR = 59;
-    public static final int THIN_TOP_FRONT_STAIR = 60;
-    public static final int THIN_TOP_BACK_STAIR = 61;
-    public static final int THIN_TOP_RIGHT_STAIR = 62;
-    public static final int THIN_TOP_LEFT_STAIR = 63;
-    public static final int THIN_FRONT_RIGHT_STAIR = 64;
-    public static final int THIN_FRONT_LEFT_STAIR = 65;
-    public static final int THIN_BACK_RIGHT_STAIR = 66;
-    public static final int THIN_BACK_LEFT_STAIR = 67;
+    public static final byte THIN_BOTTOM_FRONT_STAIR = 56;
+    public static final byte THIN_BOTTOM_BACK_STAIR = 57;
+    public static final byte THIN_BOTTOM_RIGHT_STAIR = 58;
+    public static final byte THIN_BOTTOM_LEFT_STAIR = 59;
+    public static final byte THIN_TOP_FRONT_STAIR = 60;
+    public static final byte THIN_TOP_BACK_STAIR = 61;
+    public static final byte THIN_TOP_RIGHT_STAIR = 62;
+    public static final byte THIN_TOP_LEFT_STAIR = 63;
+    public static final byte THIN_FRONT_RIGHT_STAIR = 64;
+    public static final byte THIN_FRONT_LEFT_STAIR = 65;
+    public static final byte THIN_BACK_RIGHT_STAIR = 66;
+    public static final byte THIN_BACK_LEFT_STAIR = 67;
 
-    public static final int[] TO_PLACE_BLOCK_TYPES = new int[]{FULL_BLOCK, PLAYER_HEAD, BOTTOM_SOCKET, BOTTOM_SLAB, BOTTOM_PLATE, FRONT_BACK_WALL, UP_DOWN_POST, THICK_BOTTOM_BACK_STAIR, BOTTOM_BACK_STAIR, THIN_BOTTOM_BACK_STAIR};
+    public static final byte UP_DOWN_FENCE = 68;
+    public static final byte UP_DOWN_FENCE_FRONT = 69;
+    public static final byte UP_DOWN_FENCE_RIGHT = 70;
+    public static final byte UP_DOWN_FENCE_FRONT_RIGHT = 71;
+    public static final byte UP_DOWN_FENCE_BACK = 72;
+    public static final byte UP_DOWN_FENCE_FRONT_BACK = 73;
+    public static final byte UP_DOWN_FENCE_RIGHT_BACK = 74;
+    public static final byte UP_DOWN_FENCE_FRONT_RIGHT_BACK = 75;
+    public static final byte UP_DOWN_FENCE_LEFT = 76;
+    public static final byte UP_DOWN_FENCE_FRONT_LEFT = 77;
+    public static final byte UP_DOWN_FENCE_RIGHT_LEFT = 78;
+    public static final byte UP_DOWN_FENCE_FRONT_RIGHT_LEFT = 79;
+    public static final byte UP_DOWN_FENCE_BACK_LEFT = 80;
+    public static final byte UP_DOWN_FENCE_FRONT_BACK_LEFT = 81;
+    public static final byte UP_DOWN_FENCE_RIGHT_BACK_LEFT = 82;
+    public static final byte UP_DOWN_FENCE_FRONT_RIGHT_BACK_LEFT = 83;
+
+    public static final byte FRONT_BACK_FENCE = 84;
+    public static final byte FRONT_BACK_FENCE_UP = 85;
+    public static final byte FRONT_BACK_FENCE_RIGHT = 86;
+    public static final byte FRONT_BACK_FENCE_UP_RIGHT = 87;
+    public static final byte FRONT_BACK_FENCE_DOWN = 88;
+    public static final byte FRONT_BACK_FENCE_UP_DOWN = 89;
+    public static final byte FRONT_BACK_FENCE_RIGHT_DOWN = 90;
+    public static final byte FRONT_BACK_FENCE_UP_RIGHT_DOWN = 91;
+    public static final byte FRONT_BACK_FENCE_LEFT = 92;
+    public static final byte FRONT_BACK_FENCE_UP_LEFT = 93;
+    public static final byte FRONT_BACK_FENCE_RIGHT_LEFT = 94;
+    public static final byte FRONT_BACK_FENCE_UP_RIGHT_LEFT = 95;
+    public static final byte FRONT_BACK_FENCE_DOWN_LEFT = 96;
+    public static final byte FRONT_BACK_FENCE_UP_DOWN_LEFT = 97;
+    public static final byte FRONT_BACK_FENCE_RIGHT_DOWN_LEFT = 98;
+    public static final byte FRONT_BACK_FENCE_UP_RIGHT_DOWN_LEFT = 99;
+
+    public static final byte LEFT_RIGHT_FENCE = 100;
+    public static final byte LEFT_RIGHT_FENCE_FRONT = 101;
+    public static final byte LEFT_RIGHT_FENCE_UP = 102;
+    public static final byte LEFT_RIGHT_FENCE_FRONT_UP = 103;
+    public static final byte LEFT_RIGHT_FENCE_BACK = 104;
+    public static final byte LEFT_RIGHT_FENCE_FRONT_BACK = 105;
+    public static final byte LEFT_RIGHT_FENCE_UP_BACK = 106;
+    public static final byte LEFT_RIGHT_FENCE_FRONT_UP_BACK = 107;
+    public static final byte LEFT_RIGHT_FENCE_DOWN = 108;
+    public static final byte LEFT_RIGHT_FENCE_FRONT_DOWN = 109;
+    public static final byte LEFT_RIGHT_FENCE_UP_DOWN = 110;
+    public static final byte LEFT_RIGHT_FENCE_FRONT_UP_DOWN = 111;
+    public static final byte LEFT_RIGHT_FENCE_BACK_DOWN = 112;
+    public static final byte LEFT_RIGHT_FENCE_FRONT_BACK_DOWN = 113;
+    public static final byte LEFT_RIGHT_FENCE_UP_BACK_DOWN = 114;
+    public static final byte LEFT_RIGHT_FENCE_FRONT_UP_BACK_DOWN = 115;
+    public static final byte[] FENCES = new byte[]{FRONT_BACK_FENCE, UP_DOWN_FENCE, LEFT_RIGHT_FENCE};
+
+    public static final byte[] TO_PLACE_BLOCK_TYPES = new byte[]{FULL_BLOCK, PLAYER_HEAD, BOTTOM_SOCKET, BOTTOM_SLAB, BOTTOM_PLATE, FRONT_BACK_WALL, UP_DOWN_POST, THICK_BOTTOM_BACK_STAIR, BOTTOM_BACK_STAIR, THIN_BOTTOM_BACK_STAIR, UP_DOWN_FENCE_FRONT_RIGHT};
     public static final int BLOCK_TYPE_BITS = 8;
     public static final int BLOCK_TYPE_MASK = (1 << BLOCK_TYPE_BITS) - 1;
     public static final int BASE_BLOCK_MASK = -1 << BLOCK_TYPE_BITS;
     public static final int STANDARD_BLOCKS_THRESHOLD = 1 << BLOCK_TYPE_BITS;
 
-    public static final int TOTAL_AMOUNT_OF_BLOCK_TYPES = 68;
+    public static final int TOTAL_AMOUNT_OF_BLOCK_TYPES = 116;
 
     //Non standard block, aka blocks without blockTypes
     public static final short AIR = 0;

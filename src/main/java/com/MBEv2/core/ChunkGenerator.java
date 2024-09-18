@@ -191,8 +191,13 @@ public class ChunkGenerator {
 
         @Override
         public void run() {
-            if (travelDirection == BOTTOM) handleSkyLightBottom();
-            else handleSkyLightTop();
+            try {
+                if (travelDirection == BOTTOM) handleSkyLightBottom();
+                else handleSkyLightTop();
+            } catch (Exception e) {
+                System.out.println(e.getClass());
+                e.printStackTrace();
+            }
 
             MeshGenerator meshGenerator = new MeshGenerator();
 

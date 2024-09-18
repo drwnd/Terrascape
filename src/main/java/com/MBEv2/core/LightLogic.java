@@ -371,13 +371,13 @@ public class LightLogic {
     public static boolean canLightTravel(short destinationBlock, int enterSide, short originBlock, int exitSide) {
         int originBlockType = Block.getBlockType(originBlock);
         int originBlockProperties = Block.getBlockProperties(originBlock);
-        boolean canExit = Block.getBlockTypeOcclusionData(originBlock, exitSide) == 0 || (originBlockProperties & LIGHT_EMITTING) != 0 || originBlockType == LIQUID_TYPE ||
+        boolean canExit = Block.getBlockTypeOcclusionData(originBlock, exitSide) != -1 || (originBlockProperties & LIGHT_EMITTING) != 0 || originBlockType == LIQUID_TYPE ||
                 Block.isGlassType(originBlock) || Block.isLeaveType(originBlock);
         if (!canExit) return false;
 
         int destinationBlockType = Block.getBlockType(destinationBlock);
         int destinationBlockProperties = Block.getBlockProperties(destinationBlock);
-        return Block.getBlockTypeOcclusionData(destinationBlock, enterSide) == 0 || (destinationBlockProperties & LIGHT_EMITTING) != 0 || destinationBlockType == LIQUID_TYPE ||
+        return Block.getBlockTypeOcclusionData(destinationBlock, enterSide) != -1 || (destinationBlockProperties & LIGHT_EMITTING) != 0 || destinationBlockType == LIQUID_TYPE ||
                 Block.isGlassType(destinationBlock) || Block.isLeaveType(destinationBlock);
     }
 
