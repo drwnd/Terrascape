@@ -18,15 +18,16 @@ public class WindowManager {
     private long window;
 
     private boolean resize;
-    private final boolean vSync;
+    private final boolean vSync, maximized;
 
     private final Matrix4f projectionMatrix;
 
-    public WindowManager(String title, int width, int height, boolean vSync) {
+    public WindowManager(String title, int width, int height, boolean vSync, boolean maximized) {
         this.title = title;
         this.width = width;
         this.height = height;
         this.vSync = vSync;
+        this.maximized = maximized;
 
         projectionMatrix = new Matrix4f();
     }
@@ -44,15 +45,14 @@ public class WindowManager {
         GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_PROFILE, GLFW.GLFW_OPENGL_CORE_PROFILE);
         GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_FORWARD_COMPAT, GL11.GL_TRUE);
 
-        boolean maximised = false;
-        if (width == 0 || height == 0) {
-            width = 100;
-            height = 100;
-            GLFW.glfwWindowHint(GLFW.GLFW_MAXIMIZED, GLFW.GLFW_TRUE);
-            maximised = true;
-        }
+        GLFWVidMode vidMode = GLFW.glfwGetVideoMode(GLFW.glfwGetPrimaryMonitor());
+        if (vidMode == null) throw new RuntimeException("Could not get video mode");
 
-        window = GLFW.glfwCreateWindow(width, height, title, MemoryUtil.NULL, MemoryUtil.NULL);
+        if (maximized) {
+            GLFW.glfwWindowHint(GLFW.GLFW_MAXIMIZED, GLFW.GLFW_TRUE);
+            window = GLFW.glfwCreateWindow(vidMode.width(), vidMode.height(), title, GLFW.glfwGetPrimaryMonitor(), MemoryUtil.NULL);
+        } else window = GLFW.glfwCreateWindow(width, height, title, MemoryUtil.NULL, MemoryUtil.NULL);
+
         if (window == MemoryUtil.NULL) throw new RuntimeException("Failed to create GLFW window");
 
         GLFW.glfwSetFramebufferSizeCallback(window, (window, width, height) -> {
@@ -62,12 +62,10 @@ public class WindowManager {
             updateProjectionMatrix();
         });
 
-        GLFWVidMode vidMode = GLFW.glfwGetVideoMode(GLFW.glfwGetPrimaryMonitor());
-        assert vidMode != null;
-        if (maximised) {
+        if (maximized) {
             GLFW.glfwMaximizeWindow(window);
             width = vidMode.width();
-            height = vidMode.height() - 71;
+            height = vidMode.height();
         } else
             GLFW.glfwSetWindowPos(window, (vidMode.width() - width) / 2, (vidMode.height() - height) / 2);
 
@@ -106,10 +104,6 @@ public class WindowManager {
         return GLFW.glfwWindowShouldClose(window);
     }
 
-    public void setTitle(String title) {
-        GLFW.glfwSetWindowTitle(window, title);
-    }
-
     public boolean isvSync() {
         return vSync;
     }
@@ -137,6 +131,11 @@ public class WindowManager {
     public void updateProjectionMatrix() {
         float aspectRatio = (float) width / height;
         projectionMatrix.setPerspective(FOV, aspectRatio, Z_NEAR, Z_FAR);
+    }
+
+    public void updateProjectionMatrix(float fov) {
+        float aspectRatio = (float) width / height;
+        projectionMatrix.setPerspective(fov, aspectRatio, Z_NEAR, Z_FAR);
     }
 
     public Matrix4f getProjectionMatrix() {

@@ -1,6 +1,6 @@
 package com.MBEv2.core;
 
-import com.MBEv2.core.entity.Entity;
+import com.MBEv2.core.entity.entities.Entity;
 import com.MBEv2.core.entity.Model;
 import com.MBEv2.test.GameLogic;
 import org.joml.Vector3i;

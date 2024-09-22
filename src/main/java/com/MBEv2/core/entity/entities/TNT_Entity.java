@@ -1,7 +1,10 @@
 package com.MBEv2.core.entity.entities;
 
-import com.MBEv2.core.*;
-import com.MBEv2.core.entity.Entity;
+import com.MBEv2.core.Block;
+import com.MBEv2.core.Chunk;
+import com.MBEv2.core.ObjectLoader;
+import com.MBEv2.core.ShaderManager;
+import com.MBEv2.core.entity.particles.ExplosionParticle;
 import com.MBEv2.core.utils.Utils;
 import com.MBEv2.test.GameLogic;
 import org.joml.Vector3f;
@@ -41,7 +44,7 @@ public class TNT_Entity extends Entity {
     }
 
     @Override
-    protected void renderUnique(ShaderManager shader, RenderManager renderer, int modelIndexBuffer, float timeSinceLastTick) {
+    protected void renderUnique(ShaderManager shader, int modelIndexBuffer, float timeSinceLastTick) {
         GL30.glBindVertexArray(vao);
         GL20.glEnableVertexAttribArray(0);
         GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, modelIndexBuffer);
@@ -55,7 +58,7 @@ public class TNT_Entity extends Entity {
     }
 
     public static void init() {
-        long vao_vbo = ObjectLoader.loadVAO_VBO(TNT_Entity.TNTEntityVertices());
+        long vao_vbo = ObjectLoader.loadVAO_VBO(0, 2, TNT_Entity.TNTEntityVertices());
         vao = (int) (vao_vbo >> 32 & 0xFFFFFFFFL);
         vbo = (int) (vao_vbo & 0xFFFFFFFFL);
     }
@@ -117,6 +120,7 @@ public class TNT_Entity extends Entity {
         castExplosionRay(position, 0.8164965809277261, 0.4082482904638631, 0.4082482904638631, EXPLOSION_STRENGTH);
 
         pushEntities();
+        GameLogic.addParticle(new ExplosionParticle(new Vector3f(position.x, position.y + 0.375f, position.z)));
     }
 
     public static void castExplosionRay(Vector3f origin, double dirX, double dirY, double dirZ, int blastStrength) {

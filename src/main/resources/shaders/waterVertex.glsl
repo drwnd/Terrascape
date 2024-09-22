@@ -3,7 +3,9 @@
 layout (location = 0) in ivec2 data;
 
 out vec2 textureCoordinates;
-out float fragLight;
+out float blockLight;
+out float skyLight;
+out float ambientOcclusionLevel;
 out vec3 totalPosition;
 out vec3 normal;
 
@@ -111,19 +113,9 @@ void main() {
 
     textureCoordinates = vec2(u, v);
 
-    float blockLight = (data.y >> 18 & 15) * 0.0425;
-    float skyLight = (data.y >> 22 & 15) * 0.0625;
-    float ambientOcclusionLevel = 1 - (data.x >> 30 & 3) * 0.22;
-    int side = data.y >> 26 & 7;
+    blockLight = (data.y >> 18 & 15) * 0.0425;
+    skyLight = (data.y >> 22 & 15) * 0.0625;
+    ambientOcclusionLevel = 1 - (data.x >> 30 & 3) * 0.22;
 
-    normal = normals[side];
-
-    float alpha = time * 3.1415926536;
-    float sinAlpha = sin(alpha);
-    float cosAlpha = cos(alpha);
-    vec3 sunDirection = vec3(cosAlpha - sinAlpha, -0.3, cosAlpha + sinAlpha);
-    float absTime = abs(time);
-    float sunIllumination = dot(normal, sunDirection) * 0.2 * skyLight * absTime;
-
-    fragLight = max(blockLight + 0.3, max(0.3, skyLight) * (absTime * 0.75 + 0.25) + sunIllumination) * ambientOcclusionLevel;
+    normal = normals[data.y >> 26 & 7];
 }

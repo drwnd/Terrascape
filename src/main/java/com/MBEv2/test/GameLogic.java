@@ -2,6 +2,9 @@ package com.MBEv2.test;
 
 import com.MBEv2.core.*;
 import com.MBEv2.core.entity.*;
+import com.MBEv2.core.entity.entities.Entity;
+import com.MBEv2.core.entity.particles.BlockBreakParticle;
+import com.MBEv2.core.entity.particles.Particle;
 import com.MBEv2.core.utils.Utils;
 import org.joml.Vector3f;
 import org.joml.Vector4i;
@@ -24,6 +27,7 @@ public class GameLogic {
 
     private static Player player;
     private static final LinkedList<Entity> entities = new LinkedList<>();
+    private static final LinkedList<Particle> particles = new LinkedList<>();
     private static final ArrayList<Entity> toSpawnEntities = new ArrayList<>();
 
     private static byte generatorRestartScheduled = 0;
@@ -127,6 +131,8 @@ public class GameLogic {
                 }
         if (highImportance) restartGeneratorNow(NONE);
         else restartGenerator(NONE);
+
+        if (highImportance && previousBlock != AIR) addParticle(new BlockBreakParticle(new Vector3f(x + 0.5f, y + 0.625f, z + 0.5f), previousBlock));
     }
 
     public static void addBlockChange(int x, int y, int z, short previousBlock, short currentBlock) {
@@ -257,6 +263,9 @@ public class GameLogic {
             }
         }
 
+        long currentTime = System.nanoTime();
+        particles.removeIf(particle -> currentTime > particle.getMaxAliveTime() + particle.getEmitTime());
+
         if (generatorRestartScheduled != 0) {
             generator.restart(generatorRestartScheduled & 0xF);
             generatorRestartScheduled = 0;
@@ -328,6 +337,7 @@ public class GameLogic {
         }
         RenderManager renderer = player.getRenderer();
         player.render();
+        for (Particle particle : particles) renderer.processParticle(particle);
         renderer.render(player.getCamera(), timeSinceLastTick);
     }
 
@@ -340,6 +350,12 @@ public class GameLogic {
     public static void addToUnloadChunk(Chunk chunk) {
         synchronized (toUnloadChunks) {
             toUnloadChunks.add(chunk);
+        }
+    }
+
+    public static void addParticle(Particle particle) {
+        synchronized (particles) {
+            particles.add(particle);
         }
     }
 

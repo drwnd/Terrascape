@@ -50,6 +50,7 @@ public class Settings {
     public static int SET_POSITION_1_BUTTON;
     public static int SET_POSITION_2_BUTTON;
     public static int RELOAD_SETTINGS_BUTTON;
+    public static int ZOOM_BUTTON;
 
     public static boolean SCROLL_HOT_BAR;
 

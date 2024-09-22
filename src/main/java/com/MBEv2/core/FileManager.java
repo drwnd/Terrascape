@@ -384,6 +384,7 @@ public class FileManager {
         SET_POSITION_2_BUTTON = keyCodes.get(getStingAfterColon(reader.readLine()));
         RELOAD_SETTINGS_BUTTON = keyCodes.get(getStingAfterColon(reader.readLine()));
         SCROLL_HOT_BAR = Boolean.parseBoolean(getStingAfterColon(reader.readLine()));
+        ZOOM_BUTTON = keyCodes.get(getStingAfterColon(reader.readLine()));
 
         reader.close();
 

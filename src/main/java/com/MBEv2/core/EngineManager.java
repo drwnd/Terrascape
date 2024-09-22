@@ -1,18 +1,19 @@
 package com.MBEv2.core;
 
-import static com.MBEv2.core.utils.Constants.*;
-
-import com.MBEv2.core.entity.Entity;
+import com.MBEv2.core.entity.entities.Entity;
+import com.MBEv2.core.entity.particles.Particle;
 import com.MBEv2.test.GameLogic;
 import com.MBEv2.test.Launcher;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
 
+import static com.MBEv2.core.utils.Constants.*;
+
 public class EngineManager {
 
-    public static final float NANOSECONDS_PER_SECOND = 1_000_000_000;
     public static float FRAME_RATE;
+    public static int currentFrameRate;
 
     public static boolean isRunning = false;
 
@@ -27,6 +28,7 @@ public class EngineManager {
         window.init();
         Block.init();
         Entity.initAll();
+        Particle.initAll();
         GameLogic.init();
 
         if (window.isvSync()) {
@@ -55,7 +57,7 @@ public class EngineManager {
 
             if (currentTime - lastFrameRateUpdateTime > NANOSECONDS_PER_SECOND * 0.25f) {
                 lastFrameRateUpdateTime = currentTime;
-                window.setTitle(TITLE + " FPS: " + frames * 4);
+                currentFrameRate = frames * 4;
                 frames = 0;
             }
             if (currentTime - lastGTTime > NANOSECONDS_PER_SECOND * 0.05f) {

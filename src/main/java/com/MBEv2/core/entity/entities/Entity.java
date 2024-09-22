@@ -1,7 +1,7 @@
-package com.MBEv2.core.entity;
+package com.MBEv2.core.entity.entities;
 
 import com.MBEv2.core.*;
-import com.MBEv2.core.entity.entities.TNT_Entity;
+import com.MBEv2.core.entity.Player;
 import com.MBEv2.core.utils.Utils;
 import org.joml.Vector3f;
 
@@ -20,11 +20,11 @@ public abstract class Entity {
 
     public abstract void update();
 
-    protected abstract void renderUnique(ShaderManager shader, RenderManager renderer, int modelIndexBuffer, float timeSinceLastTick);
+    protected abstract void renderUnique(ShaderManager shader, int modelIndexBuffer, float timeSinceLastTick);
 
     public abstract void delete();
 
-    public void render(ShaderManager shader, RenderManager renderer, int modelIndexBuffer, float timeSinceLastTick) {
+    public void render(ShaderManager shader, int modelIndexBuffer, float timeSinceLastTick) {
         int x = Utils.floor(position.x);
         int y = Utils.floor(position.y);
         int z = Utils.floor(position.z);
@@ -35,7 +35,7 @@ public abstract class Entity {
                 position.z - (0.05f - timeSinceLastTick) * velocity.z);
         shader.setUniform("lightLevel", Chunk.getLightInWorld(x, y, z));
 
-        renderUnique(shader, renderer, modelIndexBuffer, timeSinceLastTick);
+        renderUnique(shader, modelIndexBuffer, timeSinceLastTick);
     }
 
     public void move() {

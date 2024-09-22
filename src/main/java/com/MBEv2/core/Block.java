@@ -29,16 +29,17 @@ public class Block {
     public static boolean occludes(short toTestBlock, short occludingBlock, int side, int x, int y, int z, int aabbIndex) {
         int occludingBlockType = getBlockType(occludingBlock);
         if (occludingBlockType == AIR_TYPE) return false;
-        if (isLeaveType(occludingBlock)) {
-            if (isLeaveType(toTestBlock)) return side > 2;
-            return false;
-        }
-        if (isGlassType(occludingBlock)) return isGlassType(toTestBlock);
 
         long toTestOcclusionData = BLOCK_TYPE_OCCLUSION_DATA[getBlockType(toTestBlock)][side + aabbIndex];
         byte blockTypeData = BLOCK_TYPE_DATA[occludingBlockType];
         int occludingSide = (side + 3) % 6;
         long occludingOcclusionData = getBlockTypeOcclusionData(occludingBlock, occludingSide);
+
+        if (isGlassType(occludingBlock)) return isGlassType(toTestBlock) && (toTestOcclusionData | occludingOcclusionData) == occludingOcclusionData;
+        if (isLeaveType(occludingBlock)) {
+            if (isLeaveType(toTestBlock)) return side > 2 && (toTestOcclusionData | occludingOcclusionData) == occludingOcclusionData;
+            return false;
+        }
 
         if ((blockTypeData & 3) == OCCLUDES_ALL) {
             if (toTestOcclusionData == 0) return false;
@@ -63,8 +64,7 @@ public class Block {
 
         if (getBlockTypeOcclusionData(blockAboveToTestBlock, BOTTOM) == -1 && getBlockTypeOcclusionData(blockAboveOccludingBlock, BOTTOM) != -1)
             return false;
-        if ((blockAboveOccludingBlockType == LIQUID_TYPE) == (blockAboveToTestBlockType == LIQUID_TYPE))
-            return true;
+        if ((blockAboveOccludingBlockType == LIQUID_TYPE) == (blockAboveToTestBlockType == LIQUID_TYPE)) return true;
         if (getBlockTypeOcclusionData(blockAboveOccludingBlock, BOTTOM) == -1 && blockAboveToTestBlockType == LIQUID_TYPE)
             return true;
         return blockAboveToTestBlockType != LIQUID_TYPE;
@@ -115,77 +115,76 @@ public class Block {
         int toPlaceBlockType = getToPlaceBlockType(blockType, primaryCameraDirection, target);
         primaryCameraDirection %= 3;
 
-        if (baseBlock == UP_DOWN_OAK_LOG) {
-            if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_OAK_LOG | toPlaceBlockType);
-            if (primaryCameraDirection == TOP) return (short) (UP_DOWN_OAK_LOG | toPlaceBlockType);
-            return (short) (LEFT_RIGHT_OAK_LOG | toPlaceBlockType);
-        }
-        if (baseBlock == UP_DOWN_STRIPPED_OAK_LOG) {
-            if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_STRIPPED_OAK_LOG | toPlaceBlockType);
-            if (primaryCameraDirection == TOP) return (short) (UP_DOWN_STRIPPED_OAK_LOG | toPlaceBlockType);
-            return (short) (LEFT_RIGHT_STRIPPED_OAK_LOG | toPlaceBlockType);
-        }
-
-        if (baseBlock == UP_DOWN_SPRUCE_LOG) {
-            if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_SPRUCE_LOG | toPlaceBlockType);
-            if (primaryCameraDirection == TOP) return (short) (UP_DOWN_SPRUCE_LOG | toPlaceBlockType);
-            return (short) (LEFT_RIGHT_SPRUCE_LOG | toPlaceBlockType);
-        }
-        if (baseBlock == UP_DOWN_STRIPPED_SPRUCE_LOG) {
-            if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_STRIPPED_SPRUCE_LOG | toPlaceBlockType);
-            if (primaryCameraDirection == TOP) return (short) (UP_DOWN_STRIPPED_SPRUCE_LOG | toPlaceBlockType);
-            return (short) (LEFT_RIGHT_STRIPPED_SPRUCE_LOG | toPlaceBlockType);
-        }
-
-        if (baseBlock == UP_DOWN_DARK_OAK_LOG) {
-            if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_DARK_OAK_LOG | toPlaceBlockType);
-            if (primaryCameraDirection == TOP) return (short) (UP_DOWN_DARK_OAK_LOG | toPlaceBlockType);
-            return (short) (LEFT_RIGHT_DARK_OAK_LOG | toPlaceBlockType);
-        }
-        if (baseBlock == UP_DOWN_STRIPPED_DARK_OAK_LOG) {
-            if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_STRIPPED_DARK_OAK_LOG | toPlaceBlockType);
-            if (primaryCameraDirection == TOP) return (short) (UP_DOWN_STRIPPED_DARK_OAK_LOG | toPlaceBlockType);
-            return (short) (LEFT_RIGHT_STRIPPED_DARK_OAK_LOG | toPlaceBlockType);
-        }
-
-        if (baseBlock == UP_DOWN_PINE_LOG) {
-            if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_PINE_LOG | toPlaceBlockType);
-            if (primaryCameraDirection == TOP) return (short) (UP_DOWN_PINE_LOG | toPlaceBlockType);
-            return (short) (LEFT_RIGHT_PINE_LOG | toPlaceBlockType);
-        }
-        if (baseBlock == UP_DOWN_STRIPPED_PINE_LOG) {
-            if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_STRIPPED_PINE_LOG | toPlaceBlockType);
-            if (primaryCameraDirection == TOP) return (short) (UP_DOWN_STRIPPED_PINE_LOG | toPlaceBlockType);
-            return (short) (LEFT_RIGHT_STRIPPED_PINE_LOG | toPlaceBlockType);
-        }
-
-        if (baseBlock == UP_DOWN_REDWOOD_LOG) {
-            if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_REDWOOD_LOG | toPlaceBlockType);
-            if (primaryCameraDirection == TOP) return (short) (UP_DOWN_REDWOOD_LOG | toPlaceBlockType);
-            return (short) (LEFT_RIGHT_REDWOOD_LOG | toPlaceBlockType);
-        }
-        if (baseBlock == UP_DOWN_STRIPPED_REDWOOD_LOG) {
-            if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_STRIPPED_REDWOOD_LOG | toPlaceBlockType);
-            if (primaryCameraDirection == TOP) return (short) (UP_DOWN_STRIPPED_REDWOOD_LOG | toPlaceBlockType);
-            return (short) (LEFT_RIGHT_STRIPPED_REDWOOD_LOG | toPlaceBlockType);
-        }
-
-        if (baseBlock == UP_DOWN_BLACK_WOOD_LOG) {
-            if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_BLACK_WOOD_LOG | toPlaceBlockType);
-            if (primaryCameraDirection == TOP) return (short) (UP_DOWN_BLACK_WOOD_LOG | toPlaceBlockType);
-            return (short) (LEFT_RIGHT_BLACK_WOOD_LOG | toPlaceBlockType);
-        }
-        if (baseBlock == UP_DOWN_STRIPPED_BLACK_WOOD_LOG) {
-            if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_STRIPPED_BLACK_WOOD_LOG | toPlaceBlockType);
-            if (primaryCameraDirection == TOP) return (short) (UP_DOWN_STRIPPED_BLACK_WOOD_LOG | toPlaceBlockType);
-            return (short) (LEFT_RIGHT_STRIPPED_BLACK_WOOD_LOG | toPlaceBlockType);
-        }
-
-        if (baseBlock == FRONT_FURNACE) {
-            if (primaryXZDirection == FRONT) return (short) (BACK_FURNACE | toPlaceBlockType);
-            if (primaryXZDirection == BACK) return (short) (FRONT_FURNACE | toPlaceBlockType);
-            if (primaryXZDirection == RIGHT) return (short) (LEFT_FURNACE | toPlaceBlockType);
-            return (short) (RIGHT_FURNACE | toPlaceBlockType);
+        switch (baseBlock) {
+            case UP_DOWN_OAK_LOG -> {
+                if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_OAK_LOG | toPlaceBlockType);
+                if (primaryCameraDirection == TOP) return (short) (UP_DOWN_OAK_LOG | toPlaceBlockType);
+                return (short) (LEFT_RIGHT_OAK_LOG | toPlaceBlockType);
+            }
+            case UP_DOWN_STRIPPED_OAK_LOG -> {
+                if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_STRIPPED_OAK_LOG | toPlaceBlockType);
+                if (primaryCameraDirection == TOP) return (short) (UP_DOWN_STRIPPED_OAK_LOG | toPlaceBlockType);
+                return (short) (LEFT_RIGHT_STRIPPED_OAK_LOG | toPlaceBlockType);
+            }
+            case UP_DOWN_SPRUCE_LOG -> {
+                if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_SPRUCE_LOG | toPlaceBlockType);
+                if (primaryCameraDirection == TOP) return (short) (UP_DOWN_SPRUCE_LOG | toPlaceBlockType);
+                return (short) (LEFT_RIGHT_SPRUCE_LOG | toPlaceBlockType);
+            }
+            case UP_DOWN_STRIPPED_SPRUCE_LOG -> {
+                if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_STRIPPED_SPRUCE_LOG | toPlaceBlockType);
+                if (primaryCameraDirection == TOP) return (short) (UP_DOWN_STRIPPED_SPRUCE_LOG | toPlaceBlockType);
+                return (short) (LEFT_RIGHT_STRIPPED_SPRUCE_LOG | toPlaceBlockType);
+            }
+            case UP_DOWN_DARK_OAK_LOG -> {
+                if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_DARK_OAK_LOG | toPlaceBlockType);
+                if (primaryCameraDirection == TOP) return (short) (UP_DOWN_DARK_OAK_LOG | toPlaceBlockType);
+                return (short) (LEFT_RIGHT_DARK_OAK_LOG | toPlaceBlockType);
+            }
+            case UP_DOWN_STRIPPED_DARK_OAK_LOG -> {
+                if (primaryCameraDirection == FRONT)
+                    return (short) (FRONT_BACK_STRIPPED_DARK_OAK_LOG | toPlaceBlockType);
+                if (primaryCameraDirection == TOP) return (short) (UP_DOWN_STRIPPED_DARK_OAK_LOG | toPlaceBlockType);
+                return (short) (LEFT_RIGHT_STRIPPED_DARK_OAK_LOG | toPlaceBlockType);
+            }
+            case UP_DOWN_PINE_LOG -> {
+                if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_PINE_LOG | toPlaceBlockType);
+                if (primaryCameraDirection == TOP) return (short) (UP_DOWN_PINE_LOG | toPlaceBlockType);
+                return (short) (LEFT_RIGHT_PINE_LOG | toPlaceBlockType);
+            }
+            case UP_DOWN_STRIPPED_PINE_LOG -> {
+                if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_STRIPPED_PINE_LOG | toPlaceBlockType);
+                if (primaryCameraDirection == TOP) return (short) (UP_DOWN_STRIPPED_PINE_LOG | toPlaceBlockType);
+                return (short) (LEFT_RIGHT_STRIPPED_PINE_LOG | toPlaceBlockType);
+            }
+            case UP_DOWN_REDWOOD_LOG -> {
+                if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_REDWOOD_LOG | toPlaceBlockType);
+                if (primaryCameraDirection == TOP) return (short) (UP_DOWN_REDWOOD_LOG | toPlaceBlockType);
+                return (short) (LEFT_RIGHT_REDWOOD_LOG | toPlaceBlockType);
+            }
+            case UP_DOWN_STRIPPED_REDWOOD_LOG -> {
+                if (primaryCameraDirection == FRONT)
+                    return (short) (FRONT_BACK_STRIPPED_REDWOOD_LOG | toPlaceBlockType);
+                if (primaryCameraDirection == TOP) return (short) (UP_DOWN_STRIPPED_REDWOOD_LOG | toPlaceBlockType);
+                return (short) (LEFT_RIGHT_STRIPPED_REDWOOD_LOG | toPlaceBlockType);
+            }
+            case UP_DOWN_BLACK_WOOD_LOG -> {
+                if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_BLACK_WOOD_LOG | toPlaceBlockType);
+                if (primaryCameraDirection == TOP) return (short) (UP_DOWN_BLACK_WOOD_LOG | toPlaceBlockType);
+                return (short) (LEFT_RIGHT_BLACK_WOOD_LOG | toPlaceBlockType);
+            }
+            case UP_DOWN_STRIPPED_BLACK_WOOD_LOG -> {
+                if (primaryCameraDirection == FRONT)
+                    return (short) (FRONT_BACK_STRIPPED_BLACK_WOOD_LOG | toPlaceBlockType);
+                if (primaryCameraDirection == TOP) return (short) (UP_DOWN_STRIPPED_BLACK_WOOD_LOG | toPlaceBlockType);
+                return (short) (LEFT_RIGHT_STRIPPED_BLACK_WOOD_LOG | toPlaceBlockType);
+            }
+            case FRONT_FURNACE -> {
+                if (primaryXZDirection == FRONT) return (short) (BACK_FURNACE | toPlaceBlockType);
+                if (primaryXZDirection == BACK) return (short) (FRONT_FURNACE | toPlaceBlockType);
+                if (primaryXZDirection == RIGHT) return (short) (LEFT_FURNACE | toPlaceBlockType);
+                return (short) (RIGHT_FURNACE | toPlaceBlockType);
+            }
         }
 
         return (short) (baseBlock | toPlaceBlockType);
@@ -193,146 +192,150 @@ public class Block {
 
     private static int getToPlaceBlockType(int blockType, int primaryCameraDirection, Target target) {
 
-        if (blockType == BOTTOM_BACK_STAIR) {
-            Vector3f inBlockPosition = target.inBlockPosition();
-            double x = Utils.fraction(inBlockPosition.x);
-            double y = Utils.fraction(inBlockPosition.y);
-            double z = Utils.fraction(inBlockPosition.z);
+        switch (blockType) {
+            case BOTTOM_BACK_STAIR -> {
+                Vector3f inBlockPosition = target.inBlockPosition();
+                double x = Utils.fraction(inBlockPosition.x);
+                double y = Utils.fraction(inBlockPosition.y);
+                double z = Utils.fraction(inBlockPosition.z);
 
-            if (primaryCameraDirection == FRONT) {
-                if (y < x && y < 1.0 - x) return BOTTOM_FRONT_STAIR;
-                if (y > x && y < 1.0 - x) return FRONT_LEFT_STAIR;
-                if (y > x && y > 1.0 - x) return TOP_FRONT_STAIR;
-                return FRONT_RIGHT_STAIR;
+                if (primaryCameraDirection == FRONT) {
+                    if (y < x && y < 1.0 - x) return BOTTOM_FRONT_STAIR;
+                    if (y > x && y < 1.0 - x) return FRONT_LEFT_STAIR;
+                    if (y > x && y > 1.0 - x) return TOP_FRONT_STAIR;
+                    return FRONT_RIGHT_STAIR;
+                }
+                if (primaryCameraDirection == BACK) {
+                    if (y < x && y < 1.0 - x) return BOTTOM_BACK_STAIR;
+                    if (y > x && y < 1.0 - x) return BACK_LEFT_STAIR;
+                    if (y > x && y > 1.0 - x) return TOP_BACK_STAIR;
+                    return BACK_RIGHT_STAIR;
+                }
+                if (primaryCameraDirection == BOTTOM) {
+                    if (x < z && x < 1.0 - z) return BOTTOM_LEFT_STAIR;
+                    if (x > z && x < 1.0 - z) return BOTTOM_BACK_STAIR;
+                    if (x > z && x > 1.0 - z) return BOTTOM_RIGHT_STAIR;
+                    return BOTTOM_FRONT_STAIR;
+                }
+                if (primaryCameraDirection == TOP) {
+                    if (x < z && x < 1.0 - z) return TOP_LEFT_STAIR;
+                    if (x > z && x < 1.0 - z) return TOP_BACK_STAIR;
+                    if (x > z && x > 1.0 - z) return TOP_RIGHT_STAIR;
+                    return TOP_FRONT_STAIR;
+                }
+                if (primaryCameraDirection == RIGHT) {
+                    if (y < z && y < 1.0 - z) return BOTTOM_RIGHT_STAIR;
+                    if (y > z && y < 1.0 - z) return BACK_RIGHT_STAIR;
+                    if (y > z && y > 1.0 - z) return TOP_RIGHT_STAIR;
+                    return FRONT_RIGHT_STAIR;
+                }
+                if (primaryCameraDirection == LEFT) {
+                    if (y < z && y < 1.0 - z) return BOTTOM_LEFT_STAIR;
+                    if (y > z && y < 1.0 - z) return BACK_LEFT_STAIR;
+                    if (y > z && y > 1.0 - z) return TOP_LEFT_STAIR;
+                    return FRONT_LEFT_STAIR;
+                }
             }
-            if (primaryCameraDirection == BACK) {
-                if (y < x && y < 1.0 - x) return BOTTOM_BACK_STAIR;
-                if (y > x && y < 1.0 - x) return BACK_LEFT_STAIR;
-                if (y > x && y > 1.0 - x) return TOP_BACK_STAIR;
-                return BACK_RIGHT_STAIR;
-            }
-            if (primaryCameraDirection == BOTTOM) {
-                if (x < z && x < 1.0 - z) return BOTTOM_LEFT_STAIR;
-                if (x > z && x < 1.0 - z) return BOTTOM_BACK_STAIR;
-                if (x > z && x > 1.0 - z) return BOTTOM_RIGHT_STAIR;
-                return BOTTOM_FRONT_STAIR;
-            }
-            if (primaryCameraDirection == TOP) {
-                if (x < z && x < 1.0 - z) return TOP_LEFT_STAIR;
-                if (x > z && x < 1.0 - z) return TOP_BACK_STAIR;
-                if (x > z && x > 1.0 - z) return TOP_RIGHT_STAIR;
-                return TOP_FRONT_STAIR;
-            }
-            if (primaryCameraDirection == RIGHT) {
-                if (y < z && y < 1.0 - z) return BOTTOM_RIGHT_STAIR;
-                if (y > z && y < 1.0 - z) return BACK_RIGHT_STAIR;
-                if (y > z && y > 1.0 - z) return TOP_RIGHT_STAIR;
-                return FRONT_RIGHT_STAIR;
-            }
-            if (primaryCameraDirection == LEFT) {
-                if (y < z && y < 1.0 - z) return BOTTOM_LEFT_STAIR;
-                if (y > z && y < 1.0 - z) return BACK_LEFT_STAIR;
-                if (y > z && y > 1.0 - z) return TOP_LEFT_STAIR;
-                return FRONT_LEFT_STAIR;
-            }
-        }
-        if (blockType == THIN_BOTTOM_BACK_STAIR) {
-            Vector3f inBlockPosition = target.inBlockPosition();
-            double x = Utils.fraction(inBlockPosition.x);
-            double y = Utils.fraction(inBlockPosition.y);
-            double z = Utils.fraction(inBlockPosition.z);
+            case THIN_BOTTOM_BACK_STAIR -> {
+                Vector3f inBlockPosition = target.inBlockPosition();
+                double x = Utils.fraction(inBlockPosition.x);
+                double y = Utils.fraction(inBlockPosition.y);
+                double z = Utils.fraction(inBlockPosition.z);
 
-            if (primaryCameraDirection == FRONT) {
-                if (y < x && y < 1.0 - x) return THIN_BOTTOM_FRONT_STAIR;
-                if (y > x && y < 1.0 - x) return THIN_FRONT_LEFT_STAIR;
-                if (y > x && y > 1.0 - x) return THIN_TOP_FRONT_STAIR;
-                return THIN_FRONT_RIGHT_STAIR;
+                if (primaryCameraDirection == FRONT) {
+                    if (y < x && y < 1.0 - x) return THIN_BOTTOM_FRONT_STAIR;
+                    if (y > x && y < 1.0 - x) return THIN_FRONT_LEFT_STAIR;
+                    if (y > x && y > 1.0 - x) return THIN_TOP_FRONT_STAIR;
+                    return THIN_FRONT_RIGHT_STAIR;
+                }
+                if (primaryCameraDirection == BACK) {
+                    if (y < x && y < 1.0 - x) return THIN_BOTTOM_BACK_STAIR;
+                    if (y > x && y < 1.0 - x) return THIN_BACK_LEFT_STAIR;
+                    if (y > x && y > 1.0 - x) return THIN_TOP_BACK_STAIR;
+                    return THIN_BACK_RIGHT_STAIR;
+                }
+                if (primaryCameraDirection == BOTTOM) {
+                    if (x < z && x < 1.0 - z) return THIN_BOTTOM_LEFT_STAIR;
+                    if (x > z && x < 1.0 - z) return THIN_BOTTOM_BACK_STAIR;
+                    if (x > z && x > 1.0 - z) return THIN_BOTTOM_RIGHT_STAIR;
+                    return THIN_BOTTOM_FRONT_STAIR;
+                }
+                if (primaryCameraDirection == TOP) {
+                    if (x < z && x < 1.0 - z) return THIN_TOP_LEFT_STAIR;
+                    if (x > z && x < 1.0 - z) return THIN_TOP_BACK_STAIR;
+                    if (x > z && x > 1.0 - z) return THIN_TOP_RIGHT_STAIR;
+                    return THIN_TOP_FRONT_STAIR;
+                }
+                if (primaryCameraDirection == RIGHT) {
+                    if (y < z && y < 1.0 - z) return THIN_BOTTOM_RIGHT_STAIR;
+                    if (y > z && y < 1.0 - z) return THIN_BACK_RIGHT_STAIR;
+                    if (y > z && y > 1.0 - z) return THIN_TOP_RIGHT_STAIR;
+                    return THIN_FRONT_RIGHT_STAIR;
+                }
+                if (primaryCameraDirection == LEFT) {
+                    if (y < z && y < 1.0 - z) return THIN_BOTTOM_LEFT_STAIR;
+                    if (y > z && y < 1.0 - z) return THIN_BACK_LEFT_STAIR;
+                    if (y > z && y > 1.0 - z) return THIN_TOP_LEFT_STAIR;
+                    return THIN_FRONT_LEFT_STAIR;
+                }
             }
-            if (primaryCameraDirection == BACK) {
-                if (y < x && y < 1.0 - x) return THIN_BOTTOM_BACK_STAIR;
-                if (y > x && y < 1.0 - x) return THIN_BACK_LEFT_STAIR;
-                if (y > x && y > 1.0 - x) return THIN_TOP_BACK_STAIR;
-                return THIN_BACK_RIGHT_STAIR;
-            }
-            if (primaryCameraDirection == BOTTOM) {
-                if (x < z && x < 1.0 - z) return THIN_BOTTOM_LEFT_STAIR;
-                if (x > z && x < 1.0 - z) return THIN_BOTTOM_BACK_STAIR;
-                if (x > z && x > 1.0 - z) return THIN_BOTTOM_RIGHT_STAIR;
-                return THIN_BOTTOM_FRONT_STAIR;
-            }
-            if (primaryCameraDirection == TOP) {
-                if (x < z && x < 1.0 - z) return THIN_TOP_LEFT_STAIR;
-                if (x > z && x < 1.0 - z) return THIN_TOP_BACK_STAIR;
-                if (x > z && x > 1.0 - z) return THIN_TOP_RIGHT_STAIR;
-                return THIN_TOP_FRONT_STAIR;
-            }
-            if (primaryCameraDirection == RIGHT) {
-                if (y < z && y < 1.0 - z) return THIN_BOTTOM_RIGHT_STAIR;
-                if (y > z && y < 1.0 - z) return THIN_BACK_RIGHT_STAIR;
-                if (y > z && y > 1.0 - z) return THIN_TOP_RIGHT_STAIR;
-                return THIN_FRONT_RIGHT_STAIR;
-            }
-            if (primaryCameraDirection == LEFT) {
-                if (y < z && y < 1.0 - z) return THIN_BOTTOM_LEFT_STAIR;
-                if (y > z && y < 1.0 - z) return THIN_BACK_LEFT_STAIR;
-                if (y > z && y > 1.0 - z) return THIN_TOP_LEFT_STAIR;
-                return THIN_FRONT_LEFT_STAIR;
-            }
-        }
-        if (blockType == THICK_BOTTOM_BACK_STAIR) {
-            Vector3f inBlockPosition = target.inBlockPosition();
-            double x = Utils.fraction(inBlockPosition.x);
-            double y = Utils.fraction(inBlockPosition.y);
-            double z = Utils.fraction(inBlockPosition.z);
+            case THICK_BOTTOM_BACK_STAIR -> {
+                Vector3f inBlockPosition = target.inBlockPosition();
+                double x = Utils.fraction(inBlockPosition.x);
+                double y = Utils.fraction(inBlockPosition.y);
+                double z = Utils.fraction(inBlockPosition.z);
 
-            if (primaryCameraDirection == FRONT) {
-                if (y < x && y < 1.0 - x) return THICK_BOTTOM_FRONT_STAIR;
-                if (y > x && y < 1.0 - x) return THICK_FRONT_LEFT_STAIR;
-                if (y > x && y > 1.0 - x) return THICK_TOP_FRONT_STAIR;
-                return THICK_FRONT_RIGHT_STAIR;
-            }
-            if (primaryCameraDirection == BACK) {
-                if (y < x && y < 1.0 - x) return THICK_BOTTOM_BACK_STAIR;
-                if (y > x && y < 1.0 - x) return THICK_BACK_LEFT_STAIR;
-                if (y > x && y > 1.0 - x) return THICK_TOP_BACK_STAIR;
-                return THICK_BACK_RIGHT_STAIR;
-            }
-            if (primaryCameraDirection == BOTTOM) {
-                if (x < z && x < 1.0 - z) return THICK_BOTTOM_LEFT_STAIR;
-                if (x > z && x < 1.0 - z) return THICK_BOTTOM_BACK_STAIR;
-                if (x > z && x > 1.0 - z) return THICK_BOTTOM_RIGHT_STAIR;
-                return THICK_BOTTOM_FRONT_STAIR;
-            }
-            if (primaryCameraDirection == TOP) {
-                if (x < z && x < 1.0 - z) return THICK_TOP_LEFT_STAIR;
-                if (x > z && x < 1.0 - z) return THICK_TOP_BACK_STAIR;
-                if (x > z && x > 1.0 - z) return THICK_TOP_RIGHT_STAIR;
-                return THICK_TOP_FRONT_STAIR;
-            }
-            if (primaryCameraDirection == RIGHT) {
-                if (y < z && y < 1.0 - z) return THICK_BOTTOM_RIGHT_STAIR;
-                if (y > z && y < 1.0 - z) return THICK_BACK_RIGHT_STAIR;
-                if (y > z && y > 1.0 - z) return THICK_TOP_RIGHT_STAIR;
-                return THICK_FRONT_RIGHT_STAIR;
-            }
-            if (primaryCameraDirection == LEFT) {
-                if (y < z && y < 1.0 - z) return THICK_BOTTOM_LEFT_STAIR;
-                if (y > z && y < 1.0 - z) return THICK_BACK_LEFT_STAIR;
-                if (y > z && y > 1.0 - z) return THICK_TOP_LEFT_STAIR;
-                return THICK_FRONT_LEFT_STAIR;
+                if (primaryCameraDirection == FRONT) {
+                    if (y < x && y < 1.0 - x) return THICK_BOTTOM_FRONT_STAIR;
+                    if (y > x && y < 1.0 - x) return THICK_FRONT_LEFT_STAIR;
+                    if (y > x && y > 1.0 - x) return THICK_TOP_FRONT_STAIR;
+                    return THICK_FRONT_RIGHT_STAIR;
+                }
+                if (primaryCameraDirection == BACK) {
+                    if (y < x && y < 1.0 - x) return THICK_BOTTOM_BACK_STAIR;
+                    if (y > x && y < 1.0 - x) return THICK_BACK_LEFT_STAIR;
+                    if (y > x && y > 1.0 - x) return THICK_TOP_BACK_STAIR;
+                    return THICK_BACK_RIGHT_STAIR;
+                }
+                if (primaryCameraDirection == BOTTOM) {
+                    if (x < z && x < 1.0 - z) return THICK_BOTTOM_LEFT_STAIR;
+                    if (x > z && x < 1.0 - z) return THICK_BOTTOM_BACK_STAIR;
+                    if (x > z && x > 1.0 - z) return THICK_BOTTOM_RIGHT_STAIR;
+                    return THICK_BOTTOM_FRONT_STAIR;
+                }
+                if (primaryCameraDirection == TOP) {
+                    if (x < z && x < 1.0 - z) return THICK_TOP_LEFT_STAIR;
+                    if (x > z && x < 1.0 - z) return THICK_TOP_BACK_STAIR;
+                    if (x > z && x > 1.0 - z) return THICK_TOP_RIGHT_STAIR;
+                    return THICK_TOP_FRONT_STAIR;
+                }
+                if (primaryCameraDirection == RIGHT) {
+                    if (y < z && y < 1.0 - z) return THICK_BOTTOM_RIGHT_STAIR;
+                    if (y > z && y < 1.0 - z) return THICK_BACK_RIGHT_STAIR;
+                    if (y > z && y > 1.0 - z) return THICK_TOP_RIGHT_STAIR;
+                    return THICK_FRONT_RIGHT_STAIR;
+                }
+                if (primaryCameraDirection == LEFT) {
+                    if (y < z && y < 1.0 - z) return THICK_BOTTOM_LEFT_STAIR;
+                    if (y > z && y < 1.0 - z) return THICK_BACK_LEFT_STAIR;
+                    if (y > z && y > 1.0 - z) return THICK_TOP_LEFT_STAIR;
+                    return THICK_FRONT_LEFT_STAIR;
+                }
             }
         }
 
         primaryCameraDirection %= 3;
         int addend = getToPlaceBlockAddend(primaryCameraDirection, target);
 
-        if (blockType == BOTTOM_SLAB) return SLABS[primaryCameraDirection + addend];
-        if (blockType == BOTTOM_PLATE) return PLATES[primaryCameraDirection + addend];
-        if (blockType == BOTTOM_SOCKET) return SOCKETS[primaryCameraDirection + addend];
-        if (blockType == FRONT_BACK_WALL) return WALLS[primaryCameraDirection];
-        if (blockType == UP_DOWN_POST) return POSTS[primaryCameraDirection];
-        if (blockType == UP_DOWN_FENCE_FRONT_RIGHT) return FENCES[primaryCameraDirection];
-        return blockType;
+        return switch (blockType) {
+            case BOTTOM_SLAB -> SLABS[primaryCameraDirection + addend];
+            case BOTTOM_PLATE -> PLATES[primaryCameraDirection + addend];
+            case BOTTOM_SOCKET -> SOCKETS[primaryCameraDirection + addend];
+            case FRONT_BACK_WALL -> WALLS[primaryCameraDirection];
+            case UP_DOWN_POST -> POSTS[primaryCameraDirection];
+            case UP_DOWN_FENCE_FRONT_RIGHT -> FENCES[primaryCameraDirection];
+            default -> blockType;
+        };
     }
 
     public static short getInInventoryBlockEquivalent(short block) {
@@ -406,11 +409,18 @@ public class Block {
 
     public static int getToPlaceBlockAddend(int primaryCameraDirection, Target target) {
         Vector3f inBlockPosition = target.inBlockPosition();
+        int side = target.side() % 3;
 
-        if (primaryCameraDirection == FRONT) return Utils.fraction(inBlockPosition.z) > 0.5f ? 0 : 3;
-        if (primaryCameraDirection == TOP) return Utils.fraction(inBlockPosition.y) > 0.5f ? 0 : 3;
+        if (primaryCameraDirection == FRONT) if (side != FRONT) return Utils.fraction(inBlockPosition.z) > 0.5f ? 0 : 3;
+        else return target.side() > 2 ? 0 : 3;
+
+        if (primaryCameraDirection == TOP) if (side != TOP) return Utils.fraction(inBlockPosition.y) > 0.5f ? 0 : 3;
+        else return target.side() > 2 ? 0 : 3;
+
 //        if (primaryCameraDirection == RIGHT)
-        return Utils.fraction(inBlockPosition.x) > 0.5f ? 0 : 3;
+        if (side != RIGHT) return !(Utils.fraction(inBlockPosition.x) > 0.5f) ? 3 : 0;
+        else return target.side() > 2 ? 0 : 3;
+
     }
 
     public static int getSmartBlockType(short block, int x, int y, int z) {
@@ -422,22 +432,22 @@ public class Block {
 
             adjacentBlock = Chunk.getBlockInWorld(x, y + 1, z);
             adjacentMask = getBlockTypeOcclusionData(adjacentBlock, BOTTOM);
-            if ((adjacentMask | BLOCK_TYPE_OCCLUSION_DATA[LEFT_RIGHT_WALL][TOP]) == adjacentMask || isFrontBackFenceType(getBlockType(adjacentBlock)))
+            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[LEFT_RIGHT_WALL][TOP]) != 0 || isFrontBackFenceType(getBlockType(adjacentBlock)))
                 index |= 1;
 
             adjacentBlock = Chunk.getBlockInWorld(x + 1, y, z);
             adjacentMask = getBlockTypeOcclusionData(adjacentBlock, LEFT);
-            if ((adjacentMask | BLOCK_TYPE_OCCLUSION_DATA[UP_DOWN_WALL][RIGHT]) == adjacentMask || isFrontBackFenceType(getBlockType(adjacentBlock)))
+            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[UP_DOWN_WALL][RIGHT]) != 0 || isFrontBackFenceType(getBlockType(adjacentBlock)))
                 index |= 2;
 
             adjacentBlock = Chunk.getBlockInWorld(x, y - 1, z);
             adjacentMask = getBlockTypeOcclusionData(adjacentBlock, TOP);
-            if ((adjacentMask | BLOCK_TYPE_OCCLUSION_DATA[LEFT_RIGHT_WALL][BOTTOM]) == adjacentMask || isFrontBackFenceType(getBlockType(adjacentBlock)))
+            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[LEFT_RIGHT_WALL][BOTTOM]) != 0 || isFrontBackFenceType(getBlockType(adjacentBlock)))
                 index |= 4;
 
             adjacentBlock = Chunk.getBlockInWorld(x - 1, y, z);
             adjacentMask = getBlockTypeOcclusionData(adjacentBlock, RIGHT);
-            if ((adjacentMask | BLOCK_TYPE_OCCLUSION_DATA[UP_DOWN_WALL][LEFT]) == adjacentMask || isFrontBackFenceType(getBlockType(adjacentBlock)))
+            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[UP_DOWN_WALL][LEFT]) != 0 || isFrontBackFenceType(getBlockType(adjacentBlock)))
                 index |= 8;
 
             return FRONT_BACK_FENCE + index;
@@ -449,22 +459,22 @@ public class Block {
 
             adjacentBlock = Chunk.getBlockInWorld(x, y, z + 1);
             adjacentMask = getBlockTypeOcclusionData(adjacentBlock, BACK);
-            if ((adjacentMask | BLOCK_TYPE_OCCLUSION_DATA[LEFT_RIGHT_WALL][FRONT]) == adjacentMask || isUpDownFenceType(getBlockType(adjacentBlock)))
+            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[LEFT_RIGHT_WALL][FRONT]) != 0 || isUpDownFenceType(getBlockType(adjacentBlock)))
                 index |= 1;
 
             adjacentBlock = Chunk.getBlockInWorld(x + 1, y, z);
             adjacentMask = getBlockTypeOcclusionData(adjacentBlock, LEFT);
-            if ((adjacentMask | BLOCK_TYPE_OCCLUSION_DATA[FRONT_BACK_WALL][RIGHT]) == adjacentMask || isUpDownFenceType(getBlockType(adjacentBlock)))
+            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[FRONT_BACK_WALL][RIGHT]) != 0 || isUpDownFenceType(getBlockType(adjacentBlock)))
                 index |= 2;
 
             adjacentBlock = Chunk.getBlockInWorld(x, y, z - 1);
             adjacentMask = getBlockTypeOcclusionData(adjacentBlock, FRONT);
-            if ((adjacentMask | BLOCK_TYPE_OCCLUSION_DATA[LEFT_RIGHT_WALL][BACK]) == adjacentMask || isUpDownFenceType(getBlockType(adjacentBlock)))
+            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[LEFT_RIGHT_WALL][BACK]) != 0 || isUpDownFenceType(getBlockType(adjacentBlock)))
                 index |= 4;
 
             adjacentBlock = Chunk.getBlockInWorld(x - 1, y, z);
             adjacentMask = getBlockTypeOcclusionData(adjacentBlock, RIGHT);
-            if ((adjacentMask | BLOCK_TYPE_OCCLUSION_DATA[FRONT_BACK_WALL][LEFT]) == adjacentMask || isUpDownFenceType(getBlockType(adjacentBlock)))
+            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[FRONT_BACK_WALL][LEFT]) != 0 || isUpDownFenceType(getBlockType(adjacentBlock)))
                 index |= 8;
 
             return UP_DOWN_FENCE + index;
@@ -476,22 +486,22 @@ public class Block {
 
             adjacentBlock = Chunk.getBlockInWorld(x, y, z + 1);
             adjacentMask = getBlockTypeOcclusionData(adjacentBlock, BACK);
-            if ((adjacentMask | BLOCK_TYPE_OCCLUSION_DATA[UP_DOWN_WALL][FRONT]) == adjacentMask || isLeftRightFenceType(getBlockType(adjacentBlock)))
+            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[UP_DOWN_WALL][FRONT]) != 0 || isLeftRightFenceType(getBlockType(adjacentBlock)))
                 index |= 1;
 
             adjacentBlock = Chunk.getBlockInWorld(x, y + 1, z);
             adjacentMask = getBlockTypeOcclusionData(adjacentBlock, BOTTOM);
-            if ((adjacentMask | BLOCK_TYPE_OCCLUSION_DATA[FRONT_BACK_WALL][TOP]) == adjacentMask || isLeftRightFenceType(getBlockType(adjacentBlock)))
+            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[FRONT_BACK_WALL][TOP]) != 0 || isLeftRightFenceType(getBlockType(adjacentBlock)))
                 index |= 2;
 
             adjacentBlock = Chunk.getBlockInWorld(x, y, z - 1);
             adjacentMask = getBlockTypeOcclusionData(adjacentBlock, FRONT);
-            if ((adjacentMask | BLOCK_TYPE_OCCLUSION_DATA[UP_DOWN_WALL][BACK]) == adjacentMask || isLeftRightFenceType(getBlockType(adjacentBlock)))
+            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[UP_DOWN_WALL][BACK]) != 0 || isLeftRightFenceType(getBlockType(adjacentBlock)))
                 index |= 4;
 
             adjacentBlock = Chunk.getBlockInWorld(x, y - 1, z);
             adjacentMask = getBlockTypeOcclusionData(adjacentBlock, TOP);
-            if ((adjacentMask | BLOCK_TYPE_OCCLUSION_DATA[FRONT_BACK_WALL][BOTTOM]) == adjacentMask || isLeftRightFenceType(getBlockType(adjacentBlock)))
+            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[FRONT_BACK_WALL][BOTTOM]) != 0 || isLeftRightFenceType(getBlockType(adjacentBlock)))
                 index |= 8;
 
             return LEFT_RIGHT_FENCE + index;
@@ -804,25 +814,25 @@ public class Block {
 
             for (int aabbIndex = 0; aabbIndex < XYZSubData.length; aabbIndex += 6) {
                 if (XYZSubData[MIN_X + aabbIndex] == 0)
-                    fillOcclusionBits(occlusionData, LEFT + aabbIndex, XYZSubData[MIN_Z + aabbIndex], XYZSubData[MAX_Z + aabbIndex], XYZSubData[MIN_Y + aabbIndex], XYZSubData[MAX_Y + aabbIndex]);
+                    occlusionData[LEFT + aabbIndex] = fillOcclusionBits(XYZSubData[MIN_Z + aabbIndex], XYZSubData[MAX_Z + aabbIndex], XYZSubData[MIN_Y + aabbIndex], XYZSubData[MAX_Y + aabbIndex]);
                 if (XYZSubData[MAX_X + aabbIndex] == 0)
-                    fillOcclusionBits(occlusionData, RIGHT + aabbIndex, XYZSubData[MIN_Z + aabbIndex], XYZSubData[MAX_Z + aabbIndex], XYZSubData[MIN_Y + aabbIndex], XYZSubData[MAX_Y + aabbIndex]);
+                    occlusionData[RIGHT + aabbIndex] = fillOcclusionBits(XYZSubData[MIN_Z + aabbIndex], XYZSubData[MAX_Z + aabbIndex], XYZSubData[MIN_Y + aabbIndex], XYZSubData[MAX_Y + aabbIndex]);
 
                 if (XYZSubData[MIN_Y + aabbIndex] == 0)
-                    fillOcclusionBits(occlusionData, BOTTOM + aabbIndex, XYZSubData[MIN_Z + aabbIndex], XYZSubData[MAX_Z + aabbIndex], XYZSubData[MIN_X + aabbIndex], XYZSubData[MAX_X + aabbIndex]);
+                    occlusionData[BOTTOM + aabbIndex] = fillOcclusionBits(XYZSubData[MIN_Z + aabbIndex], XYZSubData[MAX_Z + aabbIndex], XYZSubData[MIN_X + aabbIndex], XYZSubData[MAX_X + aabbIndex]);
                 if (XYZSubData[MAX_Y + aabbIndex] == 0)
-                    fillOcclusionBits(occlusionData, TOP + aabbIndex, XYZSubData[MIN_Z + aabbIndex], XYZSubData[MAX_Z + aabbIndex], XYZSubData[MIN_X + aabbIndex], XYZSubData[MAX_X + aabbIndex]);
+                    occlusionData[TOP + aabbIndex] = fillOcclusionBits(XYZSubData[MIN_Z + aabbIndex], XYZSubData[MAX_Z + aabbIndex], XYZSubData[MIN_X + aabbIndex], XYZSubData[MAX_X + aabbIndex]);
 
                 if (XYZSubData[MIN_Z + aabbIndex] == 0)
-                    fillOcclusionBits(occlusionData, BACK + aabbIndex, XYZSubData[MIN_X + aabbIndex], XYZSubData[MAX_X + aabbIndex], XYZSubData[MIN_Y + aabbIndex], XYZSubData[MAX_Y + aabbIndex]);
+                    occlusionData[BACK + aabbIndex] = fillOcclusionBits(XYZSubData[MIN_X + aabbIndex], XYZSubData[MAX_X + aabbIndex], XYZSubData[MIN_Y + aabbIndex], XYZSubData[MAX_Y + aabbIndex]);
                 if (XYZSubData[MAX_Z + aabbIndex] == 0)
-                    fillOcclusionBits(occlusionData, FRONT + aabbIndex, XYZSubData[MIN_X + aabbIndex], XYZSubData[MAX_X + aabbIndex], XYZSubData[MIN_Y + aabbIndex], XYZSubData[MAX_Y + aabbIndex]);
+                    occlusionData[FRONT + aabbIndex] = fillOcclusionBits(XYZSubData[MIN_X + aabbIndex], XYZSubData[MAX_X + aabbIndex], XYZSubData[MIN_Y + aabbIndex], XYZSubData[MAX_Y + aabbIndex]);
             }
             BLOCK_TYPE_OCCLUSION_DATA[blockType] = occlusionData;
         }
     }
 
-    private static void fillOcclusionBits(long[] occlusionData, int index, int minX, int maxX, int minY, int maxY) {
+    private static long fillOcclusionBits(int minX, int maxX, int minY, int maxY) {
         minX = minX >> 1;
         maxX = (16 + maxX) >> 1;
         minY = minY >> 1;
@@ -832,7 +842,7 @@ public class Block {
         for (int x = minX; x < maxX; x++)
             for (int y = minY; y < maxY; y++) value |= 1L << y * 8 + x;
 
-        occlusionData[index] = value;
+        return value;
     }
 
     private static void initXYZSubData() {

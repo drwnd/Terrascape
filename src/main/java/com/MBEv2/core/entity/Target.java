@@ -104,11 +104,9 @@ public record Target(Vector3i position, Vector3f inBlockPosition, int side, shor
                         y >= aabb[MIN_Y + aabbIndex] && y <= aabb[MAX_Y + aabbIndex] + 15 &&
                         z >= aabb[MIN_Z + aabbIndex] && z <= aabb[MAX_Z + aabbIndex] + 15) {
 
-                    int[] normal = Block.NORMALS[intersectedSide];
-
-                    origin.x = x * 0.0625f + normal[0] * 0.0625f;
-                    origin.y = y * 0.0625f + normal[1] * 0.0625f;
-                    origin.z = z * 0.0625f + normal[2] * 0.0625f;
+                    origin.x = x * 0.0625f;
+                    origin.y = y * 0.0625f;
+                    origin.z = z * 0.0625f;
                     return (byte) (0x80 | intersectedSide);
                 }
 

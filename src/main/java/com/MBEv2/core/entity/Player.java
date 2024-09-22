@@ -1,6 +1,7 @@
 package com.MBEv2.core.entity;
 
 import com.MBEv2.core.*;
+import com.MBEv2.core.entity.entities.Entity;
 import com.MBEv2.core.entity.entities.TNT_Entity;
 import com.MBEv2.core.utils.Transformation;
 import com.MBEv2.core.utils.Utils;
@@ -528,18 +529,20 @@ public class Player {
     }
 
     public void handleNonMovementInputs(int button, int action) {
-        if (button == DESTROY_BUTTON) if (action == GLFW.GLFW_PRESS) {
-            destroyButtonPressTime = System.nanoTime();
-            destroyButtonWasJustPressed = true;
-        } else {
-            destroyButtonPressTime = -1;
-        }
-        else if (button == USE_BUTTON) if (action == GLFW.GLFW_PRESS) {
-            useButtonPressTime = System.nanoTime();
-            useButtonWasJustPressed = true;
-        } else {
-            useButtonPressTime = -1;
-        }
+        if (button == DESTROY_BUTTON)
+            if (action == GLFW.GLFW_PRESS) {
+                destroyButtonPressTime = System.nanoTime();
+                destroyButtonWasJustPressed = true;
+            } else {
+                destroyButtonPressTime = -1;
+            }
+        else if (button == USE_BUTTON)
+            if (action == GLFW.GLFW_PRESS) {
+                useButtonPressTime = System.nanoTime();
+                useButtonWasJustPressed = true;
+            } else {
+                useButtonPressTime = -1;
+            }
         else if (button == HOT_BAR_SLOT_1 && action == GLFW.GLFW_PRESS) setSelectedHotBarSlot(0);
         else if (button == HOT_BAR_SLOT_2 && action == GLFW.GLFW_PRESS) setSelectedHotBarSlot(1);
         else if (button == HOT_BAR_SLOT_3 && action == GLFW.GLFW_PRESS) setSelectedHotBarSlot(2);
@@ -555,6 +558,8 @@ public class Player {
 
         else if (button == TOGGLE_NO_CLIP_BUTTON && action == GLFW.GLFW_PRESS) noClip = !noClip;
         else if (button == TOGGLE_X_RAY_BUTTON && action == GLFW.GLFW_PRESS) renderer.setXRay(!renderer.isxRay());
+        else if (button == ZOOM_BUTTON && action == GLFW.GLFW_PRESS) window.updateProjectionMatrix(FOV * 0.25f);
+        else if (button == ZOOM_BUTTON && action == GLFW.GLFW_RELEASE) window.updateProjectionMatrix(FOV);
         else if (button == SET_POSITION_1_BUTTON && action == GLFW.GLFW_PRESS) {
             Vector3f cameraPosition = camera.getPosition();
             pos1.x = Utils.floor(cameraPosition.x);
