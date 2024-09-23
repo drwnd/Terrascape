@@ -198,13 +198,15 @@ public class Constants {
     public static final byte LEFT_RIGHT_FENCE_FRONT_UP_BACK_DOWN = 115;
     public static final byte[] FENCES = new byte[]{FRONT_BACK_FENCE, UP_DOWN_FENCE, LEFT_RIGHT_FENCE};
 
+    public static final byte FLOWER_TYPE = 116;
+
     public static final byte[] TO_PLACE_BLOCK_TYPES = new byte[]{FULL_BLOCK, PLAYER_HEAD, BOTTOM_SOCKET, BOTTOM_SLAB, BOTTOM_PLATE, FRONT_BACK_WALL, UP_DOWN_POST, THICK_BOTTOM_BACK_STAIR, BOTTOM_BACK_STAIR, THIN_BOTTOM_BACK_STAIR, UP_DOWN_FENCE_FRONT_RIGHT};
     public static final int BLOCK_TYPE_BITS = 8;
     public static final int BLOCK_TYPE_MASK = (1 << BLOCK_TYPE_BITS) - 1;
     public static final int BASE_BLOCK_MASK = -1 << BLOCK_TYPE_BITS;
     public static final int STANDARD_BLOCKS_THRESHOLD = 1 << BLOCK_TYPE_BITS;
 
-    public static final int TOTAL_AMOUNT_OF_BLOCK_TYPES = 116;
+    public static final int TOTAL_AMOUNT_OF_BLOCK_TYPES = 117;
 
     //Non standard block, aka blocks without blockTypes
     public static final short AIR = 0;
@@ -217,7 +219,16 @@ public class Constants {
     public static final short RIGHT_CREATOR_HEAD = 7;
     public static final short LEFT_CREATOR_HEAD = 8;
     public static final short TORCH = 9;
-    public static final short[] TO_PLACE_NON_STANDARD_BLOCKS = new short[]{WATER, LAVA, CACTUS, FRONT_CREATOR_HEAD, TORCH};
+    public static final short TALL_GRASS = 10;
+    public static final short RED_TULIP = 11;
+    public static final short YELLOW_TULIP = 12;
+    public static final short ORANGE_TULIP = 13;
+    public static final short MAGENTA_TULIP = 14;
+    public static final short ROSE = 15;
+    public static final short HYACINTH = 16;
+    public static final short DRISLY = 17;
+    public static final short SHRUB = 18;
+    public static final short[] TO_PLACE_NON_STANDARD_BLOCKS = new short[]{WATER, LAVA, CACTUS, FRONT_CREATOR_HEAD, TORCH, TALL_GRASS, RED_TULIP, YELLOW_TULIP, ORANGE_TULIP, MAGENTA_TULIP, ROSE, HYACINTH, DRISLY, SHRUB};
 
     //Standard blocks, aka blocks with blockTypes
     public static final short GRASS = (short) (1 << BLOCK_TYPE_BITS);
@@ -465,6 +476,15 @@ public class Constants {
     public static final byte MOSSY_STONE_BRICK_TEXTURE = -18;
     public static final byte MOSSY_ANDESITE_TEXTURE = -17;
     public static final byte MOSSY_STONE_TEXTURE = -16;
+    public static final byte TALL_GRASS_TEXTURE = -63;
+    public static final byte RED_TULIP_TEXTURE = -62;
+    public static final byte YELLOW_TULIP_TEXTURE = -61;
+    public static final byte ORANGE_TULIP_TEXTURE = -60;
+    public static final byte MAGENTA_TULIP_TEXTURE = -59;
+    public static final byte ROSE_TEXTURE = -58;
+    public static final byte HYACINTH_TEXTURE = -57;
+    public static final byte DRISLY_TEXTURE = -56;
+    public static final byte SHRUB_TEXTURE = -55;
 
     //Just pretend it doesn't exist
     public static final float[] SKY_BOX_VERTICES;

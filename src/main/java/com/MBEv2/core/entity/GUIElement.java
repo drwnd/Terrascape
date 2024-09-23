@@ -154,67 +154,117 @@ public class GUIElement {
         byte[] XYZSubData = Block.getXYZSubData(block);
         float[] textureCoordinates = new float[XYZSubData.length * 6];
 
-        final int textureFrontX = textureIndexFront & 15;
-        final int textureFrontY = (textureIndexFront >> 4) & 15;
-        final int textureTopX = textureIndexTop & 15;
-        final int textureTopY = (textureIndexTop >> 4) & 15;
-        final int textureLeftX = textureIndexRight & 15;
-        final int textureLeftY = (textureIndexRight >> 4) & 15;
+        final int textureFrontU = textureIndexFront & 15;
+        final int textureFrontV = (textureIndexFront >> 4) & 15;
+        final int textureTopU = textureIndexTop & 15;
+        final int textureTopV = (textureIndexTop >> 4) & 15;
+        final int textureLeftU = textureIndexRight & 15;
+        final int textureLeftV = (textureIndexRight >> 4) & 15;
 
         for (int aabbIndex = 0; aabbIndex < XYZSubData.length; aabbIndex += 6) {
             int offset = aabbIndex * 6;
 
-            final float upperFrontX = (textureFrontX + 1 + Block.getSubU(blockType, FRONT, 0, aabbIndex) * 0.0625f) * 0.0625f;
-            final float lowerFrontX = (textureFrontX + Block.getSubU(blockType, FRONT, 1, aabbIndex) * 0.0625f) * 0.0625f;
-            final float upperFrontY = (textureFrontY + Block.getSubV(blockType, FRONT, 1, aabbIndex) * 0.0625f) * 0.0625f;
-            final float lowerFrontY = (textureFrontY + 1 + Block.getSubV(blockType, FRONT, 2, aabbIndex) * 0.0625f) * 0.0625f;
-            textureCoordinates[offset] = lowerFrontX;
-            textureCoordinates[offset + 1] = lowerFrontY;
-            textureCoordinates[offset + 2] = lowerFrontX;
-            textureCoordinates[offset + 3] = upperFrontY;
-            textureCoordinates[offset + 4] = upperFrontX;
-            textureCoordinates[offset + 5] = lowerFrontY;
-            textureCoordinates[offset + 6] = lowerFrontX;
-            textureCoordinates[offset + 7] = upperFrontY;
-            textureCoordinates[offset + 8] = upperFrontX;
-            textureCoordinates[offset + 9] = upperFrontY;
-            textureCoordinates[offset + 10] = upperFrontX;
-            textureCoordinates[offset + 11] = lowerFrontY;
+            final float upperFrontU = (textureFrontU + 1 + Block.getSubU(blockType, FRONT, 0, aabbIndex) * 0.0625f) * 0.0625f;
+            final float lowerFrontU = (textureFrontU + Block.getSubU(blockType, FRONT, 1, aabbIndex) * 0.0625f) * 0.0625f;
+            final float upperFrontV = (textureFrontV + Block.getSubV(blockType, FRONT, 1, aabbIndex) * 0.0625f) * 0.0625f;
+            final float lowerFrontV = (textureFrontV + 1 + Block.getSubV(blockType, FRONT, 2, aabbIndex) * 0.0625f) * 0.0625f;
+            textureCoordinates[offset] = lowerFrontU;
+            textureCoordinates[offset + 1] = lowerFrontV;
+            textureCoordinates[offset + 2] = lowerFrontU;
+            textureCoordinates[offset + 3] = upperFrontV;
+            textureCoordinates[offset + 4] = upperFrontU;
+            textureCoordinates[offset + 5] = lowerFrontV;
+            textureCoordinates[offset + 6] = lowerFrontU;
+            textureCoordinates[offset + 7] = upperFrontV;
+            textureCoordinates[offset + 8] = upperFrontU;
+            textureCoordinates[offset + 9] = upperFrontV;
+            textureCoordinates[offset + 10] = upperFrontU;
+            textureCoordinates[offset + 11] = lowerFrontV;
 
-            final float upperTopX = (textureTopX + 1 + Block.getSubU(blockType, TOP, 0, aabbIndex) * 0.0625f) * 0.0625f;
-            final float lowerTopX = (textureTopX + Block.getSubU(blockType, TOP, 1, aabbIndex) * 0.0625f) * 0.0625f;
-            final float upperTopY = (textureTopY + Block.getSubV(blockType, TOP, 1, aabbIndex) * 0.0625f) * 0.0625f;
-            final float lowerTopY = (textureTopY + 1 + Block.getSubV(blockType, TOP, 2, aabbIndex) * 0.0625f) * 0.0625f;
-            textureCoordinates[offset + 12] = lowerTopX;
-            textureCoordinates[offset + 13] = lowerTopY;
-            textureCoordinates[offset + 14] = lowerTopX;
-            textureCoordinates[offset + 15] = upperTopY;
-            textureCoordinates[offset + 16] = upperTopX;
-            textureCoordinates[offset + 17] = lowerTopY;
-            textureCoordinates[offset + 18] = lowerTopX;
-            textureCoordinates[offset + 19] = upperTopY;
-            textureCoordinates[offset + 20] = upperTopX;
-            textureCoordinates[offset + 21] = upperTopY;
-            textureCoordinates[offset + 22] = upperTopX;
-            textureCoordinates[offset + 23] = lowerTopY;
+            final float upperTopU = (textureTopU + 1 + Block.getSubU(blockType, TOP, 0, aabbIndex) * 0.0625f) * 0.0625f;
+            final float lowerTopU = (textureTopU + Block.getSubU(blockType, TOP, 1, aabbIndex) * 0.0625f) * 0.0625f;
+            final float upperTopV = (textureTopV + Block.getSubV(blockType, TOP, 1, aabbIndex) * 0.0625f) * 0.0625f;
+            final float lowerTopV = (textureTopV + 1 + Block.getSubV(blockType, TOP, 2, aabbIndex) * 0.0625f) * 0.0625f;
+            textureCoordinates[offset + 12] = lowerTopU;
+            textureCoordinates[offset + 13] = lowerTopV;
+            textureCoordinates[offset + 14] = lowerTopU;
+            textureCoordinates[offset + 15] = upperTopV;
+            textureCoordinates[offset + 16] = upperTopU;
+            textureCoordinates[offset + 17] = lowerTopV;
+            textureCoordinates[offset + 18] = lowerTopU;
+            textureCoordinates[offset + 19] = upperTopV;
+            textureCoordinates[offset + 20] = upperTopU;
+            textureCoordinates[offset + 21] = upperTopV;
+            textureCoordinates[offset + 22] = upperTopU;
+            textureCoordinates[offset + 23] = lowerTopV;
 
-            final float upperRightX = (textureLeftX + Block.getSubU(blockType, LEFT, 0, aabbIndex) * 0.0625f) * 0.0625f;
-            final float lowerRightX = (textureLeftX + 1 + Block.getSubU(blockType, LEFT, 1, aabbIndex) * 0.0625f) * 0.0625f;
-            final float upperRightY = (textureLeftY + Block.getSubV(blockType, LEFT, 1, aabbIndex) * 0.0625f) * 0.0625f;
-            final float lowerRightY = (textureLeftY + 1 + Block.getSubV(blockType, LEFT, 2, aabbIndex) * 0.0625f) * 0.0625f;
-            textureCoordinates[offset + 24] = lowerRightX;
-            textureCoordinates[offset + 25] = lowerRightY;
-            textureCoordinates[offset + 26] = lowerRightX;
-            textureCoordinates[offset + 27] = upperRightY;
-            textureCoordinates[offset + 28] = upperRightX;
-            textureCoordinates[offset + 29] = lowerRightY;
-            textureCoordinates[offset + 30] = lowerRightX;
-            textureCoordinates[offset + 31] = upperRightY;
-            textureCoordinates[offset + 32] = upperRightX;
-            textureCoordinates[offset + 33] = upperRightY;
-            textureCoordinates[offset + 34] = upperRightX;
-            textureCoordinates[offset + 35] = lowerRightY;
+            final float upperRightU = (textureLeftU + Block.getSubU(blockType, LEFT, 0, aabbIndex) * 0.0625f) * 0.0625f;
+            final float lowerRightU = (textureLeftU + 1 + Block.getSubU(blockType, LEFT, 1, aabbIndex) * 0.0625f) * 0.0625f;
+            final float upperRightV = (textureLeftV + Block.getSubV(blockType, LEFT, 1, aabbIndex) * 0.0625f) * 0.0625f;
+            final float lowerRightV = (textureLeftV + 1 + Block.getSubV(blockType, LEFT, 2, aabbIndex) * 0.0625f) * 0.0625f;
+            textureCoordinates[offset + 24] = lowerRightU;
+            textureCoordinates[offset + 25] = lowerRightV;
+            textureCoordinates[offset + 26] = lowerRightU;
+            textureCoordinates[offset + 27] = upperRightV;
+            textureCoordinates[offset + 28] = upperRightU;
+            textureCoordinates[offset + 29] = lowerRightV;
+            textureCoordinates[offset + 30] = lowerRightU;
+            textureCoordinates[offset + 31] = upperRightV;
+            textureCoordinates[offset + 32] = upperRightU;
+            textureCoordinates[offset + 33] = upperRightV;
+            textureCoordinates[offset + 34] = upperRightU;
+            textureCoordinates[offset + 35] = lowerRightV;
         }
+        return textureCoordinates;
+    }
+
+    public static float[] getFlatDisplayVertices() {
+        float[] vertices = new float[12];
+
+        WindowManager window = Launcher.getWindow();
+        final int width = window.getWidth();
+        final int height = window.getHeight();
+
+        vertices[0] = 16 * -GUI_SIZE / width;
+        vertices[1] = 0;
+        vertices[2] = 16 * -GUI_SIZE / width;
+        vertices[3] = 32 * GUI_SIZE / height;
+        vertices[4] = 16 * GUI_SIZE / width;
+        vertices[5] = 0;
+
+        vertices[6] = 16 * -GUI_SIZE / width;
+        vertices[7] = 32 * GUI_SIZE / height;
+        vertices[8] = 16 * GUI_SIZE / width;
+        vertices[9] = 32 * GUI_SIZE / height;
+        vertices[10] = 16 * GUI_SIZE / width;
+        vertices[11] = 0;
+
+        return vertices;
+    }
+
+    public static float[] getFlatDisplayTextureCoordinates(int textureIndex) {
+        float[] textureCoordinates = new float[12];
+
+        final int u = textureIndex & 15;
+        final int v = (textureIndex >> 4) & 15;
+
+        final float upperFrontU = (u + 1) * 0.0625f;
+        final float lowerFrontU = u * 0.0625f;
+        final float upperFrontV = v * 0.0625f;
+        final float lowerFrontV = (v + 1) * 0.0625f;
+        textureCoordinates[0] = lowerFrontU;
+        textureCoordinates[1] = lowerFrontV;
+        textureCoordinates[2] = lowerFrontU;
+        textureCoordinates[3] = upperFrontV;
+        textureCoordinates[4] = upperFrontU;
+        textureCoordinates[5] = lowerFrontV;
+        textureCoordinates[6] = lowerFrontU;
+        textureCoordinates[7] = upperFrontV;
+        textureCoordinates[8] = upperFrontU;
+        textureCoordinates[9] = upperFrontV;
+        textureCoordinates[10] = upperFrontU;
+        textureCoordinates[11] = lowerFrontV;
+
         return textureCoordinates;
     }
 

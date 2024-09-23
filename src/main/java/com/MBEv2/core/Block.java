@@ -35,9 +35,11 @@ public class Block {
         int occludingSide = (side + 3) % 6;
         long occludingOcclusionData = getBlockTypeOcclusionData(occludingBlock, occludingSide);
 
-        if (isGlassType(occludingBlock)) return isGlassType(toTestBlock) && (toTestOcclusionData | occludingOcclusionData) == occludingOcclusionData;
+        if (isGlassType(occludingBlock))
+            return isGlassType(toTestBlock) && (toTestOcclusionData | occludingOcclusionData) == occludingOcclusionData;
         if (isLeaveType(occludingBlock)) {
-            if (isLeaveType(toTestBlock)) return side > 2 && (toTestOcclusionData | occludingOcclusionData) == occludingOcclusionData;
+            if (isLeaveType(toTestBlock))
+                return side > 2 && (toTestOcclusionData | occludingOcclusionData) == occludingOcclusionData;
             return false;
         }
 
@@ -541,7 +543,7 @@ public class Block {
         if (isLeaveType(block)) return false;
         if (isGlassType(block)) return false;
         int blockType = getBlockType(block);
-        if (blockType == LIQUID_TYPE) return false;
+        if (blockType == LIQUID_TYPE || blockType == FLOWER_TYPE) return false;
         if (blockType != FULL_BLOCK && blockType == (referenceBlock & BLOCK_TYPE_MASK)) return false;
         return (getBlockProperties(block) & LIGHT_EMITTING) == 0;
     }
@@ -642,6 +644,15 @@ public class Block {
         NON_STANDARD_BLOCK_TEXTURE_INDICES[CACTUS] = new byte[]{CACTUS_SIDE_TEXTURE, CACTUS_TOP_TEXTURE, CACTUS_SIDE_TEXTURE, CACTUS_SIDE_TEXTURE, CACTUS_TOP_TEXTURE, CACTUS_SIDE_TEXTURE};
         NON_STANDARD_BLOCK_TEXTURE_INDICES[WATER] = new byte[]{WATER_TEXTURE};
         NON_STANDARD_BLOCK_TEXTURE_INDICES[LAVA] = new byte[]{LAVA_TEXTURE};
+        NON_STANDARD_BLOCK_TEXTURE_INDICES[TALL_GRASS] = new byte[]{TALL_GRASS_TEXTURE};
+        NON_STANDARD_BLOCK_TEXTURE_INDICES[RED_TULIP] = new byte[]{RED_TULIP_TEXTURE};
+        NON_STANDARD_BLOCK_TEXTURE_INDICES[YELLOW_TULIP] = new byte[]{YELLOW_TULIP_TEXTURE};
+        NON_STANDARD_BLOCK_TEXTURE_INDICES[ORANGE_TULIP] = new byte[]{ORANGE_TULIP_TEXTURE};
+        NON_STANDARD_BLOCK_TEXTURE_INDICES[MAGENTA_TULIP] = new byte[]{MAGENTA_TULIP_TEXTURE};
+        NON_STANDARD_BLOCK_TEXTURE_INDICES[ROSE] = new byte[]{ROSE_TEXTURE};
+        NON_STANDARD_BLOCK_TEXTURE_INDICES[HYACINTH] = new byte[]{HYACINTH_TEXTURE};
+        NON_STANDARD_BLOCK_TEXTURE_INDICES[DRISLY] = new byte[]{DRISLY_TEXTURE};
+        NON_STANDARD_BLOCK_TEXTURE_INDICES[SHRUB] = new byte[]{SHRUB_TEXTURE};
 
         STANDARD_BLOCK_TEXTURE_INDICES[GRASS >> BLOCK_TYPE_BITS] = new byte[]{GRASS_SIDE_TEXTURE, GRASS_TOP_TEXTURE, GRASS_SIDE_TEXTURE, GRASS_SIDE_TEXTURE, DIRT_TEXTURE, GRASS_SIDE_TEXTURE};
         STANDARD_BLOCK_TEXTURE_INDICES[DIRT >> BLOCK_TYPE_BITS] = new byte[]{DIRT_TEXTURE};
@@ -768,6 +779,15 @@ public class Block {
         NON_STANDARD_BLOCK_PROPERTIES[WATER] = NO_COLLISION | REPLACEABLE | BLAST_RESISTANT;
         NON_STANDARD_BLOCK_PROPERTIES[LAVA] = LIGHT_EMITTING | NO_COLLISION | REPLACEABLE | BLAST_RESISTANT;
         NON_STANDARD_BLOCK_PROPERTIES[TORCH] = LIGHT_EMITTING | NO_COLLISION;
+        NON_STANDARD_BLOCK_PROPERTIES[TALL_GRASS] = NO_COLLISION | REPLACEABLE;
+        NON_STANDARD_BLOCK_PROPERTIES[RED_TULIP] = NO_COLLISION | REPLACEABLE;
+        NON_STANDARD_BLOCK_PROPERTIES[YELLOW_TULIP] = NO_COLLISION | REPLACEABLE;
+        NON_STANDARD_BLOCK_PROPERTIES[ORANGE_TULIP] = NO_COLLISION | REPLACEABLE;
+        NON_STANDARD_BLOCK_PROPERTIES[MAGENTA_TULIP] = NO_COLLISION | REPLACEABLE;
+        NON_STANDARD_BLOCK_PROPERTIES[ROSE] = NO_COLLISION | REPLACEABLE;
+        NON_STANDARD_BLOCK_PROPERTIES[HYACINTH] = NO_COLLISION | REPLACEABLE;
+        NON_STANDARD_BLOCK_PROPERTIES[DRISLY] = NO_COLLISION | REPLACEABLE;
+        NON_STANDARD_BLOCK_PROPERTIES[SHRUB] = NO_COLLISION | REPLACEABLE;
 
         STANDARD_BLOCK_PROPERTIES[WHITE >> BLOCK_TYPE_BITS] = LIGHT_EMITTING;
         STANDARD_BLOCK_PROPERTIES[MOSSY_OBSIDIAN >> BLOCK_TYPE_BITS] = BLAST_RESISTANT;
@@ -792,6 +812,15 @@ public class Block {
         NON_STANDARD_BLOCK_TYPE[BACK_CREATOR_HEAD] = PLAYER_HEAD;
         NON_STANDARD_BLOCK_TYPE[LEFT_CREATOR_HEAD] = PLAYER_HEAD;
         NON_STANDARD_BLOCK_TYPE[TORCH] = TORCH_TYPE;
+        NON_STANDARD_BLOCK_TYPE[TALL_GRASS] = FLOWER_TYPE;
+        NON_STANDARD_BLOCK_TYPE[RED_TULIP] = FLOWER_TYPE;
+        NON_STANDARD_BLOCK_TYPE[YELLOW_TULIP] = FLOWER_TYPE;
+        NON_STANDARD_BLOCK_TYPE[ORANGE_TULIP] = FLOWER_TYPE;
+        NON_STANDARD_BLOCK_TYPE[MAGENTA_TULIP] = FLOWER_TYPE;
+        NON_STANDARD_BLOCK_TYPE[ROSE] = FLOWER_TYPE;
+        NON_STANDARD_BLOCK_TYPE[HYACINTH] = FLOWER_TYPE;
+        NON_STANDARD_BLOCK_TYPE[DRISLY] = FLOWER_TYPE;
+        NON_STANDARD_BLOCK_TYPE[SHRUB] = FLOWER_TYPE;
     }
 
     private static void initBlockTypeData() {
@@ -897,8 +926,6 @@ public class Block {
         BLOCK_TYPE_XYZ_SUB_DATA[FRONT_BACK_FENCE_RIGHT_DOWN_LEFT] = new byte[]{0, 0, 4, -4, 0, 0, 4, -4, 0, -12, 0, 0};
         BLOCK_TYPE_XYZ_SUB_DATA[FRONT_BACK_FENCE_UP_RIGHT_DOWN_LEFT] = new byte[]{0, 0, 4, -4, 0, 0, 4, -4, 0, 0, 0, 0};
 
-        BLOCK_TYPE_XYZ_SUB_DATA[TORCH_TYPE] = new byte[]{7, -7, 0, -4, 7, -7};
-
         BLOCK_TYPE_XYZ_SUB_DATA[FRONT_RIGHT_STAIR] = new byte[]{8, 0, 0, 0, 0, -8, 0, 0, 0, 0, 8, 0};
         BLOCK_TYPE_XYZ_SUB_DATA[FRONT_LEFT_STAIR] = new byte[]{0, -8, 0, 0, 0, -8, 0, 0, 0, 0, 8, 0};
         BLOCK_TYPE_XYZ_SUB_DATA[BACK_RIGHT_STAIR] = new byte[]{8, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, -8};
@@ -939,8 +966,9 @@ public class Block {
         BLOCK_TYPE_XYZ_SUB_DATA[THICK_TOP_LEFT_STAIR] = new byte[]{0, 0, 4, 0, 0, 0, 0, -4, 0, -12, 0, 0};
 
         BLOCK_TYPE_XYZ_SUB_DATA[CACTUS_TYPE] = new byte[]{1, -1, 0, 0, 1, -1};
-
+        BLOCK_TYPE_XYZ_SUB_DATA[TORCH_TYPE] = new byte[]{7, -7, 0, -4, 7, -7};
         BLOCK_TYPE_XYZ_SUB_DATA[PLAYER_HEAD] = new byte[]{4, -4, 0, -8, 4, -4};
+        BLOCK_TYPE_XYZ_SUB_DATA[FLOWER_TYPE] = new byte[]{4, -4, 0, -8, 4, -4};
 
         BLOCK_TYPE_XYZ_SUB_DATA[UP_DOWN_WALL] = new byte[]{0, 0, 4, -4, 0, 0};
         BLOCK_TYPE_XYZ_SUB_DATA[FRONT_BACK_WALL] = new byte[]{0, 0, 0, 0, 4, -4};

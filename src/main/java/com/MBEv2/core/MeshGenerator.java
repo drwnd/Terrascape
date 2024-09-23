@@ -3,6 +3,7 @@ package com.MBEv2.core;
 import org.joml.Vector3i;
 
 import java.util.ArrayList;
+import java.util.Random;
 
 import static com.MBEv2.core.utils.Constants.*;
 
@@ -15,6 +16,7 @@ public class MeshGenerator {
     private int side, aabbIndex;
     private short block;
     private ArrayList<Integer> list;
+    private final Random random = new Random();
 
     public void setChunk(Chunk chunk) {
         this.chunk = chunk;
@@ -44,6 +46,12 @@ public class MeshGenerator {
 
                     int blockType = Block.getBlockType(block);
                     if (blockType == AIR_TYPE) continue;
+
+                    if (blockType == FLOWER_TYPE) {
+                        list = foliageVerticesList;
+                        addFlowerToList();
+                        continue;
+                    }
 
                     int faceCount = Block.getFaceCount(blockType);
 
@@ -86,7 +94,7 @@ public class MeshGenerator {
     }
 
 
-    public void addSideToList(int u, int v, ArrayList<Integer> list) {
+    private void addSideToList(int u, int v, ArrayList<Integer> list) {
         this.list = list;
 
         switch (side) {
@@ -129,7 +137,7 @@ public class MeshGenerator {
         }
     }
 
-    public void addVertexToList(int inChunkX, int inChunkY, int inChunkZ, int u, int v, int corner, int subDataAddend) {
+    private void addVertexToList(int inChunkX, int inChunkY, int inChunkZ, int u, int v, int corner, int subDataAddend) {
         int x = worldCoordinate.x + inChunkX;
         int y = worldCoordinate.y + inChunkY;
         int z = worldCoordinate.z + inChunkZ;
@@ -154,7 +162,7 @@ public class MeshGenerator {
         list.add(packData2(skyLight, blockLight, (u << 4) + subU + 15, (v << 4) + subV + 15));
     }
 
-    public void addVertexToListDynamic(int inChunkX, int inChunkY, int inChunkZ, int u, int v, int skyLight, int blockLight, int corner) {
+    private void addVertexToListDynamic(int inChunkX, int inChunkY, int inChunkZ, int u, int v, int skyLight, int blockLight, int corner) {
         int subX = 0;
         int subY = 0;
         int subZ = 0;
@@ -198,7 +206,7 @@ public class MeshGenerator {
     }
 
 
-    public void addWaterSideToList(ArrayList<Integer> list) {
+    private void addWaterSideToList(ArrayList<Integer> list) {
         this.list = list;
         int u = WATER_TEXTURE - 1 & 15;
         int v = WATER_TEXTURE - 1 >> 4 & 15;
@@ -243,7 +251,7 @@ public class MeshGenerator {
         }
     }
 
-    public void addWaterVertexToList(int inChunkX, int inChunkY, int inChunkZ, int u, int v, int corner) {
+    private void addWaterVertexToList(int inChunkX, int inChunkY, int inChunkZ, int u, int v, int corner) {
         int x = worldCoordinate.x + inChunkX;
         int y = worldCoordinate.y + inChunkY;
         int z = worldCoordinate.z + inChunkZ;
@@ -282,7 +290,8 @@ public class MeshGenerator {
                     subV = -14;
                     shouldSimulateWaves = true;
                 }
-                if (blockBelow == WATER || Block.getBlockTypeOcclusionData(blockBelow, TOP) != -1) shouldSimulateWaves = true;
+                if (blockBelow == WATER || Block.getBlockTypeOcclusionData(blockBelow, TOP) != -1)
+                    shouldSimulateWaves = true;
             }
         } else shouldSimulateWaves = true;
 
@@ -295,7 +304,7 @@ public class MeshGenerator {
     }
 
 
-    public void addFoliageSideToList(ArrayList<Integer> list, int u, int v) {
+    private void addFoliageSideToList(ArrayList<Integer> list, int u, int v) {
         this.list = list;
 
         switch (side) {
@@ -338,7 +347,7 @@ public class MeshGenerator {
         }
     }
 
-    public void addFoliageVertexToList(int inChunkX, int inChunkY, int inChunkZ, int u, int v, int corner, int subDataAddend) {
+    private void addFoliageVertexToList(int inChunkX, int inChunkY, int inChunkZ, int u, int v, int corner, int subDataAddend) {
         int x = worldCoordinate.x + inChunkX;
         int y = worldCoordinate.y + inChunkY;
         int z = worldCoordinate.z + inChunkZ;
@@ -360,23 +369,68 @@ public class MeshGenerator {
 
         int ambientOcclusionLevel = getAmbientOcclusionLevel(inChunkX, inChunkY, inChunkZ, subX, subY, subZ);
         list.add(packData1(ambientOcclusionLevel, (inChunkX << 4) + subX + 15, (inChunkY << 4) + subY + 15, (inChunkZ << 4) + subZ + 15));
-        list.add(packData2(skyLight, blockLight, (u << 4) + subU + 15, (v << 4) + subV + 15));
+        list.add(packFoliageData(1, skyLight, blockLight, (u << 4) + subU + 15, (v << 4) + subV + 15));
+    }
+
+    private void addFlowerToList() {
+        int texture = Block.getTextureIndex(block, side) - 1;
+
+        int u = texture & 15;
+        int v = texture >> 4 & 15;
+
+        int x = worldCoordinate.x + blockX;
+        int y = worldCoordinate.y + blockY;
+        int z = worldCoordinate.z + blockZ;
+
+        int skyLight = Chunk.getVertexSkyLightInWorld(x, y, z);
+        int blockLight = Chunk.getVertexBlockLightInWorld(x, y, z);
+
+        side = BOTTOM;
+        int ambientOcclusionLevelBottom = getAmbientOcclusionLevel(blockX, blockY, blockZ, 8, 0, 8);
+        side = TOP;
+        int ambientOcclusionLevelTop = getAmbientOcclusionLevel(blockX, blockY + 1, blockZ, 8, 0, 8);
+
+        random.setSeed((long) x << 42 | (long) z << 21 | y);
+        int randomX = (int) (random.nextDouble() * 8 - 4);
+        int randomZ = (int) (random.nextDouble() * 8 - 4);
+
+        list.add(packData1(ambientOcclusionLevelTop, (blockX << 4) + 3 + 15 + randomX, (blockY + 1 << 4) + 15, (blockZ << 4) + 3 + 15 + randomZ));
+        list.add(packFoliageData(1, skyLight, blockLight, (u << 4) + 15, (v << 4) + 15));
+        list.add(packData1(ambientOcclusionLevelBottom, (blockX << 4) + 3 + 15 + randomX, (blockY << 4) + 15, (blockZ << 4) + 3 + 15 + randomZ));
+        list.add(packFoliageData(0, skyLight, blockLight, (u << 4) + 15, (v + 1 << 4) + 15));
+        list.add(packData1(ambientOcclusionLevelTop, (blockX << 4) + 13 + 15 + randomX, (blockY + 1 << 4) + 15, (blockZ << 4) + 13 + 15 + randomZ));
+        list.add(packFoliageData(1, skyLight, blockLight, (u + 1 << 4) + 15, (v << 4) + 15));
+        list.add(packData1(ambientOcclusionLevelBottom, (blockX << 4) + 13 + 15 + randomX, (blockY << 4) + 15, (blockZ << 4) + 13 + 15 + randomZ));
+        list.add(packFoliageData(0, skyLight, blockLight, (u + 1 << 4) + 15, (v + 1 << 4) + 15));
+
+        list.add(packData1(ambientOcclusionLevelTop, (blockX << 4) + 3 + 15 + randomX, (blockY + 1 << 4) + 15, (blockZ << 4) + 13 + 15 + randomZ));
+        list.add(packFoliageData(1, skyLight, blockLight, (u << 4) + 15, (v << 4) + 15));
+        list.add(packData1(ambientOcclusionLevelBottom, (blockX << 4) + 3 + 15 + randomX, (blockY << 4) + 15, (blockZ << 4) + 13 + 15 + randomZ));
+        list.add(packFoliageData(0, skyLight, blockLight, (u << 4) + 15, (v + 1 << 4) + 15));
+        list.add(packData1(ambientOcclusionLevelTop, (blockX << 4) + 13 + 15 + randomX, (blockY + 1 << 4) + 15, (blockZ << 4) + 3 + 15 + randomZ));
+        list.add(packFoliageData(1, skyLight, blockLight, (u + 1 << 4) + 15, (v << 4) + 15));
+        list.add(packData1(ambientOcclusionLevelBottom, (blockX << 4) + 13 + 15 + randomX, (blockY << 4) + 15, (blockZ << 4) + 3 + 15 + randomZ));
+        list.add(packFoliageData(0, skyLight, blockLight, (u + 1 << 4) + 15, (v + 1 << 4) + 15));
     }
 
 
-    public int packData1(int ambientOcclusionLevel, int inChunkX, int inChunkY, int inChunkZ) {
+    private int packData1(int ambientOcclusionLevel, int inChunkX, int inChunkY, int inChunkZ) {
         return ambientOcclusionLevel << 30 | inChunkX << 20 | inChunkY << 10 | inChunkZ;
     }
 
-    public int packData2(int skyLight, int blockLight, int u, int v) {
+    private int packData2(int skyLight, int blockLight, int u, int v) {
         return side << 26 | skyLight << 22 | blockLight << 18 | u << 9 | v;
     }
 
-    public int packWaterData(int waveMultiplier, int skyLight, int blockLight, int u, int v) {
+    private int packWaterData(int waveMultiplier, int skyLight, int blockLight, int u, int v) {
         return waveMultiplier << 29 | side << 26 | skyLight << 22 | blockLight << 18 | u << 9 | v;
     }
 
-    public int getAmbientOcclusionLevel(int inChunkX, int inChunkY, int inChunkZ, int subX, int subY, int subZ) {
+    private int packFoliageData(int windMultiplier, int skyLight, int blockLight, int u, int v) {
+        return windMultiplier << 29 | side << 26 | skyLight << 22 | blockLight << 18 | u << 9 | v;
+    }
+
+    private int getAmbientOcclusionLevel(int inChunkX, int inChunkY, int inChunkZ, int subX, int subY, int subZ) {
         int level = 0;
         int x = worldCoordinate.x + inChunkX;
         int y = worldCoordinate.y + inChunkY;

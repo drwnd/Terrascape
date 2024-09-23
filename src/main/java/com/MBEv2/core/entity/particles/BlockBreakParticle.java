@@ -103,7 +103,7 @@ public class BlockBreakParticle extends Particle {
         int index = 0;
 
         for (int x = 0; x < 8; x++)
-            for (int y = 0; y < 8; y++)
+            for (int y = 7; y >= 0; y--)
                 for (int z = 0; z < 8; z++) {
 
                     float textureU = x * 0.125f;

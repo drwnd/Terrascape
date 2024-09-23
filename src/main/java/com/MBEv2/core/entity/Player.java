@@ -467,10 +467,15 @@ public class Player {
         final float minZ = cameraPosition.z - HALF_PLAYER_WIDTH;
         final float maxZ = cameraPosition.z + HALF_PLAYER_WIDTH;
         Vector3i position = target.position();
-        int[] normal = Block.NORMALS[target.side()];
-        int x = position.x + normal[0];
-        int y = position.y + normal[1];
-        int z = position.z + normal[2];
+        int x = position.x;
+        int y = position.y;
+        int z = position.z;
+        if ((Block.getBlockProperties(Chunk.getBlockInWorld(x, y, z)) & REPLACEABLE) == 0) {
+            int[] normal = Block.NORMALS[target.side()];
+            x = position.x + normal[0];
+            y = position.y + normal[1];
+            z = position.z + normal[2];
+        }
         if (hasCollision() && Block.entityIntersectsBlock(minX, maxX, minY, maxY, minZ, maxZ, x, y, z, toPlaceBlock))
             return;
 
@@ -936,15 +941,23 @@ public class Player {
         int height = window.getHeight();
 
         for (int i = 0; i < hotBar.length; i++) {
-            short block = hotBar[i];
-
-            int textureIndexFront = Block.getTextureIndex(block, FRONT) - 1;
-            int textureIndexTop = Block.getTextureIndex(block, TOP) - 1;
-            int textureIndexLeft = Block.getTextureIndex(block, LEFT) - 1;
-            float[] textureCoordinates = GUIElement.getBlockDisplayTextureCoordinates(textureIndexFront, textureIndexTop, textureIndexLeft, block);
             float xOffset = (40.0f * i - 165 + 4) * GUI_SIZE / width;
             float yOffset = -0.5f + 4.0f * GUI_SIZE / height;
-            GUIElement element = ObjectLoader.loadGUIElement(GUIElement.getBlockDisplayVertices(block), textureCoordinates, new Vector2f(xOffset, yOffset));
+            GUIElement element;
+
+            short block = hotBar[i];
+            if (Block.getBlockType(block) == FLOWER_TYPE) {
+                int textureIndex = Block.getTextureIndex(block, 0) - 1;
+                float[] textureCoordinates = GUIElement.getFlatDisplayTextureCoordinates(textureIndex);
+                element = ObjectLoader.loadGUIElement(GUIElement.getFlatDisplayVertices(), textureCoordinates, new Vector2f(xOffset, yOffset));
+            } else {
+                int textureIndexFront = Block.getTextureIndex(block, FRONT) - 1;
+                int textureIndexTop = Block.getTextureIndex(block, TOP) - 1;
+                int textureIndexLeft = Block.getTextureIndex(block, LEFT) - 1;
+                float[] textureCoordinates = GUIElement.getBlockDisplayTextureCoordinates(textureIndexFront, textureIndexTop, textureIndexLeft, block);
+                element = ObjectLoader.loadGUIElement(GUIElement.getBlockDisplayVertices(block), textureCoordinates, new Vector2f(xOffset, yOffset));
+            }
+
             element.setTexture(atlas);
             hotBarElements.add(element);
         }
@@ -953,13 +966,18 @@ public class Player {
     private void generateInventoryElements(ArrayList<GUIElement> elements) {
         for (int i = 0; i < TO_PLACE_NON_STANDARD_BLOCKS.length; i++) {
             short block = TO_PLACE_NON_STANDARD_BLOCKS[i];
-            float[] vertices = GUIElement.getBlockDisplayVertices(block);
-
-            int textureIndexFront = Block.getTextureIndex(block, FRONT) - 1;
-            int textureIndexTop = Block.getTextureIndex(block, TOP) - 1;
-            int textureIndexLeft = Block.getTextureIndex(block, LEFT) - 1;
-            float[] textureCoordinates = GUIElement.getBlockDisplayTextureCoordinates(textureIndexFront, textureIndexTop, textureIndexLeft, block);
-            GUIElement element = ObjectLoader.loadGUIElement(vertices, textureCoordinates, new Vector2f(0.5f - (i + 1) * 0.02f * GUI_SIZE, 0.5f - GUI_SIZE * 0.04f));
+            GUIElement element;
+            if (Block.getBlockType(block) == FLOWER_TYPE) {
+                int textureIndex = Block.getTextureIndex(block, 0) - 1;
+                float[] textureCoordinates = GUIElement.getFlatDisplayTextureCoordinates(textureIndex);
+                element = ObjectLoader.loadGUIElement(GUIElement.getFlatDisplayVertices(), textureCoordinates, new Vector2f(0.5f - (i + 1) * 0.02f * GUI_SIZE, 0.5f - GUI_SIZE * 0.04f));
+            } else {
+                int textureIndexFront = Block.getTextureIndex(block, FRONT) - 1;
+                int textureIndexTop = Block.getTextureIndex(block, TOP) - 1;
+                int textureIndexLeft = Block.getTextureIndex(block, LEFT) - 1;
+                float[] textureCoordinates = GUIElement.getBlockDisplayTextureCoordinates(textureIndexFront, textureIndexTop, textureIndexLeft, block);
+                element = ObjectLoader.loadGUIElement(GUIElement.getBlockDisplayVertices(block), textureCoordinates, new Vector2f(0.5f - (i + 1) * 0.02f * GUI_SIZE, 0.5f - GUI_SIZE * 0.04f));
+            }
             element.setTexture(atlas);
             elements.add(element);
         }

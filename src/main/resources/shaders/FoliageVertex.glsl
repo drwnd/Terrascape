@@ -152,13 +152,14 @@ void main() {
     float x = ((data.x >> 20 & 1023) - 15) * 0.0625;
     float y = ((data.x >> 10 & 1023) - 15) * 0.0625;
     float z = ((data.x & 1023) - 15) * 0.0625;
+    int windMultiplier = data.y >> 29 & 1;
 
     vec3 totalPosition = vec3(x, y, z) + worldPos;
 
     if (shouldSimulateWind == 1) {
-        totalPosition.x += snoise(vec4(totalPosition * 0.333, abs(time) * 350)) * 0.09;
-        totalPosition.y += snoise(vec4(totalPosition * 0.333, abs(time) * 350 + 100)) * 0.09;
-        totalPosition.z += snoise(vec4(totalPosition * 0.333, abs(time) * 350 + 200)) * 0.09;
+        totalPosition.x += snoise(vec4(totalPosition * 0.333, abs(time) * 350)) * 0.09 * windMultiplier;
+        totalPosition.y += snoise(vec4(totalPosition * 0.333, abs(time) * 350 + 100)) * 0.09 * windMultiplier;
+        totalPosition.z += snoise(vec4(totalPosition * 0.333, abs(time) * 350 + 200)) * 0.09 * windMultiplier;
     }
 
     gl_Position = projectionMatrix * viewMatrix * vec4(totalPosition, 1.0);
