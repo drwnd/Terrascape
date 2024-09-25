@@ -1,5 +1,6 @@
 package com.MBEv2.core.utils;
 
+import java.util.Random;
 
 public class Settings {
     public static final int IS_MOUSE_BUTTON = 0x80000000;
