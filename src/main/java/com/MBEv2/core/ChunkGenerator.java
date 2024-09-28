@@ -109,16 +109,27 @@ public class ChunkGenerator {
 
         @Override
         public void run() {
+            HeightMap heightMapObject = Chunk.getHeightMap(chunkX, chunkZ);
+
+            if (heightMapObject == null || heightMapObject.chunkX != chunkX || heightMapObject.chunkZ != chunkZ) {
+                heightMapObject = FileManager.getHeightMap(chunkX, chunkZ);
+                if (heightMapObject == null)
+                    heightMapObject = new HeightMap(new int[CHUNK_SIZE * CHUNK_SIZE], chunkX, chunkZ);
+                Chunk.setHeightMap(heightMapObject, GameLogic.getHeightMapIndex(chunkX, chunkZ));
+            }
+            int[] intHeightMap = heightMapObject.map;
+
             double[][] heightMap = WorldGeneration.heightMap(chunkX, chunkZ);
             double[][] temperatureMap = WorldGeneration.temperatureMap(chunkX, chunkZ);
             double[][] humidityMap = WorldGeneration.humidityMap(chunkX, chunkZ);
             double[][] erosionMap = WorldGeneration.erosionMap(chunkX, chunkZ);
             double[][] featureMap = WorldGeneration.featureMap(chunkX, chunkZ);
+            boolean hasGenerated = false;
 
             int[][] resultingHeightMap = new int[CHUNK_SIZE][CHUNK_SIZE];
-            for (int x = 0; x < CHUNK_SIZE; x++)
-                for (int z = 0; z < CHUNK_SIZE; z++)
-                    resultingHeightMap[x][z] = WorldGeneration.getHeight(heightMap[x][z], erosionMap[x][z]);
+            for (int inCHunkX = 0; inCHunkX < CHUNK_SIZE; inCHunkX++)
+                for (int inChunkZ = 0; inChunkZ < CHUNK_SIZE; inChunkZ++)
+                    resultingHeightMap[inCHunkX][inChunkZ] = WorldGeneration.getHeight(heightMap[inCHunkX][inChunkZ], erosionMap[inCHunkX][inChunkZ]);
 
             for (int chunkY = playerY + RENDER_DISTANCE_Y + 1; chunkY >= playerY - RENDER_DISTANCE_Y - 1 && shouldFinish; chunkY--) {
                 try {
@@ -132,13 +143,9 @@ public class ChunkGenerator {
                             WorldGeneration.generateSurroundingChunkTreeBlocks(chunk, resultingHeightMap, temperatureMap, humidityMap, erosionMap, featureMap);
 
                         Chunk.storeChunk(chunk);
-                        if (!chunk.isGenerated())
-                            WorldGeneration.generate(chunk, resultingHeightMap, temperatureMap, humidityMap, erosionMap, featureMap);
                     } else if (chunk.id != expectedId) {
+                        System.out.println("found chunk has wrong id");
                         GameLogic.addToUnloadChunk(chunk);
-
-                        if (chunk.isModified())
-                            FileManager.saveChunk(chunk);
 
                         chunk = FileManager.getChunk(expectedId);
                         if (chunk == null) chunk = new Chunk(chunkX, chunkY, chunkZ);
@@ -146,10 +153,10 @@ public class ChunkGenerator {
                             WorldGeneration.generateSurroundingChunkTreeBlocks(chunk, resultingHeightMap, temperatureMap, humidityMap, erosionMap, featureMap);
 
                         Chunk.storeChunk(chunk);
-                        if (!chunk.isGenerated())
-                            WorldGeneration.generate(chunk, resultingHeightMap, temperatureMap, humidityMap, erosionMap, featureMap);
-                    } else if (!chunk.isGenerated()) {
+                    }
+                    if (!chunk.isGenerated()) {
                         WorldGeneration.generate(chunk, resultingHeightMap, temperatureMap, humidityMap, erosionMap, featureMap);
+                        hasGenerated = true;
                     }
                 } catch (Exception exception) {
                     exception.printStackTrace();
@@ -159,15 +166,18 @@ public class ChunkGenerator {
                 }
             }
 
-            int[] intHeightMap = Chunk.getHeightMap(chunkX, chunkZ);
+            if (!hasGenerated) return;
 
             for (int x = chunkX << CHUNK_SIZE_BITS, maxX = x + CHUNK_SIZE; x < maxX; x++)
                 for (int z = chunkZ << CHUNK_SIZE_BITS, maxZ = z + CHUNK_SIZE; z < maxZ; z++) {
 
-                    int y = (playerY + RENDER_DISTANCE_Y << CHUNK_SIZE_BITS) + CHUNK_SIZE;
-                    int minY = (playerY - RENDER_DISTANCE_Y << CHUNK_SIZE_BITS);
-                    while (y >= minY) {
-                        short block = Chunk.getBlockInWorld(x, --y, z);
+                    int height = intHeightMap[(x & CHUNK_SIZE_MASK) << CHUNK_SIZE_BITS | (z & CHUNK_SIZE_MASK)];
+                    int y = (playerY + RENDER_DISTANCE_Y << CHUNK_SIZE_BITS) + CHUNK_SIZE - 1;
+
+                    if (height >= y) continue;
+
+                    for (; y > height; y--) {
+                        short block = Chunk.getBlockInWorld(x, y, z);
                         if (block == AIR || block == OUT_OF_WORLD) continue;
 
                         intHeightMap[(x & CHUNK_SIZE_MASK) << CHUNK_SIZE_BITS | (z & CHUNK_SIZE_MASK)] = y;
@@ -224,7 +234,6 @@ public class ChunkGenerator {
                 } catch (Exception exception) {
                     System.out.println("Meshing:");
                     System.out.println(exception.getClass());
-                    //noinspection CallToPrintStackTrace
                     exception.printStackTrace();
                     System.out.println(chunkX + " " + chunkY + " " + chunkZ);
                 }
@@ -251,7 +260,7 @@ public class ChunkGenerator {
 
         private void handleSkyLightTop() {
             int maxY = Integer.MIN_VALUE;
-            for (int chunkY = RENDERED_WORLD_HEIGHT; chunkY > 0; chunkY--) {
+            for (int chunkY = RENDERED_WORLD_HEIGHT; chunkY >= 0; chunkY--) {
                 Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
                 if (chunk == null || !chunk.isGenerated()) continue;
                 if (chunk.Y > maxY) maxY = chunk.Y;

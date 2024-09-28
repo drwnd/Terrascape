@@ -9,6 +9,7 @@ import com.MBEv2.core.entity.entities.Entity;
 import com.MBEv2.core.entity.particles.Particle;
 import com.MBEv2.core.utils.Transformation;
 import com.MBEv2.core.utils.Utils;
+import com.MBEv2.test.GameLogic;
 import com.MBEv2.test.Launcher;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -460,17 +461,18 @@ public class RenderManager {
 
         int x = Utils.floor(position.x), y = Utils.floor(position.y), z = Utils.floor(position.z);
         int chunkX = x >> CHUNK_SIZE_BITS, chunkY = y >> CHUNK_SIZE_BITS, chunkZ = z >> CHUNK_SIZE_BITS;
+        int inChunkX = x & CHUNK_SIZE_MASK, inChunkY = y & CHUNK_SIZE_MASK, inChunkZ = z & CHUNK_SIZE_MASK;
         Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
 
         renderTextLine("Frame rate:" + EngineManager.currentFrameRate, ++line);
         renderTextLine("Coordinates: X:" + Utils.floor(position.x * 10) / 10f + " Y:" + Utils.floor(position.y * 10) / 10f + " Z:" + Utils.floor(position.z * 10) / 10f, ++line);
         renderTextLine("Chunk coordinates: X:" + chunkX + " Y:" + chunkY + " Z:" + chunkZ, ++line);
-        renderTextLine("In Chunk coordinates: X:" + (x & CHUNK_SIZE_MASK) + " Y:" + (y & CHUNK_SIZE_MASK) + " Z:" + (z & CHUNK_SIZE_MASK), ++line);
+        renderTextLine("In Chunk coordinates: X:" + inChunkX + " Y:" + inChunkY + " Z:" + inChunkZ, ++line);
         renderTextLine("Looking at: X:" + Utils.floor(direction.x * 100) / 100f + " Y:" + Utils.floor(direction.y * 100) / 100f + " Z:" + Utils.floor(direction.z * 100) / 100f, ++line);
         if (chunk != null) {
             renderTextLine("OcclusionCullingData:" + Integer.toBinaryString(chunk.getOcclusionCullingData() & 0x7FFF) + " Damping:" + (chunk.getOcclusionCullingDamper() == 0 ? "false" : "true"), ++line);
             renderTextLine("Block optimized:" + (chunk.isBlockOptimized() ? "true" : "false") + " Light optimized:" + (chunk.isLightOptimized() ? "true" : "false"), ++line);
-            renderTextLine("HeightMap:" + Chunk.getHeightMap(chunkX, chunkZ)[(x & CHUNK_SIZE_MASK) << CHUNK_SIZE_BITS | z & CHUNK_SIZE_MASK], ++line);
+            renderTextLine("HeightMap:" + Chunk.getHeightMap(chunkX, chunkZ).map[inChunkX << CHUNK_SIZE_BITS | inChunkZ], ++line);
             renderTextLine("BlockLight:" + Chunk.getBlockLightInWorld(x, y, z) + " SkyLight:" + Chunk.getSkyLightInWorld(x, y, z), ++line);
         }
         if (target != null) {
@@ -494,6 +496,8 @@ public class RenderManager {
         renderTextLine("Time:" + time, ++line);
         //This one line literally quarters the fps when debug screen is open
 //        renderTextLine("Saved chunks memory:" + FileManager.getSeedFileSize() / 1_000_000 + "MB", ++line);
+        renderTextLine("To buffer chunks:" + GameLogic.getAmountOfToBufferChunks(), ++line);
+        renderTextLine("Entities:" + GameLogic.getAmountOfEntities(), ++line);
 
         textShader.unBind();
     }

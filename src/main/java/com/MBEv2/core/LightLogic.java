@@ -36,7 +36,6 @@ public class LightLogic {
             chunk.storeSaveBlockLight(index, currentBlockLight);
             chunk.setMeshed(false);
             unMeshNextChunkIfNecessary(x & CHUNK_SIZE_MASK, y & CHUNK_SIZE_MASK, z & CHUNK_SIZE_MASK, chunk);
-            chunk.setModified();
 
             byte nextBlockLight = (byte) (currentBlockLight - 1);
             if (nextBlockLight <= 0) continue;
@@ -103,7 +102,6 @@ public class LightLogic {
             chunk.removeBlockLight(index);
             chunk.setMeshed(false);
             unMeshNextChunkIfNecessary(x & CHUNK_SIZE_MASK, y & CHUNK_SIZE_MASK, z & CHUNK_SIZE_MASK, chunk);
-            chunk.setModified();
             short currentBlock = onFirstIteration ? AIR : chunk.getSaveBlock(index);
 
             short nextBlock = Chunk.getBlockInWorld(x + 1, y, z);
@@ -187,7 +185,7 @@ public class LightLogic {
 
     public static void setChunkColumnSkyLight(final int chunkX, int chunkY, final int chunkZ) {
         LinkedList<Vector4i> toPlaceLights = new LinkedList<>();
-        int[] heightMap = Chunk.getHeightMap(chunkX, chunkZ);
+        int[] heightMap = Chunk.getHeightMap(chunkX, chunkZ).map;
 
         int x = chunkX << CHUNK_SIZE_BITS;
         int y = (chunkY << CHUNK_SIZE_BITS) + CHUNK_SIZE - 1;

@@ -19,15 +19,15 @@ public class Constants {
     public static final int IN_CHUNK_ENTITY_CLUSTER_MASK = 3;
     public static final int ENTITY_CLUSTER_TO_CHUNK_BITS = CHUNK_SIZE_BITS - ENTITY_CLUSTER_SIZE_BITS;
 
-    //Other useful stuff
-    public static final int MAX_BLOCK_LIGHT_VALUE = 15;
-    public static final int MAX_SKY_LIGHT_VALUE = 15;
-
     //Change based on computing power
-    public static final int MAX_CHUNKS_TO_BUFFER_PER_FRAME = 5;
+    public static final int MAX_CHUNKS_TO_BUFFER_PER_FRAME = 15;
 
     public static final int NUMBER_OF_GENERATION_THREADS = 4;
     public static final int MAX_OCCLUSION_CULLING_DAMPER = 6;
+
+    //Other useful stuff
+    public static final int MAX_BLOCK_LIGHT_VALUE = 15;
+    public static final int MAX_SKY_LIGHT_VALUE = 15;
 
     //Indices for the sides of blocks
     public static final int FRONT = 0;
@@ -228,7 +228,8 @@ public class Constants {
     public static final short HYACINTH = 16;
     public static final short DRISLY = 17;
     public static final short SHRUB = 18;
-    public static final short[] TO_PLACE_NON_STANDARD_BLOCKS = new short[]{WATER, LAVA, CACTUS, FRONT_CREATOR_HEAD, TORCH, TALL_GRASS, RED_TULIP, YELLOW_TULIP, ORANGE_TULIP, MAGENTA_TULIP, ROSE, HYACINTH, DRISLY, SHRUB};
+    public static final short SUGAR_CANE = 19;
+    public static final short[] TO_PLACE_NON_STANDARD_BLOCKS = new short[]{WATER, LAVA, CACTUS, FRONT_CREATOR_HEAD, TORCH, TALL_GRASS, RED_TULIP, YELLOW_TULIP, ORANGE_TULIP, MAGENTA_TULIP, ROSE, HYACINTH, DRISLY, SHRUB, SUGAR_CANE};
 
     //Standard blocks, aka blocks with blockTypes
     public static final short GRASS = (short) (1 << BLOCK_TYPE_BITS);
@@ -485,6 +486,7 @@ public class Constants {
     public static final byte HYACINTH_TEXTURE = -57;
     public static final byte DRISLY_TEXTURE = -56;
     public static final byte SHRUB_TEXTURE = -55;
+    public static final byte SUGAR_CANE_TEXTURE = -54;
 
     //Just pretend it doesn't exist
     public static final float[] SKY_BOX_VERTICES;

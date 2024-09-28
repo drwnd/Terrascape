@@ -12,11 +12,12 @@ import static com.MBEv2.core.utils.Constants.*;
 public class Chunk {
 
     private static Chunk[] world;
-    private static int[][] heightMap;
+    private static HeightMap[] heightMaps;
     private static final HashMap<Long, ArrayList<Long>> toGenerateBlocks = new HashMap<>();
 
     private short[] blocks;
     private byte[] light;
+    @SuppressWarnings("unchecked")
     private final LinkedList<Entity>[] entityClusters = new LinkedList[64];
 
     private int[][] vertices = new int[6][0];
@@ -56,14 +57,14 @@ public class Chunk {
         for (int i = 0; i < entityClusters.length; i++) entityClusters[i] = new LinkedList<>();
     }
 
-    public Chunk(int x, int y, int z, byte[] light, short[] blocks) {
+    public Chunk(int x, int y, int z, short[] blocks) {
         this.X = x;
         this.Y = y;
         this.Z = z;
         worldCoordinate = new Vector3i(X << CHUNK_SIZE_BITS, Y << CHUNK_SIZE_BITS, Z << CHUNK_SIZE_BITS);
 
         this.blocks = blocks;
-        this.light = light;
+        light = new byte[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
 
         id = GameLogic.getChunkId(X, Y, Z);
         index = GameLogic.getChunkIndex(X, Y, Z);
@@ -211,6 +212,7 @@ public class Chunk {
                     Chunk chunk = getChunk(index);
 
                     if (chunk == null) {
+                        System.out.println("surrounding Chunk is null");
                         chunk = FileManager.getChunk(expectedId);
                         if (chunk == null) chunk = new Chunk(chunkX, chunkY, chunkZ);
                         else WorldGeneration.generateSurroundingChunkTreeBlocks(chunk);
@@ -219,9 +221,8 @@ public class Chunk {
                         if (!chunk.isGenerated) WorldGeneration.generate(chunk);
 
                     } else if (chunk.id != expectedId) {
+                        System.out.println("surrounding Chunk is not correct");
                         GameLogic.addToUnloadChunk(chunk);
-
-                        if (chunk.isModified) FileManager.saveChunk(chunk);
 
                         chunk = FileManager.getChunk(expectedId);
                         if (chunk == null) chunk = new Chunk(chunkX, chunkY, chunkZ);
@@ -230,7 +231,10 @@ public class Chunk {
                         Chunk.storeChunk(chunk);
                         if (!chunk.isGenerated) WorldGeneration.generate(chunk);
 
-                    } else if (!chunk.isGenerated) WorldGeneration.generate(chunk);
+                    } else if (!chunk.isGenerated) {
+                        System.out.println("surrounding Chunk is not generated");
+                        WorldGeneration.generate(chunk);
+                    }
                 }
     }
 
@@ -290,9 +294,12 @@ public class Chunk {
             blocks = new short[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
             Arrays.fill(blocks, oldBlock);
         }
-        blocks[inChunkX << CHUNK_SIZE_BITS * 2 | inChunkZ << CHUNK_SIZE_BITS | inChunkY] = block;
+        storeSave(inChunkX, inChunkY, inChunkZ, block);
+        setModified();
 
-        int[] heightMap = Chunk.heightMap[GameLogic.getHeightMapIndex(X, Z)];
+        HeightMap heightMapObject = getHeightMap(X, Z);
+        heightMapObject.setModified(true);
+        int[] heightMap = heightMapObject.map;
         int totalY = worldCoordinate.y | inChunkY;
 
         if (totalY > heightMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ])
@@ -328,7 +335,7 @@ public class Chunk {
             if (blocks[index] != AIR && Block.isLeaveType(block)) return;
             blocks[index] = block;
 
-            int[] heightMap = getHeightMap(X, Z);
+            int[] heightMap = getHeightMap(X, Z).map;
             if (y > heightMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ])
                 heightMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ] = y;
         } else storeSurroundingChunkTreeBlock(inChunkX, inChunkY, inChunkZ, block);
@@ -351,7 +358,7 @@ public class Chunk {
         if (chunk == null) {
             long id = GameLogic.getChunkId(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS);
             synchronized (toGenerateBlocks) {
-                ArrayList<Long> toPlaceBlocks = toGenerateBlocks.computeIfAbsent(id, k -> new ArrayList<>());
+                ArrayList<Long> toPlaceBlocks = toGenerateBlocks.computeIfAbsent(id, ignored -> new ArrayList<>());
                 toPlaceBlocks.add((long) block << 48 | inChunkX << CHUNK_SIZE_BITS * 2 | inChunkY << CHUNK_SIZE_BITS | inChunkZ);
             }
         } else {
@@ -361,7 +368,7 @@ public class Chunk {
             if (blocks.length == 1) chunk.blocks = new short[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
             chunk.storeSave(inChunkX, inChunkY, inChunkZ, block);
 
-            int[] heightMap = getHeightMap(chunk.X, chunk.Z);
+            int[] heightMap = getHeightMap(chunk.X, chunk.Z).map;
             if (y > heightMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ])
                 heightMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ] = y;
         }
@@ -484,8 +491,8 @@ public class Chunk {
         world[index] = null;
     }
 
-    public static int[] getHeightMap(int chunkX, int chunkZ) {
-        return heightMap[GameLogic.getHeightMapIndex(chunkX, chunkZ)];
+    public static HeightMap getHeightMap(int chunkX, int chunkZ) {
+        return heightMaps[GameLogic.getHeightMapIndex(chunkX, chunkZ)];
     }
 
     public int[] getVertices(int side) {
@@ -566,6 +573,10 @@ public class Chunk {
         return world;
     }
 
+    public static HeightMap[] getHeightMaps() {
+        return heightMaps;
+    }
+
     public static ArrayList<Long> removeToGenerateBlocks(long id) {
         synchronized (toGenerateBlocks) {
             return toGenerateBlocks.remove(id);
@@ -608,9 +619,9 @@ public class Chunk {
         return blocks;
     }
 
-    public byte[] getLight() {
-        return light;
-    }
+//    public byte[] getLight() {
+//        return light;
+//    }
 
     public void setSaved() {
         this.saved = true;
@@ -624,8 +635,12 @@ public class Chunk {
         Chunk.world = world;
     }
 
-    public static void setHeightMap(int[][] heightMap) {
-        Chunk.heightMap = heightMap;
+    public static void setHeightMaps(HeightMap[] heightMaps) {
+        Chunk.heightMaps = heightMaps;
+    }
+
+    public static void setHeightMap(HeightMap heightMap, int index) {
+        heightMaps[index] = heightMap;
     }
 
     public void setWaterVertices(int[] waterVertices) {

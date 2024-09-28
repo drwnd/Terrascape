@@ -11,7 +11,6 @@ import org.joml.Vector4i;
 import org.lwjgl.opengl.GL11;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
 
@@ -23,6 +22,7 @@ public class GameLogic {
 
     private static final LinkedList<Chunk> toBufferChunks = new LinkedList<>();
     private static final LinkedList<Chunk> toUnloadChunks = new LinkedList<>();
+    private static final LinkedList<HeightMap> toUnloadHeightMaps = new LinkedList<>();
     private static ChunkGenerator generator;
 
     private static Player player;
@@ -100,7 +100,6 @@ public class GameLogic {
         if (previousBlock == block) return;
 
         chunk.placeBlock(inChunkX, inChunkY, inChunkZ, block);
-        chunk.setModified();
 
         Block.updateSmartBlock(x + 1, y, z);
         Block.updateSmartBlock(x - 1, y, z);
@@ -182,10 +181,16 @@ public class GameLogic {
         synchronized (toUnloadChunks) {
             while (!toUnloadChunks.isEmpty()) {
                 Chunk chunk = toUnloadChunks.removeFirst();
-                if (chunk != null) {
-                    deleteChunkMeshBuffers(chunk);
-                    Chunk.removeToGenerateBlocks(chunk.id);
-                }
+                deleteChunkMeshBuffers(chunk);
+                Chunk.removeToGenerateBlocks(chunk.id);
+                if (chunk.isModified()) FileManager.saveChunk(chunk);
+            }
+        }
+
+        synchronized (toUnloadHeightMaps) {
+            while (!toUnloadHeightMaps.isEmpty()) {
+                HeightMap heightMap = toUnloadHeightMaps.removeFirst();
+                FileManager.saveHeightMap(heightMap);
             }
         }
 
@@ -279,13 +284,16 @@ public class GameLogic {
             if (Math.abs(chunk.X - playerX) <= RENDER_DISTANCE_XZ + 2 && Math.abs(chunk.Z - playerZ) <= RENDER_DISTANCE_XZ + 2 && Math.abs(chunk.Y - playerY) <= RENDER_DISTANCE_Y + 2)
                 continue;
 
-            if (Math.abs(chunk.Y - playerY) < RENDER_DISTANCE_Y + 2)
-                Arrays.fill(Chunk.getHeightMap(chunk.X, chunk.Z), Integer.MIN_VALUE);
+            if (Math.abs(chunk.Y - playerY) < RENDER_DISTANCE_Y + 2) {
+                HeightMap heightMap = Chunk.getHeightMap(chunk.X, chunk.Z);
+                if (heightMap != null && heightMap.isModified()) {
+                    addToUnloadHeightMap(Chunk.getHeightMap(chunk.X, chunk.Z));
+                    HeightMap.setNull(GameLogic.getHeightMapIndex(chunk.X, chunk.Z));
+                }
+            }
 
             chunk.clearMesh();
             addToUnloadChunk(chunk);
-
-            if (chunk.isModified()) FileManager.saveChunk(chunk);
 
             Chunk.setNull(chunk.getIndex());
         }
@@ -342,18 +350,29 @@ public class GameLogic {
     }
 
     public static void addToBufferChunk(Chunk chunk) {
+        if (chunk == null) return;
         synchronized (toBufferChunks) {
             if (!toBufferChunks.contains(chunk)) toBufferChunks.add(chunk);
         }
     }
 
     public static void addToUnloadChunk(Chunk chunk) {
+        if (chunk == null) return;
         synchronized (toUnloadChunks) {
             toUnloadChunks.add(chunk);
         }
     }
 
+    public static void addToUnloadHeightMap(HeightMap heightMap) {
+        if (heightMap == null) return;
+        synchronized (toUnloadHeightMaps) {
+            if (toUnloadHeightMaps.contains(heightMap)) return;
+            toUnloadHeightMaps.add(heightMap);
+        }
+    }
+
     public static void addParticle(Particle particle) {
+        if (particle == null) return;
         synchronized (particles) {
             particles.add(particle);
         }
@@ -403,4 +422,25 @@ public class GameLogic {
         FileManager.saveGameState();
         FileManager.saveAllModifiedChunks();
     }
+
+//    public static int getAmountOfToUnloadChunks() {
+//        return toUnloadChunks.size();
+//    }
+
+    public static int getAmountOfToBufferChunks() {
+        return toBufferChunks.size();
+    }
+
+    public static int getAmountOfEntities() {
+        return entities.size();
+    }
+
+    // Same as amount of rendered particles
+//    public static int getAmountOfParticles() {
+//        return particles.size();
+//    }
+
+//    public static int getAmountOfToSpawnEntities() {
+//        return toSpawnEntities.size();
+//    }
 }

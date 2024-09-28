@@ -205,7 +205,6 @@ public class WorldGeneration {
 
         ArrayList<Long> toGenerateBlocks = Chunk.removeToGenerateBlocks(chunk.id);
         if (toGenerateBlocks != null) {
-            int[] intHeightMap = Chunk.getHeightMap(chunk.X, chunk.Z);
             for (long data : toGenerateBlocks) {
                 short block = (short) (data >> 48 & 0xFFFF);
                 int inChunkX = (int) (data >> CHUNK_SIZE_BITS * 2 & CHUNK_SIZE_MASK);
@@ -215,10 +214,6 @@ public class WorldGeneration {
                 int index = inChunkX << CHUNK_SIZE_BITS * 2 | inChunkZ << CHUNK_SIZE_BITS | inChunkY;
                 if (chunk.getSaveBlock(index) != AIR && Block.isLeaveType(block)) continue;
                 chunk.storeSave(inChunkX, inChunkY, inChunkZ, block);
-
-                int y = inChunkY | chunk.Y << CHUNK_SIZE_BITS;
-                if (y > intHeightMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ])
-                    intHeightMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ] = y;
             }
         }
 

@@ -33,6 +33,7 @@ public class MeshGenerator {
 
         if (chunk.getBlockLength() == 1 && chunk.getSaveBlock(0) == AIR) return;
 
+        @SuppressWarnings("unchecked")
         ArrayList<Integer>[] verticesLists = new ArrayList[6];
         ArrayList<Integer> foliageVerticesList = new ArrayList<>();
         ArrayList<Integer> waterVerticesList = new ArrayList<>();
@@ -390,27 +391,29 @@ public class MeshGenerator {
         side = TOP;
         int ambientOcclusionLevelTop = getAmbientOcclusionLevel(blockX, blockY + 1, blockZ, 8, 0, 8);
 
-        random.setSeed((long) x << 42 | (long) z << 21 | y);
+        random.setSeed((long) (z * 5135.64843) << 24 | (long) (x * 18941.484138) << 5);
         int randomX = (int) (random.nextDouble() * 8 - 4);
         int randomZ = (int) (random.nextDouble() * 8 - 4);
+        int bottomWindMultiplier = Block.getBlockTypeOcclusionData(Chunk.getBlockInWorld(x, y - 1, z), TOP) == -1 ? 0 : 1;
+        int topWindMultiplier = 1;
 
         list.add(packData1(ambientOcclusionLevelTop, (blockX << 4) + 3 + 15 + randomX, (blockY + 1 << 4) + 15, (blockZ << 4) + 3 + 15 + randomZ));
-        list.add(packFoliageData(1, skyLight, blockLight, (u << 4) + 15, (v << 4) + 15));
+        list.add(packFoliageData(topWindMultiplier, skyLight, blockLight, (u << 4) + 15, (v << 4) + 15));
         list.add(packData1(ambientOcclusionLevelBottom, (blockX << 4) + 3 + 15 + randomX, (blockY << 4) + 15, (blockZ << 4) + 3 + 15 + randomZ));
-        list.add(packFoliageData(0, skyLight, blockLight, (u << 4) + 15, (v + 1 << 4) + 15));
+        list.add(packFoliageData(bottomWindMultiplier, skyLight, blockLight, (u << 4) + 15, (v + 1 << 4) + 15));
         list.add(packData1(ambientOcclusionLevelTop, (blockX << 4) + 13 + 15 + randomX, (blockY + 1 << 4) + 15, (blockZ << 4) + 13 + 15 + randomZ));
-        list.add(packFoliageData(1, skyLight, blockLight, (u + 1 << 4) + 15, (v << 4) + 15));
+        list.add(packFoliageData(topWindMultiplier, skyLight, blockLight, (u + 1 << 4) + 15, (v << 4) + 15));
         list.add(packData1(ambientOcclusionLevelBottom, (blockX << 4) + 13 + 15 + randomX, (blockY << 4) + 15, (blockZ << 4) + 13 + 15 + randomZ));
-        list.add(packFoliageData(0, skyLight, blockLight, (u + 1 << 4) + 15, (v + 1 << 4) + 15));
+        list.add(packFoliageData(bottomWindMultiplier, skyLight, blockLight, (u + 1 << 4) + 15, (v + 1 << 4) + 15));
 
         list.add(packData1(ambientOcclusionLevelTop, (blockX << 4) + 3 + 15 + randomX, (blockY + 1 << 4) + 15, (blockZ << 4) + 13 + 15 + randomZ));
-        list.add(packFoliageData(1, skyLight, blockLight, (u << 4) + 15, (v << 4) + 15));
+        list.add(packFoliageData(topWindMultiplier, skyLight, blockLight, (u << 4) + 15, (v << 4) + 15));
         list.add(packData1(ambientOcclusionLevelBottom, (blockX << 4) + 3 + 15 + randomX, (blockY << 4) + 15, (blockZ << 4) + 13 + 15 + randomZ));
-        list.add(packFoliageData(0, skyLight, blockLight, (u << 4) + 15, (v + 1 << 4) + 15));
+        list.add(packFoliageData(bottomWindMultiplier, skyLight, blockLight, (u << 4) + 15, (v + 1 << 4) + 15));
         list.add(packData1(ambientOcclusionLevelTop, (blockX << 4) + 13 + 15 + randomX, (blockY + 1 << 4) + 15, (blockZ << 4) + 3 + 15 + randomZ));
-        list.add(packFoliageData(1, skyLight, blockLight, (u + 1 << 4) + 15, (v << 4) + 15));
+        list.add(packFoliageData(topWindMultiplier, skyLight, blockLight, (u + 1 << 4) + 15, (v << 4) + 15));
         list.add(packData1(ambientOcclusionLevelBottom, (blockX << 4) + 13 + 15 + randomX, (blockY << 4) + 15, (blockZ << 4) + 3 + 15 + randomZ));
-        list.add(packFoliageData(0, skyLight, blockLight, (u + 1 << 4) + 15, (v + 1 << 4) + 15));
+        list.add(packFoliageData(bottomWindMultiplier, skyLight, blockLight, (u + 1 << 4) + 15, (v + 1 << 4) + 15));
     }
 
 

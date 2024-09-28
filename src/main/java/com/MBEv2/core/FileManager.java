@@ -18,8 +18,7 @@ public class FileManager {
     private static final int CHUNK_X = 0;
     private static final int CHUNK_Y = 1;
     private static final int CHUNK_Z = 2;
-    private static final int LIGHT_LENGTH = 3;
-    private static final int BLOCKS_LENGTH = 4;
+    private static final int BLOCKS_LENGTH = 3;
 
     private static final int TIME = 0;
     private static final int PLAYER_X = 1;
@@ -32,12 +31,17 @@ public class FileManager {
     private static final int IS_FLYING = 2;
 
     private static File seedFile;
+    private static File heightMapFile;
     private static final Map<String, Integer> keyCodes = new HashMap<>(70);
 
     public static void init() {
         seedFile = new File(System.getProperty("user.dir") + "/src/main/resources/Saves/" + SEED);
         if (!seedFile.exists()) //noinspection ResultOfMethodCallIgnored
             seedFile.mkdirs();
+
+        heightMapFile = new File(seedFile.getPath() + "/height_maps");
+        if (!heightMapFile.exists()) //noinspection ResultOfMethodCallIgnored
+            heightMapFile.mkdirs();
 
         keyCodes.put("LEFT_CLICK", GLFW.GLFW_MOUSE_BUTTON_LEFT | IS_MOUSE_BUTTON);
         keyCodes.put("RIGHT_CLICK", GLFW.GLFW_MOUSE_BUTTON_RIGHT | IS_MOUSE_BUTTON);
@@ -127,10 +131,8 @@ public class FileManager {
             writer.write(toByteArray(chunk.Y));
             writer.write(toByteArray(chunk.Z));
 
-            writer.write(toByteArray(chunk.getLightLength()));
             writer.write(toByteArray(chunk.getBlockLength()));
 
-            writer.write(chunk.getLight());
             writer.write(toByteArray(chunk.getBlocks()));
 
             writer.close();
@@ -162,60 +164,24 @@ public class FileManager {
             return null;
         }
 
-        int[] ints = getInts(data);
+        int[] ints = getInts(data, 4);
 
-        byte[] light = getLight(ints[LIGHT_LENGTH], data);
-        short[] blocks = getBlocks(ints[LIGHT_LENGTH], ints[BLOCKS_LENGTH], data);
+        short[] blocks = getBlocks(ints[BLOCKS_LENGTH], data);
 
-        Chunk chunk = new Chunk(ints[CHUNK_X], ints[CHUNK_Y], ints[CHUNK_Z], light, blocks);
+        Chunk chunk = new Chunk(ints[CHUNK_X], ints[CHUNK_Y], ints[CHUNK_Z], blocks);
         chunk.setGenerated();
-        chunk.setHasPropagatedBlockLight();
         chunk.setSaved();
         Chunk.removeToGenerateBlocks(chunk.id);
 
         return chunk;
     }
 
-    private static byte[] toByteArray(int i) {
-        return new byte[]{(byte) (i >> 24 & 0xFF), (byte) (i >> 16 & 0xFF), (byte) (i >> 8 & 0xFF), (byte) (i & 0xFF)};
-    }
-
-    private static byte[] toByteArray(short[] blocks) {
-        byte[] byteArray = new byte[blocks.length * 2];
-
-        for (int i = 0; i < blocks.length; i++) {
-            byteArray[i << 1] = (byte) (blocks[i] >> 8 & 0xFF);
-            byteArray[(i << 1) + 1] = (byte) (blocks[i] & 0xFF);
-        }
-
-        return byteArray;
-    }
-
-    private static int[] getInts(byte[] bytes) {
-        int[] ints = new int[5];
-
-        for (int i = 0; i < ints.length; i++) {
-            int index = i << 2;
-            ints[i] = ((int) bytes[index] & 0xFF) << 24 | ((int) bytes[index + 1] & 0xFF) << 16 | ((int) bytes[index + 2] & 0xFF) << 8 | ((int) bytes[index + 3] & 0xFF);
-        }
-
-        return ints;
-    }
-
-    private static byte[] getLight(int lightLength, byte[] data) {
-        byte[] light = new byte[lightLength];
-
-        System.arraycopy(data, 20, light, 0, lightLength);
-
-        return light;
-    }
-
-    private static short[] getBlocks(int lightLength, int blocksLength, byte[] data) {
+    private static short[] getBlocks(int blocksLength, byte[] data) {
         short[] blocks = new short[blocksLength];
 
         for (int i = 0; i < blocksLength; i++) {
             int index = i << 1;
-            short block = (short) (((int) data[20 + lightLength + index] & 0xFF) << 8 | ((int) data[21 + lightLength + index] & 0xFF));
+            short block = (short) (((int) data[16 + index] & 0xFF) << 8 | ((int) data[17 + index] & 0xFF));
             blocks[i] = block;
         }
 
@@ -227,6 +193,57 @@ public class FileManager {
             if (chunk == null) continue;
             if (chunk.isModified()) saveChunk(chunk);
         }
+
+        for (HeightMap heightMap : Chunk.getHeightMaps()) {
+            if (heightMap == null) continue;
+            if (heightMap.isModified()) saveHeightMap(heightMap);
+        }
+    }
+
+
+    public static void saveHeightMap(HeightMap heightMap) {
+        try {
+            File mapFile = new File(heightMapFile.getPath() + "/" + GameLogic.getHeightMapIndex(heightMap.chunkX, heightMap.chunkZ));
+
+            if (!mapFile.exists()) //noinspection ResultOfMethodCallIgnored
+                mapFile.createNewFile();
+
+            FileOutputStream writer = new FileOutputStream(mapFile.getPath());
+            writer.write(toByteArray(heightMap.chunkX));
+            writer.write(toByteArray(heightMap.chunkZ));
+
+            writer.write(toByteArray(heightMap.map));
+
+            writer.close();
+        } catch (IOException e) {
+            System.out.println("saveChunk");
+        }
+    }
+
+    public static HeightMap getHeightMap(int chunkX, int chunkZ) {
+        File mapFile = new File(heightMapFile.getPath() + "/" + GameLogic.getHeightMapIndex(chunkX, chunkZ));
+        if (!mapFile.exists()) return null;
+
+        FileInputStream reader;
+
+        try {
+            reader = new FileInputStream(mapFile.getPath());
+        } catch (FileNotFoundException e) {
+            System.out.println("get Height Map 1");
+            return null;
+        }
+
+        byte[] data;
+
+        try {
+            data = reader.readAllBytes();
+            reader.close();
+        } catch (IOException e) {
+            System.out.println("get Height Map 2");
+            return null;
+        }
+
+        return new HeightMap(getInts(data, CHUNK_SIZE * CHUNK_SIZE), chunkX, chunkZ);
     }
 
 
@@ -327,9 +344,6 @@ public class FileManager {
         return hotBar;
     }
 
-    public static long getSeedFileSize() {
-        return folderSize(seedFile);
-    }
 
     public static void loadSettings(boolean initialLoad) throws Exception {
         File settings = new File(System.getProperty("user.dir") + "/src/main/resources/Settings");
@@ -392,15 +406,15 @@ public class FileManager {
         TEXT_CHAR_SIZE_Y = (int) (24 * TEXT_SIZE);
         TEXT_LINE_SPACING = (int) (28 * TEXT_SIZE);
 
-        RENDERED_WORLD_WIDTH = newRenderDistanceXZ * 2 + 5;
-        RENDERED_WORLD_HEIGHT = newRenderDistanceY * 2 + 5;
-
         if (!initialLoad && (RENDER_DISTANCE_XZ != newRenderDistanceXZ || RENDER_DISTANCE_Y != newRenderDistanceY)) {
             RENDER_DISTANCE_XZ = newRenderDistanceXZ;
             RENDER_DISTANCE_Y = newRenderDistanceY;
 
             GameLogic.haltChunkGenerator();
             GameLogic.unloadChunks();
+
+            RENDERED_WORLD_WIDTH = newRenderDistanceXZ * 2 + 5;
+            RENDERED_WORLD_HEIGHT = newRenderDistanceY * 2 + 5;
 
             Chunk[] newWorld = new Chunk[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
             for (Chunk chunk : Chunk.getWorld()) {
@@ -410,16 +424,26 @@ public class FileManager {
                 newWorld[newIndex] = chunk;
             }
             Chunk.setWorld(newWorld);
-            Chunk.setHeightMap(new int[RENDERED_WORLD_WIDTH * RENDERED_WORLD_WIDTH][CHUNK_SIZE * CHUNK_SIZE]);
+
+            HeightMap[] newHeightMaps = new HeightMap[RENDERED_WORLD_WIDTH * RENDERED_WORLD_WIDTH];
+            for (HeightMap heightMap : Chunk.getHeightMaps()) {
+                if (heightMap == null) continue;
+                int newIndex = GameLogic.getHeightMapIndex(heightMap.chunkX, heightMap.chunkZ);
+                newHeightMaps[newIndex] = heightMap;
+            }
+            Chunk.setHeightMaps(newHeightMaps);
             GameLogic.getPlayer().setVisibleChunks(new long[(RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH >> 6) + 1]);
 
             GameLogic.startGenerator();
         }
+
         if (initialLoad) {
             RENDER_DISTANCE_XZ = newRenderDistanceXZ;
             RENDER_DISTANCE_Y = newRenderDistanceY;
+            RENDERED_WORLD_WIDTH = newRenderDistanceXZ * 2 + 5;
+            RENDERED_WORLD_HEIGHT = newRenderDistanceY * 2 + 5;
             Chunk.setWorld(new Chunk[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH]);
-            Chunk.setHeightMap(new int[RENDERED_WORLD_WIDTH * RENDERED_WORLD_WIDTH][CHUNK_SIZE * CHUNK_SIZE]);
+            Chunk.setHeightMaps(new HeightMap[RENDERED_WORLD_WIDTH * RENDERED_WORLD_WIDTH]);
         }
         if (GUI_SIZE != newGUISize) {
             GUI_SIZE = newGUISize;
@@ -436,19 +460,60 @@ public class FileManager {
     }
 
 
-    public static long folderSize(File directory) {
-        File[] files = directory.listFiles();
-        if (files == null) return -1;
-
-        long length = 0;
-        for (File file : files) {
-            if (file.isFile())
-                length += file.length();
-            else
-                length += folderSize(file);
-        }
-        return length;
+    private static byte[] toByteArray(int i) {
+        return new byte[]{(byte) (i >> 24 & 0xFF), (byte) (i >> 16 & 0xFF), (byte) (i >> 8 & 0xFF), (byte) (i & 0xFF)};
     }
 
+    private static byte[] toByteArray(short[] blocks) {
+        byte[] byteArray = new byte[blocks.length * 2];
 
+        for (int i = 0; i < blocks.length; i++) {
+            byteArray[i << 1] = (byte) (blocks[i] >> 8 & 0xFF);
+            byteArray[(i << 1) + 1] = (byte) (blocks[i] & 0xFF);
+        }
+
+        return byteArray;
+    }
+
+    public static byte[] toByteArray(int[] ints) {
+        byte[] byteArray = new byte[(ints.length << 2)];
+
+        for (int i = 0; i < ints.length; i++) {
+            byteArray[i << 2] = (byte) (ints[i] >> 24 & 0xFF);
+            byteArray[(i << 2) + 1] = (byte) (ints[i] >> 16 & 0xFF);
+            byteArray[(i << 2) + 2] = (byte) (ints[i] >> 8 & 0xFF);
+            byteArray[(i << 2) + 3] = (byte) (ints[i] & 0xFF);
+        }
+
+        return byteArray;
+    }
+
+    private static int[] getInts(byte[] bytes, int count) {
+        int[] ints = new int[count];
+
+        for (int i = 0; i < count; i++) {
+            int index = i << 2;
+            ints[i] = ((int) bytes[index] & 0xFF) << 24 | ((int) bytes[index + 1] & 0xFF) << 16 | ((int) bytes[index + 2] & 0xFF) << 8 | ((int) bytes[index + 3] & 0xFF);
+        }
+
+        return ints;
+    }
+
+//        public static long getSeedFileSize() {
+//        return folderSize(seedFile);
+//    }
+//
+//    public static long folderSize(File directory) {
+//        File[] files = directory.listFiles();
+//        if (files == null) return -1;
+//
+//        long length = 0;
+//        for (File file : files) {
+//            if (file.isFile())
+//                length += file.length();
+//            else
+//                length += folderSize(file);
+//        }
+//        return length;
+//    }
 }
