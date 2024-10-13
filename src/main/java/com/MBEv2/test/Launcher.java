@@ -7,9 +7,11 @@ import static com.MBEv2.core.utils.Constants.*;
 public class Launcher {
 
     private static WindowManager window;
+    private static SoundManager sound;
 
     public static void main(String[] args) {
         window = new WindowManager(TITLE, 0, 0, true, true);
+        sound = new SoundManager();
         EngineManager engine = new EngineManager();
 
         try {
@@ -31,5 +33,9 @@ public class Launcher {
 
     public static WindowManager getWindow() {
         return window;
+    }
+
+    public static SoundManager getSound() {
+        return sound;
     }
 }

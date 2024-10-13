@@ -4,10 +4,12 @@ import com.MBEv2.core.entity.GUIElement;
 import com.MBEv2.core.entity.Player;
 import com.MBEv2.test.Launcher;
 import org.joml.Vector2f;
+import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 
+import static com.MBEv2.core.utils.Constants.*;
 import static com.MBEv2.core.utils.Settings.*;
 
 public class MouseInput {
@@ -15,6 +17,7 @@ public class MouseInput {
     private final Vector2f previousPos, currentPos;
     private Vector2f displayVec;
     private final Player player;
+    private short hoveredOverBlock = AIR;
 
     public MouseInput(Player player) {
         this.player = player;
@@ -27,6 +30,8 @@ public class MouseInput {
         GLFW.glfwSetCursorPosCallback(Launcher.getWindow().getWindow(), (window, xPos, yPos) -> {
             currentPos.x = (float) xPos;
             currentPos.y = (float) yPos;
+
+            playHoverSelectionSound();
         });
 
         GLFW.glfwSetMouseButtonCallback(Launcher.getWindow().getWindow(), (window, button, action, mods) ->
@@ -43,6 +48,8 @@ public class MouseInput {
             } else if (SCROLL_HOT_BAR) {
                 player.setSelectedHotBarSlot((player.getSelectedHotBarSlot() - (int) yPos + 9) % 9);
             }
+
+            playHoverSelectionSound();
         });
 
         GLFW.glfwSetInputMode(Launcher.getWindow().getWindow(), GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_DISABLED);
@@ -63,5 +70,16 @@ public class MouseInput {
         Vector2f returns = displayVec;
         displayVec = new Vector2f();
         return returns;
+    }
+
+    private void playHoverSelectionSound() {
+        if (!player.isInInventory()) return;
+        short currentHoveredOverBlock = GUIElement.getHoveredOverBlock(player.getInventoryScroll());
+        if (currentHoveredOverBlock == hoveredOverBlock) return;
+
+        Vector3f position = player.getCamera().getPosition();
+        hoveredOverBlock = currentHoveredOverBlock;
+        Launcher.getSound().playRandomSound(Block.getFootstepsSound(hoveredOverBlock),
+                position.x, position.y, position.z, 0.0f,0.0f,0.0f, INVENTORY_GAIN);
     }
 }

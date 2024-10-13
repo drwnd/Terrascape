@@ -52,6 +52,12 @@ public class Settings {
     public static int SET_POSITION_2_BUTTON;
     public static int RELOAD_SETTINGS_BUTTON;
     public static int ZOOM_BUTTON;
+    public static float AUDIO_GAIN;
+    public static float STEP_GAIN;
+    public static float PLACE_GAIN;
+    public static float DIG_GAIN;
+    public static float MISCELLANEOUS_GAIN;
+    public static float INVENTORY_GAIN;
 
     public static boolean SCROLL_HOT_BAR;
 

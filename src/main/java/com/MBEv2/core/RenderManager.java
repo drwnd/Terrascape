@@ -282,13 +282,13 @@ public class RenderManager {
 
         renderSkyBox(camera);
 
-        renderOpaqueChunks(projectionMatrix, viewMatrix);
+        renderOpaqueChunks(projectionMatrix, viewMatrix, timeSinceLastTick);
 
         renderFoliageChunks(projectionMatrix, viewMatrix, timeSinceLastTick);
 
         renderEntities(projectionMatrix, viewMatrix, timeSinceLastTick);
 
-        renderParticles(projectionMatrix, viewMatrix);
+        renderParticles(projectionMatrix, viewMatrix, timeSinceLastTick);
 
         renderWaterChunks(projectionMatrix, viewMatrix, timeSinceLastTick);
 
@@ -315,12 +315,12 @@ public class RenderManager {
         skyBoxShader.unBind();
     }
 
-    public void renderOpaqueChunks(Matrix4f projectionMatrix, Matrix4f viewMatrix) {
+    public void renderOpaqueChunks(Matrix4f projectionMatrix, Matrix4f viewMatrix, float timeSinceLastTick) {
         blockShader.bind();
         blockShader.setUniform("projectionMatrix", projectionMatrix);
         blockShader.setUniform("viewMatrix", viewMatrix);
         blockShader.setUniform("textureSampler", 0);
-        blockShader.setUniform("time", time);
+        blockShader.setUniform("time", time + TIME_SPEED * timeSinceLastTick);
         blockShader.setUniform("headUnderWater", headUnderWater ? 1 : 0);
         blockShader.setUniform("cameraPosition", player.getCamera().getPosition());
 
@@ -377,13 +377,13 @@ public class RenderManager {
         entityShader.unBind();
     }
 
-    public void renderParticles(Matrix4f projectionMatrix, Matrix4f viewMatrix) {
+    public void renderParticles(Matrix4f projectionMatrix, Matrix4f viewMatrix, float timeSinceLastTick) {
         particleShader.bind();
         particleShader.setUniform("projectionMatrix", projectionMatrix);
         particleShader.setUniform("viewMatrix", viewMatrix);
         particleShader.setUniform("textureSampler", 0);
         particleShader.setUniform("cameraPosition", player.getCamera().getPosition());
-        particleShader.setUniform("time", time);
+        particleShader.setUniform("time", time + TIME_SPEED * timeSinceLastTick);
 
         GL11.glDisable(GL11.GL_CULL_FACE);
         GL13.glActiveTexture(GL13.GL_TEXTURE0);
@@ -456,6 +456,7 @@ public class RenderManager {
         int line = -1;
         final Vector3f position = player.getCamera().getPosition();
         final Vector3f direction = player.getCamera().getDirection();
+        final Vector3f velocity = player.getVelocity();
 
         Target target = Target.getTarget(position, direction);
 
@@ -463,12 +464,15 @@ public class RenderManager {
         int chunkX = x >> CHUNK_SIZE_BITS, chunkY = y >> CHUNK_SIZE_BITS, chunkZ = z >> CHUNK_SIZE_BITS;
         int inChunkX = x & CHUNK_SIZE_MASK, inChunkY = y & CHUNK_SIZE_MASK, inChunkZ = z & CHUNK_SIZE_MASK;
         Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
+        int sourceCounter = 0;
+        for (AudioSource source : Launcher.getSound().getSources()) if (source.isPlaying()) sourceCounter++;
 
         renderTextLine("Frame rate:" + EngineManager.currentFrameRate, ++line);
         renderTextLine("Coordinates: X:" + Utils.floor(position.x * 10) / 10f + " Y:" + Utils.floor(position.y * 10) / 10f + " Z:" + Utils.floor(position.z * 10) / 10f, ++line);
         renderTextLine("Chunk coordinates: X:" + chunkX + " Y:" + chunkY + " Z:" + chunkZ, ++line);
         renderTextLine("In Chunk coordinates: X:" + inChunkX + " Y:" + inChunkY + " Z:" + inChunkZ, ++line);
         renderTextLine("Looking at: X:" + Utils.floor(direction.x * 100) / 100f + " Y:" + Utils.floor(direction.y * 100) / 100f + " Z:" + Utils.floor(direction.z * 100) / 100f, ++line);
+        renderTextLine("Velocity: X:" + velocity.x + " Y:" + velocity.y + " Z:" + velocity.z, ++line) ;
         if (chunk != null) {
             renderTextLine("OcclusionCullingData:" + Integer.toBinaryString(chunk.getOcclusionCullingData() & 0x7FFF) + " Damping:" + (chunk.getOcclusionCullingDamper() == 0 ? "false" : "true"), ++line);
             renderTextLine("Block optimized:" + (chunk.isBlockOptimized() ? "true" : "false") + " Light optimized:" + (chunk.isLightOptimized() ? "true" : "false"), ++line);
@@ -485,6 +489,9 @@ public class RenderManager {
             renderTextLine("Block type:" + Block.getBlockType(target.block()), ++line);
             renderTextLine("Intersected side:" + target.side(), ++line);
         }
+        if (player.isGrounded()) {
+            renderTextLine("Standing on block:" + player.getStandingBlock(), ++line);
+        }
         renderTextLine("Seed:" + SEED, ++line);
         renderTextLine("Rendered chunk models:" + chunkModels.size(), ++line);
         renderTextLine("Rendered water models:" + waterModels.size(), ++line);
@@ -493,6 +500,7 @@ public class RenderManager {
         renderTextLine("Rendered particles:" + particles.size(), ++line);
         renderTextLine("Rendered GUIElements:" + GUIElements.size(), ++line);
         renderTextLine("Render distance XZ:" + RENDER_DISTANCE_XZ + " Render distance Y:" + RENDER_DISTANCE_Y, ++line);
+        renderTextLine("Concurrent played sounds:" + sourceCounter, ++line);
         renderTextLine("Time:" + time, ++line);
         //This one line literally quarters the fps when debug screen is open
 //        renderTextLine("Saved chunks memory:" + FileManager.getSeedFileSize() / 1_000_000 + "MB", ++line);

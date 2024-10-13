@@ -18,6 +18,7 @@ public class EngineManager {
     public static boolean isRunning = false;
 
     private WindowManager window;
+    private SoundManager sound;
     private GLFWErrorCallback errorCallback;
 
     public void init() throws Exception {
@@ -26,6 +27,8 @@ public class EngineManager {
         FileManager.loadSettings(true);
         window = Launcher.getWindow();
         window.init();
+        sound = Launcher.getSound();
+        sound.init();
         Block.init();
         Entity.initAll();
         Particle.initAll();
@@ -44,6 +47,7 @@ public class EngineManager {
         long lastFrameRateUpdateTime = 0;
         long lastGTTime = 0;
         int frames = 0;
+        long tick = 0L;
 
         while (isRunning) {
             long currentTime = System.nanoTime();
@@ -62,8 +66,9 @@ public class EngineManager {
             }
             if (currentTime - lastGTTime > NANOSECONDS_PER_SECOND * 0.05f) {
                 lastGTTime = currentTime;
-                updateGT();
+                updateGT(tick);
                 input();
+                tick++;
             }
         }
     }
@@ -85,13 +90,14 @@ public class EngineManager {
         GameLogic.update(passedTicks);
     }
 
-    private void updateGT() {
-        GameLogic.updateGT();
+    private void updateGT(long tick) {
+        GameLogic.updateGT(tick);
     }
 
     public void cleanUp() {
         GameLogic.cleanUp();
         window.cleanUp();
+        sound.cleanUp();
         errorCallback.free();
         GLFW.glfwTerminate();
     }

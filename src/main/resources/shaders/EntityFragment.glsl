@@ -23,8 +23,8 @@ void main() {
     if (color.a == 0.0) {
         discard;
     }
-
-    float fragLight = max(blockLight + 0.3, max(0.3, skyLight) * easeInOutQuart(abs(time)));
+    float timeLight = max(0.2, easeInOutQuart(abs(time)));
+    float fragLight = max(blockLight + 0.2, max(0.2, skyLight) * timeLight);
 
     fragColor = vec4(color.rgb * fragLight, color.a);
 }

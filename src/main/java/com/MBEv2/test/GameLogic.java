@@ -131,7 +131,16 @@ public class GameLogic {
         if (highImportance) restartGeneratorNow(NONE);
         else restartGenerator(NONE);
 
-        if (highImportance && previousBlock != AIR) addParticle(new BlockBreakParticle(new Vector3f(x + 0.5f, y + 0.625f, z + 0.5f), previousBlock));
+        if (highImportance && previousBlock != AIR) {
+            addParticle(new BlockBreakParticle(new Vector3f(x + 0.5f, y + 0.625f, z + 0.5f), previousBlock));
+
+            SoundManager sound = Launcher.getSound();
+            sound.playRandomSound(Block.getDigSound(previousBlock), x + 0.5f, y + 0.5f, z + 0.5f, 0.0f, 0.0f, 0.0f, DIG_GAIN);
+        }
+        if (highImportance && block != AIR) {
+            SoundManager sound = Launcher.getSound();
+            sound.playRandomSound(Block.getFootstepsSound(block), x + 0.5f, y + 0.5f, z + 0.5f, 0.0f, 0.0f, 0.0f, PLACE_GAIN);
+        }
     }
 
     public static void addBlockChange(int x, int y, int z, short previousBlock, short currentBlock) {
@@ -203,8 +212,8 @@ public class GameLogic {
         player.update(passedTicks);
     }
 
-    public static void updateGT() {
-        player.getRenderer().incrementTime();
+    public static void updateGT(long tick) {
+        player.updateGT(tick);
 
         for (Entity entity : toSpawnEntities) addEntityToLists(entity);
         toSpawnEntities.clear();
@@ -416,7 +425,7 @@ public class GameLogic {
     }
 
     public static void cleanUp() {
-        player.getRenderer().cleanUp();
+        player.cleanUp();
         ObjectLoader.cleanUp();
         generator.cleanUp();
         FileManager.saveGameState();

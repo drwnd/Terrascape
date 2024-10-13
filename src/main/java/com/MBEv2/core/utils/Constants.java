@@ -25,6 +25,8 @@ public class Constants {
     public static final int NUMBER_OF_GENERATION_THREADS = 4;
     public static final int MAX_OCCLUSION_CULLING_DAMPER = 6;
 
+    public static final float MAX_SOUND_DISTANCE = 30.0f * 30.0f;
+
     //Other useful stuff
     public static final int MAX_BLOCK_LIGHT_VALUE = 15;
     public static final int MAX_SKY_LIGHT_VALUE = 15;
@@ -324,7 +326,7 @@ public class Constants {
     public static final short LEFT_RIGHT_STRIPPED_OAK_LOG = (short) (508 << BLOCK_TYPE_BITS);
     public static final short FRONT_BACK_SPRUCE_LOG = (short) (507 << BLOCK_TYPE_BITS);
     public static final short LEFT_RIGHT_SPRUCE_LOG = (short) (506 << BLOCK_TYPE_BITS);
-    public static final short FRONT_BACK_STRIPPED_SPRUCE_LOG = (short) (505<< BLOCK_TYPE_BITS);
+    public static final short FRONT_BACK_STRIPPED_SPRUCE_LOG = (short) (505 << BLOCK_TYPE_BITS);
     public static final short LEFT_RIGHT_STRIPPED_SPRUCE_LOG = (short) (504 << BLOCK_TYPE_BITS);
     public static final short FRONT_BACK_DARK_OAK_LOG = (short) (503 << BLOCK_TYPE_BITS);
     public static final short LEFT_RIGHT_DARK_OAK_LOG = (short) (502 << BLOCK_TYPE_BITS);

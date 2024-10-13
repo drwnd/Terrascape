@@ -399,6 +399,12 @@ public class FileManager {
         RELOAD_SETTINGS_BUTTON = keyCodes.get(getStingAfterColon(reader.readLine()));
         SCROLL_HOT_BAR = Boolean.parseBoolean(getStingAfterColon(reader.readLine()));
         ZOOM_BUTTON = keyCodes.get(getStingAfterColon(reader.readLine()));
+        AUDIO_GAIN = Float.parseFloat(getStingAfterColon(reader.readLine()));
+        STEP_GAIN = Float.parseFloat(getStingAfterColon(reader.readLine()));
+        PLACE_GAIN = Float.parseFloat(getStingAfterColon(reader.readLine()));
+        DIG_GAIN = Float.parseFloat(getStingAfterColon(reader.readLine()));
+        MISCELLANEOUS_GAIN = Float.parseFloat(getStingAfterColon(reader.readLine()));
+        INVENTORY_GAIN = Float.parseFloat(getStingAfterColon(reader.readLine()));
 
         reader.close();
 
@@ -445,9 +451,9 @@ public class FileManager {
             Chunk.setWorld(new Chunk[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH]);
             Chunk.setHeightMaps(new HeightMap[RENDERED_WORLD_WIDTH * RENDERED_WORLD_WIDTH]);
         }
+        Player player = GameLogic.getPlayer();
         if (GUI_SIZE != newGUISize) {
             GUI_SIZE = newGUISize;
-            Player player = GameLogic.getPlayer();
             if (player != null) {
                 player.reloadGUIElements();
                 player.updateHotBarElements();

@@ -302,7 +302,7 @@ public class Chunk {
         int[] heightMap = heightMapObject.map;
         int totalY = worldCoordinate.y | inChunkY;
 
-        if (totalY > heightMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ])
+        if (totalY > heightMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ] && block != AIR)
             heightMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ] = totalY;
 
         else if (totalY == heightMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ] && block == AIR) {

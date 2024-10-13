@@ -5,6 +5,7 @@ layout (location = 1) in vec3 velocity;
 layout (location = 2) in vec2 textureCoordinates;
 
 out vec2 fragTextureCoordinates;
+out vec3 normal;
 
 uniform vec3 position;
 uniform vec3 cameraPosition;
@@ -22,8 +23,9 @@ void main() {
     vec3 currentPosition = position + offset + velocity * aliveTime;
     currentPosition.y += aliveTime * aliveTime * gravity;
 
-    vec3 cross1 = cross(cameraPosition - currentPosition, vec3(0.0, 1.0, 0.0));
-    vec3 cross2 = cross(cameraPosition - currentPosition, cross1);
+    normal = normalize(cameraPosition - currentPosition);
+    vec3 cross1 = cross(normal, vec3(0.0, 1.0, 0.0));
+    vec3 cross2 = cross(normal, cross1);
 
     float timeSacalar = (maxAliveTime - aliveTime) / maxAliveTime;
 

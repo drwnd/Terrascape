@@ -2,6 +2,7 @@ package com.MBEv2.core;
 
 import com.MBEv2.core.entity.Target;
 import com.MBEv2.core.utils.Utils;
+import com.MBEv2.test.Launcher;
 import org.joml.Vector3f;
 
 import static com.MBEv2.core.utils.Constants.*;
@@ -14,8 +15,10 @@ public class Block {
     private static final int[] NON_STANDARD_BLOCK_PROPERTIES = new int[STANDARD_BLOCKS_THRESHOLD];
     private static final int[] STANDARD_BLOCK_PROPERTIES = new int[AMOUNT_OF_STANDARD_BLOCKS];
 
-//    private static final byte[] old_BLOCK_TYPE_OCCLUSION_DATA = new byte[TOTAL_AMOUNT_OF_BLOCK_TYPES];
-//    private static final byte[] old_BLOCK_TYPE_DATA = new byte[TOTAL_AMOUNT_OF_BLOCK_TYPES];
+    private static final int[][] NON_STANDARD_BLOCK_DIG_SOUNDS = new int[STANDARD_BLOCKS_THRESHOLD][0];
+    private static final int[][] STANDARD_BLOCK_DIG_SOUNDS = new int[AMOUNT_OF_STANDARD_BLOCKS][0];
+    private static final int[][] NON_STANDARD_BLOCK_STEP_SOUNDS = new int[STANDARD_BLOCKS_THRESHOLD][0];
+    private static final int[][] STANDARD_BLOCK_STEP_SOUNDS = new int[AMOUNT_OF_STANDARD_BLOCKS][0];
 
     public static final long[][] BLOCK_TYPE_OCCLUSION_DATA = new long[TOTAL_AMOUNT_OF_BLOCK_TYPES][0];
     public static final byte[] BLOCK_TYPE_DATA = new byte[TOTAL_AMOUNT_OF_BLOCK_TYPES];
@@ -102,7 +105,7 @@ public class Block {
     }
 
     public static short getToPlaceBlock(short toPlaceBlock, int primaryCameraDirection, int primaryXZDirection, Target target) {
-        if (toPlaceBlock < STANDARD_BLOCKS_THRESHOLD) {
+        if ((toPlaceBlock & 0xFFFF) < STANDARD_BLOCKS_THRESHOLD) {
             if (toPlaceBlock == FRONT_CREATOR_HEAD) {
                 if (primaryXZDirection == BACK) return FRONT_CREATOR_HEAD;
                 if (primaryXZDirection == FRONT) return BACK_CREATOR_HEAD;
@@ -115,70 +118,70 @@ public class Block {
         int baseBlock = toPlaceBlock & BASE_BLOCK_MASK;
 
         int toPlaceBlockType = getToPlaceBlockType(blockType, primaryCameraDirection, target);
-        primaryCameraDirection %= 3;
+        int side = target.side() % 3;
 
         switch (baseBlock) {
             case UP_DOWN_OAK_LOG -> {
-                if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_OAK_LOG | toPlaceBlockType);
-                if (primaryCameraDirection == TOP) return (short) (UP_DOWN_OAK_LOG | toPlaceBlockType);
+                if (side == FRONT) return (short) (FRONT_BACK_OAK_LOG | toPlaceBlockType);
+                if (side == TOP) return (short) (UP_DOWN_OAK_LOG | toPlaceBlockType);
                 return (short) (LEFT_RIGHT_OAK_LOG | toPlaceBlockType);
             }
             case UP_DOWN_STRIPPED_OAK_LOG -> {
-                if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_STRIPPED_OAK_LOG | toPlaceBlockType);
-                if (primaryCameraDirection == TOP) return (short) (UP_DOWN_STRIPPED_OAK_LOG | toPlaceBlockType);
+                if (side == FRONT) return (short) (FRONT_BACK_STRIPPED_OAK_LOG | toPlaceBlockType);
+                if (side == TOP) return (short) (UP_DOWN_STRIPPED_OAK_LOG | toPlaceBlockType);
                 return (short) (LEFT_RIGHT_STRIPPED_OAK_LOG | toPlaceBlockType);
             }
             case UP_DOWN_SPRUCE_LOG -> {
-                if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_SPRUCE_LOG | toPlaceBlockType);
-                if (primaryCameraDirection == TOP) return (short) (UP_DOWN_SPRUCE_LOG | toPlaceBlockType);
+                if (side == FRONT) return (short) (FRONT_BACK_SPRUCE_LOG | toPlaceBlockType);
+                if (side == TOP) return (short) (UP_DOWN_SPRUCE_LOG | toPlaceBlockType);
                 return (short) (LEFT_RIGHT_SPRUCE_LOG | toPlaceBlockType);
             }
             case UP_DOWN_STRIPPED_SPRUCE_LOG -> {
-                if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_STRIPPED_SPRUCE_LOG | toPlaceBlockType);
-                if (primaryCameraDirection == TOP) return (short) (UP_DOWN_STRIPPED_SPRUCE_LOG | toPlaceBlockType);
+                if (side == FRONT) return (short) (FRONT_BACK_STRIPPED_SPRUCE_LOG | toPlaceBlockType);
+                if (side == TOP) return (short) (UP_DOWN_STRIPPED_SPRUCE_LOG | toPlaceBlockType);
                 return (short) (LEFT_RIGHT_STRIPPED_SPRUCE_LOG | toPlaceBlockType);
             }
             case UP_DOWN_DARK_OAK_LOG -> {
-                if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_DARK_OAK_LOG | toPlaceBlockType);
-                if (primaryCameraDirection == TOP) return (short) (UP_DOWN_DARK_OAK_LOG | toPlaceBlockType);
+                if (side == FRONT) return (short) (FRONT_BACK_DARK_OAK_LOG | toPlaceBlockType);
+                if (side == TOP) return (short) (UP_DOWN_DARK_OAK_LOG | toPlaceBlockType);
                 return (short) (LEFT_RIGHT_DARK_OAK_LOG | toPlaceBlockType);
             }
             case UP_DOWN_STRIPPED_DARK_OAK_LOG -> {
-                if (primaryCameraDirection == FRONT)
+                if (side == FRONT)
                     return (short) (FRONT_BACK_STRIPPED_DARK_OAK_LOG | toPlaceBlockType);
-                if (primaryCameraDirection == TOP) return (short) (UP_DOWN_STRIPPED_DARK_OAK_LOG | toPlaceBlockType);
+                if (side == TOP) return (short) (UP_DOWN_STRIPPED_DARK_OAK_LOG | toPlaceBlockType);
                 return (short) (LEFT_RIGHT_STRIPPED_DARK_OAK_LOG | toPlaceBlockType);
             }
             case UP_DOWN_PINE_LOG -> {
-                if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_PINE_LOG | toPlaceBlockType);
-                if (primaryCameraDirection == TOP) return (short) (UP_DOWN_PINE_LOG | toPlaceBlockType);
+                if (side == FRONT) return (short) (FRONT_BACK_PINE_LOG | toPlaceBlockType);
+                if (side == TOP) return (short) (UP_DOWN_PINE_LOG | toPlaceBlockType);
                 return (short) (LEFT_RIGHT_PINE_LOG | toPlaceBlockType);
             }
             case UP_DOWN_STRIPPED_PINE_LOG -> {
-                if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_STRIPPED_PINE_LOG | toPlaceBlockType);
-                if (primaryCameraDirection == TOP) return (short) (UP_DOWN_STRIPPED_PINE_LOG | toPlaceBlockType);
+                if (side == FRONT) return (short) (FRONT_BACK_STRIPPED_PINE_LOG | toPlaceBlockType);
+                if (side == TOP) return (short) (UP_DOWN_STRIPPED_PINE_LOG | toPlaceBlockType);
                 return (short) (LEFT_RIGHT_STRIPPED_PINE_LOG | toPlaceBlockType);
             }
             case UP_DOWN_REDWOOD_LOG -> {
-                if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_REDWOOD_LOG | toPlaceBlockType);
-                if (primaryCameraDirection == TOP) return (short) (UP_DOWN_REDWOOD_LOG | toPlaceBlockType);
+                if (side == FRONT) return (short) (FRONT_BACK_REDWOOD_LOG | toPlaceBlockType);
+                if (side == TOP) return (short) (UP_DOWN_REDWOOD_LOG | toPlaceBlockType);
                 return (short) (LEFT_RIGHT_REDWOOD_LOG | toPlaceBlockType);
             }
             case UP_DOWN_STRIPPED_REDWOOD_LOG -> {
-                if (primaryCameraDirection == FRONT)
+                if (side == FRONT)
                     return (short) (FRONT_BACK_STRIPPED_REDWOOD_LOG | toPlaceBlockType);
-                if (primaryCameraDirection == TOP) return (short) (UP_DOWN_STRIPPED_REDWOOD_LOG | toPlaceBlockType);
+                if (side == TOP) return (short) (UP_DOWN_STRIPPED_REDWOOD_LOG | toPlaceBlockType);
                 return (short) (LEFT_RIGHT_STRIPPED_REDWOOD_LOG | toPlaceBlockType);
             }
             case UP_DOWN_BLACK_WOOD_LOG -> {
-                if (primaryCameraDirection == FRONT) return (short) (FRONT_BACK_BLACK_WOOD_LOG | toPlaceBlockType);
-                if (primaryCameraDirection == TOP) return (short) (UP_DOWN_BLACK_WOOD_LOG | toPlaceBlockType);
+                if (side == FRONT) return (short) (FRONT_BACK_BLACK_WOOD_LOG | toPlaceBlockType);
+                if (side == TOP) return (short) (UP_DOWN_BLACK_WOOD_LOG | toPlaceBlockType);
                 return (short) (LEFT_RIGHT_BLACK_WOOD_LOG | toPlaceBlockType);
             }
             case UP_DOWN_STRIPPED_BLACK_WOOD_LOG -> {
-                if (primaryCameraDirection == FRONT)
+                if (side == FRONT)
                     return (short) (FRONT_BACK_STRIPPED_BLACK_WOOD_LOG | toPlaceBlockType);
-                if (primaryCameraDirection == TOP) return (short) (UP_DOWN_STRIPPED_BLACK_WOOD_LOG | toPlaceBlockType);
+                if (side == TOP) return (short) (UP_DOWN_STRIPPED_BLACK_WOOD_LOG | toPlaceBlockType);
                 return (short) (LEFT_RIGHT_STRIPPED_BLACK_WOOD_LOG | toPlaceBlockType);
             }
             case FRONT_FURNACE -> {
@@ -196,42 +199,43 @@ public class Block {
 
         switch (blockType) {
             case BOTTOM_BACK_STAIR -> {
+                int side = target.side();
                 Vector3f inBlockPosition = target.inBlockPosition();
                 double x = Utils.fraction(inBlockPosition.x);
                 double y = Utils.fraction(inBlockPosition.y);
                 double z = Utils.fraction(inBlockPosition.z);
 
-                if (primaryCameraDirection == FRONT) {
+                if (side == BACK) {
                     if (y < x && y < 1.0 - x) return BOTTOM_FRONT_STAIR;
                     if (y > x && y < 1.0 - x) return FRONT_LEFT_STAIR;
                     if (y > x && y > 1.0 - x) return TOP_FRONT_STAIR;
                     return FRONT_RIGHT_STAIR;
                 }
-                if (primaryCameraDirection == BACK) {
+                if (side == FRONT) {
                     if (y < x && y < 1.0 - x) return BOTTOM_BACK_STAIR;
                     if (y > x && y < 1.0 - x) return BACK_LEFT_STAIR;
                     if (y > x && y > 1.0 - x) return TOP_BACK_STAIR;
                     return BACK_RIGHT_STAIR;
                 }
-                if (primaryCameraDirection == BOTTOM) {
+                if (side == TOP) {
                     if (x < z && x < 1.0 - z) return BOTTOM_LEFT_STAIR;
                     if (x > z && x < 1.0 - z) return BOTTOM_BACK_STAIR;
                     if (x > z && x > 1.0 - z) return BOTTOM_RIGHT_STAIR;
                     return BOTTOM_FRONT_STAIR;
                 }
-                if (primaryCameraDirection == TOP) {
+                if (side == BOTTOM) {
                     if (x < z && x < 1.0 - z) return TOP_LEFT_STAIR;
                     if (x > z && x < 1.0 - z) return TOP_BACK_STAIR;
                     if (x > z && x > 1.0 - z) return TOP_RIGHT_STAIR;
                     return TOP_FRONT_STAIR;
                 }
-                if (primaryCameraDirection == RIGHT) {
+                if (side == LEFT) {
                     if (y < z && y < 1.0 - z) return BOTTOM_RIGHT_STAIR;
                     if (y > z && y < 1.0 - z) return BACK_RIGHT_STAIR;
                     if (y > z && y > 1.0 - z) return TOP_RIGHT_STAIR;
                     return FRONT_RIGHT_STAIR;
                 }
-                if (primaryCameraDirection == LEFT) {
+                if (side == RIGHT) {
                     if (y < z && y < 1.0 - z) return BOTTOM_LEFT_STAIR;
                     if (y > z && y < 1.0 - z) return BACK_LEFT_STAIR;
                     if (y > z && y > 1.0 - z) return TOP_LEFT_STAIR;
@@ -239,42 +243,43 @@ public class Block {
                 }
             }
             case THIN_BOTTOM_BACK_STAIR -> {
+                int side = target.side();
                 Vector3f inBlockPosition = target.inBlockPosition();
                 double x = Utils.fraction(inBlockPosition.x);
                 double y = Utils.fraction(inBlockPosition.y);
                 double z = Utils.fraction(inBlockPosition.z);
 
-                if (primaryCameraDirection == FRONT) {
+                if (side == BACK) {
                     if (y < x && y < 1.0 - x) return THIN_BOTTOM_FRONT_STAIR;
                     if (y > x && y < 1.0 - x) return THIN_FRONT_LEFT_STAIR;
                     if (y > x && y > 1.0 - x) return THIN_TOP_FRONT_STAIR;
                     return THIN_FRONT_RIGHT_STAIR;
                 }
-                if (primaryCameraDirection == BACK) {
+                if (side == FRONT) {
                     if (y < x && y < 1.0 - x) return THIN_BOTTOM_BACK_STAIR;
                     if (y > x && y < 1.0 - x) return THIN_BACK_LEFT_STAIR;
                     if (y > x && y > 1.0 - x) return THIN_TOP_BACK_STAIR;
                     return THIN_BACK_RIGHT_STAIR;
                 }
-                if (primaryCameraDirection == BOTTOM) {
+                if (side == TOP) {
                     if (x < z && x < 1.0 - z) return THIN_BOTTOM_LEFT_STAIR;
                     if (x > z && x < 1.0 - z) return THIN_BOTTOM_BACK_STAIR;
                     if (x > z && x > 1.0 - z) return THIN_BOTTOM_RIGHT_STAIR;
                     return THIN_BOTTOM_FRONT_STAIR;
                 }
-                if (primaryCameraDirection == TOP) {
+                if (side == BOTTOM) {
                     if (x < z && x < 1.0 - z) return THIN_TOP_LEFT_STAIR;
                     if (x > z && x < 1.0 - z) return THIN_TOP_BACK_STAIR;
                     if (x > z && x > 1.0 - z) return THIN_TOP_RIGHT_STAIR;
                     return THIN_TOP_FRONT_STAIR;
                 }
-                if (primaryCameraDirection == RIGHT) {
+                if (side == LEFT) {
                     if (y < z && y < 1.0 - z) return THIN_BOTTOM_RIGHT_STAIR;
                     if (y > z && y < 1.0 - z) return THIN_BACK_RIGHT_STAIR;
                     if (y > z && y > 1.0 - z) return THIN_TOP_RIGHT_STAIR;
                     return THIN_FRONT_RIGHT_STAIR;
                 }
-                if (primaryCameraDirection == LEFT) {
+                if (side == RIGHT) {
                     if (y < z && y < 1.0 - z) return THIN_BOTTOM_LEFT_STAIR;
                     if (y > z && y < 1.0 - z) return THIN_BACK_LEFT_STAIR;
                     if (y > z && y > 1.0 - z) return THIN_TOP_LEFT_STAIR;
@@ -282,42 +287,43 @@ public class Block {
                 }
             }
             case THICK_BOTTOM_BACK_STAIR -> {
+                int side = target.side();
                 Vector3f inBlockPosition = target.inBlockPosition();
                 double x = Utils.fraction(inBlockPosition.x);
                 double y = Utils.fraction(inBlockPosition.y);
                 double z = Utils.fraction(inBlockPosition.z);
 
-                if (primaryCameraDirection == FRONT) {
+                if (side == BACK) {
                     if (y < x && y < 1.0 - x) return THICK_BOTTOM_FRONT_STAIR;
                     if (y > x && y < 1.0 - x) return THICK_FRONT_LEFT_STAIR;
                     if (y > x && y > 1.0 - x) return THICK_TOP_FRONT_STAIR;
                     return THICK_FRONT_RIGHT_STAIR;
                 }
-                if (primaryCameraDirection == BACK) {
+                if (side == FRONT) {
                     if (y < x && y < 1.0 - x) return THICK_BOTTOM_BACK_STAIR;
                     if (y > x && y < 1.0 - x) return THICK_BACK_LEFT_STAIR;
                     if (y > x && y > 1.0 - x) return THICK_TOP_BACK_STAIR;
                     return THICK_BACK_RIGHT_STAIR;
                 }
-                if (primaryCameraDirection == BOTTOM) {
+                if (side == TOP) {
                     if (x < z && x < 1.0 - z) return THICK_BOTTOM_LEFT_STAIR;
                     if (x > z && x < 1.0 - z) return THICK_BOTTOM_BACK_STAIR;
                     if (x > z && x > 1.0 - z) return THICK_BOTTOM_RIGHT_STAIR;
                     return THICK_BOTTOM_FRONT_STAIR;
                 }
-                if (primaryCameraDirection == TOP) {
+                if (side == BOTTOM) {
                     if (x < z && x < 1.0 - z) return THICK_TOP_LEFT_STAIR;
                     if (x > z && x < 1.0 - z) return THICK_TOP_BACK_STAIR;
                     if (x > z && x > 1.0 - z) return THICK_TOP_RIGHT_STAIR;
                     return THICK_TOP_FRONT_STAIR;
                 }
-                if (primaryCameraDirection == RIGHT) {
+                if (side == LEFT) {
                     if (y < z && y < 1.0 - z) return THICK_BOTTOM_RIGHT_STAIR;
                     if (y > z && y < 1.0 - z) return THICK_BACK_RIGHT_STAIR;
                     if (y > z && y > 1.0 - z) return THICK_TOP_RIGHT_STAIR;
                     return THICK_FRONT_RIGHT_STAIR;
                 }
-                if (primaryCameraDirection == LEFT) {
+                if (side == RIGHT) {
                     if (y < z && y < 1.0 - z) return THICK_BOTTOM_LEFT_STAIR;
                     if (y > z && y < 1.0 - z) return THICK_BACK_LEFT_STAIR;
                     if (y > z && y > 1.0 - z) return THICK_TOP_LEFT_STAIR;
@@ -342,16 +348,39 @@ public class Block {
 
     public static short getInInventoryBlockEquivalent(short block) {
         if (block == AIR || block == OUT_OF_WORLD) return AIR;
-        if (block < STANDARD_BLOCKS_THRESHOLD) {
+        if ((block & 0xFFFF) < STANDARD_BLOCKS_THRESHOLD) {
             if (block >= FRONT_CREATOR_HEAD && block <= LEFT_CREATOR_HEAD) return FRONT_CREATOR_HEAD;
             return block;
         }
         int blockType = block & BLOCK_TYPE_MASK;
-        int baseBlock = block & BASE_BLOCK_MASK;
+        int baseBlock = switch (block & BASE_BLOCK_MASK) {
+            case UP_DOWN_OAK_LOG, FRONT_BACK_OAK_LOG, LEFT_RIGHT_OAK_LOG -> UP_DOWN_OAK_LOG;
+            case UP_DOWN_STRIPPED_OAK_LOG, FRONT_BACK_STRIPPED_OAK_LOG, LEFT_RIGHT_STRIPPED_OAK_LOG ->
+                    UP_DOWN_STRIPPED_OAK_LOG;
+            case UP_DOWN_SPRUCE_LOG, FRONT_BACK_SPRUCE_LOG, LEFT_RIGHT_SPRUCE_LOG -> UP_DOWN_SPRUCE_LOG;
+            case UP_DOWN_STRIPPED_SPRUCE_LOG, FRONT_BACK_STRIPPED_SPRUCE_LOG, LEFT_RIGHT_STRIPPED_SPRUCE_LOG ->
+                    UP_DOWN_STRIPPED_SPRUCE_LOG;
+            case UP_DOWN_DARK_OAK_LOG, FRONT_BACK_DARK_OAK_LOG, LEFT_RIGHT_DARK_OAK_LOG -> UP_DOWN_DARK_OAK_LOG;
+            case UP_DOWN_STRIPPED_DARK_OAK_LOG, FRONT_BACK_STRIPPED_DARK_OAK_LOG, LEFT_RIGHT_STRIPPED_DARK_OAK_LOG ->
+                    UP_DOWN_STRIPPED_DARK_OAK_LOG;
+            case UP_DOWN_PINE_LOG, FRONT_BACK_PINE_LOG, LEFT_RIGHT_PINE_LOG -> UP_DOWN_PINE_LOG;
+            case UP_DOWN_STRIPPED_PINE_LOG, FRONT_BACK_STRIPPED_PINE_LOG, LEFT_RIGHT_STRIPPED_PINE_LOG ->
+                    UP_DOWN_STRIPPED_PINE_LOG;
+            case UP_DOWN_REDWOOD_LOG, FRONT_BACK_REDWOOD_LOG, LEFT_RIGHT_REDWOOD_LOG -> UP_DOWN_REDWOOD_LOG;
+            case UP_DOWN_STRIPPED_REDWOOD_LOG, FRONT_BACK_STRIPPED_REDWOOD_LOG, LEFT_RIGHT_STRIPPED_REDWOOD_LOG ->
+                    UP_DOWN_STRIPPED_REDWOOD_LOG;
+            case UP_DOWN_BLACK_WOOD_LOG, FRONT_BACK_BLACK_WOOD_LOG, LEFT_RIGHT_BLACK_WOOD_LOG -> UP_DOWN_BLACK_WOOD_LOG;
+            case UP_DOWN_STRIPPED_BLACK_WOOD_LOG, FRONT_BACK_STRIPPED_BLACK_WOOD_LOG,
+                 LEFT_RIGHT_STRIPPED_BLACK_WOOD_LOG -> UP_DOWN_STRIPPED_BLACK_WOOD_LOG;
+
+            case FRONT_FURNACE, BACK_FURNACE, RIGHT_FURNACE, LEFT_FURNACE -> FRONT_FURNACE;
+
+            default -> block & BASE_BLOCK_MASK;
+        };
 
         switch (blockType) {
             case FULL_BLOCK -> {
-                return (short) (baseBlock | FULL_BLOCK);
+                return (short) baseBlock;
             }
             case PLAYER_HEAD -> {
                 return (short) (baseBlock | PLAYER_HEAD);
@@ -589,6 +618,24 @@ public class Block {
             case BOTTOM -> (byte) -getSubZ(blockType, side, corner, subDataAddend);
             default -> getSubX(blockType, side, corner, subDataAddend);
         };
+    }
+
+    public static int[] getDigSound(short block) {
+        if ((block & 0xFFFF) < STANDARD_BLOCKS_THRESHOLD) {
+            if (NON_STANDARD_BLOCK_DIG_SOUNDS[block & 0xFFFF].length != 0)
+                return NON_STANDARD_BLOCK_DIG_SOUNDS[block & 0xFFFF];
+        } else if (STANDARD_BLOCK_DIG_SOUNDS[(block & 0xFFFF) >> BLOCK_TYPE_BITS].length != 0)
+            return STANDARD_BLOCK_DIG_SOUNDS[(block & 0xFFFF) >> BLOCK_TYPE_BITS];
+        return null;
+    }
+
+    public static int[] getFootstepsSound(short block) {
+        if ((block & 0xFFFF) < STANDARD_BLOCKS_THRESHOLD) {
+            if (NON_STANDARD_BLOCK_STEP_SOUNDS[block & 0xFFFF].length != 0)
+                return NON_STANDARD_BLOCK_STEP_SOUNDS[block & 0xFFFF];
+        } else if (STANDARD_BLOCK_STEP_SOUNDS[(block & 0xFFFF) >> BLOCK_TYPE_BITS].length != 0)
+            return STANDARD_BLOCK_STEP_SOUNDS[(block & 0xFFFF) >> BLOCK_TYPE_BITS];
+        return null;
     }
 
     public static long getBlockTypeOcclusionData(short block, int side) {
@@ -1012,6 +1059,289 @@ public class Block {
         BLOCK_TYPE_UV_SUB_DATA[TORCH_TYPE] = new byte[]{7, 4, -7, 4, 7, 0, -7, 0, 7, 4, -7, 4, 7, -10, -7, -10, 7, 4, -7, 4, 7, 0, -7, 0, 7, 4, -7, 4, 7, 0, -7, 0, -7, -7, -7, 7, 7, -7, 7, 7, -7, 4, 7, 4, -7, 0, 7, 0};
     }
 
+    private static void initDigSounds() {
+        SoundManager sound = Launcher.getSound();
+        NON_STANDARD_BLOCK_DIG_SOUNDS[WATER] = sound.splash;
+        NON_STANDARD_BLOCK_DIG_SOUNDS[LAVA] = sound.lavaPop;
+        NON_STANDARD_BLOCK_DIG_SOUNDS[FRONT_CREATOR_HEAD] = sound.digWood;
+        NON_STANDARD_BLOCK_DIG_SOUNDS[BACK_CREATOR_HEAD] = sound.digWood;
+        NON_STANDARD_BLOCK_DIG_SOUNDS[RIGHT_CREATOR_HEAD] = sound.digWood;
+        NON_STANDARD_BLOCK_DIG_SOUNDS[LEFT_CREATOR_HEAD] = sound.digWood;
+        NON_STANDARD_BLOCK_DIG_SOUNDS[TORCH] = sound.digWood;
+
+        NON_STANDARD_BLOCK_DIG_SOUNDS[TALL_GRASS] = sound.digFoliage;
+        NON_STANDARD_BLOCK_DIG_SOUNDS[CACTUS] = sound.digFoliage;
+        NON_STANDARD_BLOCK_DIG_SOUNDS[RED_TULIP] = sound.digFoliage;
+        NON_STANDARD_BLOCK_DIG_SOUNDS[YELLOW_TULIP] = sound.digFoliage;
+        NON_STANDARD_BLOCK_DIG_SOUNDS[ORANGE_TULIP] = sound.digFoliage;
+        NON_STANDARD_BLOCK_DIG_SOUNDS[MAGENTA_TULIP] = sound.digFoliage;
+        NON_STANDARD_BLOCK_DIG_SOUNDS[ROSE] = sound.digFoliage;
+        NON_STANDARD_BLOCK_DIG_SOUNDS[HYACINTH] = sound.digFoliage;
+        NON_STANDARD_BLOCK_DIG_SOUNDS[DRISLY] = sound.digFoliage;
+        NON_STANDARD_BLOCK_DIG_SOUNDS[SHRUB] = sound.digFoliage;
+        NON_STANDARD_BLOCK_DIG_SOUNDS[SUGAR_CANE] = sound.digFoliage;
+
+        STANDARD_BLOCK_DIG_SOUNDS[STONE >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[STONE_BRICK >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[COBBLESTONE >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[CHISELED_STONE >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[POLISHED_STONE >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[CHISELED_POLISHED_STONE >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[ANDESITE >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[SANDSTONE >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[POLISHED_SANDSTONE >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[SLATE >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[CHISELED_SLATE >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[COBBLED_SLATE >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[SLATE_BRICKS >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[POLISHED_SLATE >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[COAL_ORE >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[IRON_ORE >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[DIAMOND_ORE >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[OBSIDIAN >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[MOSSY_STONE >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[MOSSY_ANDESITE >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[MOSSY_STONE_BRICK >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[MOSSY_POLISHED_STONE >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[MOSSY_CHISELED_POLISHED_STONE >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[MOSSY_CHISELED_STONE >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[MOSSY_SLATE >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[MOSSY_COBBLED_SLATE >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[MOSSY_SLATE_BRICKS >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[MOSSY_POLISHED_SLATE >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[MOSSY_CHISELED_SLATE >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[MOSSY_OBSIDIAN >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[MOSSY_CRACKED_ANDESITE >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[MOSSY_COBBLESTONE >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[FRONT_FURNACE >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[(BACK_FURNACE & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[(RIGHT_FURNACE & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[(LEFT_FURNACE & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[CRACKED_ANDESITE >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[BLACK >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[WHITE >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[MAGENTA >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[YELLOW >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[CYAN >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[RED >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[GREEN >> BLOCK_TYPE_BITS] = sound.digStone;
+        STANDARD_BLOCK_DIG_SOUNDS[BLUE >> BLOCK_TYPE_BITS] = sound.digStone;
+
+        STANDARD_BLOCK_DIG_SOUNDS[UP_DOWN_OAK_LOG >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[(FRONT_BACK_OAK_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[(LEFT_RIGHT_OAK_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[UP_DOWN_STRIPPED_OAK_LOG >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[(FRONT_BACK_STRIPPED_OAK_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[(LEFT_RIGHT_STRIPPED_OAK_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[OAK_PLANKS >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[UP_DOWN_SPRUCE_LOG >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[(FRONT_BACK_SPRUCE_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[(LEFT_RIGHT_SPRUCE_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[UP_DOWN_STRIPPED_SPRUCE_LOG >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[(FRONT_BACK_STRIPPED_SPRUCE_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[(LEFT_RIGHT_STRIPPED_SPRUCE_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[SPRUCE_PLANKS >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[UP_DOWN_DARK_OAK_LOG >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[(FRONT_BACK_DARK_OAK_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[(LEFT_RIGHT_DARK_OAK_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[UP_DOWN_STRIPPED_DARK_OAK_LOG >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[(FRONT_BACK_STRIPPED_DARK_OAK_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[(LEFT_RIGHT_STRIPPED_DARK_OAK_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[DARK_OAK_PLANKS >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[UP_DOWN_PINE_LOG >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[(FRONT_BACK_PINE_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[(LEFT_RIGHT_PINE_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[UP_DOWN_STRIPPED_PINE_LOG >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[(FRONT_BACK_STRIPPED_PINE_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[(LEFT_RIGHT_STRIPPED_PINE_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[PINE_PLANKS >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[UP_DOWN_REDWOOD_LOG >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[(FRONT_BACK_REDWOOD_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[(LEFT_RIGHT_REDWOOD_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[UP_DOWN_STRIPPED_REDWOOD_LOG >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[(FRONT_BACK_STRIPPED_REDWOOD_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[(LEFT_RIGHT_STRIPPED_REDWOOD_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[REDWOOD_PLANKS >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[UP_DOWN_BLACK_WOOD_LOG >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[(FRONT_BACK_BLACK_WOOD_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[(LEFT_RIGHT_BLACK_WOOD_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[UP_DOWN_STRIPPED_BLACK_WOOD_LOG >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[(FRONT_BACK_STRIPPED_BLACK_WOOD_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[(LEFT_RIGHT_STRIPPED_BLACK_WOOD_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[BLACK_WOOD_PLANKS >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[CRAFTING_TABLE >> BLOCK_TYPE_BITS] = sound.digWood;
+
+        STANDARD_BLOCK_DIG_SOUNDS[OAK_LEAVES >> BLOCK_TYPE_BITS] = sound.digFoliage;
+        STANDARD_BLOCK_DIG_SOUNDS[SPRUCE_LEAVES >> BLOCK_TYPE_BITS] = sound.digFoliage;
+        STANDARD_BLOCK_DIG_SOUNDS[DARK_OAK_LEAVES >> BLOCK_TYPE_BITS] = sound.digFoliage;
+        STANDARD_BLOCK_DIG_SOUNDS[PINE_LEAVES >> BLOCK_TYPE_BITS] = sound.digFoliage;
+        STANDARD_BLOCK_DIG_SOUNDS[REDWOOD_LEAVES >> BLOCK_TYPE_BITS] = sound.digFoliage;
+        STANDARD_BLOCK_DIG_SOUNDS[BLACK_WOOD_LEAVES >> BLOCK_TYPE_BITS] = sound.digFoliage;
+        STANDARD_BLOCK_DIG_SOUNDS[MOSS >> BLOCK_TYPE_BITS] = sound.digFoliage;
+
+        STANDARD_BLOCK_DIG_SOUNDS[GRAVEL >> BLOCK_TYPE_BITS] = sound.digGravel;
+        STANDARD_BLOCK_DIG_SOUNDS[MOSSY_GRAVEL >> BLOCK_TYPE_BITS] = sound.digGravel;
+
+        STANDARD_BLOCK_DIG_SOUNDS[SAND >> BLOCK_TYPE_BITS] = sound.digSand;
+
+        STANDARD_BLOCK_DIG_SOUNDS[GLASS >> BLOCK_TYPE_BITS] = sound.digGlass;
+
+        STANDARD_BLOCK_DIG_SOUNDS[SNOW >> BLOCK_TYPE_BITS] = sound.digSnow;
+
+        STANDARD_BLOCK_DIG_SOUNDS[GRASS >> BLOCK_TYPE_BITS] = sound.digGrass;
+        STANDARD_BLOCK_DIG_SOUNDS[DIRT >> BLOCK_TYPE_BITS] = sound.digGrass;
+        STANDARD_BLOCK_DIG_SOUNDS[MOSSY_DIRT >> BLOCK_TYPE_BITS] = sound.digGrass;
+        STANDARD_BLOCK_DIG_SOUNDS[CLAY >> BLOCK_TYPE_BITS] = sound.digGrass;
+        STANDARD_BLOCK_DIG_SOUNDS[COURSE_DIRT >> BLOCK_TYPE_BITS] = sound.digGrass;
+        STANDARD_BLOCK_DIG_SOUNDS[MUD >> BLOCK_TYPE_BITS] = sound.digGrass;
+
+        STANDARD_BLOCK_DIG_SOUNDS[ICE >> BLOCK_TYPE_BITS] = sound.digIce;
+        STANDARD_BLOCK_DIG_SOUNDS[HEAVY_ICE >> BLOCK_TYPE_BITS] = sound.digIce;
+
+        STANDARD_BLOCK_DIG_SOUNDS[TNT >> BLOCK_TYPE_BITS] = sound.stepGrass;
+    }
+
+    private static void initStepSounds() {
+        SoundManager sound = Launcher.getSound();
+        NON_STANDARD_BLOCK_STEP_SOUNDS[FRONT_CREATOR_HEAD] = sound.stepWood;
+        NON_STANDARD_BLOCK_STEP_SOUNDS[BACK_CREATOR_HEAD] = sound.stepWood;
+        NON_STANDARD_BLOCK_STEP_SOUNDS[RIGHT_CREATOR_HEAD] = sound.stepWood;
+        NON_STANDARD_BLOCK_STEP_SOUNDS[LEFT_CREATOR_HEAD] = sound.stepWood;
+        NON_STANDARD_BLOCK_STEP_SOUNDS[TORCH] = sound.stepWood;
+        NON_STANDARD_BLOCK_STEP_SOUNDS[WATER] = sound.splash;
+        NON_STANDARD_BLOCK_STEP_SOUNDS[LAVA] = sound.lavaPop;
+
+        NON_STANDARD_BLOCK_STEP_SOUNDS[TALL_GRASS] = sound.stepFoliage;
+        NON_STANDARD_BLOCK_STEP_SOUNDS[CACTUS] = sound.stepFoliage;
+        NON_STANDARD_BLOCK_STEP_SOUNDS[RED_TULIP] = sound.stepFoliage;
+        NON_STANDARD_BLOCK_STEP_SOUNDS[YELLOW_TULIP] = sound.stepFoliage;
+        NON_STANDARD_BLOCK_STEP_SOUNDS[ORANGE_TULIP] = sound.stepFoliage;
+        NON_STANDARD_BLOCK_STEP_SOUNDS[MAGENTA_TULIP] = sound.stepFoliage;
+        NON_STANDARD_BLOCK_STEP_SOUNDS[ROSE] = sound.stepFoliage;
+        NON_STANDARD_BLOCK_STEP_SOUNDS[HYACINTH] = sound.stepFoliage;
+        NON_STANDARD_BLOCK_STEP_SOUNDS[DRISLY] = sound.stepFoliage;
+        NON_STANDARD_BLOCK_STEP_SOUNDS[SHRUB] = sound.stepFoliage;
+        NON_STANDARD_BLOCK_STEP_SOUNDS[SUGAR_CANE] = sound.stepFoliage;
+
+        STANDARD_BLOCK_STEP_SOUNDS[STONE >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[STONE_BRICK >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[COBBLESTONE >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[CHISELED_STONE >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[POLISHED_STONE >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[CHISELED_POLISHED_STONE >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[ANDESITE >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[SANDSTONE >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[POLISHED_SANDSTONE >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[SLATE >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[CHISELED_SLATE >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[COBBLED_SLATE >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[SLATE_BRICKS >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[POLISHED_SLATE >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[COAL_ORE >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[IRON_ORE >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[DIAMOND_ORE >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[OBSIDIAN >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[MOSSY_STONE >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[MOSSY_ANDESITE >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[MOSSY_STONE_BRICK >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[MOSSY_POLISHED_STONE >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[MOSSY_CHISELED_POLISHED_STONE >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[MOSSY_CHISELED_STONE >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[MOSSY_SLATE >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[MOSSY_COBBLED_SLATE >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[MOSSY_SLATE_BRICKS >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[MOSSY_POLISHED_SLATE >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[MOSSY_CHISELED_SLATE >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[MOSSY_OBSIDIAN >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[MOSSY_CRACKED_ANDESITE >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[MOSSY_COBBLESTONE >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[FRONT_FURNACE >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[(BACK_FURNACE & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[(RIGHT_FURNACE & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[(LEFT_FURNACE & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[CRACKED_ANDESITE >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[BLACK >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[WHITE >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[MAGENTA >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[YELLOW >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[CYAN >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[RED >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[GREEN >> BLOCK_TYPE_BITS] = sound.stepStone;
+        STANDARD_BLOCK_STEP_SOUNDS[BLUE >> BLOCK_TYPE_BITS] = sound.stepStone;
+
+        STANDARD_BLOCK_STEP_SOUNDS[UP_DOWN_OAK_LOG >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[(FRONT_BACK_OAK_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[(LEFT_RIGHT_OAK_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[UP_DOWN_STRIPPED_OAK_LOG >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[(FRONT_BACK_STRIPPED_OAK_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[(LEFT_RIGHT_STRIPPED_OAK_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[OAK_PLANKS >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[UP_DOWN_SPRUCE_LOG >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[(FRONT_BACK_SPRUCE_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[(LEFT_RIGHT_SPRUCE_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[UP_DOWN_STRIPPED_SPRUCE_LOG >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[(FRONT_BACK_STRIPPED_SPRUCE_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[(LEFT_RIGHT_STRIPPED_SPRUCE_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[SPRUCE_PLANKS >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[UP_DOWN_DARK_OAK_LOG >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[(FRONT_BACK_DARK_OAK_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[(LEFT_RIGHT_DARK_OAK_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[UP_DOWN_STRIPPED_DARK_OAK_LOG >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[(FRONT_BACK_STRIPPED_DARK_OAK_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[(LEFT_RIGHT_STRIPPED_DARK_OAK_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[DARK_OAK_PLANKS >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[UP_DOWN_PINE_LOG >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[(FRONT_BACK_PINE_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[(LEFT_RIGHT_PINE_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[UP_DOWN_STRIPPED_PINE_LOG >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[(FRONT_BACK_STRIPPED_PINE_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[(LEFT_RIGHT_STRIPPED_PINE_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[PINE_PLANKS >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[UP_DOWN_REDWOOD_LOG >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[(FRONT_BACK_REDWOOD_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[(LEFT_RIGHT_REDWOOD_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[UP_DOWN_STRIPPED_REDWOOD_LOG >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[(FRONT_BACK_STRIPPED_REDWOOD_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[(LEFT_RIGHT_STRIPPED_REDWOOD_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[REDWOOD_PLANKS >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[UP_DOWN_BLACK_WOOD_LOG >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[(FRONT_BACK_BLACK_WOOD_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[(LEFT_RIGHT_BLACK_WOOD_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[UP_DOWN_STRIPPED_BLACK_WOOD_LOG >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[(FRONT_BACK_STRIPPED_BLACK_WOOD_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[(LEFT_RIGHT_STRIPPED_BLACK_WOOD_LOG & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[BLACK_WOOD_PLANKS >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[CRAFTING_TABLE >> BLOCK_TYPE_BITS] = sound.stepWood;
+
+        STANDARD_BLOCK_STEP_SOUNDS[OAK_LEAVES >> BLOCK_TYPE_BITS] = sound.stepFoliage;
+        STANDARD_BLOCK_STEP_SOUNDS[SPRUCE_LEAVES >> BLOCK_TYPE_BITS] = sound.stepFoliage;
+        STANDARD_BLOCK_STEP_SOUNDS[DARK_OAK_LEAVES >> BLOCK_TYPE_BITS] = sound.stepFoliage;
+        STANDARD_BLOCK_STEP_SOUNDS[PINE_LEAVES >> BLOCK_TYPE_BITS] = sound.stepFoliage;
+        STANDARD_BLOCK_STEP_SOUNDS[REDWOOD_LEAVES >> BLOCK_TYPE_BITS] = sound.stepFoliage;
+        STANDARD_BLOCK_STEP_SOUNDS[BLACK_WOOD_LEAVES >> BLOCK_TYPE_BITS] = sound.stepFoliage;
+        STANDARD_BLOCK_STEP_SOUNDS[MOSS >> BLOCK_TYPE_BITS] = sound.stepFoliage;
+
+        STANDARD_BLOCK_STEP_SOUNDS[GRAVEL >> BLOCK_TYPE_BITS] = sound.stepGravel;
+        STANDARD_BLOCK_STEP_SOUNDS[MOSSY_GRAVEL >> BLOCK_TYPE_BITS] = sound.stepGravel;
+
+        STANDARD_BLOCK_STEP_SOUNDS[SAND >> BLOCK_TYPE_BITS] = sound.stepSand;
+        STANDARD_BLOCK_STEP_SOUNDS[SNOW >> BLOCK_TYPE_BITS] = sound.stepSnow;
+
+        STANDARD_BLOCK_STEP_SOUNDS[GRASS >> BLOCK_TYPE_BITS] = sound.stepGrass;
+
+        STANDARD_BLOCK_STEP_SOUNDS[DIRT >> BLOCK_TYPE_BITS] = sound.stepDirt;
+        STANDARD_BLOCK_STEP_SOUNDS[MOSSY_DIRT >> BLOCK_TYPE_BITS] = sound.stepDirt;
+        STANDARD_BLOCK_STEP_SOUNDS[CLAY >> BLOCK_TYPE_BITS] = sound.stepDirt;
+        STANDARD_BLOCK_STEP_SOUNDS[MUD >> BLOCK_TYPE_BITS] = sound.stepDirt;
+        STANDARD_BLOCK_STEP_SOUNDS[COURSE_DIRT >> BLOCK_TYPE_BITS] = sound.stepDirt;
+
+        STANDARD_BLOCK_STEP_SOUNDS[GLASS >> BLOCK_TYPE_BITS] = sound.stepGlass;
+        STANDARD_BLOCK_STEP_SOUNDS[ICE >> BLOCK_TYPE_BITS] = sound.stepGlass;
+        STANDARD_BLOCK_STEP_SOUNDS[HEAVY_ICE >> BLOCK_TYPE_BITS] = sound.stepGlass;
+
+        STANDARD_BLOCK_STEP_SOUNDS[TNT >> BLOCK_TYPE_BITS] = sound.stepGrass;
+    }
+
     //I don't know how to use JSON-Files, so just ignore it
     public static void init() {
         intiBlockTextures();
@@ -1020,5 +1350,7 @@ public class Block {
         initXYZSubData();
         initUVSubData();
         initBlockTypeData();
+        initDigSounds();
+        initStepSounds();
     }
 }

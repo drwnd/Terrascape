@@ -1,6 +1,7 @@
 #version 400 core
 
 in vec2 fragTextureCoordinates;
+in vec3 normal;
 
 out vec4 fragColor;
 
@@ -25,7 +26,14 @@ void main() {
     float absTime = abs(time);
     float blockLight = (lightLevel & 15) * 0.0625;
     float skyLight = (lightLevel >> 4 & 15) * 0.0625;
-    float fragLight = max(blockLight + 0.3, max(0.3, skyLight) * easeInOutQuart(absTime));
+    float alpha = time * 3.1415926536;
+    float sinAlpha = sin(alpha);
+    float cosAlpha = cos(alpha);
+    vec3 sunDirection = vec3(cosAlpha - sinAlpha, -0.3, cosAlpha + sinAlpha);
+
+    float sunIllumination = dot(normal, sunDirection) * 0.2 * skyLight * absTime;
+    float timeLight = max(0.2, easeInOutQuart(absTime));
+    float fragLight = max(blockLight + 0.2, max(0.2, skyLight) * timeLight);
 
     fragColor = vec4(color.rgb * fragLight, color.a);
 }

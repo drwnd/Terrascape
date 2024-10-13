@@ -4,6 +4,7 @@ import com.MBEv2.core.Block;
 import com.MBEv2.core.WindowManager;
 import com.MBEv2.test.Launcher;
 import org.joml.Vector2f;
+import org.lwjgl.glfw.GLFW;
 
 import static com.MBEv2.core.utils.Constants.*;
 import static com.MBEv2.core.utils.Constants.LEFT;
@@ -305,5 +306,34 @@ public class GUIElement {
                 sizeX * GUI_SIZE / width, sizeY * GUI_SIZE / height - 0.5f - yOffset,
                 sizeX * GUI_SIZE / width, -0.5f - yOffset
         };
+    }
+
+    public static short getHoveredOverBlock(float inventoryScroll) {
+        double[] xPos = new double[1];
+        double[] yPos = new double[1];
+        WindowManager window = Launcher.getWindow();
+        GLFW.glfwGetCursorPos(window.getWindow(), xPos, yPos);
+        double x = xPos[0] / window.getWidth() - 0.5;
+        double y = yPos[0] / window.getHeight() - 0.5;
+
+        y += inventoryScroll;
+
+        if (y < -0.5f + GUI_SIZE * 0.04f) {
+            if (y < -0.5) return 0;
+            if (x < 0.5f - (TO_PLACE_NON_STANDARD_BLOCKS.length + 1) * 0.02f * GUI_SIZE) return 0;
+            int value = (int) ((0.5 - 0.01 * GUI_SIZE - x) / (0.02 * GUI_SIZE));
+            value = Math.min(TO_PLACE_NON_STANDARD_BLOCKS.length - 1, Math.max(value, 0));
+            return TO_PLACE_NON_STANDARD_BLOCKS[value];
+        }
+        if (x < 0.5f - (TO_PLACE_BLOCK_TYPES.length + 1) * 0.02f * GUI_SIZE) return 0;
+        if (y > -0.5f + GUI_SIZE * 0.04f * (AMOUNT_OF_TO_PLACE_STANDARD_BLOCKS)) return 0;
+
+        int valueX = (int) ((0.5 - 0.01 * GUI_SIZE - x) / (0.02 * GUI_SIZE));
+        valueX = Math.min(TO_PLACE_BLOCK_TYPES.length - 1, Math.max(valueX, 0));
+
+        int valueY = (int) ((y - 0.005 * GUI_SIZE + 0.5) / (0.04 * GUI_SIZE));
+        valueY = Math.min(AMOUNT_OF_TO_PLACE_STANDARD_BLOCKS - 1, Math.max(valueY, 1));
+
+        return (short) (valueY << BLOCK_TYPE_BITS | TO_PLACE_BLOCK_TYPES[valueX]);
     }
 }

@@ -1,12 +1,10 @@
 package com.MBEv2.core.entity.entities;
 
-import com.MBEv2.core.Block;
-import com.MBEv2.core.Chunk;
-import com.MBEv2.core.ObjectLoader;
-import com.MBEv2.core.ShaderManager;
+import com.MBEv2.core.*;
 import com.MBEv2.core.entity.particles.ExplosionParticle;
 import com.MBEv2.core.utils.Utils;
 import com.MBEv2.test.GameLogic;
+import com.MBEv2.test.Launcher;
 import org.joml.Vector3f;
 import org.joml.Vector3i;
 import org.lwjgl.opengl.GL11;
@@ -17,6 +15,7 @@ import org.lwjgl.opengl.GL30;
 import java.util.LinkedList;
 
 import static com.MBEv2.core.utils.Constants.*;
+import static com.MBEv2.core.utils.Settings.*;
 
 public class TNT_Entity extends Entity {
     private static final float[] TNT_AABB = new float[]{-0.5f, 0.5f, -0.25f, 0.75f, -0.5f, 0.5f};
@@ -121,6 +120,9 @@ public class TNT_Entity extends Entity {
 
         pushEntities();
         GameLogic.addParticle(new ExplosionParticle(new Vector3f(position.x, position.y + 0.375f, position.z)));
+
+        SoundManager sound = Launcher.getSound();
+        sound.playRandomSound(sound.explode, position.x, position.y, position.z, velocity.x, velocity.y, velocity.z, MISCELLANEOUS_GAIN);
     }
 
     public static void castExplosionRay(Vector3f origin, double dirX, double dirY, double dirZ, int blastStrength) {
