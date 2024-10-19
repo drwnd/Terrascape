@@ -7,8 +7,6 @@ import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 
-import java.util.ArrayList;
-
 import static com.MBEv2.core.utils.Constants.*;
 import static com.MBEv2.core.utils.Settings.*;
 
@@ -39,12 +37,8 @@ public class MouseInput {
 
         GLFW.glfwSetScrollCallback(Launcher.getWindow().getWindow(), (window, xPos, yPos) -> {
             if (player.isInInventory()) {
-                ArrayList<GUIElement> inventoryElements = player.getInventoryElements();
                 float scrollValue = (float) yPos * -0.05f;
-                player.addToInventoryScroll(scrollValue);
-                for (GUIElement element : inventoryElements) {
-                    element.getPosition().add(0.0f, scrollValue);
-                }
+                player.updateInventoryScroll(scrollValue);
             } else if (SCROLL_HOT_BAR) {
                 player.setSelectedHotBarSlot((player.getSelectedHotBarSlot() - (int) yPos + 9) % 9);
             }

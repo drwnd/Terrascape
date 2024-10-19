@@ -64,7 +64,7 @@ public class MeshGenerator {
                             if (Block.occludes(block, occludingBlock, side, worldCoordinate.x | blockX, worldCoordinate.y | blockY, worldCoordinate.z | blockZ, aabbIndex))
                                 continue;
 
-                            int texture = Block.getTextureIndex(block, side) - 1;
+                            int texture = Block.getTextureIndex(block, side);
 
                             int u = texture & 15;
                             int v = texture >> 4 & 15;
@@ -143,18 +143,19 @@ public class MeshGenerator {
         int y = worldCoordinate.y + inChunkY;
         int z = worldCoordinate.z + inChunkZ;
 
-        int skyLight = Chunk.getVertexSkyLightInWorld(x, y, z);
-        int blockLight = Chunk.getVertexBlockLightInWorld(x, y, z);
+        int blockType = Block.getBlockType(block);
+        int subX = Block.getSubX(blockType, side, corner, subDataAddend);
+        int subY = Block.getSubY(blockType, side, corner, subDataAddend);
+        int subZ = Block.getSubZ(blockType, side, corner, subDataAddend);
+
+        int skyLight = getVertexSkyLightInWorld(x, y, z, subX, subY, subZ);
+        int blockLight = getVertexBlockLightInWorld(x, y, z, subX, subY, subZ);
 
         if ((Block.getBlockTypeData(block) & DYNAMIC_SHAPE_MASK) != 0) {
             addVertexToListDynamic(inChunkX, inChunkY, inChunkZ, u, v, skyLight, blockLight, corner);
             return;
         }
 
-        int blockType = Block.getBlockType(block);
-        int subX = Block.getSubX(blockType, side, corner, subDataAddend);
-        int subY = Block.getSubY(blockType, side, corner, subDataAddend);
-        int subZ = Block.getSubZ(blockType, side, corner, subDataAddend);
         int subU = Block.getSubU(blockType, side, corner, subDataAddend);
         int subV = Block.getSubV(blockType, side, corner, subDataAddend);
 
@@ -209,8 +210,8 @@ public class MeshGenerator {
 
     private void addWaterSideToList(ArrayList<Integer> list) {
         this.list = list;
-        int u = WATER_TEXTURE - 1 & 15;
-        int v = WATER_TEXTURE - 1 >> 4 & 15;
+        int u = (byte) 64 & 15;
+        int v = (byte) 64 >> 4 & 15;
 
         switch (side) {
             case FRONT:
@@ -257,9 +258,6 @@ public class MeshGenerator {
         int y = worldCoordinate.y + inChunkY;
         int z = worldCoordinate.z + inChunkZ;
 
-        int skyLight = Chunk.getVertexSkyLightInWorld(x, y, z);
-        int blockLight = Chunk.getVertexBlockLightInWorld(x, y, z);
-
         int subX = 0;
         int subY = 0;
         int subZ = 0;
@@ -298,6 +296,9 @@ public class MeshGenerator {
 
         if (inChunkX == 0 || inChunkX == CHUNK_SIZE || inChunkZ == 0 || inChunkZ == CHUNK_SIZE)
             shouldSimulateWaves = false;
+
+        int skyLight = getVertexSkyLightInWorld(x, y, z, subX, subY, subZ);
+        int blockLight = getVertexBlockLightInWorld(x, y, z, subX, subY, subZ);
 
         int ambientOcclusionLevel = getAmbientOcclusionLevel(inChunkX, inChunkY, inChunkZ, subX, subY, subZ);
         list.add(packData1(ambientOcclusionLevel, (inChunkX << 4) + subX + 15, (inChunkY << 4) + subY + 15, (inChunkZ << 4) + subZ + 15));
@@ -353,18 +354,19 @@ public class MeshGenerator {
         int y = worldCoordinate.y + inChunkY;
         int z = worldCoordinate.z + inChunkZ;
 
-        int skyLight = Chunk.getVertexSkyLightInWorld(x, y, z);
-        int blockLight = Chunk.getVertexBlockLightInWorld(x, y, z);
+        int blockType = Block.getBlockType(block);
+        int subX = Block.getSubX(blockType, side, corner, subDataAddend);
+        int subY = Block.getSubY(blockType, side, corner, subDataAddend);
+        int subZ = Block.getSubZ(blockType, side, corner, subDataAddend);
+
+        int skyLight = getVertexSkyLightInWorld(x, y, z, subX, subY, subZ);
+        int blockLight = getVertexBlockLightInWorld(x, y, z, subX, subY, subZ);
 
         if ((Block.getBlockTypeData(block) & DYNAMIC_SHAPE_MASK) != 0) {
             addVertexToListDynamic(inChunkX, inChunkY, inChunkZ, u, v, skyLight, blockLight, corner);
             return;
         }
 
-        int blockType = Block.getBlockType(block);
-        int subX = Block.getSubX(blockType, side, corner, subDataAddend);
-        int subY = Block.getSubY(blockType, side, corner, subDataAddend);
-        int subZ = Block.getSubZ(blockType, side, corner, subDataAddend);
         int subU = Block.getSubU(blockType, side, corner, subDataAddend);
         int subV = Block.getSubV(blockType, side, corner, subDataAddend);
 
@@ -374,7 +376,7 @@ public class MeshGenerator {
     }
 
     private void addFlowerToList() {
-        int texture = Block.getTextureIndex(block, side) - 1;
+        int texture = Block.getTextureIndex(block, side);
 
         int u = texture & 15;
         int v = texture >> 4 & 15;
@@ -383,8 +385,8 @@ public class MeshGenerator {
         int y = worldCoordinate.y + blockY;
         int z = worldCoordinate.z + blockZ;
 
-        int skyLight = Chunk.getVertexSkyLightInWorld(x, y, z);
-        int blockLight = Chunk.getVertexBlockLightInWorld(x, y, z);
+        int skyLight = getVertexSkyLightInWorld(x, y, z, 0, 0, 0);
+        int blockLight = getVertexBlockLightInWorld(x, y, z, 0, 0, 0);
 
         side = BOTTOM;
         int ambientOcclusionLevelBottom = getAmbientOcclusionLevel(blockX, blockY, blockZ, 8, 0, 8);
@@ -484,4 +486,95 @@ public class MeshGenerator {
         return Math.min(3, level);
     }
 
+    public int getVertexBlockLightInWorld(int x, int y, int z, int subX, int subY, int subZ) {
+        byte max = 0;
+        int startX, startY, startZ;
+
+        switch (side) {
+            case FRONT -> {
+                startX = x - 1;
+                startY = y - 1;
+                startZ = subZ == 0 ? z : ++z;
+            }
+            case BACK -> {
+                startX = x - 1;
+                startY = y - 1;
+                startZ = subZ == 0 ? --z : z;
+            }
+            case TOP -> {
+                startX = x - 1;
+                startZ = z - 1;
+                startY = subY == 0 ? y : ++y;
+            }
+            case BOTTOM -> {
+                startX = x - 1;
+                startZ = z - 1;
+                startY = subY == 0 ? --y : y;
+            }
+            case RIGHT -> {
+                startY = y - 1;
+                startZ = z - 1;
+                startX = subX == 0 ? x : ++x;
+            }
+            default -> { // LEFT
+                startY = y - 1;
+                startZ = z - 1;
+                startX = subX == 0 ? --x : x;
+            }
+        }
+
+        for (int lightX = startX; lightX <= x; lightX++)
+            for (int lightY = startY; lightY <= y; lightY++)
+                for (int lightZ = startZ; lightZ <= z; lightZ++) {
+                    byte currentBlockLight = Chunk.getBlockLightInWorld(lightX, lightY, lightZ);
+                    if (max < currentBlockLight) max = currentBlockLight;
+                }
+        return max;
+    }
+
+    public int getVertexSkyLightInWorld(int x, int y, int z, int subX, int subY, int subZ) {
+        byte max = 0;
+        int startX, startY, startZ;
+
+        switch (side) {
+            case FRONT -> {
+                startX = x - 1;
+                startY = y - 1;
+                startZ = subZ == 0 ? z : ++z;
+            }
+            case BACK -> {
+                startX = x - 1;
+                startY = y - 1;
+                startZ = subZ == 0 ? --z : z;
+            }
+            case TOP -> {
+                startX = x - 1;
+                startZ = z - 1;
+                startY = subY == 0 ? y : ++y;
+            }
+            case BOTTOM -> {
+                startX = x - 1;
+                startZ = z - 1;
+                startY = subY == 0 ? --y : y;
+            }
+            case RIGHT -> {
+                startY = y - 1;
+                startZ = z - 1;
+                startX = subX == 0 ? x : ++x;
+            }
+            default -> { // LEFT
+                startY = y - 1;
+                startZ = z - 1;
+                startX = subX == 0 ? --x : x;
+            }
+        }
+
+        for (int lightX = startX; lightX <= x; lightX++)
+            for (int lightY = startY; lightY <= y; lightY++)
+                for (int lightZ = startZ; lightZ <= z; lightZ++) {
+                    byte currentBlockLight = Chunk.getSkyLightInWorld(lightX, lightY, lightZ);
+                    if (max < currentBlockLight) max = currentBlockLight;
+                }
+        return max;
+    }
 }

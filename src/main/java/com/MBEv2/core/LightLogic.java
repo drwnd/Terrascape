@@ -367,15 +367,21 @@ public class LightLogic {
     }
 
     public static boolean canLightTravel(short destinationBlock, int enterSide, short originBlock, int exitSide) {
-        int originBlockType = Block.getBlockType(originBlock);
-        int originBlockProperties = Block.getBlockProperties(originBlock);
-        boolean canExit = Block.getBlockTypeOcclusionData(originBlock, exitSide) != -1 || (originBlockProperties & LIGHT_EMITTING) != 0 || originBlockType == LIQUID_TYPE ||
+        int blockType;
+        long occlusionData;
+        boolean lightEmitting;
+
+        occlusionData = Block.getBlockTypeOcclusionData(originBlock, exitSide);
+        lightEmitting = (Block.getBlockProperties(originBlock) & LIGHT_EMITTING) != 0;
+        blockType = Block.getBlockType(originBlock);
+        boolean canExit = occlusionData != -1 || blockType == LIQUID_TYPE || lightEmitting ||
                 Block.isGlassType(originBlock) || Block.isLeaveType(originBlock);
         if (!canExit) return false;
 
-        int destinationBlockType = Block.getBlockType(destinationBlock);
-        int destinationBlockProperties = Block.getBlockProperties(destinationBlock);
-        return Block.getBlockTypeOcclusionData(destinationBlock, enterSide) != -1 || (destinationBlockProperties & LIGHT_EMITTING) != 0 || destinationBlockType == LIQUID_TYPE ||
+        occlusionData = Block.getBlockTypeOcclusionData(destinationBlock, enterSide);
+        lightEmitting = (Block.getBlockProperties(destinationBlock) & LIGHT_EMITTING) != 0;
+        blockType = Block.getBlockType(destinationBlock);
+        return occlusionData != -1  || blockType == LIQUID_TYPE || lightEmitting ||
                 Block.isGlassType(destinationBlock) || Block.isLeaveType(destinationBlock);
     }
 
@@ -383,8 +389,7 @@ public class LightLogic {
         if (inChunkX == 0) {
             Chunk chunk1 = Chunk.getChunk(chunk.X - 1, chunk.Y, chunk.Z);
             if (chunk1 != null) chunk1.setMeshed(false);
-        }
-        else if (inChunkX == CHUNK_SIZE - 1) {
+        } else if (inChunkX == CHUNK_SIZE - 1) {
             Chunk chunk1 = Chunk.getChunk(chunk.X + 1, chunk.Y, chunk.Z);
             if (chunk1 != null) chunk1.setMeshed(false);
         }
@@ -392,8 +397,7 @@ public class LightLogic {
         if (inChunkY == 0) {
             Chunk chunk1 = Chunk.getChunk(chunk.X, chunk.Y - 1, chunk.Z);
             if (chunk1 != null) chunk1.setMeshed(false);
-        }
-        else if (inChunkY == CHUNK_SIZE - 1) {
+        } else if (inChunkY == CHUNK_SIZE - 1) {
             Chunk chunk1 = Chunk.getChunk(chunk.X, chunk.Y + 1, chunk.Z);
             if (chunk1 != null) chunk1.setMeshed(false);
         }
@@ -401,8 +405,7 @@ public class LightLogic {
         if (inChunkZ == 0) {
             Chunk chunk1 = Chunk.getChunk(chunk.X, chunk.Y, chunk.Z - 1);
             if (chunk1 != null) chunk1.setMeshed(false);
-        }
-        else if (inChunkZ == CHUNK_SIZE - 1) {
+        } else if (inChunkZ == CHUNK_SIZE - 1) {
             Chunk chunk1 = Chunk.getChunk(chunk.X, chunk.Y, chunk.Z + 1);
             if (chunk1 != null) chunk1.setMeshed(false);
         }

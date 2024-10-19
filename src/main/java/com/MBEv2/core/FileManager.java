@@ -423,13 +423,18 @@ public class FileManager {
             RENDERED_WORLD_HEIGHT = newRenderDistanceY * 2 + 5;
 
             Chunk[] newWorld = new Chunk[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
+            short[] occlusionCullingData = new short[newWorld.length];
             for (Chunk chunk : Chunk.getWorld()) {
                 if (chunk == null) continue;
                 int newIndex = GameLogic.getChunkIndex(chunk.X, chunk.Y, chunk.Z);
-                chunk.setIndex(newIndex);
+
+                occlusionCullingData[newIndex] = Chunk.getOcclusionCullingData(chunk.getIndex());
                 newWorld[newIndex] = chunk;
+
+                chunk.setIndex(newIndex);
             }
             Chunk.setWorld(newWorld);
+            Chunk.setOcclusionCullingData(occlusionCullingData);
 
             HeightMap[] newHeightMaps = new HeightMap[RENDERED_WORLD_WIDTH * RENDERED_WORLD_WIDTH];
             for (HeightMap heightMap : Chunk.getHeightMaps()) {
@@ -449,6 +454,7 @@ public class FileManager {
             RENDERED_WORLD_WIDTH = newRenderDistanceXZ * 2 + 5;
             RENDERED_WORLD_HEIGHT = newRenderDistanceY * 2 + 5;
             Chunk.setWorld(new Chunk[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH]);
+            Chunk.setOcclusionCullingData(new short[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH]);
             Chunk.setHeightMaps(new HeightMap[RENDERED_WORLD_WIDTH * RENDERED_WORLD_WIDTH]);
         }
         Player player = GameLogic.getPlayer();

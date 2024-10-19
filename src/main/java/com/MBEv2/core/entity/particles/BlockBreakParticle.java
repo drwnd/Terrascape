@@ -18,7 +18,7 @@ public class BlockBreakParticle extends Particle {
 
     public BlockBreakParticle(Vector3f position, short block) {
         super(position);
-        textureIndex = (byte) (Block.getTextureIndex(block, TOP) - 1);
+        textureIndex = (byte) Block.getTextureIndex(block, TOP);
     }
 
     @Override

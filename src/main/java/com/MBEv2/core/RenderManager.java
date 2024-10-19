@@ -474,7 +474,7 @@ public class RenderManager {
         renderTextLine("Looking at: X:" + Utils.floor(direction.x * 100) / 100f + " Y:" + Utils.floor(direction.y * 100) / 100f + " Z:" + Utils.floor(direction.z * 100) / 100f, ++line);
         renderTextLine("Velocity: X:" + velocity.x + " Y:" + velocity.y + " Z:" + velocity.z, ++line) ;
         if (chunk != null) {
-            renderTextLine("OcclusionCullingData:" + Integer.toBinaryString(chunk.getOcclusionCullingData() & 0x7FFF) + " Damping:" + (chunk.getOcclusionCullingDamper() == 0 ? "false" : "true"), ++line);
+            renderTextLine("OcclusionCullingData:" + Integer.toBinaryString(Chunk.getOcclusionCullingData(chunk.getIndex()) & 0x7FFF) + " Damping:" + (Chunk.getOcclusionCullingDamper(Chunk.getOcclusionCullingData(chunk.getIndex())) == 0 ? "false" : "true"), ++line);
             renderTextLine("Block optimized:" + (chunk.isBlockOptimized() ? "true" : "false") + " Light optimized:" + (chunk.isLightOptimized() ? "true" : "false"), ++line);
             renderTextLine("HeightMap:" + Chunk.getHeightMap(chunkX, chunkZ).map[inChunkX << CHUNK_SIZE_BITS | inChunkZ], ++line);
             renderTextLine("BlockLight:" + Chunk.getBlockLightInWorld(x, y, z) + " SkyLight:" + Chunk.getSkyLightInWorld(x, y, z), ++line);

@@ -213,20 +213,20 @@ public class TNT_Entity extends Entity {
     }
 
     public static int[] TNTEntityVertices() {
-        int sideTL = Byte.toUnsignedInt(TNT_SIDE_TEXTURE) - 1;
-        int sideTR = Byte.toUnsignedInt(TNT_SIDE_TEXTURE);
-        int sideBL = Byte.toUnsignedInt(TNT_SIDE_TEXTURE) + 15;
-        int sideBR = Byte.toUnsignedInt(TNT_SIDE_TEXTURE) + 16;
+        int sideTL = Byte.toUnsignedInt((byte) -106);
+        int sideTR = Byte.toUnsignedInt((byte) -106) + 1;
+        int sideBL = Byte.toUnsignedInt((byte) -106) + 16;
+        int sideBR = Byte.toUnsignedInt((byte) -106) + 17;
 
-        int topTL = Byte.toUnsignedInt(TNT_TOP_TEXTURE) - 1;
-        int topTR = Byte.toUnsignedInt(TNT_TOP_TEXTURE);
-        int topBL = Byte.toUnsignedInt(TNT_TOP_TEXTURE) + 15;
-        int topBR = Byte.toUnsignedInt(TNT_TOP_TEXTURE) + 16;
+        int topTL = Byte.toUnsignedInt((byte) -122);
+        int topTR = Byte.toUnsignedInt((byte) -122) + 1;
+        int topBL = Byte.toUnsignedInt((byte) -122) + 16;
+        int topBR = Byte.toUnsignedInt((byte) -122) + 17;
 
-        int bottomTL = Byte.toUnsignedInt(TNT_BOTTOM_TEXTURE) - 1;
-        int bottomTR = Byte.toUnsignedInt(TNT_BOTTOM_TEXTURE);
-        int bottomBL = Byte.toUnsignedInt(TNT_BOTTOM_TEXTURE) + 15;
-        int bottomBR = Byte.toUnsignedInt(TNT_BOTTOM_TEXTURE) + 16;
+        int bottomTL = Byte.toUnsignedInt((byte) -90);
+        int bottomTR = Byte.toUnsignedInt((byte) -90) + 1;
+        int bottomBL = Byte.toUnsignedInt((byte) -90) + 16;
+        int bottomBR = Byte.toUnsignedInt((byte) -90) + 17;
 
         return new int[]{
                 packData((sideTL & 15) << 4, (topTL >> 4) << 4), packData(8, 12, 8),

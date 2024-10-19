@@ -42,7 +42,7 @@ public class Constants {
 
     //BLOCK_TYPE_OCCLUSION_DATA
     public static final int OCCLUDES_ALL = 0;
-    public static final int OCCLUDES_SELF = 1;
+    //    public static final int OCCLUDES_SELF = 1;
     public static final int OCCLUDES_DYNAMIC_SELF = 3;
 
     //BLOCK_TYPE_DATA
@@ -106,13 +106,14 @@ public class Constants {
     public static final byte BACK_RIGHT_STAIR = 29;
     public static final byte BACK_LEFT_STAIR = 30;
 
-    public static final byte PLAYER_HEAD = 31;
-    public static final byte CACTUS_TYPE = 32;
-    public static final byte AIR_TYPE = 33;
-    public static final byte LIQUID_TYPE = 34;
-    public static final byte LEAVE_TYPE = 35;
-    public static final byte GLASS_TYPE = 36;
-    public static final byte TORCH_TYPE = 37;
+    public static final byte BOTTOM_PLAYER_HEAD = 31;
+    public static final byte TOP_PLAYER_HEAD = 32;
+    public static final byte FRONT_PLAYER_HEAD = 33;
+    public static final byte BACK_PLAYER_HEAD = 34;
+    public static final byte RIGHT_PLAYER_HEAD = 35;
+    public static final byte LEFT_PLAYER_HEAD = 36;
+
+    //TODO block type 37 unused
 
     public static final byte FRONT_SOCKET = 38;
     public static final byte TOP_SOCKET = 39;
@@ -200,15 +201,20 @@ public class Constants {
     public static final byte LEFT_RIGHT_FENCE_FRONT_UP_BACK_DOWN = 115;
     public static final byte[] FENCES = new byte[]{FRONT_BACK_FENCE, UP_DOWN_FENCE, LEFT_RIGHT_FENCE};
 
-    public static final byte FLOWER_TYPE = 116;
+    public static final short FLOWER_TYPE = 256;
+    public static final short CACTUS_TYPE = 257;
+    public static final short AIR_TYPE = 258;
+    public static final short LIQUID_TYPE = 259;
+    public static final short TORCH_TYPE = 260;
+    public static final short PATH_TYPE = 261;
 
-    public static final byte[] TO_PLACE_BLOCK_TYPES = new byte[]{FULL_BLOCK, PLAYER_HEAD, BOTTOM_SOCKET, BOTTOM_SLAB, BOTTOM_PLATE, FRONT_BACK_WALL, UP_DOWN_POST, THICK_BOTTOM_BACK_STAIR, BOTTOM_BACK_STAIR, THIN_BOTTOM_BACK_STAIR, UP_DOWN_FENCE_FRONT_RIGHT};
+    public static final byte[] TO_PLACE_BLOCK_TYPES = new byte[]{FULL_BLOCK, BOTTOM_PLAYER_HEAD, BOTTOM_SOCKET, BOTTOM_SLAB, BOTTOM_PLATE, FRONT_BACK_WALL, UP_DOWN_POST, THICK_BOTTOM_BACK_STAIR, BOTTOM_BACK_STAIR, THIN_BOTTOM_BACK_STAIR, UP_DOWN_FENCE_FRONT_RIGHT};
     public static final int BLOCK_TYPE_BITS = 8;
     public static final int BLOCK_TYPE_MASK = (1 << BLOCK_TYPE_BITS) - 1;
     public static final int BASE_BLOCK_MASK = -1 << BLOCK_TYPE_BITS;
     public static final int STANDARD_BLOCKS_THRESHOLD = 1 << BLOCK_TYPE_BITS;
 
-    public static final int TOTAL_AMOUNT_OF_BLOCK_TYPES = 117;
+    public static final int TOTAL_AMOUNT_OF_BLOCK_TYPES = 264;
 
     //Non standard block, aka blocks without blockTypes
     public static final short AIR = 0;
@@ -231,7 +237,8 @@ public class Constants {
     public static final short DRISLY = 17;
     public static final short SHRUB = 18;
     public static final short SUGAR_CANE = 19;
-    public static final short[] TO_PLACE_NON_STANDARD_BLOCKS = new short[]{WATER, LAVA, CACTUS, FRONT_CREATOR_HEAD, TORCH, TALL_GRASS, RED_TULIP, YELLOW_TULIP, ORANGE_TULIP, MAGENTA_TULIP, ROSE, HYACINTH, DRISLY, SHRUB, SUGAR_CANE};
+    public static final short PATH_BLOCK = 20;
+    public static final short[] TO_PLACE_NON_STANDARD_BLOCKS = new short[]{WATER, LAVA, CACTUS, FRONT_CREATOR_HEAD, TORCH, TALL_GRASS, RED_TULIP, YELLOW_TULIP, ORANGE_TULIP, MAGENTA_TULIP, ROSE, HYACINTH, DRISLY, SHRUB, SUGAR_CANE, PATH_BLOCK};
 
     //Standard blocks, aka blocks with blockTypes
     public static final short GRASS = (short) (1 << BLOCK_TYPE_BITS);
@@ -316,9 +323,9 @@ public class Constants {
     public static final short MOSSY_CRACKED_ANDESITE = (short) (80 << BLOCK_TYPE_BITS);
     public static final short MOSSY_COBBLESTONE = (short) (81 << BLOCK_TYPE_BITS);
     public static final short FRONT_FURNACE = (short) (82 << BLOCK_TYPE_BITS);
+    public static final short SEA_LIGHT = (short) (83 << BLOCK_TYPE_BITS);
 
-
-    public static final int AMOUNT_OF_TO_PLACE_STANDARD_BLOCKS = 83;
+    public static final int AMOUNT_OF_TO_PLACE_STANDARD_BLOCKS = 84;
 
     public static final short FRONT_BACK_OAK_LOG = (short) (511 << BLOCK_TYPE_BITS);
     public static final short LEFT_RIGHT_OAK_LOG = (short) (510 << BLOCK_TYPE_BITS);
@@ -350,146 +357,6 @@ public class Constants {
 
     public static final int AMOUNT_OF_STANDARD_BLOCKS = 512;
 
-    //Texture indices
-    public static final byte GRASS_TOP_TEXTURE = 1;
-    public static final byte DIRT_TEXTURE = 2;
-    public static final byte STONE_TEXTURE = 3;
-    public static final byte OAK_LOG_TEXTURE = 4;
-    public static final byte SPRUCE_LOG_TEXTURE = 5;
-    public static final byte DARK_OAK_LOG_TEXTURE = 6;
-    public static final byte GRASS_SIDE_TEXTURE = 17;
-    public static final byte MUD_TEXTURE = 18;
-    public static final byte ANDESITE_TEXTURE = 19;
-    public static final byte OAK_LOG_TOP_TEXTURE = 20;
-    public static final byte SPRUCE_LOG_TOP_TEXTURE = 21;
-    public static final byte DARK_OAK_LOG_TOP_TEXTURE = 22;
-    public static final byte SNOW_TEXTURE = 33;
-    public static final byte SAND_TEXTURE = 34;
-    public static final byte STONE_BRICK_TEXTURE = 35;
-    public static final byte STRIPPED_OAK_LOG_TEXTURE = 36;
-    public static final byte STRIPPED_SPRUCE_LOG_TEXTURE = 37;
-    public static final byte STRIPPED_DARK_OAK_LOG_TEXTURE = 38;
-    public static final byte SLATE_TEXTURE = 49;
-    public static final byte GLASS_TEXTURE = 50;
-    public static final byte COBBLESTONE_TEXTURE = 51;
-    public static final byte STRIPPED_OAK_LOG_TOP_TEXTURE = 52;
-    public static final byte STRIPPED_SPRUCE_LOG_TOP_TEXTURE = 53;
-    public static final byte STRIPPED_DARK_OAK_LOG_TOP_TEXTURE = 54;
-    public static final byte WATER_TEXTURE = 65;
-    public static final byte GRAVEL_TEXTURE = 66;
-    public static final byte POLISHED_STONE_TEXTURE = 67;
-    public static final byte OAK_PLANKS_TEXTURE = 68;
-    public static final byte SPRUCE_PLANKS_TEXTURE = 69;
-    public static final byte DARK_OAK_PLANKS_TEXTURE = 70;
-    public static final byte COURSE_DIRT_TEXTURE = 81;
-    public static final byte CHISELED_STONE_TEXTURE = 82;
-    public static final byte CHISELED_POLISHED_STONE_TEXTURE = 83;
-    public static final byte OAK_LEAVES_TEXTURE = 84;
-    public static final byte SPRUCE_LEAVES_TEXTURE = 85;
-    public static final byte DARK_OAK_LEAVES_TEXTURE = 86;
-    public static final byte ICE_TEXTURE = 97;
-    public static final byte CLAY_TEXTURE = 98;
-    public static final byte MOSS_TEXTURE = 99;
-    public static final byte ROTATED_OAK_LOG_TEXTURE = 100;
-    public static final byte ROTATED_SPRUCE_LOG_TEXTURE = 101;
-    public static final byte ROTATED_DARK_OAK_LOG_TEXTURE = 102;
-    public static final byte HEAVY_ICE_TEXTURE = 113;
-    public static final byte CACTUS_SIDE_TEXTURE = 114;
-    public static final byte ROTATED_STRIPPED_OAK_LOG_TEXTURE = 116;
-    public static final byte ROTATED_STRIPPED_SPRUCE_LOG_TEXTURE = 117;
-    public static final byte ROTATED_STRIPPED_DARK_OAK_LOG_TEXTURE = 118;
-    public static final byte CHISELED_SLATE_TEXTURE = -127;
-    public static final byte LAVA_TEXTURE = -126;
-    public static final byte CREATOR_HEAD_RIGHT_TEXTURE = -122;
-    public static final byte CREATOR_HEAD_FRONT_TEXTURE = -123;
-    public static final byte CREATOR_HEAD_LEFT_TEXTURE = -124;
-    public static final byte COAL_ORE_TEXTURE = -111;
-    public static final byte IRON_ORE_TEXTURE = -110;
-    public static final byte DIAMOND_ORE_TEXTURE = -109;
-    public static final byte CREATOR_HEAD_TOP_TEXTURE = -108;
-    public static final byte CREATOR_HEAD_BACK_TEXTURE = -107;
-    public static final byte CREATOR_HEAD_BOTTOM_TEXTURE = -106;
-    public static final byte ROTATED_CREATOR_HEAD_BOTTOM_TEXTURE = -90;
-    public static final byte CACTUS_TOP_TEXTURE = -91;
-    public static final byte RED_TEXTURE = -1;
-    public static final byte GREEN_TEXTURE = -2;
-    public static final byte BLUE_TEXTURE = -3;
-    public static final byte YELLOW_TEXTURE = -4;
-    public static final byte MAGENTA_TEXTURE = -5;
-    public static final byte CYAN_TEXTURE = -6;
-    public static final byte WHITE_TEXTURE = -7;
-    public static final byte BLACK_TEXTURE = -8;
-    public static final byte EXPLOSION_TEXTURE = -9;
-    public static final byte COBBLED_SLATE_TEXTURE = 115;
-    public static final byte SLATE_BRICKS_TEXTURE = -125;
-    public static final byte POLISHED_SANDSTONE_TEXTURE = -93;
-    public static final byte SANDSTONE_TEXTURE = -94;
-    public static final byte POLISHED_SLATE_TEXTURE = -95;
-    public static final byte CRACKED_ANDESITE_TEXTURE = -92;
-    public static final byte PINE_LOG_TEXTURE = 7;
-    public static final byte PINE_LOG_TOP_TEXTURE = 23;
-    public static final byte STRIPPED_PINE_LOG_TEXTURE = 39;
-    public static final byte STRIPPED_PINE_LOG_TOP_TEXTURE = 55;
-    public static final byte PINE_PLANKS_TEXTURE = 71;
-    public static final byte PINE_LEAVES_TEXTURE = 87;
-    public static final byte ROTATED_PINE_LOG_TEXTURE = 103;
-    public static final byte ROTATED_STRIPPED_PINE_LOG_TEXTURE = 119;
-    public static final byte REDWOOD_LOG_TEXTURE = 8;
-    public static final byte REDWOOD_LOG_TOP_TEXTURE = 24;
-    public static final byte STRIPPED_REDWOOD_LOG_TEXTURE = 40;
-    public static final byte STRIPPED_REDWOOD_LOG_TOP_TEXTURE = 56;
-    public static final byte REDWOOD_PLANKS_TEXTURE = 72;
-    public static final byte REDWOOD_LEAVES_TEXTURE = 88;
-    public static final byte ROTATED_REDWOOD_LOG_TEXTURE = 104;
-    public static final byte ROTATED_STRIPPED_REDWOOD_LOG_TEXTURE = 120;
-    public static final byte BLACK_WOOD_LOG_TEXTURE = 9;
-    public static final byte BLACK_WOOD_LOG_TOP_TEXTURE = 25;
-    public static final byte STRIPPED_BLACK_WOOD_LOG_TEXTURE = 41;
-    public static final byte STRIPPED_BLACK_WOOD_LOG_TOP_TEXTURE = 57;
-    public static final byte BLACK_WOOD_PLANKS_TEXTURE = 73;
-    public static final byte BLACK_WOOD_LEAVES_TEXTURE = 89;
-    public static final byte ROTATED_BLACK_WOOD_LOG_TEXTURE = 105;
-    public static final byte ROTATED_STRIPPED_BLACK_WOOD_LOG_TEXTURE = 121;
-    public static final byte TNT_TOP_TEXTURE = -121;
-    public static final byte FURNACE_TOP_TEXTURE = -120;
-    public static final byte TNT_SIDE_TEXTURE = -105;
-    public static final byte FURNACE_SIDE_TEXTURE = -104;
-    public static final byte FURNACE_FRONT_TEXTURE = -103;
-    public static final byte TNT_BOTTOM_TEXTURE = -89;
-    public static final byte FURNACE_BOTTOM_TEXTURE = -88;
-    public static final byte TORCH_TEXTURE = -79;
-    public static final byte CRAFTING_TABLE_TOP_TEXTURE = -78;
-    public static final byte CRAFTING_TABLE_SIDE_TEXTURE_1 = -77;
-    public static final byte CRAFTING_TABLE_SIDE_TEXTURE_2 = -76;
-    public static final byte OBSIDIAN_TEXTURE = -75;
-    //    public static final byte WINE_TEXTURE = -74;
-    public static final byte MOSSY_COBBLESTONE_TEXTURE = -31;
-    public static final byte MOSSY_CRACKED_ANDESITE_TEXTURE = -30;
-    public static final byte MOSSY_OBSIDIAN_TEXTURE = -29;
-    public static final byte MOSSY_GRAVEL_TEXTURE = -28;
-    public static final byte MOSSY_DIRT_TEXTURE = -27;
-    public static final byte MOSSY_POLISHED_SLATE_TEXTURE = -26;
-    public static final byte MOSSY_CHISELED_SLATE_TEXTURE = -25;
-    public static final byte MOSSY_SLATE_BRICKS_TEXTURE = -24;
-    public static final byte MOSSY_COBBLED_SLATE_TEXTURE = -23;
-    public static final byte MOSSY_SLATE_TEXTURE = -22;
-    public static final byte MOSSY_CHISELED_STONE_TEXTURE = -21;
-    public static final byte MOSSY_CHISELED_POLISHED_STONE_TEXTURE = -20;
-    public static final byte MOSSY_POLISHED_STONE_TEXTURE = -19;
-    public static final byte MOSSY_STONE_BRICK_TEXTURE = -18;
-    public static final byte MOSSY_ANDESITE_TEXTURE = -17;
-    public static final byte MOSSY_STONE_TEXTURE = -16;
-    public static final byte TALL_GRASS_TEXTURE = -63;
-    public static final byte RED_TULIP_TEXTURE = -62;
-    public static final byte YELLOW_TULIP_TEXTURE = -61;
-    public static final byte ORANGE_TULIP_TEXTURE = -60;
-    public static final byte MAGENTA_TULIP_TEXTURE = -59;
-    public static final byte ROSE_TEXTURE = -58;
-    public static final byte HYACINTH_TEXTURE = -57;
-    public static final byte DRISLY_TEXTURE = -56;
-    public static final byte SHRUB_TEXTURE = -55;
-    public static final byte SUGAR_CANE_TEXTURE = -54;
-
     //Just pretend it doesn't exist
     public static final float[] SKY_BOX_VERTICES;
 
@@ -515,9 +382,7 @@ public class Constants {
         //I WARNED YOU!!!
         //WHY DIDN'T YOU LISTEN!??!!?
 
-        OAK_TREE = new short[][][]{{{AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, DIRT, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR}}, {
-
-                {AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, UP_DOWN_OAK_LOG, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR}}, {
+        OAK_TREE = new short[][][]{{{AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, DIRT, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR}}, {{AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, UP_DOWN_OAK_LOG, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR}}, {
 
                 {AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, UP_DOWN_OAK_LOG, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR}}, {
 
@@ -557,37 +422,12 @@ public class Constants {
 
                 {AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR, AIR}, {DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR}, {DARK_OAK_LEAVES, UP_DOWN_DARK_OAK_LOG, UP_DOWN_DARK_OAK_LOG, UP_DOWN_DARK_OAK_LOG, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR}, {DARK_OAK_LEAVES, DARK_OAK_LEAVES, UP_DOWN_DARK_OAK_LOG, UP_DOWN_DARK_OAK_LOG, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR}, {AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, UP_DOWN_DARK_OAK_LOG, DARK_OAK_LEAVES, AIR, AIR}, {AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}}, {
 
-                {AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR}, {DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, UP_DOWN_DARK_OAK_LOG, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR}, {DARK_OAK_LEAVES, UP_DOWN_DARK_OAK_LOG, UP_DOWN_DARK_OAK_LOG, UP_DOWN_DARK_OAK_LOG, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR}, {DARK_OAK_LEAVES, DARK_OAK_LEAVES, UP_DOWN_DARK_OAK_LOG, UP_DOWN_DARK_OAK_LOG, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR}, {DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, UP_DOWN_DARK_OAK_LOG, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR}, {AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR}, {AIR, AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR, AIR}}, {
-                {AIR, AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR, AIR}, {AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, UP_DOWN_DARK_OAK_LOG, DARK_OAK_LEAVES, AIR, AIR}, {DARK_OAK_LEAVES, UP_DOWN_DARK_OAK_LOG, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR}, {DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR}, {AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, UP_DOWN_DARK_OAK_LOG, DARK_OAK_LEAVES, AIR, AIR}, {AIR, AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}}, {
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR, AIR}, {AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR}, {AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR}, {AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR}, {AIR, AIR, AIR, DARK_OAK_LEAVES, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}}, {
-                {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR, AIR}, {AIR, AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}}};
+                {AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR}, {DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, UP_DOWN_DARK_OAK_LOG, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR}, {DARK_OAK_LEAVES, UP_DOWN_DARK_OAK_LOG, UP_DOWN_DARK_OAK_LOG, UP_DOWN_DARK_OAK_LOG, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR}, {DARK_OAK_LEAVES, DARK_OAK_LEAVES, UP_DOWN_DARK_OAK_LOG, UP_DOWN_DARK_OAK_LOG, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR}, {DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, UP_DOWN_DARK_OAK_LOG, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR}, {AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR}, {AIR, AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR, AIR}}, {{AIR, AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR, AIR}, {AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, UP_DOWN_DARK_OAK_LOG, DARK_OAK_LEAVES, AIR, AIR}, {DARK_OAK_LEAVES, UP_DOWN_DARK_OAK_LOG, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR}, {DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR}, {AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, UP_DOWN_DARK_OAK_LOG, DARK_OAK_LEAVES, AIR, AIR}, {AIR, AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}}, {{AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR, AIR}, {AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR}, {AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR}, {AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR}, {AIR, AIR, AIR, DARK_OAK_LEAVES, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}}, {{AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR, AIR}, {AIR, AIR, DARK_OAK_LEAVES, DARK_OAK_LEAVES, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}, {AIR, AIR, AIR, AIR, AIR, AIR, AIR}}};
 
-        SKY_BOX_VERTICES = new float[]{
-                -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f,
-                1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f,
-                -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f,
-                -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f,
-                -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f,
-                -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
-        SKY_BOX_INDICES = new int[]{
-                0, 2, 1, 3, 1, 2,
-                4, 5, 6, 7, 6, 5,
-                8, 9, 10, 11, 10, 9,
-                12, 14, 13, 15, 13, 14,
-                16, 18, 17, 19, 17, 18,
-                20, 21, 22, 23, 22, 21};
-        SKY_BOX_TEXTURE_COORDINATES = new float[]{
-                1.0f, 2 / 3f, 0.75f, 2 / 3f, 1.0f, 1 / 3f, 0.75f, 1 / 3f,
-                0.25f, 2 / 3f, 0.5f, 2 / 3f, 0.25f, 1 / 3f, 0.5f, 1 / 3f,
-                0.25f, 1.0f, 0.5f, 1.0f, 0.25f, 2 / 3f, 0.5f, 2 / 3f,
-                0.25f, 0.0f, 0.5f, 0.0f, 0.25f, 1 / 3f, 0.5f, 1 / 3f,
-                0.0f, 2 / 3f, 0.0f, 1 / 3f, 0.25f, 2 / 3f, 0.25f, 1 / 3f,
-                0.75f, 2 / 3f, 0.75f, 1 / 3f, 0.5f, 2 / 3f, 0.5f, 1 / 3f};
-        GUI_ELEMENT_TEXTURE_COORDINATES = new float[]{
-                0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f,
-                0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f};
-        OVERLAY_VERTICES = new float[]{
-                -0.5f, 0.5f, -0.5f, -0.5f, 0.5f, 0.5f,
-                -0.5f, -0.5f, 0.5f, -0.5f, 0.5f, 0.5f};
+        SKY_BOX_VERTICES = new float[]{-1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+        SKY_BOX_INDICES = new int[]{0, 2, 1, 3, 1, 2, 4, 5, 6, 7, 6, 5, 8, 9, 10, 11, 10, 9, 12, 14, 13, 15, 13, 14, 16, 18, 17, 19, 17, 18, 20, 21, 22, 23, 22, 21};
+        SKY_BOX_TEXTURE_COORDINATES = new float[]{1.0f, 2 / 3f, 0.75f, 2 / 3f, 1.0f, 1 / 3f, 0.75f, 1 / 3f, 0.25f, 2 / 3f, 0.5f, 2 / 3f, 0.25f, 1 / 3f, 0.5f, 1 / 3f, 0.25f, 1.0f, 0.5f, 1.0f, 0.25f, 2 / 3f, 0.5f, 2 / 3f, 0.25f, 0.0f, 0.5f, 0.0f, 0.25f, 1 / 3f, 0.5f, 1 / 3f, 0.0f, 2 / 3f, 0.0f, 1 / 3f, 0.25f, 2 / 3f, 0.25f, 1 / 3f, 0.75f, 2 / 3f, 0.75f, 1 / 3f, 0.5f, 2 / 3f, 0.5f, 1 / 3f};
+        GUI_ELEMENT_TEXTURE_COORDINATES = new float[]{0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f};
+        OVERLAY_VERTICES = new float[]{-0.5f, 0.5f, -0.5f, -0.5f, 0.5f, 0.5f, -0.5f, -0.5f, 0.5f, -0.5f, 0.5f, 0.5f};
     }
 }

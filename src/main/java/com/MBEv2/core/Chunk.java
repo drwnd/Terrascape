@@ -12,6 +12,7 @@ import static com.MBEv2.core.utils.Constants.*;
 public class Chunk {
 
     private static Chunk[] world;
+    private static short[] occlusionCullingData;
     private static HeightMap[] heightMaps;
     private static final HashMap<Long, ArrayList<Long>> toGenerateBlocks = new HashMap<>();
 
@@ -39,7 +40,7 @@ public class Chunk {
     private Model foliageModel;
     private Model waterModel;
 
-    private short occlusionCullingData;
+//    private short occlusionCullingData;
 
     public Chunk(int x, int y, int z) {
         this.X = x;
@@ -100,7 +101,7 @@ public class Chunk {
         return occlusionCullingData;
     }
 
-    public boolean readOcclusionCullingSidePair(int side1, int side2) {
+    public static boolean readOcclusionCullingSidePair(int side1, int side2, short occlusionCullingData) {
         if (side1 == side2) return false;
         int largerSide = Math.max(side1, side2);
         int smallerSide = Math.min(side1, side2);
@@ -118,10 +119,10 @@ public class Chunk {
             if (Block.getBlockType(blocks[0]) != FULL_BLOCK) occlusionCullingData = 0x7FFF;
             for (byte light : light)
                 if (light != 0) {
-                    this.occlusionCullingData = occlusionCullingData;
+                    Chunk.occlusionCullingData[index] = occlusionCullingData;
                     return;
                 }
-            this.occlusionCullingData = (short) (occlusionCullingData | (short) 0x8000);
+            Chunk.occlusionCullingData[index] = (short) (occlusionCullingData | (short) 0x8000);
             return;
         }
 
@@ -186,11 +187,11 @@ public class Chunk {
 
         for (byte light : light)
             if (light != 0) {
-                this.occlusionCullingData = occlusionCullingData;
+                Chunk.occlusionCullingData[index] = occlusionCullingData;
                 return;
             }
         occlusionCullingData |= (short) 0x8000;
-        this.occlusionCullingData = occlusionCullingData;
+        Chunk.occlusionCullingData[index] = occlusionCullingData;
     }
 
     public void propagateBlockLight() {
@@ -453,28 +454,6 @@ public class Chunk {
         light[index] = (byte) (skyLight << 4 | oldLight & 15);
     }
 
-    public static int getVertexBlockLightInWorld(int x, int y, int z) {
-        int max = 0;
-        for (int x_ = x - 1; x_ <= x; x_++)
-            for (int y_ = y - 1; y_ <= y; y_++)
-                for (int z_ = z - 1; z_ <= z; z_++) {
-                    int currentBlockLight = getBlockLightInWorld(x_, y_, z_);
-                    if (max < currentBlockLight) max = currentBlockLight;
-                }
-        return max;
-    }
-
-    public static int getVertexSkyLightInWorld(int x, int y, int z) {
-        int max = 0;
-        for (int x_ = x - 1; x_ <= x; x_++)
-            for (int y_ = y - 1; y_ <= y; y_++)
-                for (int z_ = z - 1; z_ <= z; z_++) {
-                    int currentBlockLight = getSkyLightInWorld(x_, y_, z_);
-                    if (max < currentBlockLight) max = currentBlockLight;
-                }
-        return max;
-    }
-
     public static Chunk getChunk(int chunkX, int chunkY, int chunkZ) {
         return world[GameLogic.getChunkIndex(chunkX, chunkY, chunkZ)];
     }
@@ -489,6 +468,7 @@ public class Chunk {
 
     public static void setNull(int index) {
         world[index] = null;
+        occlusionCullingData[index] = (short) 0;
     }
 
     public static HeightMap getHeightMap(int chunkX, int chunkZ) {
@@ -591,12 +571,12 @@ public class Chunk {
         hasPropagatedBlockLight = true;
     }
 
-    public int getOcclusionCullingDamper() {
+    public static int getOcclusionCullingDamper(short occlusionCullingData) {
         return occlusionCullingData >> 15 & 1;
     }
 
-    public short getOcclusionCullingData() {
-        return occlusionCullingData;
+    public static short getOcclusionCullingData(int index) {
+        return occlusionCullingData[index];
     }
 
     public boolean isBlockOptimized() {
@@ -633,6 +613,10 @@ public class Chunk {
 
     public static void setWorld(Chunk[] world) {
         Chunk.world = world;
+    }
+
+    public static void setOcclusionCullingData(short[] occlusionCullingData) {
+        Chunk.occlusionCullingData = occlusionCullingData;
     }
 
     public static void setHeightMaps(HeightMap[] heightMaps) {

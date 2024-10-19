@@ -68,7 +68,7 @@ public class Player {
     private long useButtonPressTime = -1, destroyButtonPressTime = -1;
     private boolean useButtonWasJustPressed = false, destroyButtonWasJustPressed = false;
 
-    private float inventoryScroll;
+    private float inventoryScroll = 0;
     private int movementState = WALKING;
     private boolean isGrounded = false;
     private boolean isFling;
@@ -114,7 +114,6 @@ public class Player {
         renderer.setInventoryOverlay(inventoryOverlay);
 
         updateHotBarElements();
-        generateInventoryElements(inventoryElements);
 
         mouseInput.init();
 
@@ -155,6 +154,8 @@ public class Player {
         hotBarSelectionIndicator = ObjectLoader.loadGUIElement(GUIElement.getHotBarSelectionIndicatorVertices(), GUI_ELEMENT_TEXTURE_COORDINATES, new Vector2f(0, 0));
         hotBarSelectionIndicator.setTexture(new Texture(ObjectLoader.loadTexture("textures/HotBarSelectionIndicator.png")));
         setSelectedHotBarSlot(0);
+
+        generateInventoryElements(inventoryElements);
     }
 
     public void reloadGUIElements() throws Exception {
@@ -171,6 +172,14 @@ public class Player {
         ObjectLoader.removeVAO(hotBarSelectionIndicator.getVao());
         ObjectLoader.removeVBO(hotBarSelectionIndicator.getVbo1());
         ObjectLoader.removeVBO(hotBarSelectionIndicator.getVbo2());
+
+        for (GUIElement element : inventoryElements) {
+            ObjectLoader.removeVAO(element.getVao());
+            ObjectLoader.removeVBO(element.getVbo1());
+            ObjectLoader.removeVBO(element.getVbo2());
+        }
+        inventoryElements.clear();
+        inventoryScroll = 0.0f;
 
         loadGUIElements();
     }
@@ -932,26 +941,27 @@ public class Player {
     private void fillVisibleChunks(int chunkX, int chunkY, int chunkZ, int entrySide, int traveledDirections, int damper) {
         if (damper >= MAX_OCCLUSION_CULLING_DAMPER) return;
         int chunkIndex = GameLogic.getChunkIndex(chunkX, chunkY, chunkZ);
-        Chunk chunk = Chunk.getChunk(chunkIndex);
-        if (chunk == null) return;
+
+        short occlusionCullingData = Chunk.getOcclusionCullingData(chunkIndex);
+        if ((occlusionCullingData &0x7FFF) == 0) return;
 
         if ((visibleChunks[chunkIndex >> 6] & 1L << (chunkIndex & 63)) != 0) return;
         visibleChunks[chunkIndex >> 6] |= 1L << (chunkIndex & 63);
-        damper += chunk.getOcclusionCullingDamper();
+        damper += Chunk.getOcclusionCullingDamper(occlusionCullingData);
 
-        if (chunk.readOcclusionCullingSidePair(entrySide, FRONT) && (traveledDirections & 1 << BACK) == 0)
+        if (Chunk.readOcclusionCullingSidePair(entrySide, FRONT, occlusionCullingData) && (traveledDirections & 1 << BACK) == 0)
             fillVisibleChunks(chunkX, chunkY, chunkZ + 1, BACK, traveledDirections | 1 << FRONT, damper);
-        if (chunk.readOcclusionCullingSidePair(entrySide, BACK) && (traveledDirections & 1 << FRONT) == 0)
+        if (Chunk.readOcclusionCullingSidePair(entrySide, BACK, occlusionCullingData) && (traveledDirections & 1 << FRONT) == 0)
             fillVisibleChunks(chunkX, chunkY, chunkZ - 1, FRONT, traveledDirections | 1 << BACK, damper);
 
-        if (chunk.readOcclusionCullingSidePair(entrySide, TOP) && (traveledDirections & 1 << BOTTOM) == 0)
+        if (Chunk.readOcclusionCullingSidePair(entrySide, TOP, occlusionCullingData) && (traveledDirections & 1 << BOTTOM) == 0)
             fillVisibleChunks(chunkX, chunkY + 1, chunkZ, BOTTOM, traveledDirections | 1 << TOP, damper);
-        if (chunk.readOcclusionCullingSidePair(entrySide, BOTTOM) && (traveledDirections & 1 << TOP) == 0)
+        if (Chunk.readOcclusionCullingSidePair(entrySide, BOTTOM, occlusionCullingData) && (traveledDirections & 1 << TOP) == 0)
             fillVisibleChunks(chunkX, chunkY - 1, chunkZ, TOP, traveledDirections | 1 << BOTTOM, damper);
 
-        if (chunk.readOcclusionCullingSidePair(entrySide, RIGHT) && (traveledDirections & 1 << LEFT) == 0)
+        if (Chunk.readOcclusionCullingSidePair(entrySide, RIGHT, occlusionCullingData) && (traveledDirections & 1 << LEFT) == 0)
             fillVisibleChunks(chunkX + 1, chunkY, chunkZ, LEFT, traveledDirections | 1 << RIGHT, damper);
-        if (chunk.readOcclusionCullingSidePair(entrySide, LEFT) && (traveledDirections & 1 << RIGHT) == 0)
+        if (Chunk.readOcclusionCullingSidePair(entrySide, LEFT, occlusionCullingData) && (traveledDirections & 1 << RIGHT) == 0)
             fillVisibleChunks(chunkX - 1, chunkY, chunkZ, RIGHT, traveledDirections | 1 << LEFT, damper);
     }
 
@@ -974,13 +984,13 @@ public class Player {
 
             short block = hotBar[i];
             if (Block.getBlockType(block) == FLOWER_TYPE) {
-                int textureIndex = Block.getTextureIndex(block, 0) - 1;
+                int textureIndex = Block.getTextureIndex(block, 0);
                 float[] textureCoordinates = GUIElement.getFlatDisplayTextureCoordinates(textureIndex);
                 element = ObjectLoader.loadGUIElement(GUIElement.getFlatDisplayVertices(), textureCoordinates, new Vector2f(xOffset, yOffset));
             } else {
-                int textureIndexFront = Block.getTextureIndex(block, FRONT) - 1;
-                int textureIndexTop = Block.getTextureIndex(block, TOP) - 1;
-                int textureIndexLeft = Block.getTextureIndex(block, LEFT) - 1;
+                int textureIndexFront = Block.getTextureIndex(block, FRONT);
+                int textureIndexTop = Block.getTextureIndex(block, TOP);
+                int textureIndexLeft = Block.getTextureIndex(block, LEFT);
                 float[] textureCoordinates = GUIElement.getBlockDisplayTextureCoordinates(textureIndexFront, textureIndexTop, textureIndexLeft, block);
                 element = ObjectLoader.loadGUIElement(GUIElement.getBlockDisplayVertices(block), textureCoordinates, new Vector2f(xOffset, yOffset));
             }
@@ -995,13 +1005,13 @@ public class Player {
             short block = TO_PLACE_NON_STANDARD_BLOCKS[i];
             GUIElement element;
             if (Block.getBlockType(block) == FLOWER_TYPE) {
-                int textureIndex = Block.getTextureIndex(block, 0) - 1;
+                int textureIndex = Block.getTextureIndex(block, 0);
                 float[] textureCoordinates = GUIElement.getFlatDisplayTextureCoordinates(textureIndex);
                 element = ObjectLoader.loadGUIElement(GUIElement.getFlatDisplayVertices(), textureCoordinates, new Vector2f(0.5f - (i + 1) * 0.02f * GUI_SIZE, 0.5f - GUI_SIZE * 0.04f));
             } else {
-                int textureIndexFront = Block.getTextureIndex(block, FRONT) - 1;
-                int textureIndexTop = Block.getTextureIndex(block, TOP) - 1;
-                int textureIndexLeft = Block.getTextureIndex(block, LEFT) - 1;
+                int textureIndexFront = Block.getTextureIndex(block, FRONT);
+                int textureIndexTop = Block.getTextureIndex(block, TOP) ;
+                int textureIndexLeft = Block.getTextureIndex(block, LEFT);
                 float[] textureCoordinates = GUIElement.getBlockDisplayTextureCoordinates(textureIndexFront, textureIndexTop, textureIndexLeft, block);
                 element = ObjectLoader.loadGUIElement(GUIElement.getBlockDisplayVertices(block), textureCoordinates, new Vector2f(0.5f - (i + 1) * 0.02f * GUI_SIZE, 0.5f - GUI_SIZE * 0.04f));
             }
@@ -1014,9 +1024,9 @@ public class Player {
                 short block = (short) (baseBlock << BLOCK_TYPE_BITS | blockType);
                 float[] vertices = GUIElement.getBlockDisplayVertices(block);
 
-                int textureIndexFront = Block.getTextureIndex(block, FRONT) - 1;
-                int textureIndexTop = Block.getTextureIndex(block, TOP) - 1;
-                int textureIndexLeft = Block.getTextureIndex(block, LEFT) - 1;
+                int textureIndexFront = Block.getTextureIndex(block, FRONT);
+                int textureIndexTop = Block.getTextureIndex(block, TOP);
+                int textureIndexLeft = Block.getTextureIndex(block, LEFT);
                 float[] textureCoordinates = GUIElement.getBlockDisplayTextureCoordinates(textureIndexFront, textureIndexTop, textureIndexLeft, block);
                 GUIElement element = ObjectLoader.loadGUIElement(vertices, textureCoordinates, new Vector2f(0.5f - (blockTypeIndex + 1) * 0.02f * GUI_SIZE, 0.5f - GUI_SIZE * 0.04f * (1 + baseBlock)));
                 element.setTexture(atlas);
@@ -1041,12 +1051,17 @@ public class Player {
         return inInventory;
     }
 
-    public ArrayList<GUIElement> getInventoryElements() {
-        return inventoryElements;
-    }
+    public void updateInventoryScroll(float value) {
+        float maxScroll = GUI_SIZE * 0.04f * (1 + AMOUNT_OF_TO_PLACE_STANDARD_BLOCKS) - 1.0f;
 
-    public void addToInventoryScroll(float value) {
+        if (inventoryScroll + value < 0.0f) value = -inventoryScroll;
+        if (inventoryScroll + value > maxScroll) value = maxScroll - inventoryScroll;
+
         inventoryScroll += value;
+
+        for (GUIElement element : inventoryElements) {
+            element.getPosition().add(0.0f, value);
+        }
     }
 
     public boolean isDebugScreenOpen() {

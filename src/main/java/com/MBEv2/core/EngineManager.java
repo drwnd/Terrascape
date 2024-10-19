@@ -6,16 +6,14 @@ import com.MBEv2.test.GameLogic;
 import com.MBEv2.test.Launcher;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;
-import org.lwjgl.glfw.GLFWVidMode;
 
 import static com.MBEv2.core.utils.Constants.*;
 
 public class EngineManager {
 
-    public static float FRAME_RATE;
     public static int currentFrameRate;
 
-    public static boolean isRunning = false;
+    private static boolean isRunning = false;
 
     private WindowManager window;
     private SoundManager sound;
@@ -33,12 +31,6 @@ public class EngineManager {
         Entity.initAll();
         Particle.initAll();
         GameLogic.init();
-
-        if (window.isvSync()) {
-            GLFWVidMode vidMode = GLFW.glfwGetVideoMode(GLFW.glfwGetPrimaryMonitor());
-            if (vidMode == null) throw new AssertionError();
-            FRAME_RATE = vidMode.refreshRate();
-        } else FRAME_RATE = Float.MAX_VALUE;
     }
 
     public void run() {
@@ -47,7 +39,7 @@ public class EngineManager {
         long lastFrameRateUpdateTime = 0;
         long lastGTTime = 0;
         int frames = 0;
-        long tick = 0L;
+        long tick = 0;
 
         while (isRunning) {
             long currentTime = System.nanoTime();
