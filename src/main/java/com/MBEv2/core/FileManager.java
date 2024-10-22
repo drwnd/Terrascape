@@ -346,7 +346,7 @@ public class FileManager {
 
 
     public static void loadSettings(boolean initialLoad) throws Exception {
-        File settings = new File(System.getProperty("user.dir") + "/src/main/resources/Settings");
+        File settings = new File("Settings");
         if (!settings.exists()) {
             //noinspection ResultOfMethodCallIgnored
             settings.createNewFile();

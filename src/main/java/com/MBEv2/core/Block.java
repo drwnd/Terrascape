@@ -946,16 +946,16 @@ public class Block {
         setNonStandardBlockData(MAGENTA_TULIP, NO_COLLISION | REPLACEABLE, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) -60});
         setNonStandardBlockData(ROSE, NO_COLLISION | REPLACEABLE, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) -59});
         setNonStandardBlockData(HYACINTH, NO_COLLISION | REPLACEABLE, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) -58});
-        setNonStandardBlockData(DRISLY, NO_COLLISION | REPLACEABLE, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) -57});
-        setNonStandardBlockData(SHRUB, NO_COLLISION | REPLACEABLE, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) -56});
-        setNonStandardBlockData(SUGAR_CANE, NO_COLLISION, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) -55});
+        setNonStandardBlockData(DRISLY, NO_COLLISION | REPLACEABLE, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) 0xD0});
+        setNonStandardBlockData(SHRUB, NO_COLLISION | REPLACEABLE, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) 0xD1});
+        setNonStandardBlockData(SUGAR_CANE, NO_COLLISION, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) 0xD2});
         setNonStandardBlockData(PATH_BLOCK, 0, sound.digGrass, sound.stepGrass, PATH_TYPE, new byte[]{(byte) -72, (byte) -88, (byte) -72, (byte) -72, (byte) 1, (byte) -72});
     }
-    
+
     private static void initStandardBlocks() {
         SoundManager sound = Launcher.getSound();
-        
-        setStandardBlockData(GRASS, 0, sound.digGrass, sound.stepGrass, new byte[]{(byte) 16, (byte) 0, (byte) 16, (byte) 16, (byte) 1, (byte) 16});
+
+        setStandardBlockData(GRASS, 0, sound.digGrass, sound.stepGrass, new byte[]{(byte) 0xBA, (byte) 0xAA, (byte) 0xBA, (byte) 0xBA, (byte) 1, (byte) 0xBA});
         setStandardBlockData(DIRT, 0, sound.digGrass, sound.stepDirt, (byte) 1);
         setStandardBlockData(STONE, 0, sound.digStone, sound.stepStone, (byte) 2);
         setStandardBlockData(STONE_BRICK, 0, sound.digStone, sound.stepStone, (byte) 34);
@@ -984,7 +984,7 @@ public class Block {
         setStandardBlockData(COAL_ORE, 0, sound.digStone, sound.stepStone, (byte) -112);
         setStandardBlockData(IRON_ORE, 0, sound.digStone, sound.stepStone, (byte) -111);
         setStandardBlockData(DIAMOND_ORE, 0, sound.digStone, sound.stepStone, (byte) -110);
-        
+
         setLogData(UP_DOWN_OAK_LOG, FRONT_BACK_OAK_LOG, LEFT_RIGHT_OAK_LOG, (byte) 19, (byte) 3, (byte) 99, sound);
         setLogData(UP_DOWN_STRIPPED_OAK_LOG, FRONT_BACK_STRIPPED_OAK_LOG, LEFT_RIGHT_STRIPPED_OAK_LOG, (byte) 51, (byte) 35, (byte) 115, sound);
         setLogData(UP_DOWN_SPRUCE_LOG, FRONT_BACK_SPRUCE_LOG, LEFT_RIGHT_SPRUCE_LOG, (byte) 20, (byte) 4, (byte) 100, sound);
@@ -1039,6 +1039,27 @@ public class Block {
         setStandardBlockData(MOSSY_CRACKED_ANDESITE, 0, sound.digStone, sound.stepStone, (byte) -31);
         setStandardBlockData(MOSSY_COBBLESTONE, 0, sound.digStone, sound.stepStone, (byte) -32);
         setStandardBlockData(SEA_LIGHT, LIGHT_EMITTING, sound.digGlass, sound.stepGlass, (byte) -120);
+        setStandardBlockData(PODZOL, 0, sound.digGrass, sound.stepGrass, new byte[]{(byte) 0xB9, (byte) 0xA9, (byte) 0xB9, (byte) 0xB9, (byte) 0x01, (byte) 0xB9});
+        setStandardBlockData(RED_SAND, 0, sound.digSand, sound.stepSand, (byte) 0xBE);
+        setStandardBlockData(RED_POLISHED_SANDSTONE, 0, sound.digStone, sound.stepStone, (byte) 0xBD);
+        setStandardBlockData(RED_SANDSTONE, 0, sound.digStone, sound.stepStone, (byte) 0xBC);
+        setStandardBlockData(TERRACOTTA, 0, sound.digStone, sound.stepStone, (byte) 0xDF);
+        setStandardBlockData(RED_TERRACOTTA, 0, sound.digStone, sound.stepStone, (byte) 0xDE);
+        setStandardBlockData(GREEN_TERRACOTTA, 0, sound.digStone, sound.stepStone, (byte) 0xDD);
+        setStandardBlockData(BLUE_TERRACOTTA, 0, sound.digStone, sound.stepStone, (byte) 0xDC);
+        setStandardBlockData(YELLOW_TERRACOTTA, 0, sound.digStone, sound.stepStone, (byte) 0xDB);
+        setStandardBlockData(MAGENTA_TERRACOTTA, 0, sound.digStone, sound.stepStone, (byte) 0xDA);
+        setStandardBlockData(CYAN_TERRACOTTA, 0, sound.digStone, sound.stepStone, (byte) 0xD9);
+        setStandardBlockData(WHITE_TERRACOTTA, 0, sound.digStone, sound.stepStone, (byte) 0xD8);
+        setStandardBlockData(BLACK_TERRACOTTA, 0, sound.digStone, sound.stepStone, (byte) 0xD7);
+        setStandardBlockData(RED_WOOL, 0, sound.digCloth, sound.stepCloth, (byte) 0xCE);
+        setStandardBlockData(GREEN_WOOL, 0, sound.digCloth, sound.stepCloth, (byte) 0xCD);
+        setStandardBlockData(BLUE_WOOL, 0, sound.digCloth, sound.stepCloth, (byte) 0xCC);
+        setStandardBlockData(YELLOW_WOOL, 0, sound.digCloth, sound.stepCloth, (byte) 0xCB);
+        setStandardBlockData(MAGENTA_WOOL, 0, sound.digCloth, sound.stepCloth, (byte) 0xCA);
+        setStandardBlockData(CYAN_WOOL, 0, sound.digCloth, sound.stepCloth, (byte) 0xC9);
+        setStandardBlockData(WHITE_WOOL, 0, sound.digCloth, sound.stepCloth, (byte) 0xC8);
+        setStandardBlockData(BLACK_WOOL, 0, sound.digCloth, sound.stepCloth, (byte) 0xC7);
 
         setStandardBlockData(FRONT_FURNACE, INTERACTABLE, sound.digStone, sound.stepStone, new byte[]{(byte) -104, (byte) -121, (byte) -105, (byte) -105, (byte) -89, (byte) -105});
         setStandardBlockData(BACK_FURNACE, INTERACTABLE, sound.digStone, sound.stepStone, new byte[]{(byte) -105, (byte) -121, (byte) -105, (byte) -104, (byte) -89, (byte) -105});

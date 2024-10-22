@@ -943,7 +943,6 @@ public class Player {
         int chunkIndex = GameLogic.getChunkIndex(chunkX, chunkY, chunkZ);
 
         short occlusionCullingData = Chunk.getOcclusionCullingData(chunkIndex);
-        if ((occlusionCullingData &0x7FFF) == 0) return;
 
         if ((visibleChunks[chunkIndex >> 6] & 1L << (chunkIndex & 63)) != 0) return;
         visibleChunks[chunkIndex >> 6] |= 1L << (chunkIndex & 63);
@@ -1010,7 +1009,7 @@ public class Player {
                 element = ObjectLoader.loadGUIElement(GUIElement.getFlatDisplayVertices(), textureCoordinates, new Vector2f(0.5f - (i + 1) * 0.02f * GUI_SIZE, 0.5f - GUI_SIZE * 0.04f));
             } else {
                 int textureIndexFront = Block.getTextureIndex(block, FRONT);
-                int textureIndexTop = Block.getTextureIndex(block, TOP) ;
+                int textureIndexTop = Block.getTextureIndex(block, TOP);
                 int textureIndexLeft = Block.getTextureIndex(block, LEFT);
                 float[] textureCoordinates = GUIElement.getBlockDisplayTextureCoordinates(textureIndexFront, textureIndexTop, textureIndexLeft, block);
                 element = ObjectLoader.loadGUIElement(GUIElement.getBlockDisplayVertices(block), textureCoordinates, new Vector2f(0.5f - (i + 1) * 0.02f * GUI_SIZE, 0.5f - GUI_SIZE * 0.04f));

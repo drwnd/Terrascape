@@ -18,10 +18,13 @@ import org.lwjgl.stb.STBVorbisInfo;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.Scanner;
 
 public class ObjectLoader {
 
@@ -179,6 +182,20 @@ public class ObjectLoader {
         result.limit(STBVorbis.stb_vorbis_get_samples_short_interleaved(decoder, channels, result) * channels);
         STBVorbis.stb_vorbis_close(decoder);
 
+        return result;
+    }
+
+    public static String loadResources(String filename) throws Exception {
+        String result;
+        try (InputStream in = Utils.class.getResourceAsStream(filename)) {
+
+            if (in == null)
+                throw new RuntimeException("Could not load resource " + filename);
+
+            try (Scanner scanner = new Scanner(in, StandardCharsets.UTF_8)) {
+                result = scanner.useDelimiter("\\A").next();
+            }
+        }
         return result;
     }
 

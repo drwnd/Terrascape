@@ -97,8 +97,8 @@ public class RenderManager {
 
     private void createParticleShader() throws Exception {
         particleShader = new ShaderManager();
-        particleShader.createVertexShader(Utils.loadResources("/shaders/ParticleVertex.glsl"));
-        particleShader.createFragmentShader(Utils.loadResources("/shaders/ParticleFragment.glsl"));
+        particleShader.createVertexShader(ObjectLoader.loadResources("/shaders/ParticleVertex.glsl"));
+        particleShader.createFragmentShader(ObjectLoader.loadResources("/shaders/ParticleFragment.glsl"));
         particleShader.link();
         particleShader.createUniform("projectionMatrix");
         particleShader.createUniform("viewMatrix");
@@ -113,8 +113,8 @@ public class RenderManager {
 
     private void createEntityShader() throws Exception {
         entityShader = new ShaderManager();
-        entityShader.createVertexShader(Utils.loadResources("/shaders/EntityVertex.glsl"));
-        entityShader.createFragmentShader(Utils.loadResources("/shaders/EntityFragment.glsl"));
+        entityShader.createVertexShader(ObjectLoader.loadResources("/shaders/EntityVertex.glsl"));
+        entityShader.createFragmentShader(ObjectLoader.loadResources("/shaders/EntityFragment.glsl"));
         entityShader.link();
         entityShader.createUniform("projectionMatrix");
         entityShader.createUniform("viewMatrix");
@@ -126,8 +126,8 @@ public class RenderManager {
 
     private void createTextShader() throws Exception {
         textShader = new ShaderManager();
-        textShader.createVertexShader(Utils.loadResources("/shaders/textVertex.glsl"));
-        textShader.createFragmentShader(Utils.loadResources("/shaders/textFragment.glsl"));
+        textShader.createVertexShader(ObjectLoader.loadResources("/shaders/textVertex.glsl"));
+        textShader.createFragmentShader(ObjectLoader.loadResources("/shaders/textFragment.glsl"));
         textShader.link();
         textShader.createUniform("screenSize");
         textShader.createUniform("charSize");
@@ -138,8 +138,8 @@ public class RenderManager {
 
     private void createGUIShader() throws Exception {
         GUIShader = new ShaderManager();
-        GUIShader.createVertexShader(Utils.loadResources("/shaders/GUIVertex.glsl"));
-        GUIShader.createFragmentShader(Utils.loadResources("/shaders/GUIFragment.glsl"));
+        GUIShader.createVertexShader(ObjectLoader.loadResources("/shaders/GUIVertex.glsl"));
+        GUIShader.createFragmentShader(ObjectLoader.loadResources("/shaders/GUIFragment.glsl"));
         GUIShader.link();
         GUIShader.createUniform("textureSampler");
         GUIShader.createUniform("position");
@@ -147,8 +147,8 @@ public class RenderManager {
 
     private void createSkyBoxShader() throws Exception {
         skyBoxShader = new ShaderManager();
-        skyBoxShader.createVertexShader(Utils.loadResources("/shaders/skyBoxVertex.glsl"));
-        skyBoxShader.createFragmentShader(Utils.loadResources("/shaders/skyBoxFragment.glsl"));
+        skyBoxShader.createVertexShader(ObjectLoader.loadResources("/shaders/skyBoxVertex.glsl"));
+        skyBoxShader.createFragmentShader(ObjectLoader.loadResources("/shaders/skyBoxFragment.glsl"));
         skyBoxShader.link();
         skyBoxShader.createUniform("textureSampler1");
         skyBoxShader.createUniform("textureSampler2");
@@ -160,8 +160,8 @@ public class RenderManager {
 
     private void createFoliageShader() throws Exception {
         foliageShader = new ShaderManager();
-        foliageShader.createVertexShader(Utils.loadResources("/shaders/FoliageVertex.glsl"));
-        foliageShader.createFragmentShader(Utils.loadResources("/shaders/blockFragment.glsl"));
+        foliageShader.createVertexShader(ObjectLoader.loadResources("/shaders/FoliageVertex.glsl"));
+        foliageShader.createFragmentShader(ObjectLoader.loadResources("/shaders/blockFragment.glsl"));
         foliageShader.link();
         foliageShader.createUniform("textureSampler");
         foliageShader.createUniform("projectionMatrix");
@@ -175,8 +175,8 @@ public class RenderManager {
 
     private void createWaterShader() throws Exception {
         waterShader = new ShaderManager();
-        waterShader.createVertexShader(Utils.loadResources("/shaders/waterVertex.glsl"));
-        waterShader.createFragmentShader(Utils.loadResources("/shaders/waterFragment.glsl"));
+        waterShader.createVertexShader(ObjectLoader.loadResources("/shaders/waterVertex.glsl"));
+        waterShader.createFragmentShader(ObjectLoader.loadResources("/shaders/waterFragment.glsl"));
         waterShader.link();
         waterShader.createUniform("textureSampler");
         waterShader.createUniform("projectionMatrix");
@@ -190,8 +190,8 @@ public class RenderManager {
 
     private void createBlockShader() throws Exception {
         blockShader = new ShaderManager();
-        blockShader.createVertexShader(Utils.loadResources("/shaders/blockVertex.glsl"));
-        blockShader.createFragmentShader(Utils.loadResources("/shaders/blockFragment.glsl"));
+        blockShader.createVertexShader(ObjectLoader.loadResources("/shaders/blockVertex.glsl"));
+        blockShader.createFragmentShader(ObjectLoader.loadResources("/shaders/blockFragment.glsl"));
         blockShader.link();
         blockShader.createUniform("textureSampler");
         blockShader.createUniform("projectionMatrix");

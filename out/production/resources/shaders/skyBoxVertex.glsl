@@ -8,9 +8,12 @@ out vec2 fragTextureCoordinates;
 uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
 uniform mat4 transformationMatrix;
+uniform float time;
 
 void main() {
-    gl_Position = projectionMatrix * viewMatrix * transformationMatrix * vec4(position * 100000.0, 1.0);
+    float alpha = time * 3.1415926536 - 0.7;
+    vec3 rotatedPosition = vec3(position.x * cos(alpha) - position.z * sin(alpha), position.y, position.z * cos(alpha) + position.x * sin(alpha));
+    gl_Position = projectionMatrix * viewMatrix * transformationMatrix * vec4(rotatedPosition, 1.0);
 
     fragTextureCoordinates = textureCoordinates;
 }

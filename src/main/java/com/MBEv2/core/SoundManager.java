@@ -24,6 +24,7 @@ public class SoundManager {
     public final int[] digFoliage = new int[4];
     public final int[] digWood = new int[6];
     public final int[] digIce = new int[2];
+    public final int[] digCloth = new int[4];
 
     public final int[] stepGlass = new int[4];
     public final int[] stepGrass = new int[6];
@@ -35,6 +36,7 @@ public class SoundManager {
     public final int[] stepWood = new int[6];
     public final int[] swim = new int[5];
     public final int[] stepDirt = new int[4];
+    public final int[] stepCloth = new int[4];
 
     public final int[] explode = new int[3];
     public final int[] splash = new int[1];
@@ -118,6 +120,11 @@ public class SoundManager {
 
         digIce[0] = ObjectLoader.loadSound("Sounds/dig/420882__inspectorj__impact-ice-moderate-a.ogg");
         digIce[1] = ObjectLoader.loadSound("Sounds/dig/420880__inspectorj__impact-ice-moderate-c.ogg");
+
+        digCloth[0] = ObjectLoader.loadSound("Sounds/dig/cloth1.ogg");
+        digCloth[1] = ObjectLoader.loadSound("Sounds/dig/cloth2.ogg");
+        digCloth[2] = ObjectLoader.loadSound("Sounds/dig/cloth3.ogg");
+        digCloth[3] = ObjectLoader.loadSound("Sounds/dig/cloth4.ogg");
     }
 
     @SuppressWarnings("SpellCheckingInspection")
@@ -181,7 +188,10 @@ public class SoundManager {
         stepDirt[2] = ObjectLoader.loadSound("Sounds/step/682127__henkonen__footsteps-dirt-road-1_3.ogg");
         stepDirt[3] = ObjectLoader.loadSound("Sounds/step/682127__henkonen__footsteps-dirt-road-1_4.ogg");
 
-
+        stepCloth[0] = ObjectLoader.loadSound("Sounds/step/cloth1.ogg");
+        stepCloth[1] = ObjectLoader.loadSound("Sounds/step/cloth2.ogg");
+        stepCloth[2] = ObjectLoader.loadSound("Sounds/step/cloth3.ogg");
+        stepCloth[3] = ObjectLoader.loadSound("Sounds/step/cloth4.ogg");
     }
 
     @SuppressWarnings("SpellCheckingInspection")

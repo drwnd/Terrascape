@@ -208,13 +208,13 @@ public class Constants {
     public static final short TORCH_TYPE = 260;
     public static final short PATH_TYPE = 261;
 
+    public static final int TOTAL_AMOUNT_OF_BLOCK_TYPES = 264;
+
     public static final byte[] TO_PLACE_BLOCK_TYPES = new byte[]{FULL_BLOCK, BOTTOM_PLAYER_HEAD, BOTTOM_SOCKET, BOTTOM_SLAB, BOTTOM_PLATE, FRONT_BACK_WALL, UP_DOWN_POST, THICK_BOTTOM_BACK_STAIR, BOTTOM_BACK_STAIR, THIN_BOTTOM_BACK_STAIR, UP_DOWN_FENCE_FRONT_RIGHT};
     public static final int BLOCK_TYPE_BITS = 8;
     public static final int BLOCK_TYPE_MASK = (1 << BLOCK_TYPE_BITS) - 1;
     public static final int BASE_BLOCK_MASK = -1 << BLOCK_TYPE_BITS;
     public static final int STANDARD_BLOCKS_THRESHOLD = 1 << BLOCK_TYPE_BITS;
-
-    public static final int TOTAL_AMOUNT_OF_BLOCK_TYPES = 264;
 
     //Non standard block, aka blocks without blockTypes
     public static final short AIR = 0;
@@ -324,8 +324,29 @@ public class Constants {
     public static final short MOSSY_COBBLESTONE = (short) (81 << BLOCK_TYPE_BITS);
     public static final short FRONT_FURNACE = (short) (82 << BLOCK_TYPE_BITS);
     public static final short SEA_LIGHT = (short) (83 << BLOCK_TYPE_BITS);
+    public static final short PODZOL = (short) (84 << BLOCK_TYPE_BITS);
+    public static final short RED_SAND = (short) (85 << BLOCK_TYPE_BITS);
+    public static final short RED_SANDSTONE = (short) (86 << BLOCK_TYPE_BITS);
+    public static final short RED_POLISHED_SANDSTONE = (short) (87 << BLOCK_TYPE_BITS);
+    public static final short TERRACOTTA = (short) (88 << BLOCK_TYPE_BITS);
+    public static final short RED_TERRACOTTA = (short) (89 << BLOCK_TYPE_BITS);
+    public static final short GREEN_TERRACOTTA = (short) (90 << BLOCK_TYPE_BITS);
+    public static final short BLUE_TERRACOTTA = (short) (91 << BLOCK_TYPE_BITS);
+    public static final short YELLOW_TERRACOTTA = (short) (92 << BLOCK_TYPE_BITS);
+    public static final short MAGENTA_TERRACOTTA = (short) (93 << BLOCK_TYPE_BITS);
+    public static final short CYAN_TERRACOTTA = (short) (94 << BLOCK_TYPE_BITS);
+    public static final short WHITE_TERRACOTTA = (short) (95 << BLOCK_TYPE_BITS);
+    public static final short BLACK_TERRACOTTA = (short) (96 << BLOCK_TYPE_BITS);
+    public static final short RED_WOOL = (short) (97 << BLOCK_TYPE_BITS);
+    public static final short GREEN_WOOL = (short) (98 << BLOCK_TYPE_BITS);
+    public static final short BLUE_WOOL = (short) (99 << BLOCK_TYPE_BITS);
+    public static final short YELLOW_WOOL = (short) (100 << BLOCK_TYPE_BITS);
+    public static final short MAGENTA_WOOL = (short) (101 << BLOCK_TYPE_BITS);
+    public static final short CYAN_WOOL = (short) (102 << BLOCK_TYPE_BITS);
+    public static final short WHITE_WOOL = (short) (103 << BLOCK_TYPE_BITS);
+    public static final short BLACK_WOOL = (short) (104 << BLOCK_TYPE_BITS);
 
-    public static final int AMOUNT_OF_TO_PLACE_STANDARD_BLOCKS = 84;
+    public static final int AMOUNT_OF_TO_PLACE_STANDARD_BLOCKS = 105;
 
     public static final short FRONT_BACK_OAK_LOG = (short) (511 << BLOCK_TYPE_BITS);
     public static final short LEFT_RIGHT_OAK_LOG = (short) (510 << BLOCK_TYPE_BITS);

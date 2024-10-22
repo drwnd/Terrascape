@@ -226,7 +226,8 @@ public class WorldGeneration {
             boolean placedBlock = false;
 
             int caveType = (int) (caveBits >> (inChunkY << 1) & 3);
-            if (caveType == NO_CAVE || height <= WATER_LEVEL && totalY >= height - 1 && totalY <= WATER_LEVEL)
+            // Either there is no cave OR a thin layer separating caves form oceans OR everything above surface (trees)
+            if (caveType == NO_CAVE || height <= WATER_LEVEL && totalY >= height - 1 && totalY <= WATER_LEVEL || totalY > height)
                 placedBlock = biome.placeBlock(chunk, inChunkX, inChunkY, inChunkZ, height, feature, caveBits);
             else if (caveType == WATER_CAVE && totalY <= WATER_LEVEL)
                 chunk.storeSave(inChunkX, inChunkY, inChunkZ, WATER);

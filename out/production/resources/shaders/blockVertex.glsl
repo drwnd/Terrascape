@@ -1,26 +1,39 @@
 #version 400 core
 
-layout(location = 0) in int data;
+layout (location = 0) in ivec2 data;
 
 out vec2 textureCoordinates;
-out float fragLight;
+out vec3 normal;
+out float blockLight;
+out float skyLight;
+out float ambientOcclusionLevel;
+out float distance;
 
 uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
 uniform ivec3 worldPos;
+uniform vec3 cameraPosition;
 
-const float[6] light = float[6](1.0f, 1.2f, 0.9f, 0.8f, 0.6f, 1.1f);
+const vec3[6] normals = vec3[6](vec3(0, 0, 1), vec3(0, 1, 0), vec3(1, 0, 0), vec3(0, 0, -1), vec3(0, -1, 0), vec3(-1, 0, 0));
 
-void main(){
+void main() {
 
-    int x = (data >> 12) & 63;
-    int y = (data >> 6) & 63;
-    int z = data & 63;
+    float x = ((data.x >> 20 & 1023) - 15) * 0.0625;
+    float y = ((data.x >> 10 & 1023) - 15) * 0.0625;
+    float z = ((data.x & 1023) - 15) * 0.0625;
 
     //Maybe problem with inplicit type cast
-    gl_Position = projectionMatrix * viewMatrix *  vec4(vec3(x, y, z) + worldPos, 1.0);
+    gl_Position = projectionMatrix * viewMatrix * vec4(vec3(x, y, z) + worldPos, 1.0);
 
-    textureCoordinates = vec2(float((data >> 23) & 31) * 0.0625, float((data >> 18) & 31) * 0.0625);
+    float u = (((data.y >> 9) & 511) - 15) * 0.00390625;
+    float v = ((data.y & 511) - 15) * 0.00390625;
 
-    fragLight = light[(data >> 28) & 7];
+    textureCoordinates = vec2(u, v);
+
+    blockLight = (data.y >> 18 & 15) * 0.0625;
+    skyLight = (data.y >> 22 & 15) * 0.0625;
+    ambientOcclusionLevel = 1 - (data.x >> 30 & 3) * 0.22;
+    normal = normals[data.y >> 26 & 7];
+
+    distance = length(vec3(x, y, z) + worldPos - cameraPosition);
 }
