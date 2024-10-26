@@ -466,6 +466,9 @@ public class RenderManager {
         Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
         int sourceCounter = 0;
         for (AudioSource source : Launcher.getSound().getSources()) if (source.isPlaying()) sourceCounter++;
+        double heightMapValue = WorldGeneration.heightMapValue(x, z);
+        double erosionMapValue = WorldGeneration.erosionMapValue(x, z);
+        double continentalMapValue = WorldGeneration.continentalMapValue(x, z);
 
         renderTextLine("Frame rate:" + EngineManager.currentFrameRate, ++line);
         renderTextLine("Coordinates: X:" + Utils.floor(position.x * 10) / 10f + " Y:" + Utils.floor(position.y * 10) / 10f + " Z:" + Utils.floor(position.z * 10) / 10f, ++line);
@@ -506,6 +509,9 @@ public class RenderManager {
 //        renderTextLine("Saved chunks memory:" + FileManager.getSeedFileSize() / 1_000_000 + "MB", ++line);
         renderTextLine("To buffer chunks:" + GameLogic.getAmountOfToBufferChunks(), ++line);
         renderTextLine("Entities:" + GameLogic.getAmountOfEntities(), ++line);
+        renderTextLine("Hei:" + Utils.floor(heightMapValue * 1000) / 1000d + " Ero:" + Utils.floor(erosionMapValue * 1000) / 1000d + " Con:" + Utils.floor(continentalMapValue * 1000) / 1000d, ++line);
+        renderTextLine("Tem:" + Utils.floor(WorldGeneration.temperatureMapValue(x, z) * 1000) / 1000d + " Hum:" + Utils.floor(WorldGeneration.humidityMapValue(x, z) * 1000) / 1000d, ++line);
+        renderTextLine("Resulting height: " + WorldGeneration.getResultingHeight(heightMapValue, erosionMapValue, continentalMapValue), ++line);
 
         textShader.unBind();
     }

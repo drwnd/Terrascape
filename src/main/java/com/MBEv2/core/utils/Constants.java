@@ -2,14 +2,15 @@ package com.MBEv2.core.utils;
 
 public class Constants {
 
-    //Recommended to not change, but I can't stop you
+    // Literally do whatever
     public static final String TITLE = "Minecräft Bad Edition v2";
     public static final float Z_NEAR = 0.01f;
     public static final float Z_FAR = 1000.0f;
     public static final float TIME_SPEED = 0.00008333f;
     public static final float NANOSECONDS_PER_SECOND = 1_000_000_000;
+    public static final float SPAWN_RADIUS = 150.0f; // More like halfSideLengthOfSpawnSquare
 
-    //DO NOT CHANGE THESE VALUES (like really, it will crash)
+    // DO NOT CHANGE THESE VALUES (like really, it will crash)
     public static final int CHUNK_SIZE_BITS = 5;
     public static final int CHUNK_SIZE = 1 << CHUNK_SIZE_BITS;
     public static final int CHUNK_SIZE_MASK = CHUNK_SIZE - 1;
@@ -19,19 +20,19 @@ public class Constants {
     public static final int IN_CHUNK_ENTITY_CLUSTER_MASK = 3;
     public static final int ENTITY_CLUSTER_TO_CHUNK_BITS = CHUNK_SIZE_BITS - ENTITY_CLUSTER_SIZE_BITS;
 
-    //Change based on computing power
+    // Change based on computing power
     public static final int MAX_CHUNKS_TO_BUFFER_PER_FRAME = 15;
 
-    public static final int NUMBER_OF_GENERATION_THREADS = 4;
+    public static final int NUMBER_OF_GENERATION_THREADS = 3;
     public static final int MAX_OCCLUSION_CULLING_DAMPER = 6;
 
     public static final float MAX_SOUND_DISTANCE = 30.0f * 30.0f;
 
-    //Other useful stuff
+    // Other useful stuff
     public static final int MAX_BLOCK_LIGHT_VALUE = 15;
     public static final int MAX_SKY_LIGHT_VALUE = 15;
 
-    //Indices for the sides of blocks
+    // Indices for the sides of blocks
     public static final int FRONT = 0;
     public static final int TOP = 1;
     public static final int RIGHT = 2;
@@ -40,16 +41,16 @@ public class Constants {
     public static final int LEFT = 5;
     public static final int NONE = 6;
 
-    //BLOCK_TYPE_OCCLUSION_DATA
+    // BLOCK_TYPE_OCCLUSION_DATA
     public static final int OCCLUDES_ALL = 0;
     //    public static final int OCCLUDES_SELF = 1;
     public static final int OCCLUDES_DYNAMIC_SELF = 3;
 
-    //BLOCK_TYPE_DATA
+    // BLOCK_TYPE_DATA
     public static final int SMART_BLOCK_TYPE = 64;
     public static final int DYNAMIC_SHAPE_MASK = 128;
 
-    //BLOCK_XYZ_SUB_DATA
+    // BLOCK_XYZ_SUB_DATA
     public static final int MIN_X = 0;
     public static final int MAX_X = 1;
     public static final int MIN_Y = 2;
@@ -57,14 +58,14 @@ public class Constants {
     public static final int MIN_Z = 4;
     public static final int MAX_Z = 5;
 
-    //BLOCK_PROPERTIES
+    // BLOCK_PROPERTIES
     public static final int LIGHT_EMITTING = 1;
     public static final int NO_COLLISION = 2;
     public static final int INTERACTABLE = 4;
     public static final int REPLACEABLE = 8;
     public static final int BLAST_RESISTANT = 16;
 
-    //Indices for information on block types
+    // Indices for information on block types
     public static final byte FULL_BLOCK = 0;
 
     public static final byte BOTTOM_SLAB = 1;
@@ -113,7 +114,7 @@ public class Constants {
     public static final byte RIGHT_PLAYER_HEAD = 35;
     public static final byte LEFT_PLAYER_HEAD = 36;
 
-    //TODO block type 37 unused
+    // TODO block type 37 unused
 
     public static final byte FRONT_SOCKET = 38;
     public static final byte TOP_SOCKET = 39;
@@ -216,7 +217,7 @@ public class Constants {
     public static final int BASE_BLOCK_MASK = -1 << BLOCK_TYPE_BITS;
     public static final int STANDARD_BLOCKS_THRESHOLD = 1 << BLOCK_TYPE_BITS;
 
-    //Non standard block, aka blocks without blockTypes
+    // Non standard block, aka blocks without blockTypes
     public static final short AIR = 0;
     public static final short OUT_OF_WORLD = 1;
     public static final short WATER = 2;
@@ -240,7 +241,7 @@ public class Constants {
     public static final short PATH_BLOCK = 20;
     public static final short[] TO_PLACE_NON_STANDARD_BLOCKS = new short[]{WATER, LAVA, CACTUS, FRONT_CREATOR_HEAD, TORCH, TALL_GRASS, RED_TULIP, YELLOW_TULIP, ORANGE_TULIP, MAGENTA_TULIP, ROSE, HYACINTH, DRISLY, SHRUB, SUGAR_CANE, PATH_BLOCK};
 
-    //Standard blocks, aka blocks with blockTypes
+    // Standard blocks, aka blocks with blockTypes
     public static final short GRASS = (short) (1 << BLOCK_TYPE_BITS);
     public static final short DIRT = (short) (2 << BLOCK_TYPE_BITS);
     public static final short STONE = (short) (3 << BLOCK_TYPE_BITS);
@@ -378,7 +379,7 @@ public class Constants {
 
     public static final int AMOUNT_OF_STANDARD_BLOCKS = 512;
 
-    //Just pretend it doesn't exist
+    // Just pretend it doesn't exist
     public static final float[] SKY_BOX_VERTICES;
 
     public static final int[] SKY_BOX_INDICES;
@@ -397,7 +398,7 @@ public class Constants {
 
     public static final byte[] OCCLUSION_CULLING_LARGER_SIDE_OFFSETS = new byte[]{0, 1, 3, 6, 10};
 
-    //No like actually, this doesn't exist! Trust me. please...
+    // No like actually, this doesn't exist! Trust me. please...
     static {
         //NOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
         //I WARNED YOU!!!

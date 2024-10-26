@@ -119,17 +119,15 @@ public class ChunkGenerator {
             }
             int[] intHeightMap = heightMapObject.map;
 
-            double[][] heightMap = WorldGeneration.heightMap(chunkX, chunkZ);
+            double[][] heightMap = WorldGeneration.heightMapPadded(chunkX, chunkZ);
             double[][] temperatureMap = WorldGeneration.temperatureMap(chunkX, chunkZ);
             double[][] humidityMap = WorldGeneration.humidityMap(chunkX, chunkZ);
-            double[][] erosionMap = WorldGeneration.erosionMap(chunkX, chunkZ);
+            double[][] erosionMap = WorldGeneration.erosionMapPadded(chunkX, chunkZ);
             double[][] featureMap = WorldGeneration.featureMap(chunkX, chunkZ);
+            double[][] continentalMap = WorldGeneration.continentalMapPadded(chunkX, chunkZ);
             boolean hasGenerated = false;
 
-            int[][] resultingHeightMap = new int[CHUNK_SIZE][CHUNK_SIZE];
-            for (int inCHunkX = 0; inCHunkX < CHUNK_SIZE; inCHunkX++)
-                for (int inChunkZ = 0; inChunkZ < CHUNK_SIZE; inChunkZ++)
-                    resultingHeightMap[inCHunkX][inChunkZ] = WorldGeneration.getHeight(heightMap[inCHunkX][inChunkZ], erosionMap[inCHunkX][inChunkZ]);
+            int[][] resultingHeightMap = WorldGeneration.getResultingHeightMap(heightMap, erosionMap, continentalMap);
 
             for (int chunkY = playerY + RENDER_DISTANCE_Y + 1; chunkY >= playerY - RENDER_DISTANCE_Y - 1 && shouldFinish; chunkY--) {
                 try {
@@ -140,7 +138,7 @@ public class ChunkGenerator {
                         chunk = FileManager.getChunk(expectedId);
                         if (chunk == null) chunk = new Chunk(chunkX, chunkY, chunkZ);
                         else
-                            WorldGeneration.generateSurroundingChunkTreeBlocks(chunk, resultingHeightMap, temperatureMap, humidityMap, erosionMap, featureMap);
+                            WorldGeneration.generateSurroundingChunkTreeBlocks(chunk, resultingHeightMap, temperatureMap, humidityMap, erosionMap, featureMap, continentalMap);
 
                         Chunk.storeChunk(chunk);
                     } else if (chunk.id != expectedId) {
@@ -150,12 +148,12 @@ public class ChunkGenerator {
                         chunk = FileManager.getChunk(expectedId);
                         if (chunk == null) chunk = new Chunk(chunkX, chunkY, chunkZ);
                         else
-                            WorldGeneration.generateSurroundingChunkTreeBlocks(chunk, resultingHeightMap, temperatureMap, humidityMap, erosionMap, featureMap);
+                            WorldGeneration.generateSurroundingChunkTreeBlocks(chunk, resultingHeightMap, temperatureMap, humidityMap, erosionMap, featureMap, continentalMap);
 
                         Chunk.storeChunk(chunk);
                     }
                     if (!chunk.isGenerated()) {
-                        WorldGeneration.generate(chunk, resultingHeightMap, temperatureMap, humidityMap, erosionMap, featureMap);
+                        WorldGeneration.generate(chunk, resultingHeightMap, temperatureMap, humidityMap, erosionMap, featureMap, continentalMap);
                         hasGenerated = true;
                     }
                 } catch (Exception exception) {
@@ -203,7 +201,7 @@ public class ChunkGenerator {
         public void run() {
             try {
                 if (travelDirection == BOTTOM) handleSkyLightBottom();
-                else handleSkyLightTop();
+                handleSkyLightTop();
             } catch (Exception e) {
                 System.out.println(e.getClass());
                 e.printStackTrace();

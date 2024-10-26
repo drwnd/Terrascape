@@ -7,8 +7,8 @@ public class Settings {
     public static final int IS_KEYBOARD_BUTTON = 0;
 
     //Change to whatever you want
-    //    public static final long SEED = new Random().nextLong();
-    public static long SEED = 2;
+        public static final long SEED = new Random().nextLong();
+//    public static long SEED = 2;
 
     public static float FOV;
     public static float GUI_SIZE;

@@ -21,6 +21,7 @@ public class EngineManager {
 
     public void init() throws Exception {
         GLFW.glfwSetErrorCallback(errorCallback = GLFWErrorCallback.createPrint(System.err));
+        WorldGeneration.init();
         FileManager.init();
         FileManager.loadSettings(true);
         window = Launcher.getWindow();

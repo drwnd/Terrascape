@@ -19,12 +19,12 @@ public class Utils {
         return buffer;
     }
 
-    public static int floor(float value){
+    public static int floor(float value) {
         int addend = value < 0 ? -1 : 0;
         return (int) value + addend;
     }
 
-    public static int floor(double value){
+    public static int floor(double value) {
         int addend = value < 0 ? -1 : 0;
         return (int) value + addend;
     }
@@ -32,5 +32,16 @@ public class Utils {
     public static float fraction(float number) {
         int addend = number < 0 ? 1 : 0;
         return (number - (int) number) + addend;
+    }
+
+    public static double smoothInOutQuad(double x, double lowBound, double highBound) {
+
+        // Maps x ∈ [lowBound, highBound] to [0, 1]
+        x -= lowBound;
+        x /= highBound - lowBound;
+
+        if (x < 0.5) return 2 * x * x;
+        double oneMinusX = 1 - x;
+        return 1 - 2 * oneMinusX * oneMinusX;
     }
 }

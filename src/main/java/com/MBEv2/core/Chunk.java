@@ -14,7 +14,7 @@ public class Chunk {
     private static Chunk[] world;
     private static short[] occlusionCullingData;
     private static HeightMap[] heightMaps;
-    private static final HashMap<Long, ArrayList<Long>> toGenerateBlocks = new HashMap<>();
+    private static final HashMap<Long, ArrayList<Integer>> toGenerateBlocks = new HashMap<>();
 
     private short[] blocks;
     private byte[] light;
@@ -359,8 +359,8 @@ public class Chunk {
         if (chunk == null) {
             long id = GameLogic.getChunkId(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS);
             synchronized (toGenerateBlocks) {
-                ArrayList<Long> toPlaceBlocks = toGenerateBlocks.computeIfAbsent(id, ignored -> new ArrayList<>());
-                toPlaceBlocks.add((long) block << 48 | inChunkX << CHUNK_SIZE_BITS * 2 | inChunkY << CHUNK_SIZE_BITS | inChunkZ);
+                ArrayList<Integer> toPlaceBlocks = toGenerateBlocks.computeIfAbsent(id, ignored -> new ArrayList<>());
+                toPlaceBlocks.add((int) block << 16 | inChunkX << CHUNK_SIZE_BITS * 2 | inChunkY << CHUNK_SIZE_BITS | inChunkZ);
             }
         } else {
             if (chunk.saved) return;
@@ -557,7 +557,7 @@ public class Chunk {
         return heightMaps;
     }
 
-    public static ArrayList<Long> removeToGenerateBlocks(long id) {
+    public static ArrayList<Integer> removeToGenerateBlocks(long id) {
         synchronized (toGenerateBlocks) {
             return toGenerateBlocks.remove(id);
         }

@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 
+import static com.MBEv2.core.WorldGeneration.WATER_LEVEL;
 import static com.MBEv2.core.utils.Constants.*;
 import static com.MBEv2.core.utils.Settings.*;
 
@@ -94,7 +95,17 @@ public class Player {
         mouseInput = new MouseInput(this);
 
         velocity = new Vector3f(0, 0, 0);
-        camera.setPosition(0.5f, WorldGeneration.getHeightMapValue(0, 0) + 3, 0.5f);
+
+        int spawnX = 0;
+        int spawnZ = 0;
+
+        for (int counter = 0; counter < 100 && WorldGeneration.getResultingHeight(Utils.floor(spawnX), Utils.floor(spawnZ)) < WATER_LEVEL; counter++) {
+            spawnX = Utils.floor(Math.random() * SPAWN_RADIUS * 2 - SPAWN_RADIUS);
+            spawnZ = Utils.floor(Math.random() * SPAWN_RADIUS * 2 - SPAWN_RADIUS);
+        }
+
+        camera.setPosition(spawnX + 0.5f, WorldGeneration.getResultingHeight(spawnX, spawnZ) + 3, spawnZ + 0.5f);
+
         pos1 = new Vector3i();
         pos2 = new Vector3i();
         visibleChunks = new long[(RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH >> 6) + 1];
