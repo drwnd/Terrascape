@@ -1,11 +1,12 @@
 package com.MBEv2.core;
 
+import com.MBEv2.dataStorage.Chunk;
 import org.joml.Vector4i;
 
 import java.util.LinkedList;
 
-import static com.MBEv2.core.utils.Constants.*;
-import static com.MBEv2.core.utils.Settings.*;
+import static com.MBEv2.utils.Constants.*;
+import static com.MBEv2.utils.Settings.*;
 
 public class LightLogic {
 
@@ -42,10 +43,10 @@ public class LightLogic {
             short currentBlock = chunk.getSaveBlock(index);
 
             short nextBlock = Chunk.getBlockInWorld(x + 1, y, z);
-            if (Chunk.getBlockLightInWorld(x + 1, y, z) < nextBlockLight && canLightTravel(nextBlock, LEFT, currentBlock, RIGHT))
+            if (Chunk.getBlockLightInWorld(x + 1, y, z) < nextBlockLight && canLightTravel(nextBlock, EAST, currentBlock, WEST))
                 toPlaceLights.add(new Vector4i(x + 1, y, z, nextBlockLight));
             nextBlock = Chunk.getBlockInWorld(x - 1, y, z);
-            if (Chunk.getBlockLightInWorld(x - 1, y, z) < nextBlockLight && canLightTravel(nextBlock, RIGHT, currentBlock, LEFT))
+            if (Chunk.getBlockLightInWorld(x - 1, y, z) < nextBlockLight && canLightTravel(nextBlock, WEST, currentBlock, EAST))
                 toPlaceLights.add(new Vector4i(x - 1, y, z, nextBlockLight));
 
             nextBlock = Chunk.getBlockInWorld(x, y + 1, z);
@@ -56,10 +57,10 @@ public class LightLogic {
                 toPlaceLights.add(new Vector4i(x, y - 1, z, nextBlockLight));
 
             nextBlock = Chunk.getBlockInWorld(x, y, z + 1);
-            if (Chunk.getBlockLightInWorld(x, y, z + 1) < nextBlockLight && canLightTravel(nextBlock, BACK, currentBlock, FRONT))
+            if (Chunk.getBlockLightInWorld(x, y, z + 1) < nextBlockLight && canLightTravel(nextBlock, SOUTH, currentBlock, NORTH))
                 toPlaceLights.add(new Vector4i(x, y, z + 1, nextBlockLight));
             nextBlock = Chunk.getBlockInWorld(x, y, z - 1);
-            if (Chunk.getBlockLightInWorld(x, y, z - 1) < nextBlockLight && canLightTravel(nextBlock, FRONT, currentBlock, BACK))
+            if (Chunk.getBlockLightInWorld(x, y, z - 1) < nextBlockLight && canLightTravel(nextBlock, NORTH, currentBlock, SOUTH))
                 toPlaceLights.add(new Vector4i(x, y, z - 1, nextBlockLight));
 
             ignoreChecksCounter--;
@@ -105,10 +106,10 @@ public class LightLogic {
             short currentBlock = onFirstIteration ? AIR : chunk.getSaveBlock(index);
 
             short nextBlock = Chunk.getBlockInWorld(x + 1, y, z);
-            if (canLightTravel(nextBlock, LEFT, currentBlock, RIGHT))
+            if (canLightTravel(nextBlock, EAST, currentBlock, WEST))
                 toDePropagate.add(new Vector4i(x + 1, y, z, currentBlockLight));
             nextBlock = Chunk.getBlockInWorld(x - 1, y, z);
-            if (canLightTravel(nextBlock, RIGHT, currentBlock, LEFT))
+            if (canLightTravel(nextBlock, WEST, currentBlock, EAST))
                 toDePropagate.add(new Vector4i(x - 1, y, z, currentBlockLight));
 
             nextBlock = Chunk.getBlockInWorld(x, y + 1, z);
@@ -119,10 +120,10 @@ public class LightLogic {
                 toDePropagate.add(new Vector4i(x, y - 1, z, currentBlockLight));
 
             nextBlock = Chunk.getBlockInWorld(x, y, z + 1);
-            if (canLightTravel(nextBlock, BACK, currentBlock, FRONT))
+            if (canLightTravel(nextBlock, SOUTH, currentBlock, NORTH))
                 toDePropagate.add(new Vector4i(x, y, z + 1, currentBlockLight));
             nextBlock = Chunk.getBlockInWorld(x, y, z - 1);
-            if (canLightTravel(nextBlock, FRONT, currentBlock, BACK))
+            if (canLightTravel(nextBlock, NORTH, currentBlock, SOUTH))
                 toDePropagate.add(new Vector4i(x, y, z - 1, currentBlockLight));
 
             onFirstIteration = false;
@@ -135,10 +136,10 @@ public class LightLogic {
 
         byte toTest = Chunk.getBlockLightInWorld(x + 1, y, z);
         short nextBlock = Chunk.getBlockInWorld(x + 1, y, z);
-        if (max < toTest && canLightTravel(nextBlock, LEFT, currentBlock, RIGHT)) max = toTest;
+        if (max < toTest && canLightTravel(nextBlock, EAST, currentBlock, WEST)) max = toTest;
         toTest = Chunk.getBlockLightInWorld(x - 1, y, z);
         nextBlock = Chunk.getBlockInWorld(x - 1, y, z);
-        if (max < toTest && canLightTravel(nextBlock, RIGHT, currentBlock, LEFT)) max = toTest;
+        if (max < toTest && canLightTravel(nextBlock, WEST, currentBlock, EAST)) max = toTest;
 
         toTest = Chunk.getBlockLightInWorld(x, y + 1, z);
         nextBlock = Chunk.getBlockInWorld(x, y + 1, z);
@@ -149,10 +150,10 @@ public class LightLogic {
 
         toTest = Chunk.getBlockLightInWorld(x, y, z + 1);
         nextBlock = Chunk.getBlockInWorld(x, y, z + 1);
-        if (max < toTest && canLightTravel(nextBlock, BACK, currentBlock, FRONT)) max = toTest;
+        if (max < toTest && canLightTravel(nextBlock, SOUTH, currentBlock, NORTH)) max = toTest;
         toTest = Chunk.getBlockLightInWorld(x, y, z - 1);
         nextBlock = Chunk.getBlockInWorld(x, y, z - 1);
-        if (max < toTest && canLightTravel(nextBlock, FRONT, currentBlock, BACK)) max = toTest;
+        if (max < toTest && canLightTravel(nextBlock, NORTH, currentBlock, SOUTH)) max = toTest;
         return max;
     }
 
@@ -241,10 +242,10 @@ public class LightLogic {
             short currentBlock = chunk.getSaveBlock(index);
 
             short nextBlock = Chunk.getBlockInWorld(x + 1, y, z);
-            if (Chunk.getSkyLightInWorld(x + 1, y, z) < nextSkyLight && canLightTravel(nextBlock, LEFT, currentBlock, RIGHT))
+            if (Chunk.getSkyLightInWorld(x + 1, y, z) < nextSkyLight && canLightTravel(nextBlock, EAST, currentBlock, WEST))
                 toPlaceLights.add(new Vector4i(x + 1, y, z, nextSkyLight));
             nextBlock = Chunk.getBlockInWorld(x - 1, y, z);
-            if (Chunk.getSkyLightInWorld(x - 1, y, z) < nextSkyLight && canLightTravel(nextBlock, RIGHT, currentBlock, LEFT))
+            if (Chunk.getSkyLightInWorld(x - 1, y, z) < nextSkyLight && canLightTravel(nextBlock, WEST, currentBlock, EAST))
                 toPlaceLights.add(new Vector4i(x - 1, y, z, nextSkyLight));
 
             nextBlock = Chunk.getBlockInWorld(x, y + 1, z);
@@ -258,10 +259,10 @@ public class LightLogic {
                 toPlaceLights.add(new Vector4i(x, y - 1, z, currentSkyLight));
 
             nextBlock = Chunk.getBlockInWorld(x, y, z + 1);
-            if (Chunk.getSkyLightInWorld(x, y, z + 1) < nextSkyLight && canLightTravel(nextBlock, BACK, currentBlock, FRONT))
+            if (Chunk.getSkyLightInWorld(x, y, z + 1) < nextSkyLight && canLightTravel(nextBlock, SOUTH, currentBlock, NORTH))
                 toPlaceLights.add(new Vector4i(x, y, z + 1, nextSkyLight));
             nextBlock = Chunk.getBlockInWorld(x, y, z - 1);
-            if (Chunk.getSkyLightInWorld(x, y, z - 1) < nextSkyLight && canLightTravel(nextBlock, FRONT, currentBlock, BACK))
+            if (Chunk.getSkyLightInWorld(x, y, z - 1) < nextSkyLight && canLightTravel(nextBlock, NORTH, currentBlock, SOUTH))
                 toPlaceLights.add(new Vector4i(x, y, z - 1, nextSkyLight));
 
             ignoreChecksCounter--;
@@ -307,10 +308,10 @@ public class LightLogic {
             short currentBlock = onFirstIteration ? AIR : chunk.getSaveBlock(index);
 
             short nextBlock = Chunk.getBlockInWorld(x + 1, y, z);
-            if (canLightTravel(nextBlock, LEFT, currentBlock, RIGHT))
+            if (canLightTravel(nextBlock, EAST, currentBlock, WEST))
                 toDePropagate.add(new Vector4i(x + 1, y, z, currentSkyLight));
             nextBlock = Chunk.getBlockInWorld(x - 1, y, z);
-            if (canLightTravel(nextBlock, RIGHT, currentBlock, LEFT))
+            if (canLightTravel(nextBlock, WEST, currentBlock, EAST))
                 toDePropagate.add(new Vector4i(x - 1, y, z, currentSkyLight));
 
             nextBlock = Chunk.getBlockInWorld(x, y + 1, z);
@@ -321,10 +322,10 @@ public class LightLogic {
                 toDePropagate.add(new Vector4i(x, y - 1, z, currentSkyLight + 1));
 
             nextBlock = Chunk.getBlockInWorld(x, y, z + 1);
-            if (canLightTravel(nextBlock, BACK, currentBlock, FRONT))
+            if (canLightTravel(nextBlock, SOUTH, currentBlock, NORTH))
                 toDePropagate.add(new Vector4i(x, y, z + 1, currentSkyLight));
             nextBlock = Chunk.getBlockInWorld(x, y, z - 1);
-            if (canLightTravel(nextBlock, FRONT, currentBlock, BACK))
+            if (canLightTravel(nextBlock, NORTH, currentBlock, SOUTH))
                 toDePropagate.add(new Vector4i(x, y, z - 1, currentSkyLight));
 
             onFirstIteration = false;
@@ -337,10 +338,10 @@ public class LightLogic {
 
         byte toTest = Chunk.getSkyLightInWorld(x + 1, y, z);
         short nextBlock = Chunk.getBlockInWorld(x + 1, y, z);
-        if (max < toTest && canLightTravel(nextBlock, LEFT, currentBlock, RIGHT)) max = toTest;
+        if (max < toTest && canLightTravel(nextBlock, EAST, currentBlock, WEST)) max = toTest;
         toTest = Chunk.getSkyLightInWorld(x - 1, y, z);
         nextBlock = Chunk.getBlockInWorld(x - 1, y, z);
-        if (max < toTest && canLightTravel(nextBlock, RIGHT, currentBlock, LEFT)) max = toTest;
+        if (max < toTest && canLightTravel(nextBlock, WEST, currentBlock, EAST)) max = toTest;
 
         toTest = (byte) (Chunk.getSkyLightInWorld(x, y + 1, z) + 1);
         nextBlock = Chunk.getBlockInWorld(x, y + 1, z);
@@ -351,10 +352,10 @@ public class LightLogic {
 
         toTest = Chunk.getSkyLightInWorld(x, y, z + 1);
         nextBlock = Chunk.getBlockInWorld(x, y, z + 1);
-        if (max < toTest && canLightTravel(nextBlock, BACK, currentBlock, FRONT)) max = toTest;
+        if (max < toTest && canLightTravel(nextBlock, SOUTH, currentBlock, NORTH)) max = toTest;
         toTest = Chunk.getSkyLightInWorld(x, y, z - 1);
         nextBlock = Chunk.getBlockInWorld(x, y, z - 1);
-        if (max < toTest && canLightTravel(nextBlock, FRONT, currentBlock, BACK)) max = toTest;
+        if (max < toTest && canLightTravel(nextBlock, NORTH, currentBlock, SOUTH)) max = toTest;
         return max;
     }
 

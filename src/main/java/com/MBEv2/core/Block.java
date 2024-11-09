@@ -1,32 +1,15 @@
 package com.MBEv2.core;
 
-import com.MBEv2.core.entity.Target;
-import com.MBEv2.core.utils.Utils;
-import com.MBEv2.test.Launcher;
+import com.MBEv2.dataStorage.Chunk;
+import com.MBEv2.entity.Target;
+import com.MBEv2.utils.Utils;
 import org.joml.Vector3f;
 
-import static com.MBEv2.core.utils.Constants.*;
+import static com.MBEv2.utils.Constants.*;
 
 public class Block {
 
-    private static final int[] NON_STANDARD_BLOCK_TYPE = new int[STANDARD_BLOCKS_THRESHOLD];
-    private static final byte[][] NON_STANDARD_BLOCK_TEXTURE_INDICES = new byte[STANDARD_BLOCKS_THRESHOLD][1];
-    private static final byte[][] STANDARD_BLOCK_TEXTURE_INDICES = new byte[AMOUNT_OF_STANDARD_BLOCKS][1];
-    private static final int[] NON_STANDARD_BLOCK_PROPERTIES = new int[STANDARD_BLOCKS_THRESHOLD];
-    private static final int[] STANDARD_BLOCK_PROPERTIES = new int[AMOUNT_OF_STANDARD_BLOCKS];
-
-    private static final int[][] NON_STANDARD_BLOCK_DIG_SOUNDS = new int[STANDARD_BLOCKS_THRESHOLD][0];
-    private static final int[][] STANDARD_BLOCK_DIG_SOUNDS = new int[AMOUNT_OF_STANDARD_BLOCKS][0];
-    private static final int[][] NON_STANDARD_BLOCK_STEP_SOUNDS = new int[STANDARD_BLOCKS_THRESHOLD][0];
-    private static final int[][] STANDARD_BLOCK_STEP_SOUNDS = new int[AMOUNT_OF_STANDARD_BLOCKS][0];
-
-    public static final long[][] BLOCK_TYPE_OCCLUSION_DATA = new long[TOTAL_AMOUNT_OF_BLOCK_TYPES][0];
-    public static final byte[] BLOCK_TYPE_DATA = new byte[TOTAL_AMOUNT_OF_BLOCK_TYPES];
-
-    private static final byte[][] BLOCK_TYPE_XYZ_SUB_DATA = new byte[TOTAL_AMOUNT_OF_BLOCK_TYPES][0];
-    private static final byte[][] BLOCK_TYPE_UV_SUB_DATA = new byte[TOTAL_AMOUNT_OF_BLOCK_TYPES][0];
     public static final int[][] NORMALS = {{0, 0, 1}, {0, 1, 0}, {1, 0, 0}, {0, 0, -1}, {0, -1, 0}, {-1, 0, 0}};
-
     public static final int[][] CORNERS_OF_SIDE = {{1, 0, 5, 4}, {2, 0, 3, 1}, {3, 1, 7, 5}, {2, 3, 6, 7}, {6, 4, 7, 5}, {2, 0, 6, 4}};
 
     public static boolean occludes(short toTestBlock, short occludingBlock, int side, int x, int y, int z, int aabbIndex) {
@@ -39,10 +22,10 @@ public class Block {
         long occludingOcclusionData = getBlockTypeOcclusionData(occludingBlock, occludingSide);
 
         if (isGlassType(occludingBlock))
-            return isGlassType(toTestBlock) && (toTestOcclusionData | occludingOcclusionData) == occludingOcclusionData;
+            return isGlassType(toTestBlock) && (toTestOcclusionData | occludingOcclusionData) == occludingOcclusionData && toTestOcclusionData != 0L;
         if (isLeaveType(occludingBlock)) {
             if (isLeaveType(toTestBlock))
-                return side > 2 && (toTestOcclusionData | occludingOcclusionData) == occludingOcclusionData;
+                return side > 2 && (toTestOcclusionData | occludingOcclusionData) == occludingOcclusionData && toTestOcclusionData != 0L;
             return false;
         }
 
@@ -106,11 +89,11 @@ public class Block {
 
     public static short getToPlaceBlock(short toPlaceBlock, int primaryCameraDirection, int primaryXZDirection, Target target) {
         if ((toPlaceBlock & 0xFFFF) < STANDARD_BLOCKS_THRESHOLD) {
-            if (toPlaceBlock == FRONT_CREATOR_HEAD) {
-                if (primaryXZDirection == BACK) return FRONT_CREATOR_HEAD;
-                if (primaryXZDirection == FRONT) return BACK_CREATOR_HEAD;
-                if (primaryXZDirection == RIGHT) return LEFT_CREATOR_HEAD;
-                if (primaryXZDirection == LEFT) return RIGHT_CREATOR_HEAD;
+            if (toPlaceBlock == NORTH_CREATOR_HEAD) {
+                if (primaryXZDirection == SOUTH) return NORTH_CREATOR_HEAD;
+                if (primaryXZDirection == NORTH) return SOUTH_CREATOR_HEAD;
+                if (primaryXZDirection == WEST) return EAST_CREATOR_HEAD;
+                if (primaryXZDirection == EAST) return WEST_CREATOR_HEAD;
             }
             return toPlaceBlock;
         }
@@ -122,73 +105,73 @@ public class Block {
 
         switch (baseBlock) {
             case UP_DOWN_OAK_LOG -> {
-                if (side == FRONT) return (short) (FRONT_BACK_OAK_LOG | toPlaceBlockType);
+                if (side == NORTH) return (short) (NORTH_SOUTH_OAK_LOG | toPlaceBlockType);
                 if (side == TOP) return (short) (UP_DOWN_OAK_LOG | toPlaceBlockType);
-                return (short) (LEFT_RIGHT_OAK_LOG | toPlaceBlockType);
+                return (short) (EAST_WEST_OAK_LOG | toPlaceBlockType);
             }
             case UP_DOWN_STRIPPED_OAK_LOG -> {
-                if (side == FRONT) return (short) (FRONT_BACK_STRIPPED_OAK_LOG | toPlaceBlockType);
+                if (side == NORTH) return (short) (NORTH_SOUTH_STRIPPED_OAK_LOG | toPlaceBlockType);
                 if (side == TOP) return (short) (UP_DOWN_STRIPPED_OAK_LOG | toPlaceBlockType);
-                return (short) (LEFT_RIGHT_STRIPPED_OAK_LOG | toPlaceBlockType);
+                return (short) (EAST_WEST_STRIPPED_OAK_LOG | toPlaceBlockType);
             }
             case UP_DOWN_SPRUCE_LOG -> {
-                if (side == FRONT) return (short) (FRONT_BACK_SPRUCE_LOG | toPlaceBlockType);
+                if (side == NORTH) return (short) (NORTH_SOUTH_SPRUCE_LOG | toPlaceBlockType);
                 if (side == TOP) return (short) (UP_DOWN_SPRUCE_LOG | toPlaceBlockType);
-                return (short) (LEFT_RIGHT_SPRUCE_LOG | toPlaceBlockType);
+                return (short) (EAST_WEST_SPRUCE_LOG | toPlaceBlockType);
             }
             case UP_DOWN_STRIPPED_SPRUCE_LOG -> {
-                if (side == FRONT) return (short) (FRONT_BACK_STRIPPED_SPRUCE_LOG | toPlaceBlockType);
+                if (side == NORTH) return (short) (NORTH_SOUTH_STRIPPED_SPRUCE_LOG | toPlaceBlockType);
                 if (side == TOP) return (short) (UP_DOWN_STRIPPED_SPRUCE_LOG | toPlaceBlockType);
-                return (short) (LEFT_RIGHT_STRIPPED_SPRUCE_LOG | toPlaceBlockType);
+                return (short) (EAST_WEST_STRIPPED_SPRUCE_LOG | toPlaceBlockType);
             }
             case UP_DOWN_DARK_OAK_LOG -> {
-                if (side == FRONT) return (short) (FRONT_BACK_DARK_OAK_LOG | toPlaceBlockType);
+                if (side == NORTH) return (short) (NORTH_SOUTH_DARK_OAK_LOG | toPlaceBlockType);
                 if (side == TOP) return (short) (UP_DOWN_DARK_OAK_LOG | toPlaceBlockType);
-                return (short) (LEFT_RIGHT_DARK_OAK_LOG | toPlaceBlockType);
+                return (short) (EAST_WEST_DARK_OAK_LOG | toPlaceBlockType);
             }
             case UP_DOWN_STRIPPED_DARK_OAK_LOG -> {
-                if (side == FRONT)
-                    return (short) (FRONT_BACK_STRIPPED_DARK_OAK_LOG | toPlaceBlockType);
+                if (side == NORTH)
+                    return (short) (NORTH_SOUTH_STRIPPED_DARK_OAK_LOG | toPlaceBlockType);
                 if (side == TOP) return (short) (UP_DOWN_STRIPPED_DARK_OAK_LOG | toPlaceBlockType);
-                return (short) (LEFT_RIGHT_STRIPPED_DARK_OAK_LOG | toPlaceBlockType);
+                return (short) (EAST_WEST_STRIPPED_DARK_OAK_LOG | toPlaceBlockType);
             }
             case UP_DOWN_PINE_LOG -> {
-                if (side == FRONT) return (short) (FRONT_BACK_PINE_LOG | toPlaceBlockType);
+                if (side == NORTH) return (short) (NORTH_SOUTH_PINE_LOG | toPlaceBlockType);
                 if (side == TOP) return (short) (UP_DOWN_PINE_LOG | toPlaceBlockType);
-                return (short) (LEFT_RIGHT_PINE_LOG | toPlaceBlockType);
+                return (short) (EAST_WEST_PINE_LOG | toPlaceBlockType);
             }
             case UP_DOWN_STRIPPED_PINE_LOG -> {
-                if (side == FRONT) return (short) (FRONT_BACK_STRIPPED_PINE_LOG | toPlaceBlockType);
+                if (side == NORTH) return (short) (NORTH_SOUTH_STRIPPED_PINE_LOG | toPlaceBlockType);
                 if (side == TOP) return (short) (UP_DOWN_STRIPPED_PINE_LOG | toPlaceBlockType);
-                return (short) (LEFT_RIGHT_STRIPPED_PINE_LOG | toPlaceBlockType);
+                return (short) (EAST_WEST_STRIPPED_PINE_LOG | toPlaceBlockType);
             }
             case UP_DOWN_REDWOOD_LOG -> {
-                if (side == FRONT) return (short) (FRONT_BACK_REDWOOD_LOG | toPlaceBlockType);
+                if (side == NORTH) return (short) (NORTH_SOUTH_REDWOOD_LOG | toPlaceBlockType);
                 if (side == TOP) return (short) (UP_DOWN_REDWOOD_LOG | toPlaceBlockType);
-                return (short) (LEFT_RIGHT_REDWOOD_LOG | toPlaceBlockType);
+                return (short) (EAST_WEST_REDWOOD_LOG | toPlaceBlockType);
             }
             case UP_DOWN_STRIPPED_REDWOOD_LOG -> {
-                if (side == FRONT)
-                    return (short) (FRONT_BACK_STRIPPED_REDWOOD_LOG | toPlaceBlockType);
+                if (side == NORTH)
+                    return (short) (NORTH_SOUTH_STRIPPED_REDWOOD_LOG | toPlaceBlockType);
                 if (side == TOP) return (short) (UP_DOWN_STRIPPED_REDWOOD_LOG | toPlaceBlockType);
-                return (short) (LEFT_RIGHT_STRIPPED_REDWOOD_LOG | toPlaceBlockType);
+                return (short) (EAST_WEST_STRIPPED_REDWOOD_LOG | toPlaceBlockType);
             }
             case UP_DOWN_BLACK_WOOD_LOG -> {
-                if (side == FRONT) return (short) (FRONT_BACK_BLACK_WOOD_LOG | toPlaceBlockType);
+                if (side == NORTH) return (short) (NORTH_SOUTH_BLACK_WOOD_LOG | toPlaceBlockType);
                 if (side == TOP) return (short) (UP_DOWN_BLACK_WOOD_LOG | toPlaceBlockType);
-                return (short) (LEFT_RIGHT_BLACK_WOOD_LOG | toPlaceBlockType);
+                return (short) (EAST_WEST_BLACK_WOOD_LOG | toPlaceBlockType);
             }
             case UP_DOWN_STRIPPED_BLACK_WOOD_LOG -> {
-                if (side == FRONT)
-                    return (short) (FRONT_BACK_STRIPPED_BLACK_WOOD_LOG | toPlaceBlockType);
+                if (side == NORTH)
+                    return (short) (NORTH_SOUTH_STRIPPED_BLACK_WOOD_LOG | toPlaceBlockType);
                 if (side == TOP) return (short) (UP_DOWN_STRIPPED_BLACK_WOOD_LOG | toPlaceBlockType);
-                return (short) (LEFT_RIGHT_STRIPPED_BLACK_WOOD_LOG | toPlaceBlockType);
+                return (short) (EAST_WEST_STRIPPED_BLACK_WOOD_LOG | toPlaceBlockType);
             }
-            case FRONT_FURNACE -> {
-                if (primaryXZDirection == FRONT) return (short) (BACK_FURNACE | toPlaceBlockType);
-                if (primaryXZDirection == BACK) return (short) (FRONT_FURNACE | toPlaceBlockType);
-                if (primaryXZDirection == RIGHT) return (short) (LEFT_FURNACE | toPlaceBlockType);
-                return (short) (RIGHT_FURNACE | toPlaceBlockType);
+            case NORTH_FURNACE -> {
+                if (primaryXZDirection == NORTH) return (short) (SOUTH_FURNACE | toPlaceBlockType);
+                if (primaryXZDirection == SOUTH) return (short) (NORTH_FURNACE | toPlaceBlockType);
+                if (primaryXZDirection == WEST) return (short) (EAST_FURNACE | toPlaceBlockType);
+                return (short) (WEST_FURNACE | toPlaceBlockType);
             }
         }
 
@@ -198,146 +181,152 @@ public class Block {
     private static int getToPlaceBlockType(int blockType, int primaryCameraDirection, Target target) {
 
         switch (blockType) {
-            case BOTTOM_BACK_STAIR -> {
+            case BOTTOM_SOUTH_STAIR -> {
                 int side = target.side();
                 Vector3f inBlockPosition = target.inBlockPosition();
                 double x = Utils.fraction(inBlockPosition.x);
                 double y = Utils.fraction(inBlockPosition.y);
                 double z = Utils.fraction(inBlockPosition.z);
 
-                if (side == BACK) {
-                    if (y < x && y < 1.0 - x) return BOTTOM_FRONT_STAIR;
-                    if (y > x && y < 1.0 - x) return FRONT_LEFT_STAIR;
-                    if (y > x && y > 1.0 - x) return TOP_FRONT_STAIR;
-                    return FRONT_RIGHT_STAIR;
+                if (side == SOUTH) {
+                    if (y < x && y < 1.0 - x) return BOTTOM_NORTH_STAIR;
+                    if (y > x && y < 1.0 - x) return NORTH_EAST_STAIR;
+                    if (y > x && y > 1.0 - x) return TOP_NORTH_STAIR;
+                    return NORTH_WEST_STAIR;
                 }
-                if (side == FRONT) {
-                    if (y < x && y < 1.0 - x) return BOTTOM_BACK_STAIR;
-                    if (y > x && y < 1.0 - x) return BACK_LEFT_STAIR;
-                    if (y > x && y > 1.0 - x) return TOP_BACK_STAIR;
-                    return BACK_RIGHT_STAIR;
+                if (side == NORTH) {
+                    if (y < x && y < 1.0 - x) return BOTTOM_SOUTH_STAIR;
+                    if (y > x && y < 1.0 - x) return SOUTH_EAST_STAIR;
+                    if (y > x && y > 1.0 - x) return TOP_SOUTH_STAIR;
+                    return SOUTH_WEST_STAIR;
                 }
                 if (side == TOP) {
-                    if (x < z && x < 1.0 - z) return BOTTOM_LEFT_STAIR;
-                    if (x > z && x < 1.0 - z) return BOTTOM_BACK_STAIR;
-                    if (x > z && x > 1.0 - z) return BOTTOM_RIGHT_STAIR;
-                    return BOTTOM_FRONT_STAIR;
+                    if (x < z && x < 1.0 - z) return BOTTOM_EAST_STAIR;
+                    if (x > z && x < 1.0 - z) return BOTTOM_SOUTH_STAIR;
+                    if (x > z && x > 1.0 - z) return BOTTOM_WEST_STAIR;
+                    return BOTTOM_NORTH_STAIR;
                 }
                 if (side == BOTTOM) {
-                    if (x < z && x < 1.0 - z) return TOP_LEFT_STAIR;
-                    if (x > z && x < 1.0 - z) return TOP_BACK_STAIR;
-                    if (x > z && x > 1.0 - z) return TOP_RIGHT_STAIR;
-                    return TOP_FRONT_STAIR;
+                    if (x < z && x < 1.0 - z) return TOP_EAST_STAIR;
+                    if (x > z && x < 1.0 - z) return TOP_SOUTH_STAIR;
+                    if (x > z && x > 1.0 - z) return TOP_WEST_STAIR;
+                    return TOP_NORTH_STAIR;
                 }
-                if (side == LEFT) {
-                    if (y < z && y < 1.0 - z) return BOTTOM_RIGHT_STAIR;
-                    if (y > z && y < 1.0 - z) return BACK_RIGHT_STAIR;
-                    if (y > z && y > 1.0 - z) return TOP_RIGHT_STAIR;
-                    return FRONT_RIGHT_STAIR;
+                if (side == EAST) {
+                    if (y < z && y < 1.0 - z) return BOTTOM_WEST_STAIR;
+                    if (y > z && y < 1.0 - z) return SOUTH_WEST_STAIR;
+                    if (y > z && y > 1.0 - z) return TOP_WEST_STAIR;
+                    return NORTH_WEST_STAIR;
                 }
-                if (side == RIGHT) {
-                    if (y < z && y < 1.0 - z) return BOTTOM_LEFT_STAIR;
-                    if (y > z && y < 1.0 - z) return BACK_LEFT_STAIR;
-                    if (y > z && y > 1.0 - z) return TOP_LEFT_STAIR;
-                    return FRONT_LEFT_STAIR;
+                if (side == WEST) {
+                    if (y < z && y < 1.0 - z) return BOTTOM_EAST_STAIR;
+                    if (y > z && y < 1.0 - z) return SOUTH_EAST_STAIR;
+                    if (y > z && y > 1.0 - z) return TOP_EAST_STAIR;
+                    return NORTH_EAST_STAIR;
                 }
             }
-            case THIN_BOTTOM_BACK_STAIR -> {
+            case THIN_BOTTOM_SOUTH_STAIR -> {
                 int side = target.side();
                 Vector3f inBlockPosition = target.inBlockPosition();
                 double x = Utils.fraction(inBlockPosition.x);
                 double y = Utils.fraction(inBlockPosition.y);
                 double z = Utils.fraction(inBlockPosition.z);
 
-                if (side == BACK) {
-                    if (y < x && y < 1.0 - x) return THIN_BOTTOM_FRONT_STAIR;
-                    if (y > x && y < 1.0 - x) return THIN_FRONT_LEFT_STAIR;
-                    if (y > x && y > 1.0 - x) return THIN_TOP_FRONT_STAIR;
-                    return THIN_FRONT_RIGHT_STAIR;
+                if (side == SOUTH) {
+                    if (y < x && y < 1.0 - x) return THIN_BOTTOM_NORTH_STAIR;
+                    if (y > x && y < 1.0 - x) return THIN_NORTH_EAST_STAIR;
+                    if (y > x && y > 1.0 - x) return THIN_TOP_NORTH_STAIR;
+                    return THIN_NORTH_WEST_STAIR;
                 }
-                if (side == FRONT) {
-                    if (y < x && y < 1.0 - x) return THIN_BOTTOM_BACK_STAIR;
-                    if (y > x && y < 1.0 - x) return THIN_BACK_LEFT_STAIR;
-                    if (y > x && y > 1.0 - x) return THIN_TOP_BACK_STAIR;
-                    return THIN_BACK_RIGHT_STAIR;
+                if (side == NORTH) {
+                    if (y < x && y < 1.0 - x) return THIN_BOTTOM_SOUTH_STAIR;
+                    if (y > x && y < 1.0 - x) return THIN_SOUTH_EAST_STAIR;
+                    if (y > x && y > 1.0 - x) return THIN_TOP_SOUTH_STAIR;
+                    return THIN_SOUTH_WEST_STAIR;
                 }
                 if (side == TOP) {
-                    if (x < z && x < 1.0 - z) return THIN_BOTTOM_LEFT_STAIR;
-                    if (x > z && x < 1.0 - z) return THIN_BOTTOM_BACK_STAIR;
-                    if (x > z && x > 1.0 - z) return THIN_BOTTOM_RIGHT_STAIR;
-                    return THIN_BOTTOM_FRONT_STAIR;
+                    if (x < z && x < 1.0 - z) return THIN_BOTTOM_EAST_STAIR;
+                    if (x > z && x < 1.0 - z) return THIN_BOTTOM_SOUTH_STAIR;
+                    if (x > z && x > 1.0 - z) return THIN_BOTTOM_WEST_STAIR;
+                    return THIN_BOTTOM_NORTH_STAIR;
                 }
                 if (side == BOTTOM) {
-                    if (x < z && x < 1.0 - z) return THIN_TOP_LEFT_STAIR;
-                    if (x > z && x < 1.0 - z) return THIN_TOP_BACK_STAIR;
-                    if (x > z && x > 1.0 - z) return THIN_TOP_RIGHT_STAIR;
-                    return THIN_TOP_FRONT_STAIR;
+                    if (x < z && x < 1.0 - z) return THIN_TOP_EAST_STAIR;
+                    if (x > z && x < 1.0 - z) return THIN_TOP_SOUTH_STAIR;
+                    if (x > z && x > 1.0 - z) return THIN_TOP_WEST_STAIR;
+                    return THIN_TOP_NORTH_STAIR;
                 }
-                if (side == LEFT) {
-                    if (y < z && y < 1.0 - z) return THIN_BOTTOM_RIGHT_STAIR;
-                    if (y > z && y < 1.0 - z) return THIN_BACK_RIGHT_STAIR;
-                    if (y > z && y > 1.0 - z) return THIN_TOP_RIGHT_STAIR;
-                    return THIN_FRONT_RIGHT_STAIR;
+                if (side == EAST) {
+                    if (y < z && y < 1.0 - z) return THIN_BOTTOM_WEST_STAIR;
+                    if (y > z && y < 1.0 - z) return THIN_SOUTH_WEST_STAIR;
+                    if (y > z && y > 1.0 - z) return THIN_TOP_WEST_STAIR;
+                    return THIN_NORTH_WEST_STAIR;
                 }
-                if (side == RIGHT) {
-                    if (y < z && y < 1.0 - z) return THIN_BOTTOM_LEFT_STAIR;
-                    if (y > z && y < 1.0 - z) return THIN_BACK_LEFT_STAIR;
-                    if (y > z && y > 1.0 - z) return THIN_TOP_LEFT_STAIR;
-                    return THIN_FRONT_LEFT_STAIR;
+                if (side == WEST) {
+                    if (y < z && y < 1.0 - z) return THIN_BOTTOM_EAST_STAIR;
+                    if (y > z && y < 1.0 - z) return THIN_SOUTH_EAST_STAIR;
+                    if (y > z && y > 1.0 - z) return THIN_TOP_EAST_STAIR;
+                    return THIN_NORTH_EAST_STAIR;
                 }
             }
-            case THICK_BOTTOM_BACK_STAIR -> {
+            case THICK_BOTTOM_SOUTH_STAIR -> {
                 int side = target.side();
                 Vector3f inBlockPosition = target.inBlockPosition();
                 double x = Utils.fraction(inBlockPosition.x);
                 double y = Utils.fraction(inBlockPosition.y);
                 double z = Utils.fraction(inBlockPosition.z);
 
-                if (side == BACK) {
-                    if (y < x && y < 1.0 - x) return THICK_BOTTOM_FRONT_STAIR;
-                    if (y > x && y < 1.0 - x) return THICK_FRONT_LEFT_STAIR;
-                    if (y > x && y > 1.0 - x) return THICK_TOP_FRONT_STAIR;
-                    return THICK_FRONT_RIGHT_STAIR;
+                if (side == SOUTH) {
+                    if (y < x && y < 1.0 - x) return THICK_BOTTOM_NORTH_STAIR;
+                    if (y > x && y < 1.0 - x) return THICK_NORTH_EAST_STAIR;
+                    if (y > x && y > 1.0 - x) return THICK_TOP_NORTH_STAIR;
+                    return THICK_NORTH_WEST_STAIR;
                 }
-                if (side == FRONT) {
-                    if (y < x && y < 1.0 - x) return THICK_BOTTOM_BACK_STAIR;
-                    if (y > x && y < 1.0 - x) return THICK_BACK_LEFT_STAIR;
-                    if (y > x && y > 1.0 - x) return THICK_TOP_BACK_STAIR;
-                    return THICK_BACK_RIGHT_STAIR;
+                if (side == NORTH) {
+                    if (y < x && y < 1.0 - x) return THICK_BOTTOM_SOUTH_STAIR;
+                    if (y > x && y < 1.0 - x) return THICK_SOUTH_EAST_STAIR;
+                    if (y > x && y > 1.0 - x) return THICK_TOP_SOUTH_STAIR;
+                    return THICK_SOUTH_WEST_STAIR;
                 }
                 if (side == TOP) {
-                    if (x < z && x < 1.0 - z) return THICK_BOTTOM_LEFT_STAIR;
-                    if (x > z && x < 1.0 - z) return THICK_BOTTOM_BACK_STAIR;
-                    if (x > z && x > 1.0 - z) return THICK_BOTTOM_RIGHT_STAIR;
-                    return THICK_BOTTOM_FRONT_STAIR;
+                    if (x < z && x < 1.0 - z) return THICK_BOTTOM_EAST_STAIR;
+                    if (x > z && x < 1.0 - z) return THICK_BOTTOM_SOUTH_STAIR;
+                    if (x > z && x > 1.0 - z) return THICK_BOTTOM_WEST_STAIR;
+                    return THICK_BOTTOM_NORTH_STAIR;
                 }
                 if (side == BOTTOM) {
-                    if (x < z && x < 1.0 - z) return THICK_TOP_LEFT_STAIR;
-                    if (x > z && x < 1.0 - z) return THICK_TOP_BACK_STAIR;
-                    if (x > z && x > 1.0 - z) return THICK_TOP_RIGHT_STAIR;
-                    return THICK_TOP_FRONT_STAIR;
+                    if (x < z && x < 1.0 - z) return THICK_TOP_EAST_STAIR;
+                    if (x > z && x < 1.0 - z) return THICK_TOP_SOUTH_STAIR;
+                    if (x > z && x > 1.0 - z) return THICK_TOP_WEST_STAIR;
+                    return THICK_TOP_NORTH_STAIR;
                 }
-                if (side == LEFT) {
-                    if (y < z && y < 1.0 - z) return THICK_BOTTOM_RIGHT_STAIR;
-                    if (y > z && y < 1.0 - z) return THICK_BACK_RIGHT_STAIR;
-                    if (y > z && y > 1.0 - z) return THICK_TOP_RIGHT_STAIR;
-                    return THICK_FRONT_RIGHT_STAIR;
+                if (side == EAST) {
+                    if (y < z && y < 1.0 - z) return THICK_BOTTOM_WEST_STAIR;
+                    if (y > z && y < 1.0 - z) return THICK_SOUTH_WEST_STAIR;
+                    if (y > z && y > 1.0 - z) return THICK_TOP_WEST_STAIR;
+                    return THICK_NORTH_WEST_STAIR;
                 }
-                if (side == RIGHT) {
-                    if (y < z && y < 1.0 - z) return THICK_BOTTOM_LEFT_STAIR;
-                    if (y > z && y < 1.0 - z) return THICK_BACK_LEFT_STAIR;
-                    if (y > z && y > 1.0 - z) return THICK_TOP_LEFT_STAIR;
-                    return THICK_FRONT_LEFT_STAIR;
+                if (side == WEST) {
+                    if (y < z && y < 1.0 - z) return THICK_BOTTOM_EAST_STAIR;
+                    if (y > z && y < 1.0 - z) return THICK_SOUTH_EAST_STAIR;
+                    if (y > z && y > 1.0 - z) return THICK_TOP_EAST_STAIR;
+                    return THICK_NORTH_EAST_STAIR;
                 }
             }
             case BOTTOM_PLAYER_HEAD -> {
                 int side = target.side();
-                if (side == FRONT) return BACK_PLAYER_HEAD;
+                if (side == NORTH) return SOUTH_PLAYER_HEAD;
                 if (side == TOP) return BOTTOM_PLAYER_HEAD;
-                if (side == RIGHT) return LEFT_PLAYER_HEAD;
-                if (side == BACK) return FRONT_PLAYER_HEAD;
+                if (side == WEST) return EAST_PLAYER_HEAD;
+                if (side == SOUTH) return NORTH_PLAYER_HEAD;
                 if (side == BOTTOM) return TOP_PLAYER_HEAD;
-                return RIGHT_PLAYER_HEAD;
+                return WEST_PLAYER_HEAD;
+            }
+            case UP_DOWN_POST -> {
+                return POSTS[target.side() % 3];
+            }
+            case UP_DOWN_FENCE_NORTH_WEST -> {
+                return FENCES[target.side() % 3];
             }
         }
 
@@ -348,9 +337,7 @@ public class Block {
             case BOTTOM_SLAB -> SLABS[primaryCameraDirection + addend];
             case BOTTOM_PLATE -> PLATES[primaryCameraDirection + addend];
             case BOTTOM_SOCKET -> SOCKETS[primaryCameraDirection + addend];
-            case FRONT_BACK_WALL -> WALLS[primaryCameraDirection];
-            case UP_DOWN_POST -> POSTS[primaryCameraDirection];
-            case UP_DOWN_FENCE_FRONT_RIGHT -> FENCES[primaryCameraDirection];
+            case NORTH_SOUTH_WALL -> WALLS[primaryCameraDirection];
             default -> blockType;
         };
     }
@@ -358,31 +345,31 @@ public class Block {
     public static short getInInventoryBlockEquivalent(short block) {
         if (block == AIR || block == OUT_OF_WORLD) return AIR;
         if ((block & 0xFFFF) < STANDARD_BLOCKS_THRESHOLD) {
-            if (block >= FRONT_CREATOR_HEAD && block <= LEFT_CREATOR_HEAD) return FRONT_CREATOR_HEAD;
+            if (block >= NORTH_CREATOR_HEAD && block <= EAST_CREATOR_HEAD) return NORTH_CREATOR_HEAD;
             return block;
         }
         int blockType = block & BLOCK_TYPE_MASK;
         int baseBlock = switch (block & BASE_BLOCK_MASK) {
-            case UP_DOWN_OAK_LOG, FRONT_BACK_OAK_LOG, LEFT_RIGHT_OAK_LOG -> UP_DOWN_OAK_LOG;
-            case UP_DOWN_STRIPPED_OAK_LOG, FRONT_BACK_STRIPPED_OAK_LOG, LEFT_RIGHT_STRIPPED_OAK_LOG ->
+            case UP_DOWN_OAK_LOG, NORTH_SOUTH_OAK_LOG, EAST_WEST_OAK_LOG -> UP_DOWN_OAK_LOG;
+            case UP_DOWN_STRIPPED_OAK_LOG, NORTH_SOUTH_STRIPPED_OAK_LOG, EAST_WEST_STRIPPED_OAK_LOG ->
                     UP_DOWN_STRIPPED_OAK_LOG;
-            case UP_DOWN_SPRUCE_LOG, FRONT_BACK_SPRUCE_LOG, LEFT_RIGHT_SPRUCE_LOG -> UP_DOWN_SPRUCE_LOG;
-            case UP_DOWN_STRIPPED_SPRUCE_LOG, FRONT_BACK_STRIPPED_SPRUCE_LOG, LEFT_RIGHT_STRIPPED_SPRUCE_LOG ->
+            case UP_DOWN_SPRUCE_LOG, NORTH_SOUTH_SPRUCE_LOG, EAST_WEST_SPRUCE_LOG -> UP_DOWN_SPRUCE_LOG;
+            case UP_DOWN_STRIPPED_SPRUCE_LOG, NORTH_SOUTH_STRIPPED_SPRUCE_LOG, EAST_WEST_STRIPPED_SPRUCE_LOG ->
                     UP_DOWN_STRIPPED_SPRUCE_LOG;
-            case UP_DOWN_DARK_OAK_LOG, FRONT_BACK_DARK_OAK_LOG, LEFT_RIGHT_DARK_OAK_LOG -> UP_DOWN_DARK_OAK_LOG;
-            case UP_DOWN_STRIPPED_DARK_OAK_LOG, FRONT_BACK_STRIPPED_DARK_OAK_LOG, LEFT_RIGHT_STRIPPED_DARK_OAK_LOG ->
+            case UP_DOWN_DARK_OAK_LOG, NORTH_SOUTH_DARK_OAK_LOG, EAST_WEST_DARK_OAK_LOG -> UP_DOWN_DARK_OAK_LOG;
+            case UP_DOWN_STRIPPED_DARK_OAK_LOG, NORTH_SOUTH_STRIPPED_DARK_OAK_LOG, EAST_WEST_STRIPPED_DARK_OAK_LOG ->
                     UP_DOWN_STRIPPED_DARK_OAK_LOG;
-            case UP_DOWN_PINE_LOG, FRONT_BACK_PINE_LOG, LEFT_RIGHT_PINE_LOG -> UP_DOWN_PINE_LOG;
-            case UP_DOWN_STRIPPED_PINE_LOG, FRONT_BACK_STRIPPED_PINE_LOG, LEFT_RIGHT_STRIPPED_PINE_LOG ->
+            case UP_DOWN_PINE_LOG, NORTH_SOUTH_PINE_LOG, EAST_WEST_PINE_LOG -> UP_DOWN_PINE_LOG;
+            case UP_DOWN_STRIPPED_PINE_LOG, NORTH_SOUTH_STRIPPED_PINE_LOG, EAST_WEST_STRIPPED_PINE_LOG ->
                     UP_DOWN_STRIPPED_PINE_LOG;
-            case UP_DOWN_REDWOOD_LOG, FRONT_BACK_REDWOOD_LOG, LEFT_RIGHT_REDWOOD_LOG -> UP_DOWN_REDWOOD_LOG;
-            case UP_DOWN_STRIPPED_REDWOOD_LOG, FRONT_BACK_STRIPPED_REDWOOD_LOG, LEFT_RIGHT_STRIPPED_REDWOOD_LOG ->
+            case UP_DOWN_REDWOOD_LOG, NORTH_SOUTH_REDWOOD_LOG, EAST_WEST_REDWOOD_LOG -> UP_DOWN_REDWOOD_LOG;
+            case UP_DOWN_STRIPPED_REDWOOD_LOG, NORTH_SOUTH_STRIPPED_REDWOOD_LOG, EAST_WEST_STRIPPED_REDWOOD_LOG ->
                     UP_DOWN_STRIPPED_REDWOOD_LOG;
-            case UP_DOWN_BLACK_WOOD_LOG, FRONT_BACK_BLACK_WOOD_LOG, LEFT_RIGHT_BLACK_WOOD_LOG -> UP_DOWN_BLACK_WOOD_LOG;
-            case UP_DOWN_STRIPPED_BLACK_WOOD_LOG, FRONT_BACK_STRIPPED_BLACK_WOOD_LOG,
-                 LEFT_RIGHT_STRIPPED_BLACK_WOOD_LOG -> UP_DOWN_STRIPPED_BLACK_WOOD_LOG;
+            case UP_DOWN_BLACK_WOOD_LOG, NORTH_SOUTH_BLACK_WOOD_LOG, EAST_WEST_BLACK_WOOD_LOG -> UP_DOWN_BLACK_WOOD_LOG;
+            case UP_DOWN_STRIPPED_BLACK_WOOD_LOG, NORTH_SOUTH_STRIPPED_BLACK_WOOD_LOG,
+                 EAST_WEST_STRIPPED_BLACK_WOOD_LOG -> UP_DOWN_STRIPPED_BLACK_WOOD_LOG;
 
-            case FRONT_FURNACE, BACK_FURNACE, RIGHT_FURNACE, LEFT_FURNACE -> FRONT_FURNACE;
+            case NORTH_FURNACE, SOUTH_FURNACE, WEST_FURNACE, EAST_FURNACE -> NORTH_FURNACE;
 
             default -> block & BASE_BLOCK_MASK;
         };
@@ -391,57 +378,58 @@ public class Block {
             case FULL_BLOCK -> {
                 return (short) baseBlock;
             }
-            case TOP_PLAYER_HEAD, BOTTOM_PLAYER_HEAD, FRONT_PLAYER_HEAD, BACK_PLAYER_HEAD, RIGHT_PLAYER_HEAD,
-                 LEFT_PLAYER_HEAD -> {
+            case TOP_PLAYER_HEAD, BOTTOM_PLAYER_HEAD, NORTH_PLAYER_HEAD, SOUTH_PLAYER_HEAD, WEST_PLAYER_HEAD,
+                 EAST_PLAYER_HEAD -> {
                 return (short) (baseBlock | BOTTOM_PLAYER_HEAD);
             }
-            case FRONT_SLAB, TOP_SLAB, RIGHT_SLAB, BACK_SLAB, BOTTOM_SLAB, LEFT_SLAB -> {
+            case NORTH_SLAB, TOP_SLAB, WEST_SLAB, SOUTH_SLAB, BOTTOM_SLAB, EAST_SLAB -> {
                 return (short) (baseBlock | BOTTOM_SLAB);
             }
-            case FRONT_PLATE, TOP_PLATE, RIGHT_PLATE, BACK_PLATE, BOTTOM_PLATE, LEFT_PLATE -> {
+            case NORTH_PLATE, TOP_PLATE, WEST_PLATE, SOUTH_PLATE, BOTTOM_PLATE, EAST_PLATE -> {
                 return (short) (baseBlock | BOTTOM_PLATE);
             }
-            case FRONT_SOCKET, TOP_SOCKET, RIGHT_SOCKET, BACK_SOCKET, BOTTOM_SOCKET, LEFT_SOCKET -> {
+            case NORTH_SOCKET, TOP_SOCKET, WEST_SOCKET, SOUTH_SOCKET, BOTTOM_SOCKET, EAST_SOCKET -> {
                 return (short) (baseBlock | BOTTOM_SOCKET);
             }
-            case FRONT_BACK_WALL, UP_DOWN_WALL, LEFT_RIGHT_WALL -> {
-                return (short) (baseBlock | FRONT_BACK_WALL);
+            case NORTH_SOUTH_WALL, UP_DOWN_WALL, EAST_WEST_WALL -> {
+                return (short) (baseBlock | NORTH_SOUTH_WALL);
             }
-            case UP_DOWN_POST, FRONT_BACK_POST, LEFT_RIGHT_POST -> {
+            case UP_DOWN_POST, NORTH_SOUTH_POST, EAST_WEST_POST -> {
                 return (short) (baseBlock | UP_DOWN_POST);
             }
-            case BOTTOM_FRONT_STAIR, BOTTOM_RIGHT_STAIR, BOTTOM_BACK_STAIR, BOTTOM_LEFT_STAIR, TOP_FRONT_STAIR,
-                 TOP_RIGHT_STAIR, TOP_BACK_STAIR, TOP_LEFT_STAIR, FRONT_RIGHT_STAIR, FRONT_LEFT_STAIR, BACK_RIGHT_STAIR,
-                 BACK_LEFT_STAIR -> {
-                return (short) (baseBlock | BOTTOM_BACK_STAIR);
+            case BOTTOM_NORTH_STAIR, BOTTOM_WEST_STAIR, BOTTOM_SOUTH_STAIR, BOTTOM_EAST_STAIR, TOP_NORTH_STAIR,
+                 TOP_WEST_STAIR, TOP_SOUTH_STAIR, TOP_EAST_STAIR, NORTH_WEST_STAIR, NORTH_EAST_STAIR, SOUTH_WEST_STAIR,
+                 SOUTH_EAST_STAIR -> {
+                return (short) (baseBlock | BOTTOM_SOUTH_STAIR);
             }
-            case THIN_BOTTOM_FRONT_STAIR, THIN_BOTTOM_RIGHT_STAIR, THIN_BOTTOM_BACK_STAIR, THIN_BOTTOM_LEFT_STAIR,
-                 THIN_TOP_FRONT_STAIR, THIN_TOP_RIGHT_STAIR, THIN_TOP_BACK_STAIR, THIN_TOP_LEFT_STAIR,
-                 THIN_FRONT_RIGHT_STAIR, THIN_FRONT_LEFT_STAIR, THIN_BACK_RIGHT_STAIR, THIN_BACK_LEFT_STAIR -> {
-                return (short) (baseBlock | THIN_BOTTOM_BACK_STAIR);
+            case THIN_BOTTOM_NORTH_STAIR, THIN_BOTTOM_WEST_STAIR, THIN_BOTTOM_SOUTH_STAIR, THIN_BOTTOM_EAST_STAIR,
+                 THIN_TOP_NORTH_STAIR, THIN_TOP_WEST_STAIR, THIN_TOP_SOUTH_STAIR, THIN_TOP_EAST_STAIR,
+                 THIN_NORTH_WEST_STAIR, THIN_NORTH_EAST_STAIR, THIN_SOUTH_WEST_STAIR, THIN_SOUTH_EAST_STAIR -> {
+                return (short) (baseBlock | THIN_BOTTOM_SOUTH_STAIR);
             }
-            case THICK_BOTTOM_FRONT_STAIR, THICK_BOTTOM_RIGHT_STAIR, THICK_BOTTOM_BACK_STAIR, THICK_BOTTOM_LEFT_STAIR,
-                 THICK_TOP_FRONT_STAIR, THICK_TOP_RIGHT_STAIR, THICK_TOP_BACK_STAIR, THICK_TOP_LEFT_STAIR,
-                 THICK_FRONT_RIGHT_STAIR, THICK_FRONT_LEFT_STAIR, THICK_BACK_RIGHT_STAIR, THICK_BACK_LEFT_STAIR -> {
-                return (short) (baseBlock | THICK_BOTTOM_BACK_STAIR);
+            case THICK_BOTTOM_NORTH_STAIR, THICK_BOTTOM_WEST_STAIR, THICK_BOTTOM_SOUTH_STAIR, THICK_BOTTOM_EAST_STAIR,
+                 THICK_TOP_NORTH_STAIR, THICK_TOP_WEST_STAIR, THICK_TOP_SOUTH_STAIR, THICK_TOP_EAST_STAIR,
+                 THICK_NORTH_WEST_STAIR, THICK_NORTH_EAST_STAIR, THICK_SOUTH_WEST_STAIR, THICK_SOUTH_EAST_STAIR -> {
+                return (short) (baseBlock | THICK_BOTTOM_SOUTH_STAIR);
             }
             //Not scuffed at all
-            case UP_DOWN_FENCE, UP_DOWN_FENCE_FRONT, UP_DOWN_FENCE_RIGHT, UP_DOWN_FENCE_FRONT_RIGHT, UP_DOWN_FENCE_BACK,
-                 UP_DOWN_FENCE_FRONT_BACK, UP_DOWN_FENCE_RIGHT_BACK, UP_DOWN_FENCE_FRONT_RIGHT_BACK, UP_DOWN_FENCE_LEFT,
-                 UP_DOWN_FENCE_FRONT_LEFT, UP_DOWN_FENCE_RIGHT_LEFT, UP_DOWN_FENCE_FRONT_RIGHT_LEFT,
-                 UP_DOWN_FENCE_BACK_LEFT, UP_DOWN_FENCE_FRONT_BACK_LEFT, UP_DOWN_FENCE_RIGHT_BACK_LEFT,
-                 UP_DOWN_FENCE_FRONT_RIGHT_BACK_LEFT, FRONT_BACK_FENCE, FRONT_BACK_FENCE_UP, FRONT_BACK_FENCE_RIGHT,
-                 FRONT_BACK_FENCE_UP_RIGHT, FRONT_BACK_FENCE_DOWN, FRONT_BACK_FENCE_UP_DOWN,
-                 FRONT_BACK_FENCE_RIGHT_DOWN, FRONT_BACK_FENCE_UP_RIGHT_DOWN, FRONT_BACK_FENCE_LEFT,
-                 FRONT_BACK_FENCE_UP_LEFT, FRONT_BACK_FENCE_RIGHT_LEFT, FRONT_BACK_FENCE_UP_RIGHT_LEFT,
-                 FRONT_BACK_FENCE_DOWN_LEFT, FRONT_BACK_FENCE_UP_DOWN_LEFT, FRONT_BACK_FENCE_RIGHT_DOWN_LEFT,
-                 FRONT_BACK_FENCE_UP_RIGHT_DOWN_LEFT, LEFT_RIGHT_FENCE, LEFT_RIGHT_FENCE_FRONT, LEFT_RIGHT_FENCE_UP,
-                 LEFT_RIGHT_FENCE_FRONT_UP, LEFT_RIGHT_FENCE_BACK, LEFT_RIGHT_FENCE_FRONT_BACK,
-                 LEFT_RIGHT_FENCE_UP_BACK, LEFT_RIGHT_FENCE_FRONT_UP_BACK, LEFT_RIGHT_FENCE_DOWN,
-                 LEFT_RIGHT_FENCE_FRONT_DOWN, LEFT_RIGHT_FENCE_UP_DOWN, LEFT_RIGHT_FENCE_FRONT_UP_DOWN,
-                 LEFT_RIGHT_FENCE_BACK_DOWN, LEFT_RIGHT_FENCE_FRONT_BACK_DOWN, LEFT_RIGHT_FENCE_UP_BACK_DOWN,
-                 LEFT_RIGHT_FENCE_FRONT_UP_BACK_DOWN -> {
-                return (short) (baseBlock | UP_DOWN_FENCE_FRONT_RIGHT);
+            case UP_DOWN_FENCE, UP_DOWN_FENCE_NORTH, UP_DOWN_FENCE_WEST, UP_DOWN_FENCE_NORTH_WEST, UP_DOWN_FENCE_SOUTH,
+                 UP_DOWN_FENCE_NORTH_SOUTH, UP_DOWN_FENCE_WEST_SOUTH, UP_DOWN_FENCE_NORTH_WEST_SOUTH,
+                 UP_DOWN_FENCE_EAST,
+                 UP_DOWN_FENCE_NORTH_EAST, UP_DOWN_FENCE_WEST_EAST, UP_DOWN_FENCE_NORTH_WEST_EAST,
+                 UP_DOWN_FENCE_SOUTH_EAST, UP_DOWN_FENCE_NORTH_SOUTH_EAST, UP_DOWN_FENCE_WEST_SOUTH_EAST,
+                 UP_DOWN_FENCE_NORTH_WEST_SOUTH_EAST, NORTH_SOUTH_FENCE, NORTH_SOUTH_FENCE_UP, NORTH_SOUTH_FENCE_WEST,
+                 NORTH_SOUTH_FENCE_UP_WEST, NORTH_SOUTH_FENCE_DOWN, NORTH_SOUTH_FENCE_UP_DOWN,
+                 NORTH_SOUTH_FENCE_WEST_DOWN, NORTH_SOUTH_FENCE_UP_WEST_DOWN, NORTH_SOUTH_FENCE_EAST,
+                 NORTH_SOUTH_FENCE_UP_EAST, NORTH_SOUTH_FENCE_WEST_EAST, NORTH_SOUTH_FENCE_UP_WEST_EAST,
+                 NORTH_SOUTH_FENCE_DOWN_EAST, NORTH_SOUTH_FENCE_UP_DOWN_EAST, NORTH_SOUTH_FENCE_WEST_DOWN_EAST,
+                 NORTH_SOUTH_FENCE_UP_WEST_DOWN_EAST, EAST_WEST_FENCE, EAST_WEST_FENCE_NORTH, EAST_WEST_FENCE_UP,
+                 EAST_WEST_FENCE_NORTH_UP, EAST_WEST_FENCE_SOUTH, EAST_WEST_FENCE_NORTH_SOUTH,
+                 EAST_WEST_FENCE_UP_SOUTH, EAST_WEST_FENCE_NORTH_UP_SOUTH, EAST_WEST_FENCE_DOWN,
+                 EAST_WEST_FENCE_NORTH_DOWN, EAST_WEST_FENCE_UP_DOWN, EAST_WEST_FENCE_NORTH_UP_DOWN,
+                 EAST_WEST_FENCE_SOUTH_DOWN, EAST_WEST_FENCE_NORTH_SOUTH_DOWN, EAST_WEST_FENCE_UP_SOUTH_DOWN,
+                 EAST_WEST_FENCE_NORTH_UP_SOUTH_DOWN -> {
+                return (short) (baseBlock | UP_DOWN_FENCE_NORTH_WEST);
             }
 
         }
@@ -452,46 +440,46 @@ public class Block {
         Vector3f inBlockPosition = target.inBlockPosition();
         int side = target.side() % 3;
 
-        if (primaryCameraDirection == FRONT) if (side != FRONT) return Utils.fraction(inBlockPosition.z) > 0.5f ? 0 : 3;
+        if (primaryCameraDirection == NORTH) if (side != NORTH) return Utils.fraction(inBlockPosition.z) > 0.5f ? 0 : 3;
         else return target.side() > 2 ? 0 : 3;
 
         if (primaryCameraDirection == TOP) if (side != TOP) return Utils.fraction(inBlockPosition.y) > 0.5f ? 0 : 3;
         else return target.side() > 2 ? 0 : 3;
 
-//        if (primaryCameraDirection == RIGHT)
-        if (side != RIGHT) return !(Utils.fraction(inBlockPosition.x) > 0.5f) ? 3 : 0;
+//        if (primaryCameraDirection == WEST)
+        if (side != WEST) return !(Utils.fraction(inBlockPosition.x) > 0.5f) ? 3 : 0;
         else return target.side() > 2 ? 0 : 3;
 
     }
 
     public static int getSmartBlockType(short block, int x, int y, int z) {
         int blockType = getBlockType(block);
-        if (isFrontBackFenceType(blockType)) {
+        if (isNORTHSOUTHFenceType(blockType)) {
             int index = 0;
             short adjacentBlock;
             long adjacentMask;
 
             adjacentBlock = Chunk.getBlockInWorld(x, y + 1, z);
             adjacentMask = getBlockTypeOcclusionData(adjacentBlock, BOTTOM);
-            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[LEFT_RIGHT_WALL][TOP]) != 0 || isFrontBackFenceType(getBlockType(adjacentBlock)))
+            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[EAST_WEST_WALL][TOP]) != 0 || isNORTHSOUTHFenceType(getBlockType(adjacentBlock)))
                 index |= 1;
 
             adjacentBlock = Chunk.getBlockInWorld(x + 1, y, z);
-            adjacentMask = getBlockTypeOcclusionData(adjacentBlock, LEFT);
-            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[UP_DOWN_WALL][RIGHT]) != 0 || isFrontBackFenceType(getBlockType(adjacentBlock)))
+            adjacentMask = getBlockTypeOcclusionData(adjacentBlock, EAST);
+            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[UP_DOWN_WALL][WEST]) != 0 || isNORTHSOUTHFenceType(getBlockType(adjacentBlock)))
                 index |= 2;
 
             adjacentBlock = Chunk.getBlockInWorld(x, y - 1, z);
             adjacentMask = getBlockTypeOcclusionData(adjacentBlock, TOP);
-            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[LEFT_RIGHT_WALL][BOTTOM]) != 0 || isFrontBackFenceType(getBlockType(adjacentBlock)))
+            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[EAST_WEST_WALL][BOTTOM]) != 0 || isNORTHSOUTHFenceType(getBlockType(adjacentBlock)))
                 index |= 4;
 
             adjacentBlock = Chunk.getBlockInWorld(x - 1, y, z);
-            adjacentMask = getBlockTypeOcclusionData(adjacentBlock, RIGHT);
-            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[UP_DOWN_WALL][LEFT]) != 0 || isFrontBackFenceType(getBlockType(adjacentBlock)))
+            adjacentMask = getBlockTypeOcclusionData(adjacentBlock, WEST);
+            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[UP_DOWN_WALL][EAST]) != 0 || isNORTHSOUTHFenceType(getBlockType(adjacentBlock)))
                 index |= 8;
 
-            return FRONT_BACK_FENCE + index;
+            return NORTH_SOUTH_FENCE + index;
         }
         if (isUpDownFenceType(blockType)) {
             int index = 0;
@@ -499,53 +487,53 @@ public class Block {
             long adjacentMask;
 
             adjacentBlock = Chunk.getBlockInWorld(x, y, z + 1);
-            adjacentMask = getBlockTypeOcclusionData(adjacentBlock, BACK);
-            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[LEFT_RIGHT_WALL][FRONT]) != 0 || isUpDownFenceType(getBlockType(adjacentBlock)))
+            adjacentMask = getBlockTypeOcclusionData(adjacentBlock, SOUTH);
+            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[EAST_WEST_WALL][NORTH]) != 0 || isUpDownFenceType(getBlockType(adjacentBlock)))
                 index |= 1;
 
             adjacentBlock = Chunk.getBlockInWorld(x + 1, y, z);
-            adjacentMask = getBlockTypeOcclusionData(adjacentBlock, LEFT);
-            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[FRONT_BACK_WALL][RIGHT]) != 0 || isUpDownFenceType(getBlockType(adjacentBlock)))
+            adjacentMask = getBlockTypeOcclusionData(adjacentBlock, EAST);
+            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[NORTH_SOUTH_WALL][WEST]) != 0 || isUpDownFenceType(getBlockType(adjacentBlock)))
                 index |= 2;
 
             adjacentBlock = Chunk.getBlockInWorld(x, y, z - 1);
-            adjacentMask = getBlockTypeOcclusionData(adjacentBlock, FRONT);
-            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[LEFT_RIGHT_WALL][BACK]) != 0 || isUpDownFenceType(getBlockType(adjacentBlock)))
+            adjacentMask = getBlockTypeOcclusionData(adjacentBlock, NORTH);
+            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[EAST_WEST_WALL][SOUTH]) != 0 || isUpDownFenceType(getBlockType(adjacentBlock)))
                 index |= 4;
 
             adjacentBlock = Chunk.getBlockInWorld(x - 1, y, z);
-            adjacentMask = getBlockTypeOcclusionData(adjacentBlock, RIGHT);
-            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[FRONT_BACK_WALL][LEFT]) != 0 || isUpDownFenceType(getBlockType(adjacentBlock)))
+            adjacentMask = getBlockTypeOcclusionData(adjacentBlock, WEST);
+            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[NORTH_SOUTH_WALL][EAST]) != 0 || isUpDownFenceType(getBlockType(adjacentBlock)))
                 index |= 8;
 
             return UP_DOWN_FENCE + index;
         }
-        if (isLeftRightFenceType(blockType)) {
+        if (isEASTWESTFenceType(blockType)) {
             int index = 0;
             short adjacentBlock;
             long adjacentMask;
 
             adjacentBlock = Chunk.getBlockInWorld(x, y, z + 1);
-            adjacentMask = getBlockTypeOcclusionData(adjacentBlock, BACK);
-            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[UP_DOWN_WALL][FRONT]) != 0 || isLeftRightFenceType(getBlockType(adjacentBlock)))
+            adjacentMask = getBlockTypeOcclusionData(adjacentBlock, SOUTH);
+            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[UP_DOWN_WALL][NORTH]) != 0 || isEASTWESTFenceType(getBlockType(adjacentBlock)))
                 index |= 1;
 
             adjacentBlock = Chunk.getBlockInWorld(x, y + 1, z);
             adjacentMask = getBlockTypeOcclusionData(adjacentBlock, BOTTOM);
-            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[FRONT_BACK_WALL][TOP]) != 0 || isLeftRightFenceType(getBlockType(adjacentBlock)))
+            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[NORTH_SOUTH_WALL][TOP]) != 0 || isEASTWESTFenceType(getBlockType(adjacentBlock)))
                 index |= 2;
 
             adjacentBlock = Chunk.getBlockInWorld(x, y, z - 1);
-            adjacentMask = getBlockTypeOcclusionData(adjacentBlock, FRONT);
-            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[UP_DOWN_WALL][BACK]) != 0 || isLeftRightFenceType(getBlockType(adjacentBlock)))
+            adjacentMask = getBlockTypeOcclusionData(adjacentBlock, NORTH);
+            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[UP_DOWN_WALL][SOUTH]) != 0 || isEASTWESTFenceType(getBlockType(adjacentBlock)))
                 index |= 4;
 
             adjacentBlock = Chunk.getBlockInWorld(x, y - 1, z);
             adjacentMask = getBlockTypeOcclusionData(adjacentBlock, TOP);
-            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[FRONT_BACK_WALL][BOTTOM]) != 0 || isLeftRightFenceType(getBlockType(adjacentBlock)))
+            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[NORTH_SOUTH_WALL][BOTTOM]) != 0 || isEASTWESTFenceType(getBlockType(adjacentBlock)))
                 index |= 8;
 
-            return LEFT_RIGHT_FENCE + index;
+            return EAST_WEST_FENCE + index;
         }
 
         return blockType;
@@ -612,9 +600,9 @@ public class Block {
             return (byte) -BLOCK_TYPE_UV_SUB_DATA[blockType][(side << 3) + (corner << 1) + subDataAddend * 48];
 
         return switch (side) {
-            case FRONT, BOTTOM -> getSubX(blockType, side, corner, subDataAddend);
-            case BACK -> (byte) -getSubX(blockType, side, corner, subDataAddend);
-            case LEFT -> getSubZ(blockType, side, corner, subDataAddend);
+            case NORTH, BOTTOM -> getSubX(blockType, side, corner, subDataAddend);
+            case SOUTH -> (byte) -getSubX(blockType, side, corner, subDataAddend);
+            case EAST -> getSubZ(blockType, side, corner, subDataAddend);
             default -> (byte) -getSubZ(blockType, side, corner, subDataAddend);
         };
     }
@@ -624,7 +612,7 @@ public class Block {
             return BLOCK_TYPE_UV_SUB_DATA[blockType][(side << 3) + (corner << 1) + 1 + subDataAddend * 48];
 
         return switch (side) {
-            case FRONT, BACK, RIGHT, LEFT -> (byte) -getSubY(blockType, side, corner, subDataAddend);
+            case NORTH, SOUTH, WEST, EAST -> (byte) -getSubY(blockType, side, corner, subDataAddend);
             case BOTTOM -> (byte) -getSubZ(blockType, side, corner, subDataAddend);
             default -> getSubX(blockType, side, corner, subDataAddend);
         };
@@ -676,15 +664,15 @@ public class Block {
     }
 
     public static boolean isUpDownFenceType(int blockType) {
-        return blockType >= UP_DOWN_FENCE && blockType <= UP_DOWN_FENCE_FRONT_RIGHT_BACK_LEFT;
+        return blockType >= UP_DOWN_FENCE && blockType <= UP_DOWN_FENCE_NORTH_WEST_SOUTH_EAST;
     }
 
-    public static boolean isFrontBackFenceType(int blockType) {
-        return blockType >= FRONT_BACK_FENCE && blockType <= FRONT_BACK_FENCE_UP_RIGHT_DOWN_LEFT;
+    public static boolean isNORTHSOUTHFenceType(int blockType) {
+        return blockType >= NORTH_SOUTH_FENCE && blockType <= NORTH_SOUTH_FENCE_UP_WEST_DOWN_EAST;
     }
 
-    public static boolean isLeftRightFenceType(int blockType) {
-        return blockType >= LEFT_RIGHT_FENCE && blockType <= LEFT_RIGHT_FENCE_FRONT_UP_BACK_DOWN;
+    public static boolean isEASTWESTFenceType(int blockType) {
+        return blockType >= EAST_WEST_FENCE && blockType <= EAST_WEST_FENCE_NORTH_UP_SOUTH_DOWN;
     }
 
     public static int getFaceCount(int blockType) {
@@ -709,12 +697,12 @@ public class Block {
         BLOCK_TYPE_DATA[LIQUID_TYPE] = (byte) (DYNAMIC_SHAPE_MASK | OCCLUDES_DYNAMIC_SELF);
         BLOCK_TYPE_DATA[CACTUS_TYPE] = (byte) (DYNAMIC_SHAPE_MASK | OCCLUDES_ALL);
 
-        for (int upDownFenceType = UP_DOWN_FENCE; upDownFenceType <= UP_DOWN_FENCE_FRONT_RIGHT_BACK_LEFT; upDownFenceType++)
+        for (int upDownFenceType = UP_DOWN_FENCE; upDownFenceType <= UP_DOWN_FENCE_NORTH_WEST_SOUTH_EAST; upDownFenceType++)
             BLOCK_TYPE_DATA[upDownFenceType] = SMART_BLOCK_TYPE | OCCLUDES_ALL;
-        for (int leftRightFenceType = LEFT_RIGHT_FENCE; leftRightFenceType <= LEFT_RIGHT_FENCE_FRONT_UP_BACK_DOWN; leftRightFenceType++)
-            BLOCK_TYPE_DATA[leftRightFenceType] = SMART_BLOCK_TYPE | OCCLUDES_ALL;
-        for (int frontBackFenceType = FRONT_BACK_FENCE; frontBackFenceType <= FRONT_BACK_FENCE_UP_RIGHT_DOWN_LEFT; frontBackFenceType++)
-            BLOCK_TYPE_DATA[frontBackFenceType] = SMART_BLOCK_TYPE | OCCLUDES_ALL;
+        for (int EASTWESTFenceType = EAST_WEST_FENCE; EASTWESTFenceType <= EAST_WEST_FENCE_NORTH_UP_SOUTH_DOWN; EASTWESTFenceType++)
+            BLOCK_TYPE_DATA[EASTWESTFenceType] = SMART_BLOCK_TYPE | OCCLUDES_ALL;
+        for (int NORTHSOUTHFenceType = NORTH_SOUTH_FENCE; NORTHSOUTHFenceType <= NORTH_SOUTH_FENCE_UP_WEST_DOWN_EAST; NORTHSOUTHFenceType++)
+            BLOCK_TYPE_DATA[NORTHSOUTHFenceType] = SMART_BLOCK_TYPE | OCCLUDES_ALL;
 
         for (int blockType = 0; blockType < TOTAL_AMOUNT_OF_BLOCK_TYPES; blockType++) {
             byte[] XYZSubData = BLOCK_TYPE_XYZ_SUB_DATA[blockType];
@@ -722,9 +710,9 @@ public class Block {
 
             for (int aabbIndex = 0; aabbIndex < XYZSubData.length; aabbIndex += 6) {
                 if (XYZSubData[MIN_X + aabbIndex] == 0)
-                    occlusionData[LEFT + aabbIndex] = fillOcclusionBits(XYZSubData[MIN_Z + aabbIndex], XYZSubData[MAX_Z + aabbIndex], XYZSubData[MIN_Y + aabbIndex], XYZSubData[MAX_Y + aabbIndex]);
+                    occlusionData[EAST + aabbIndex] = fillOcclusionBits(XYZSubData[MIN_Z + aabbIndex], XYZSubData[MAX_Z + aabbIndex], XYZSubData[MIN_Y + aabbIndex], XYZSubData[MAX_Y + aabbIndex]);
                 if (XYZSubData[MAX_X + aabbIndex] == 0)
-                    occlusionData[RIGHT + aabbIndex] = fillOcclusionBits(XYZSubData[MIN_Z + aabbIndex], XYZSubData[MAX_Z + aabbIndex], XYZSubData[MIN_Y + aabbIndex], XYZSubData[MAX_Y + aabbIndex]);
+                    occlusionData[WEST + aabbIndex] = fillOcclusionBits(XYZSubData[MIN_Z + aabbIndex], XYZSubData[MAX_Z + aabbIndex], XYZSubData[MIN_Y + aabbIndex], XYZSubData[MAX_Y + aabbIndex]);
 
                 if (XYZSubData[MIN_Y + aabbIndex] == 0)
                     occlusionData[BOTTOM + aabbIndex] = fillOcclusionBits(XYZSubData[MIN_Z + aabbIndex], XYZSubData[MAX_Z + aabbIndex], XYZSubData[MIN_X + aabbIndex], XYZSubData[MAX_X + aabbIndex]);
@@ -732,9 +720,9 @@ public class Block {
                     occlusionData[TOP + aabbIndex] = fillOcclusionBits(XYZSubData[MIN_Z + aabbIndex], XYZSubData[MAX_Z + aabbIndex], XYZSubData[MIN_X + aabbIndex], XYZSubData[MAX_X + aabbIndex]);
 
                 if (XYZSubData[MIN_Z + aabbIndex] == 0)
-                    occlusionData[BACK + aabbIndex] = fillOcclusionBits(XYZSubData[MIN_X + aabbIndex], XYZSubData[MAX_X + aabbIndex], XYZSubData[MIN_Y + aabbIndex], XYZSubData[MAX_Y + aabbIndex]);
+                    occlusionData[SOUTH + aabbIndex] = fillOcclusionBits(XYZSubData[MIN_X + aabbIndex], XYZSubData[MAX_X + aabbIndex], XYZSubData[MIN_Y + aabbIndex], XYZSubData[MAX_Y + aabbIndex]);
                 if (XYZSubData[MAX_Z + aabbIndex] == 0)
-                    occlusionData[FRONT + aabbIndex] = fillOcclusionBits(XYZSubData[MIN_X + aabbIndex], XYZSubData[MAX_X + aabbIndex], XYZSubData[MIN_Y + aabbIndex], XYZSubData[MAX_Y + aabbIndex]);
+                    occlusionData[NORTH + aabbIndex] = fillOcclusionBits(XYZSubData[MIN_X + aabbIndex], XYZSubData[MAX_X + aabbIndex], XYZSubData[MIN_Y + aabbIndex], XYZSubData[MAX_Y + aabbIndex]);
             }
             BLOCK_TYPE_OCCLUSION_DATA[blockType] = occlusionData;
         }
@@ -742,123 +730,123 @@ public class Block {
 
     private static void initXYZSubData() {
         BLOCK_TYPE_XYZ_SUB_DATA[UP_DOWN_FENCE] = new byte[]{4, -4, 0, 0, 4, -4};
-        BLOCK_TYPE_XYZ_SUB_DATA[UP_DOWN_FENCE_FRONT] = new byte[]{4, -4, 0, 0, 4, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[UP_DOWN_FENCE_RIGHT] = new byte[]{4, 0, 0, 0, 4, -4};
-        BLOCK_TYPE_XYZ_SUB_DATA[UP_DOWN_FENCE_FRONT_RIGHT] = new byte[]{4, -4, 0, 0, 4, 0, 12, 0, 0, 0, 4, -4};
-        BLOCK_TYPE_XYZ_SUB_DATA[UP_DOWN_FENCE_BACK] = new byte[]{4, -4, 0, 0, 0, -4};
-        BLOCK_TYPE_XYZ_SUB_DATA[UP_DOWN_FENCE_FRONT_BACK] = new byte[]{4, -4, 0, 0, 0, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[UP_DOWN_FENCE_RIGHT_BACK] = new byte[]{4, 0, 0, 0, 4, -4, 4, -4, 0, 0, 0, -12};
-        BLOCK_TYPE_XYZ_SUB_DATA[UP_DOWN_FENCE_FRONT_RIGHT_BACK] = new byte[]{4, -4, 0, 0, 0, 0, 12, 0, 0, 0, 4, -4};
-        BLOCK_TYPE_XYZ_SUB_DATA[UP_DOWN_FENCE_LEFT] = new byte[]{0, -4, 0, 0, 4, -4};
-        BLOCK_TYPE_XYZ_SUB_DATA[UP_DOWN_FENCE_FRONT_LEFT] = new byte[]{4, -4, 0, 0, 4, 0, 0, -12, 0, 0, 4, -4};
-        BLOCK_TYPE_XYZ_SUB_DATA[UP_DOWN_FENCE_RIGHT_LEFT] = new byte[]{0, 0, 0, 0, 4, -4};
-        BLOCK_TYPE_XYZ_SUB_DATA[UP_DOWN_FENCE_FRONT_RIGHT_LEFT] = new byte[]{0, 0, 0, 0, 4, -4, 4, -4, 0, 0, 12, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[UP_DOWN_FENCE_BACK_LEFT] = new byte[]{4, -4, 0, 0, 0, -4, 0, -12, 0, 0, 4, -4};
-        BLOCK_TYPE_XYZ_SUB_DATA[UP_DOWN_FENCE_FRONT_BACK_LEFT] = new byte[]{4, -4, 0, 0, 0, 0, 0, -12, 0, 0, 4, -4};
-        BLOCK_TYPE_XYZ_SUB_DATA[UP_DOWN_FENCE_RIGHT_BACK_LEFT] = new byte[]{0, 0, 0, 0, 4, -4, 4, -4, 0, 0, 0, -12};
-        BLOCK_TYPE_XYZ_SUB_DATA[UP_DOWN_FENCE_FRONT_RIGHT_BACK_LEFT] = new byte[]{0, 0, 0, 0, 4, -4, 4, -4, 0, 0, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[UP_DOWN_FENCE_NORTH] = new byte[]{4, -4, 0, 0, 4, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[UP_DOWN_FENCE_WEST] = new byte[]{4, 0, 0, 0, 4, -4};
+        BLOCK_TYPE_XYZ_SUB_DATA[UP_DOWN_FENCE_NORTH_WEST] = new byte[]{4, -4, 0, 0, 4, 0, 12, 0, 0, 0, 4, -4};
+        BLOCK_TYPE_XYZ_SUB_DATA[UP_DOWN_FENCE_SOUTH] = new byte[]{4, -4, 0, 0, 0, -4};
+        BLOCK_TYPE_XYZ_SUB_DATA[UP_DOWN_FENCE_NORTH_SOUTH] = new byte[]{4, -4, 0, 0, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[UP_DOWN_FENCE_WEST_SOUTH] = new byte[]{4, 0, 0, 0, 4, -4, 4, -4, 0, 0, 0, -12};
+        BLOCK_TYPE_XYZ_SUB_DATA[UP_DOWN_FENCE_NORTH_WEST_SOUTH] = new byte[]{4, -4, 0, 0, 0, 0, 12, 0, 0, 0, 4, -4};
+        BLOCK_TYPE_XYZ_SUB_DATA[UP_DOWN_FENCE_EAST] = new byte[]{0, -4, 0, 0, 4, -4};
+        BLOCK_TYPE_XYZ_SUB_DATA[UP_DOWN_FENCE_NORTH_EAST] = new byte[]{4, -4, 0, 0, 4, 0, 0, -12, 0, 0, 4, -4};
+        BLOCK_TYPE_XYZ_SUB_DATA[UP_DOWN_FENCE_WEST_EAST] = new byte[]{0, 0, 0, 0, 4, -4};
+        BLOCK_TYPE_XYZ_SUB_DATA[UP_DOWN_FENCE_NORTH_WEST_EAST] = new byte[]{0, 0, 0, 0, 4, -4, 4, -4, 0, 0, 12, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[UP_DOWN_FENCE_SOUTH_EAST] = new byte[]{4, -4, 0, 0, 0, -4, 0, -12, 0, 0, 4, -4};
+        BLOCK_TYPE_XYZ_SUB_DATA[UP_DOWN_FENCE_NORTH_SOUTH_EAST] = new byte[]{4, -4, 0, 0, 0, 0, 0, -12, 0, 0, 4, -4};
+        BLOCK_TYPE_XYZ_SUB_DATA[UP_DOWN_FENCE_WEST_SOUTH_EAST] = new byte[]{0, 0, 0, 0, 4, -4, 4, -4, 0, 0, 0, -12};
+        BLOCK_TYPE_XYZ_SUB_DATA[UP_DOWN_FENCE_NORTH_WEST_SOUTH_EAST] = new byte[]{0, 0, 0, 0, 4, -4, 4, -4, 0, 0, 0, 0};
 
-        BLOCK_TYPE_XYZ_SUB_DATA[LEFT_RIGHT_FENCE] = new byte[]{0, 0, 4, -4, 4, -4};
-        BLOCK_TYPE_XYZ_SUB_DATA[LEFT_RIGHT_FENCE_FRONT] = new byte[]{0, 0, 4, -4, 4, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[LEFT_RIGHT_FENCE_UP] = new byte[]{0, 0, 4, 0, 4, -4};
-        BLOCK_TYPE_XYZ_SUB_DATA[LEFT_RIGHT_FENCE_FRONT_UP] = new byte[]{0, 0, 4, -4, 4, 0, 0, 0, 12, 0, 4, -4};
-        BLOCK_TYPE_XYZ_SUB_DATA[LEFT_RIGHT_FENCE_BACK] = new byte[]{0, 0, 4, -4, 0, -4};
-        BLOCK_TYPE_XYZ_SUB_DATA[LEFT_RIGHT_FENCE_FRONT_BACK] = new byte[]{0, 0, 4, -4, 0, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[LEFT_RIGHT_FENCE_UP_BACK] = new byte[]{0, 0, 4, 0, 4, -4, 0, 0, 4, -4, 0, -12};
-        BLOCK_TYPE_XYZ_SUB_DATA[LEFT_RIGHT_FENCE_FRONT_UP_BACK] = new byte[]{0, 0, 4, -4, 0, 0, 0, 0, 12, 0, 4, -4};
-        BLOCK_TYPE_XYZ_SUB_DATA[LEFT_RIGHT_FENCE_DOWN] = new byte[]{0, 0, 0, -4, 4, -4};
-        BLOCK_TYPE_XYZ_SUB_DATA[LEFT_RIGHT_FENCE_FRONT_DOWN] = new byte[]{0, 0, 4, -4, 4, 0, 0, 0, 0, -12, 4, -4};
-        BLOCK_TYPE_XYZ_SUB_DATA[LEFT_RIGHT_FENCE_UP_DOWN] = new byte[]{0, 0, 0, 0, 4, -4};
-        BLOCK_TYPE_XYZ_SUB_DATA[LEFT_RIGHT_FENCE_FRONT_UP_DOWN] = new byte[]{0, 0, 0, 0, 4, -4, 0, 0, 4, -4, 12, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[LEFT_RIGHT_FENCE_BACK_DOWN] = new byte[]{0, 0, 4, -4, 0, -4, 0, 0, 0, -12, 4, -4};
-        BLOCK_TYPE_XYZ_SUB_DATA[LEFT_RIGHT_FENCE_FRONT_BACK_DOWN] = new byte[]{0, 0, 4, -4, 0, 0, 0, 0, 0, -12, 4, -4};
-        BLOCK_TYPE_XYZ_SUB_DATA[LEFT_RIGHT_FENCE_UP_BACK_DOWN] = new byte[]{0, 0, 0, 0, 4, -4, 0, 0, 4, -4, 0, -12};
-        BLOCK_TYPE_XYZ_SUB_DATA[LEFT_RIGHT_FENCE_FRONT_UP_BACK_DOWN] = new byte[]{0, 0, 0, 0, 4, -4, 0, 0, 4, -4, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[EAST_WEST_FENCE] = new byte[]{0, 0, 4, -4, 4, -4};
+        BLOCK_TYPE_XYZ_SUB_DATA[EAST_WEST_FENCE_NORTH] = new byte[]{0, 0, 4, -4, 4, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[EAST_WEST_FENCE_UP] = new byte[]{0, 0, 4, 0, 4, -4};
+        BLOCK_TYPE_XYZ_SUB_DATA[EAST_WEST_FENCE_NORTH_UP] = new byte[]{0, 0, 4, -4, 4, 0, 0, 0, 12, 0, 4, -4};
+        BLOCK_TYPE_XYZ_SUB_DATA[EAST_WEST_FENCE_SOUTH] = new byte[]{0, 0, 4, -4, 0, -4};
+        BLOCK_TYPE_XYZ_SUB_DATA[EAST_WEST_FENCE_NORTH_SOUTH] = new byte[]{0, 0, 4, -4, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[EAST_WEST_FENCE_UP_SOUTH] = new byte[]{0, 0, 4, 0, 4, -4, 0, 0, 4, -4, 0, -12};
+        BLOCK_TYPE_XYZ_SUB_DATA[EAST_WEST_FENCE_NORTH_UP_SOUTH] = new byte[]{0, 0, 4, -4, 0, 0, 0, 0, 12, 0, 4, -4};
+        BLOCK_TYPE_XYZ_SUB_DATA[EAST_WEST_FENCE_DOWN] = new byte[]{0, 0, 0, -4, 4, -4};
+        BLOCK_TYPE_XYZ_SUB_DATA[EAST_WEST_FENCE_NORTH_DOWN] = new byte[]{0, 0, 4, -4, 4, 0, 0, 0, 0, -12, 4, -4};
+        BLOCK_TYPE_XYZ_SUB_DATA[EAST_WEST_FENCE_UP_DOWN] = new byte[]{0, 0, 0, 0, 4, -4};
+        BLOCK_TYPE_XYZ_SUB_DATA[EAST_WEST_FENCE_NORTH_UP_DOWN] = new byte[]{0, 0, 0, 0, 4, -4, 0, 0, 4, -4, 12, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[EAST_WEST_FENCE_SOUTH_DOWN] = new byte[]{0, 0, 4, -4, 0, -4, 0, 0, 0, -12, 4, -4};
+        BLOCK_TYPE_XYZ_SUB_DATA[EAST_WEST_FENCE_NORTH_SOUTH_DOWN] = new byte[]{0, 0, 4, -4, 0, 0, 0, 0, 0, -12, 4, -4};
+        BLOCK_TYPE_XYZ_SUB_DATA[EAST_WEST_FENCE_UP_SOUTH_DOWN] = new byte[]{0, 0, 0, 0, 4, -4, 0, 0, 4, -4, 0, -12};
+        BLOCK_TYPE_XYZ_SUB_DATA[EAST_WEST_FENCE_NORTH_UP_SOUTH_DOWN] = new byte[]{0, 0, 0, 0, 4, -4, 0, 0, 4, -4, 0, 0};
 
-        BLOCK_TYPE_XYZ_SUB_DATA[FRONT_BACK_FENCE] = new byte[]{4, -4, 4, -4, 0, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[FRONT_BACK_FENCE_UP] = new byte[]{4, -4, 4, 0, 0, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[FRONT_BACK_FENCE_RIGHT] = new byte[]{4, 0, 4, -4, 0, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[FRONT_BACK_FENCE_UP_RIGHT] = new byte[]{4, -4, 4, 0, 0, 0, 12, 0, 4, -4, 0, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[FRONT_BACK_FENCE_DOWN] = new byte[]{4, -4, 0, -4, 0, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[FRONT_BACK_FENCE_UP_DOWN] = new byte[]{4, -4, 0, 0, 0, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[FRONT_BACK_FENCE_RIGHT_DOWN] = new byte[]{4, 0, 4, -4, 0, 0, 4, -4, 0, -12, 0, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[FRONT_BACK_FENCE_UP_RIGHT_DOWN] = new byte[]{4, -4, 0, 0, 0, 0, 12, 0, 4, -4, 0, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[FRONT_BACK_FENCE_LEFT] = new byte[]{0, -4, 4, -4, 0, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[FRONT_BACK_FENCE_UP_LEFT] = new byte[]{4, -4, 4, 0, 0, 0, 0, -12, 4, -4, 0, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[FRONT_BACK_FENCE_RIGHT_LEFT] = new byte[]{0, 0, 4, -4, 0, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[FRONT_BACK_FENCE_UP_RIGHT_LEFT] = new byte[]{0, 0, 4, -4, 0, 0, 4, -4, 12, 0, 0, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[FRONT_BACK_FENCE_DOWN_LEFT] = new byte[]{4, -4, 0, -4, 0, 0, 0, -12, 4, -4, 0, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[FRONT_BACK_FENCE_UP_DOWN_LEFT] = new byte[]{4, -4, 0, 0, 0, 0, 0, -12, 4, -4, 0, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[FRONT_BACK_FENCE_RIGHT_DOWN_LEFT] = new byte[]{0, 0, 4, -4, 0, 0, 4, -4, 0, -12, 0, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[FRONT_BACK_FENCE_UP_RIGHT_DOWN_LEFT] = new byte[]{0, 0, 4, -4, 0, 0, 4, -4, 0, 0, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[NORTH_SOUTH_FENCE] = new byte[]{4, -4, 4, -4, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[NORTH_SOUTH_FENCE_UP] = new byte[]{4, -4, 4, 0, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[NORTH_SOUTH_FENCE_WEST] = new byte[]{4, 0, 4, -4, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[NORTH_SOUTH_FENCE_UP_WEST] = new byte[]{4, -4, 4, 0, 0, 0, 12, 0, 4, -4, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[NORTH_SOUTH_FENCE_DOWN] = new byte[]{4, -4, 0, -4, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[NORTH_SOUTH_FENCE_UP_DOWN] = new byte[]{4, -4, 0, 0, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[NORTH_SOUTH_FENCE_WEST_DOWN] = new byte[]{4, 0, 4, -4, 0, 0, 4, -4, 0, -12, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[NORTH_SOUTH_FENCE_UP_WEST_DOWN] = new byte[]{4, -4, 0, 0, 0, 0, 12, 0, 4, -4, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[NORTH_SOUTH_FENCE_EAST] = new byte[]{0, -4, 4, -4, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[NORTH_SOUTH_FENCE_UP_EAST] = new byte[]{4, -4, 4, 0, 0, 0, 0, -12, 4, -4, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[NORTH_SOUTH_FENCE_WEST_EAST] = new byte[]{0, 0, 4, -4, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[NORTH_SOUTH_FENCE_UP_WEST_EAST] = new byte[]{0, 0, 4, -4, 0, 0, 4, -4, 12, 0, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[NORTH_SOUTH_FENCE_DOWN_EAST] = new byte[]{4, -4, 0, -4, 0, 0, 0, -12, 4, -4, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[NORTH_SOUTH_FENCE_UP_DOWN_EAST] = new byte[]{4, -4, 0, 0, 0, 0, 0, -12, 4, -4, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[NORTH_SOUTH_FENCE_WEST_DOWN_EAST] = new byte[]{0, 0, 4, -4, 0, 0, 4, -4, 0, -12, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[NORTH_SOUTH_FENCE_UP_WEST_DOWN_EAST] = new byte[]{0, 0, 4, -4, 0, 0, 4, -4, 0, 0, 0, 0};
 
-        BLOCK_TYPE_XYZ_SUB_DATA[FRONT_RIGHT_STAIR] = new byte[]{8, 0, 0, 0, 0, -8, 0, 0, 0, 0, 8, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[FRONT_LEFT_STAIR] = new byte[]{0, -8, 0, 0, 0, -8, 0, 0, 0, 0, 8, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[BACK_RIGHT_STAIR] = new byte[]{8, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, -8};
-        BLOCK_TYPE_XYZ_SUB_DATA[BACK_LEFT_STAIR] = new byte[]{0, -8, 0, 0, 8, 0, 0, 0, 0, 0, 0, -8};
-        BLOCK_TYPE_XYZ_SUB_DATA[BOTTOM_FRONT_STAIR] = new byte[]{0, 0, 0, -8, 0, 0, 0, 0, 8, 0, 8, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[BOTTOM_RIGHT_STAIR] = new byte[]{0, 0, 0, -8, 0, 0, 8, 0, 8, 0, 0, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[BOTTOM_BACK_STAIR] = new byte[]{0, 0, 0, -8, 0, 0, 0, 0, 8, 0, 0, -8};
-        BLOCK_TYPE_XYZ_SUB_DATA[BOTTOM_LEFT_STAIR] = new byte[]{0, 0, 0, -8, 0, 0, 0, -8, 8, 0, 0, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[TOP_FRONT_STAIR] = new byte[]{0, 0, 8, 0, 0, 0, 0, 0, 0, -8, 8, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[TOP_RIGHT_STAIR] = new byte[]{0, 0, 8, 0, 0, 0, 8, 0, 0, -8, 0, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[TOP_BACK_STAIR] = new byte[]{0, 0, 8, 0, 0, 0, 0, 0, 0, -8, 0, -8};
-        BLOCK_TYPE_XYZ_SUB_DATA[TOP_LEFT_STAIR] = new byte[]{0, 0, 8, 0, 0, 0, 0, -8, 0, -8, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[NORTH_WEST_STAIR] = new byte[]{8, 0, 0, 0, 0, -8, 0, 0, 0, 0, 8, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[NORTH_EAST_STAIR] = new byte[]{0, -8, 0, 0, 0, -8, 0, 0, 0, 0, 8, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[SOUTH_WEST_STAIR] = new byte[]{8, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, -8};
+        BLOCK_TYPE_XYZ_SUB_DATA[SOUTH_EAST_STAIR] = new byte[]{0, -8, 0, 0, 8, 0, 0, 0, 0, 0, 0, -8};
+        BLOCK_TYPE_XYZ_SUB_DATA[BOTTOM_NORTH_STAIR] = new byte[]{0, 0, 0, -8, 0, 0, 0, 0, 8, 0, 8, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[BOTTOM_WEST_STAIR] = new byte[]{0, 0, 0, -8, 0, 0, 8, 0, 8, 0, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[BOTTOM_SOUTH_STAIR] = new byte[]{0, 0, 0, -8, 0, 0, 0, 0, 8, 0, 0, -8};
+        BLOCK_TYPE_XYZ_SUB_DATA[BOTTOM_EAST_STAIR] = new byte[]{0, 0, 0, -8, 0, 0, 0, -8, 8, 0, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[TOP_NORTH_STAIR] = new byte[]{0, 0, 8, 0, 0, 0, 0, 0, 0, -8, 8, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[TOP_WEST_STAIR] = new byte[]{0, 0, 8, 0, 0, 0, 8, 0, 0, -8, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[TOP_SOUTH_STAIR] = new byte[]{0, 0, 8, 0, 0, 0, 0, 0, 0, -8, 0, -8};
+        BLOCK_TYPE_XYZ_SUB_DATA[TOP_EAST_STAIR] = new byte[]{0, 0, 8, 0, 0, 0, 0, -8, 0, -8, 0, 0};
 
-        BLOCK_TYPE_XYZ_SUB_DATA[THIN_FRONT_RIGHT_STAIR] = new byte[]{12, 0, 0, 0, 0, -4, 0, 0, 0, 0, 12, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[THIN_FRONT_LEFT_STAIR] = new byte[]{0, -12, 0, 0, 0, -4, 0, 0, 0, 0, 12, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[THIN_BACK_RIGHT_STAIR] = new byte[]{12, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, -12};
-        BLOCK_TYPE_XYZ_SUB_DATA[THIN_BACK_LEFT_STAIR] = new byte[]{0, -12, 0, 0, 4, 0, 0, 0, 0, 0, 0, -12};
-        BLOCK_TYPE_XYZ_SUB_DATA[THIN_BOTTOM_FRONT_STAIR] = new byte[]{0, 0, 0, -12, 0, 0, 0, 0, 4, 0, 12, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[THIN_BOTTOM_RIGHT_STAIR] = new byte[]{0, 0, 0, -12, 0, 0, 12, 0, 4, 0, 0, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[THIN_BOTTOM_BACK_STAIR] = new byte[]{0, 0, 0, -12, 0, 0, 0, 0, 4, 0, 0, -12};
-        BLOCK_TYPE_XYZ_SUB_DATA[THIN_BOTTOM_LEFT_STAIR] = new byte[]{0, 0, 0, -12, 0, 0, 0, -12, 4, 0, 0, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[THIN_TOP_FRONT_STAIR] = new byte[]{0, 0, 12, 0, 0, 0, 0, 0, 0, -4, 12, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[THIN_TOP_RIGHT_STAIR] = new byte[]{0, 0, 12, 0, 0, 0, 12, 0, 0, -4, 0, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[THIN_TOP_BACK_STAIR] = new byte[]{0, 0, 12, 0, 0, 0, 0, 0, 0, -4, 0, -12};
-        BLOCK_TYPE_XYZ_SUB_DATA[THIN_TOP_LEFT_STAIR] = new byte[]{0, 0, 12, 0, 0, 0, 0, -12, 0, -4, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[THIN_NORTH_WEST_STAIR] = new byte[]{12, 0, 0, 0, 0, -4, 0, 0, 0, 0, 12, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[THIN_NORTH_EAST_STAIR] = new byte[]{0, -12, 0, 0, 0, -4, 0, 0, 0, 0, 12, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[THIN_SOUTH_WEST_STAIR] = new byte[]{12, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, -12};
+        BLOCK_TYPE_XYZ_SUB_DATA[THIN_SOUTH_EAST_STAIR] = new byte[]{0, -12, 0, 0, 4, 0, 0, 0, 0, 0, 0, -12};
+        BLOCK_TYPE_XYZ_SUB_DATA[THIN_BOTTOM_NORTH_STAIR] = new byte[]{0, 0, 0, -12, 0, 0, 0, 0, 4, 0, 12, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[THIN_BOTTOM_WEST_STAIR] = new byte[]{0, 0, 0, -12, 0, 0, 12, 0, 4, 0, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[THIN_BOTTOM_SOUTH_STAIR] = new byte[]{0, 0, 0, -12, 0, 0, 0, 0, 4, 0, 0, -12};
+        BLOCK_TYPE_XYZ_SUB_DATA[THIN_BOTTOM_EAST_STAIR] = new byte[]{0, 0, 0, -12, 0, 0, 0, -12, 4, 0, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[THIN_TOP_NORTH_STAIR] = new byte[]{0, 0, 12, 0, 0, 0, 0, 0, 0, -4, 12, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[THIN_TOP_WEST_STAIR] = new byte[]{0, 0, 12, 0, 0, 0, 12, 0, 0, -4, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[THIN_TOP_SOUTH_STAIR] = new byte[]{0, 0, 12, 0, 0, 0, 0, 0, 0, -4, 0, -12};
+        BLOCK_TYPE_XYZ_SUB_DATA[THIN_TOP_EAST_STAIR] = new byte[]{0, 0, 12, 0, 0, 0, 0, -12, 0, -4, 0, 0};
 
-        BLOCK_TYPE_XYZ_SUB_DATA[THICK_FRONT_RIGHT_STAIR] = new byte[]{4, 0, 0, 0, 0, -12, 0, 0, 0, 0, 4, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[THICK_FRONT_LEFT_STAIR] = new byte[]{0, -4, 0, 0, 0, -12, 0, 0, 0, 0, 4, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[THICK_BACK_RIGHT_STAIR] = new byte[]{4, 0, 0, 0, 12, 0, 0, 0, 0, 0, 0, -4};
-        BLOCK_TYPE_XYZ_SUB_DATA[THICK_BACK_LEFT_STAIR] = new byte[]{0, -4, 0, 0, 12, 0, 0, 0, 0, 0, 0, -4};
-        BLOCK_TYPE_XYZ_SUB_DATA[THICK_BOTTOM_FRONT_STAIR] = new byte[]{0, 0, 0, -4, 0, 0, 0, 0, 12, 0, 4, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[THICK_BOTTOM_RIGHT_STAIR] = new byte[]{0, 0, 0, -4, 0, 0, 4, 0, 12, 0, 0, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[THICK_BOTTOM_BACK_STAIR] = new byte[]{0, 0, 0, -4, 0, 0, 0, 0, 12, 0, 0, -4};
-        BLOCK_TYPE_XYZ_SUB_DATA[THICK_BOTTOM_LEFT_STAIR] = new byte[]{0, 0, 0, -4, 0, 0, 0, -4, 12, 0, 0, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[THICK_TOP_FRONT_STAIR] = new byte[]{0, 0, 4, 0, 0, 0, 0, 0, 0, -12, 4, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[THICK_TOP_RIGHT_STAIR] = new byte[]{0, 0, 4, 0, 0, 0, 4, 0, 0, -12, 0, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[THICK_TOP_BACK_STAIR] = new byte[]{0, 0, 4, 0, 0, 0, 0, 0, 0, -12, 0, -4};
-        BLOCK_TYPE_XYZ_SUB_DATA[THICK_TOP_LEFT_STAIR] = new byte[]{0, 0, 4, 0, 0, 0, 0, -4, 0, -12, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[THICK_NORTH_WEST_STAIR] = new byte[]{4, 0, 0, 0, 0, -12, 0, 0, 0, 0, 4, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[THICK_NORTH_EAST_STAIR] = new byte[]{0, -4, 0, 0, 0, -12, 0, 0, 0, 0, 4, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[THICK_SOUTH_WEST_STAIR] = new byte[]{4, 0, 0, 0, 12, 0, 0, 0, 0, 0, 0, -4};
+        BLOCK_TYPE_XYZ_SUB_DATA[THICK_SOUTH_EAST_STAIR] = new byte[]{0, -4, 0, 0, 12, 0, 0, 0, 0, 0, 0, -4};
+        BLOCK_TYPE_XYZ_SUB_DATA[THICK_BOTTOM_NORTH_STAIR] = new byte[]{0, 0, 0, -4, 0, 0, 0, 0, 12, 0, 4, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[THICK_BOTTOM_WEST_STAIR] = new byte[]{0, 0, 0, -4, 0, 0, 4, 0, 12, 0, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[THICK_BOTTOM_SOUTH_STAIR] = new byte[]{0, 0, 0, -4, 0, 0, 0, 0, 12, 0, 0, -4};
+        BLOCK_TYPE_XYZ_SUB_DATA[THICK_BOTTOM_EAST_STAIR] = new byte[]{0, 0, 0, -4, 0, 0, 0, -4, 12, 0, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[THICK_TOP_NORTH_STAIR] = new byte[]{0, 0, 4, 0, 0, 0, 0, 0, 0, -12, 4, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[THICK_TOP_WEST_STAIR] = new byte[]{0, 0, 4, 0, 0, 0, 4, 0, 0, -12, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[THICK_TOP_SOUTH_STAIR] = new byte[]{0, 0, 4, 0, 0, 0, 0, 0, 0, -12, 0, -4};
+        BLOCK_TYPE_XYZ_SUB_DATA[THICK_TOP_EAST_STAIR] = new byte[]{0, 0, 4, 0, 0, 0, 0, -4, 0, -12, 0, 0};
 
         BLOCK_TYPE_XYZ_SUB_DATA[UP_DOWN_WALL] = new byte[]{0, 0, 4, -4, 0, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[FRONT_BACK_WALL] = new byte[]{0, 0, 0, 0, 4, -4};
-        BLOCK_TYPE_XYZ_SUB_DATA[LEFT_RIGHT_WALL] = new byte[]{4, -4, 0, 0, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[NORTH_SOUTH_WALL] = new byte[]{0, 0, 0, 0, 4, -4};
+        BLOCK_TYPE_XYZ_SUB_DATA[EAST_WEST_WALL] = new byte[]{4, -4, 0, 0, 0, 0};
 
-        BLOCK_TYPE_XYZ_SUB_DATA[LEFT_RIGHT_POST] = new byte[]{0, 0, 4, -4, 4, -4};
-        BLOCK_TYPE_XYZ_SUB_DATA[FRONT_BACK_POST] = new byte[]{4, -4, 4, -4, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[EAST_WEST_POST] = new byte[]{0, 0, 4, -4, 4, -4};
+        BLOCK_TYPE_XYZ_SUB_DATA[NORTH_SOUTH_POST] = new byte[]{4, -4, 4, -4, 0, 0};
         BLOCK_TYPE_XYZ_SUB_DATA[UP_DOWN_POST] = new byte[]{4, -4, 0, 0, 4, -4};
 
         BLOCK_TYPE_XYZ_SUB_DATA[BOTTOM_SLAB] = new byte[]{0, 0, 0, -8, 0, 0};
         BLOCK_TYPE_XYZ_SUB_DATA[TOP_SLAB] = new byte[]{0, 0, 8, 0, 0, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[FRONT_SLAB] = new byte[]{0, 0, 0, 0, 8, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[BACK_SLAB] = new byte[]{0, 0, 0, 0, 0, -8};
-        BLOCK_TYPE_XYZ_SUB_DATA[RIGHT_SLAB] = new byte[]{8, 0, 0, 0, 0, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[LEFT_SLAB] = new byte[]{0, -8, 0, 0, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[NORTH_SLAB] = new byte[]{0, 0, 0, 0, 8, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[SOUTH_SLAB] = new byte[]{0, 0, 0, 0, 0, -8};
+        BLOCK_TYPE_XYZ_SUB_DATA[WEST_SLAB] = new byte[]{8, 0, 0, 0, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[EAST_SLAB] = new byte[]{0, -8, 0, 0, 0, 0};
 
         BLOCK_TYPE_XYZ_SUB_DATA[BOTTOM_SOCKET] = new byte[]{0, 0, 0, -4, 0, 0};
         BLOCK_TYPE_XYZ_SUB_DATA[TOP_SOCKET] = new byte[]{0, 0, 4, 0, 0, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[FRONT_SOCKET] = new byte[]{0, 0, 0, 0, 4, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[BACK_SOCKET] = new byte[]{0, 0, 0, 0, 0, -4};
-        BLOCK_TYPE_XYZ_SUB_DATA[RIGHT_SOCKET] = new byte[]{4, 0, 0, 0, 0, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[LEFT_SOCKET] = new byte[]{0, -4, 0, 0, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[NORTH_SOCKET] = new byte[]{0, 0, 0, 0, 4, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[SOUTH_SOCKET] = new byte[]{0, 0, 0, 0, 0, -4};
+        BLOCK_TYPE_XYZ_SUB_DATA[WEST_SOCKET] = new byte[]{4, 0, 0, 0, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[EAST_SOCKET] = new byte[]{0, -4, 0, 0, 0, 0};
 
         BLOCK_TYPE_XYZ_SUB_DATA[BOTTOM_PLATE] = new byte[]{0, 0, 0, -12, 0, 0};
         BLOCK_TYPE_XYZ_SUB_DATA[TOP_PLATE] = new byte[]{0, 0, 12, 0, 0, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[FRONT_PLATE] = new byte[]{0, 0, 0, 0, 12, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[BACK_PLATE] = new byte[]{0, 0, 0, 0, 0, -12};
-        BLOCK_TYPE_XYZ_SUB_DATA[RIGHT_PLATE] = new byte[]{12, 0, 0, 0, 0, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[LEFT_PLATE] = new byte[]{0, -12, 0, 0, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[NORTH_PLATE] = new byte[]{0, 0, 0, 0, 12, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[SOUTH_PLATE] = new byte[]{0, 0, 0, 0, 0, -12};
+        BLOCK_TYPE_XYZ_SUB_DATA[WEST_PLATE] = new byte[]{12, 0, 0, 0, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[EAST_PLATE] = new byte[]{0, -12, 0, 0, 0, 0};
 
         BLOCK_TYPE_XYZ_SUB_DATA[CACTUS_TYPE] = new byte[]{1, -1, 0, 0, 1, -1};
         BLOCK_TYPE_XYZ_SUB_DATA[TORCH_TYPE] = new byte[]{7, -7, 0, -4, 7, -7};
@@ -867,10 +855,10 @@ public class Block {
 
         BLOCK_TYPE_XYZ_SUB_DATA[TOP_PLAYER_HEAD] = new byte[]{4, -4, 8, 0, 4, -4};
         BLOCK_TYPE_XYZ_SUB_DATA[BOTTOM_PLAYER_HEAD] = new byte[]{4, -4, 0, -8, 4, -4};
-        BLOCK_TYPE_XYZ_SUB_DATA[FRONT_PLAYER_HEAD] = new byte[]{4, -4, 4, -4, 8, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[BACK_PLAYER_HEAD] = new byte[]{4, -4, 4, -4, 0, -8};
-        BLOCK_TYPE_XYZ_SUB_DATA[RIGHT_PLAYER_HEAD] = new byte[]{8, 0, 4, -4, 4, -4};
-        BLOCK_TYPE_XYZ_SUB_DATA[LEFT_PLAYER_HEAD] = new byte[]{0, -8, 4, -4, 4, -4};
+        BLOCK_TYPE_XYZ_SUB_DATA[NORTH_PLAYER_HEAD] = new byte[]{4, -4, 4, -4, 8, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[SOUTH_PLAYER_HEAD] = new byte[]{4, -4, 4, -4, 0, -8};
+        BLOCK_TYPE_XYZ_SUB_DATA[WEST_PLAYER_HEAD] = new byte[]{8, 0, 4, -4, 4, -4};
+        BLOCK_TYPE_XYZ_SUB_DATA[EAST_PLAYER_HEAD] = new byte[]{0, -8, 4, -4, 4, -4};
 
         BLOCK_TYPE_XYZ_SUB_DATA[FULL_BLOCK] = new byte[]{0, 0, 0, 0, 0, 0};
         BLOCK_TYPE_XYZ_SUB_DATA[LIQUID_TYPE] = new byte[]{0, 0, 0, 0, 0, 0};
@@ -880,10 +868,10 @@ public class Block {
         BLOCK_TYPE_UV_SUB_DATA[TORCH_TYPE] = new byte[]{7, 4, -7, 4, 7, 0, -7, 0, 7, 4, -7, 4, 7, -10, -7, -10, 7, 4, -7, 4, 7, 0, -7, 0, 7, 4, -7, 4, 7, 0, -7, 0, -7, -7, -7, 7, 7, -7, 7, 7, -7, 4, 7, 4, -7, 0, 7, 0};
         BLOCK_TYPE_UV_SUB_DATA[BOTTOM_PLAYER_HEAD] = new byte[]{4, 4, -4, 4, 4, -4, -4, -4, 4, 4, -4, 4, 4, -4, -4, -4, 4, 4, -4, 4, 4, -4, -4, -4, 4, 4, -4, 4, 4, -4, -4, -4, -4, -4, -4, 4, 4, -4, 4, 4, -4, 4, 4, 4, -4, -4, 4, -4};
         BLOCK_TYPE_UV_SUB_DATA[TOP_PLAYER_HEAD] = BLOCK_TYPE_UV_SUB_DATA[BOTTOM_PLAYER_HEAD];
-        BLOCK_TYPE_UV_SUB_DATA[FRONT_PLAYER_HEAD] = BLOCK_TYPE_UV_SUB_DATA[BOTTOM_PLAYER_HEAD];
-        BLOCK_TYPE_UV_SUB_DATA[BACK_PLAYER_HEAD] = BLOCK_TYPE_UV_SUB_DATA[BOTTOM_PLAYER_HEAD];
-        BLOCK_TYPE_UV_SUB_DATA[RIGHT_PLAYER_HEAD] = BLOCK_TYPE_UV_SUB_DATA[BOTTOM_PLAYER_HEAD];
-        BLOCK_TYPE_UV_SUB_DATA[LEFT_PLAYER_HEAD] = BLOCK_TYPE_UV_SUB_DATA[BOTTOM_PLAYER_HEAD];
+        BLOCK_TYPE_UV_SUB_DATA[NORTH_PLAYER_HEAD] = BLOCK_TYPE_UV_SUB_DATA[BOTTOM_PLAYER_HEAD];
+        BLOCK_TYPE_UV_SUB_DATA[SOUTH_PLAYER_HEAD] = BLOCK_TYPE_UV_SUB_DATA[BOTTOM_PLAYER_HEAD];
+        BLOCK_TYPE_UV_SUB_DATA[WEST_PLAYER_HEAD] = BLOCK_TYPE_UV_SUB_DATA[BOTTOM_PLAYER_HEAD];
+        BLOCK_TYPE_UV_SUB_DATA[EAST_PLAYER_HEAD] = BLOCK_TYPE_UV_SUB_DATA[BOTTOM_PLAYER_HEAD];
     }
 
     private static void setNonStandardBlockData(short block, int properties, int[] digSounds, int[] stepSounds, int type, byte[] textures) {
@@ -908,22 +896,22 @@ public class Block {
         if (stepSounds != null) STANDARD_BLOCK_STEP_SOUNDS[(block & 0xFFFF) >> BLOCK_TYPE_BITS] = stepSounds;
     }
 
-    private static void setLogData(short upDownLog, short frontBackLog, short leftRightLog, byte topTexture, byte sideTexture, byte rotatedSideTexture, SoundManager sound) {
+    private static void setLogData(short upDownLog, short northSouthLog, short eastWestLog, byte topTexture, byte sideTexture, byte rotatedSideTexture, SoundManager sound) {
         STANDARD_BLOCK_TEXTURE_INDICES[(upDownLog & 0xFFFF) >> BLOCK_TYPE_BITS] = new byte[]{sideTexture, topTexture, sideTexture, sideTexture, topTexture, sideTexture};
-        STANDARD_BLOCK_TEXTURE_INDICES[(frontBackLog & 0xFFFF) >> BLOCK_TYPE_BITS] = new byte[]{topTexture, rotatedSideTexture, rotatedSideTexture, topTexture, sideTexture, rotatedSideTexture};
-        STANDARD_BLOCK_TEXTURE_INDICES[(leftRightLog & 0xFFFF) >> BLOCK_TYPE_BITS] = new byte[]{rotatedSideTexture, sideTexture, topTexture, rotatedSideTexture, rotatedSideTexture, topTexture};
+        STANDARD_BLOCK_TEXTURE_INDICES[(northSouthLog & 0xFFFF) >> BLOCK_TYPE_BITS] = new byte[]{topTexture, rotatedSideTexture, rotatedSideTexture, topTexture, sideTexture, rotatedSideTexture};
+        STANDARD_BLOCK_TEXTURE_INDICES[(eastWestLog & 0xFFFF) >> BLOCK_TYPE_BITS] = new byte[]{rotatedSideTexture, sideTexture, topTexture, rotatedSideTexture, rotatedSideTexture, topTexture};
 
         STANDARD_BLOCK_DIG_SOUNDS[(upDownLog & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.digWood;
-        STANDARD_BLOCK_DIG_SOUNDS[(frontBackLog & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.digWood;
-        STANDARD_BLOCK_DIG_SOUNDS[(leftRightLog & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[(northSouthLog & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[(eastWestLog & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.digWood;
 
         STANDARD_BLOCK_STEP_SOUNDS[(upDownLog & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.stepWood;
-        STANDARD_BLOCK_STEP_SOUNDS[(frontBackLog & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.stepWood;
-        STANDARD_BLOCK_STEP_SOUNDS[(leftRightLog & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[(northSouthLog & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[(eastWestLog & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.stepWood;
 
         STANDARD_BLOCK_PROPERTIES[(upDownLog & 0xFFFF) >> BLOCK_TYPE_BITS] = 0;
-        STANDARD_BLOCK_PROPERTIES[(frontBackLog & 0xFFFF) >> BLOCK_TYPE_BITS] = 0;
-        STANDARD_BLOCK_PROPERTIES[(leftRightLog & 0xFFFF) >> BLOCK_TYPE_BITS] = 0;
+        STANDARD_BLOCK_PROPERTIES[(northSouthLog & 0xFFFF) >> BLOCK_TYPE_BITS] = 0;
+        STANDARD_BLOCK_PROPERTIES[(eastWestLog & 0xFFFF) >> BLOCK_TYPE_BITS] = 0;
     }
 
     private static void initNonStandardBlocks() {
@@ -934,10 +922,10 @@ public class Block {
         setNonStandardBlockData(WATER, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT, sound.splash, sound.splash, LIQUID_TYPE, new byte[]{(byte) 64});
         setNonStandardBlockData(LAVA, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT | LIGHT_EMITTING, sound.lavaPop, sound.lavaPop, LIQUID_TYPE, new byte[]{(byte) -127});
         setNonStandardBlockData(CACTUS, 0, sound.digWood, sound.stepWood, CACTUS_TYPE, new byte[]{(byte) 113, (byte) -92, (byte) 113, (byte) 113, (byte) -92, (byte) 113});
-        setNonStandardBlockData(FRONT_CREATOR_HEAD, 0, sound.digWood, sound.stepWood, BOTTOM_PLAYER_HEAD, new byte[]{(byte) -124, (byte) -109, (byte) -123, (byte) -108, (byte) -107, (byte) -125});
-        setNonStandardBlockData(RIGHT_CREATOR_HEAD, 0, sound.digWood, sound.stepWood, BOTTOM_PLAYER_HEAD, new byte[]{(byte) -125, (byte) -109, (byte) -124, (byte) -123, (byte) -91, (byte) -108});
-        setNonStandardBlockData(BACK_CREATOR_HEAD, 0, sound.digWood, sound.stepWood, BOTTOM_PLAYER_HEAD, new byte[]{(byte) -108, (byte) -109, (byte) -125, (byte) -124, (byte) -107, (byte) -123});
-        setNonStandardBlockData(LEFT_CREATOR_HEAD, 0, sound.digWood, sound.stepWood, BOTTOM_PLAYER_HEAD, new byte[]{(byte) -123, (byte) -109, (byte) -108, (byte) -125, (byte) -91, (byte) -124});
+        setNonStandardBlockData(NORTH_CREATOR_HEAD, 0, sound.digWood, sound.stepWood, BOTTOM_PLAYER_HEAD, new byte[]{(byte) -124, (byte) -109, (byte) -123, (byte) -108, (byte) -107, (byte) -125});
+        setNonStandardBlockData(WEST_CREATOR_HEAD, 0, sound.digWood, sound.stepWood, BOTTOM_PLAYER_HEAD, new byte[]{(byte) -125, (byte) -109, (byte) -124, (byte) -123, (byte) -91, (byte) -108});
+        setNonStandardBlockData(SOUTH_CREATOR_HEAD, 0, sound.digWood, sound.stepWood, BOTTOM_PLAYER_HEAD, new byte[]{(byte) -108, (byte) -109, (byte) -125, (byte) -124, (byte) -107, (byte) -123});
+        setNonStandardBlockData(EAST_CREATOR_HEAD, 0, sound.digWood, sound.stepWood, BOTTOM_PLAYER_HEAD, new byte[]{(byte) -123, (byte) -109, (byte) -108, (byte) -125, (byte) -91, (byte) -124});
         setNonStandardBlockData(TORCH, NO_COLLISION | LIGHT_EMITTING, sound.digWood, sound.stepWood, TORCH_TYPE, new byte[]{(byte) -80});
         setNonStandardBlockData(TALL_GRASS, NO_COLLISION | REPLACEABLE, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) -64});
         setNonStandardBlockData(RED_TULIP, NO_COLLISION | REPLACEABLE, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) -63});
@@ -985,18 +973,18 @@ public class Block {
         setStandardBlockData(IRON_ORE, 0, sound.digStone, sound.stepStone, (byte) -111);
         setStandardBlockData(DIAMOND_ORE, 0, sound.digStone, sound.stepStone, (byte) -110);
 
-        setLogData(UP_DOWN_OAK_LOG, FRONT_BACK_OAK_LOG, LEFT_RIGHT_OAK_LOG, (byte) 19, (byte) 3, (byte) 99, sound);
-        setLogData(UP_DOWN_STRIPPED_OAK_LOG, FRONT_BACK_STRIPPED_OAK_LOG, LEFT_RIGHT_STRIPPED_OAK_LOG, (byte) 51, (byte) 35, (byte) 115, sound);
-        setLogData(UP_DOWN_SPRUCE_LOG, FRONT_BACK_SPRUCE_LOG, LEFT_RIGHT_SPRUCE_LOG, (byte) 20, (byte) 4, (byte) 100, sound);
-        setLogData(UP_DOWN_STRIPPED_SPRUCE_LOG, FRONT_BACK_STRIPPED_SPRUCE_LOG, LEFT_RIGHT_STRIPPED_SPRUCE_LOG, (byte) 52, (byte) 36, (byte) 116, sound);
-        setLogData(UP_DOWN_DARK_OAK_LOG, FRONT_BACK_DARK_OAK_LOG, LEFT_RIGHT_DARK_OAK_LOG, (byte) 21, (byte) 5, (byte) 101, sound);
-        setLogData(UP_DOWN_STRIPPED_DARK_OAK_LOG, FRONT_BACK_STRIPPED_DARK_OAK_LOG, LEFT_RIGHT_STRIPPED_DARK_OAK_LOG, (byte) 53, (byte) 37, (byte) 117, sound);
-        setLogData(UP_DOWN_PINE_LOG, FRONT_BACK_PINE_LOG, LEFT_RIGHT_PINE_LOG, (byte) 22, (byte) 6, (byte) 102, sound);
-        setLogData(UP_DOWN_STRIPPED_PINE_LOG, FRONT_BACK_STRIPPED_PINE_LOG, LEFT_RIGHT_STRIPPED_PINE_LOG, (byte) 54, (byte) 38, (byte) 118, sound);
-        setLogData(UP_DOWN_REDWOOD_LOG, FRONT_BACK_REDWOOD_LOG, LEFT_RIGHT_REDWOOD_LOG, (byte) 23, (byte) 7, (byte) 103, sound);
-        setLogData(UP_DOWN_STRIPPED_REDWOOD_LOG, FRONT_BACK_STRIPPED_REDWOOD_LOG, LEFT_RIGHT_STRIPPED_REDWOOD_LOG, (byte) 55, (byte) 39, (byte) 119, sound);
-        setLogData(UP_DOWN_BLACK_WOOD_LOG, FRONT_BACK_BLACK_WOOD_LOG, LEFT_RIGHT_BLACK_WOOD_LOG, (byte) 24, (byte) 8, (byte) 104, sound);
-        setLogData(UP_DOWN_STRIPPED_BLACK_WOOD_LOG, FRONT_BACK_STRIPPED_BLACK_WOOD_LOG, LEFT_RIGHT_STRIPPED_BLACK_WOOD_LOG, (byte) 56, (byte) 40, (byte) 120, sound);
+        setLogData(UP_DOWN_OAK_LOG, NORTH_SOUTH_OAK_LOG, EAST_WEST_OAK_LOG, (byte) 19, (byte) 3, (byte) 99, sound);
+        setLogData(UP_DOWN_STRIPPED_OAK_LOG, NORTH_SOUTH_STRIPPED_OAK_LOG, EAST_WEST_STRIPPED_OAK_LOG, (byte) 51, (byte) 35, (byte) 115, sound);
+        setLogData(UP_DOWN_SPRUCE_LOG, NORTH_SOUTH_SPRUCE_LOG, EAST_WEST_SPRUCE_LOG, (byte) 20, (byte) 4, (byte) 100, sound);
+        setLogData(UP_DOWN_STRIPPED_SPRUCE_LOG, NORTH_SOUTH_STRIPPED_SPRUCE_LOG, EAST_WEST_STRIPPED_SPRUCE_LOG, (byte) 52, (byte) 36, (byte) 116, sound);
+        setLogData(UP_DOWN_DARK_OAK_LOG, NORTH_SOUTH_DARK_OAK_LOG, EAST_WEST_DARK_OAK_LOG, (byte) 21, (byte) 5, (byte) 101, sound);
+        setLogData(UP_DOWN_STRIPPED_DARK_OAK_LOG, NORTH_SOUTH_STRIPPED_DARK_OAK_LOG, EAST_WEST_STRIPPED_DARK_OAK_LOG, (byte) 53, (byte) 37, (byte) 117, sound);
+        setLogData(UP_DOWN_PINE_LOG, NORTH_SOUTH_PINE_LOG, EAST_WEST_PINE_LOG, (byte) 22, (byte) 6, (byte) 102, sound);
+        setLogData(UP_DOWN_STRIPPED_PINE_LOG, NORTH_SOUTH_STRIPPED_PINE_LOG, EAST_WEST_STRIPPED_PINE_LOG, (byte) 54, (byte) 38, (byte) 118, sound);
+        setLogData(UP_DOWN_REDWOOD_LOG, NORTH_SOUTH_REDWOOD_LOG, EAST_WEST_REDWOOD_LOG, (byte) 23, (byte) 7, (byte) 103, sound);
+        setLogData(UP_DOWN_STRIPPED_REDWOOD_LOG, NORTH_SOUTH_STRIPPED_REDWOOD_LOG, EAST_WEST_STRIPPED_REDWOOD_LOG, (byte) 55, (byte) 39, (byte) 119, sound);
+        setLogData(UP_DOWN_BLACK_WOOD_LOG, NORTH_SOUTH_BLACK_WOOD_LOG, EAST_WEST_BLACK_WOOD_LOG, (byte) 24, (byte) 8, (byte) 104, sound);
+        setLogData(UP_DOWN_STRIPPED_BLACK_WOOD_LOG, NORTH_SOUTH_STRIPPED_BLACK_WOOD_LOG, EAST_WEST_STRIPPED_BLACK_WOOD_LOG, (byte) 56, (byte) 40, (byte) 120, sound);
 
         setStandardBlockData(OAK_LEAVES, 0, sound.digFoliage, sound.stepFoliage, (byte) 83);
         setStandardBlockData(SPRUCE_LEAVES, 0, sound.digFoliage, sound.stepFoliage, (byte) 84);
@@ -1061,10 +1049,10 @@ public class Block {
         setStandardBlockData(WHITE_WOOL, 0, sound.digCloth, sound.stepCloth, (byte) 0xC8);
         setStandardBlockData(BLACK_WOOL, 0, sound.digCloth, sound.stepCloth, (byte) 0xC7);
 
-        setStandardBlockData(FRONT_FURNACE, INTERACTABLE, sound.digStone, sound.stepStone, new byte[]{(byte) -104, (byte) -121, (byte) -105, (byte) -105, (byte) -89, (byte) -105});
-        setStandardBlockData(BACK_FURNACE, INTERACTABLE, sound.digStone, sound.stepStone, new byte[]{(byte) -105, (byte) -121, (byte) -105, (byte) -104, (byte) -89, (byte) -105});
-        setStandardBlockData(RIGHT_FURNACE, INTERACTABLE, sound.digStone, sound.stepStone, new byte[]{(byte) -105, (byte) -121, (byte) -104, (byte) -105, (byte) -89, (byte) -105});
-        setStandardBlockData(LEFT_FURNACE, INTERACTABLE, sound.digStone, sound.stepStone, new byte[]{(byte) -105, (byte) -121, (byte) -105, (byte) -105, (byte) -89, (byte) -104});
+        setStandardBlockData(NORTH_FURNACE, INTERACTABLE, sound.digStone, sound.stepStone, new byte[]{(byte) -104, (byte) -121, (byte) -105, (byte) -105, (byte) -89, (byte) -105});
+        setStandardBlockData(SOUTH_FURNACE, INTERACTABLE, sound.digStone, sound.stepStone, new byte[]{(byte) -105, (byte) -121, (byte) -105, (byte) -104, (byte) -89, (byte) -105});
+        setStandardBlockData(WEST_FURNACE, INTERACTABLE, sound.digStone, sound.stepStone, new byte[]{(byte) -105, (byte) -121, (byte) -104, (byte) -105, (byte) -89, (byte) -105});
+        setStandardBlockData(EAST_FURNACE, INTERACTABLE, sound.digStone, sound.stepStone, new byte[]{(byte) -105, (byte) -121, (byte) -105, (byte) -105, (byte) -89, (byte) -104});
     }
 
     //I don't know how to use JSON-Files, so just ignore it
@@ -1076,4 +1064,21 @@ public class Block {
         initUVSubData();
         initBlockTypeData();
     }
+
+    private static final int[] NON_STANDARD_BLOCK_TYPE = new int[STANDARD_BLOCKS_THRESHOLD];
+    private static final byte[][] NON_STANDARD_BLOCK_TEXTURE_INDICES = new byte[STANDARD_BLOCKS_THRESHOLD][1];
+    private static final byte[][] STANDARD_BLOCK_TEXTURE_INDICES = new byte[AMOUNT_OF_STANDARD_BLOCKS][1];
+    private static final int[] NON_STANDARD_BLOCK_PROPERTIES = new int[STANDARD_BLOCKS_THRESHOLD];
+    private static final int[] STANDARD_BLOCK_PROPERTIES = new int[AMOUNT_OF_STANDARD_BLOCKS];
+
+    private static final int[][] NON_STANDARD_BLOCK_DIG_SOUNDS = new int[STANDARD_BLOCKS_THRESHOLD][0];
+    private static final int[][] STANDARD_BLOCK_DIG_SOUNDS = new int[AMOUNT_OF_STANDARD_BLOCKS][0];
+    private static final int[][] NON_STANDARD_BLOCK_STEP_SOUNDS = new int[STANDARD_BLOCKS_THRESHOLD][0];
+    private static final int[][] STANDARD_BLOCK_STEP_SOUNDS = new int[AMOUNT_OF_STANDARD_BLOCKS][0];
+
+    private static final long[][] BLOCK_TYPE_OCCLUSION_DATA = new long[TOTAL_AMOUNT_OF_BLOCK_TYPES][0];
+    private static final byte[] BLOCK_TYPE_DATA = new byte[TOTAL_AMOUNT_OF_BLOCK_TYPES];
+
+    private static final byte[][] BLOCK_TYPE_XYZ_SUB_DATA = new byte[TOTAL_AMOUNT_OF_BLOCK_TYPES][0];
+    private static final byte[][] BLOCK_TYPE_UV_SUB_DATA = new byte[TOTAL_AMOUNT_OF_BLOCK_TYPES][0];
 }

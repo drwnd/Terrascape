@@ -1,14 +1,13 @@
 package com.MBEv2.core;
 
-import com.MBEv2.core.entity.GUIElement;
-import com.MBEv2.core.entity.Player;
-import com.MBEv2.test.Launcher;
+import com.MBEv2.entity.GUIElement;
+import com.MBEv2.entity.Player;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 
-import static com.MBEv2.core.utils.Constants.*;
-import static com.MBEv2.core.utils.Settings.*;
+import static com.MBEv2.utils.Constants.*;
+import static com.MBEv2.utils.Settings.*;
 
 public class MouseInput {
 
@@ -39,6 +38,8 @@ public class MouseInput {
             if (player.isInInventory()) {
                 float scrollValue = (float) yPos * -0.05f;
                 player.updateInventoryScroll(scrollValue);
+            } else if (Launcher.getWindow().isKeyPressed(ZOOM_BUTTON)) {
+                player.changeZoomModifier(yPos > 0 ? 0.9f : 1 / 0.9f);
             } else if (SCROLL_HOT_BAR) {
                 player.setSelectedHotBarSlot((player.getSelectedHotBarSlot() - (int) yPos + 9) % 9);
             }
@@ -74,6 +75,6 @@ public class MouseInput {
         Vector3f position = player.getCamera().getPosition();
         hoveredOverBlock = currentHoveredOverBlock;
         Launcher.getSound().playRandomSound(Block.getFootstepsSound(hoveredOverBlock),
-                position.x, position.y, position.z, 0.0f,0.0f,0.0f, INVENTORY_GAIN);
+                position.x, position.y, position.z, 0.0f, 0.0f, 0.0f, INVENTORY_GAIN);
     }
 }

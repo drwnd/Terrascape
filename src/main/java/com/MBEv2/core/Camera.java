@@ -3,7 +3,7 @@ package com.MBEv2.core;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
-import static com.MBEv2.core.utils.Constants.*;
+import static com.MBEv2.utils.Constants.*;
 
 public class Camera {
 
@@ -37,14 +37,6 @@ public class Camera {
         return new Vector3f(x, y, z);
     }
 
-    public int getPrimaryDirection() {
-        return getPrimaryDirection(getDirection());
-    }
-
-    public int getPrimaryXZDirection(){
-        return getPrimaryXZDirection(getDirection());
-    }
-
     public int getPrimaryXZDirection(Vector3f cameraDirection){
         float x = Math.abs(cameraDirection.x);
         float z = Math.abs(cameraDirection.z);
@@ -59,9 +51,9 @@ public class Camera {
         float y = Math.abs(cameraDirection.y);
         float z = Math.abs(cameraDirection.z);
         if (x > z && x > y)
-            return cameraDirection.x > 0.0f ? RIGHT : LEFT;
+            return cameraDirection.x > 0.0f ? WEST : EAST;
         else if (z > x && z > y)
-            return cameraDirection.z > 0.0f ? FRONT : BACK;
+            return cameraDirection.z > 0.0f ? NORTH : SOUTH;
         return cameraDirection.y > 0.0f ? TOP : BOTTOM;
     }
 

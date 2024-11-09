@@ -1,16 +1,16 @@
 package com.MBEv2.core;
 
-import com.MBEv2.core.entity.*;
+import com.MBEv2.dataStorage.Chunk;
+import com.MBEv2.entity.*;
 
-import static com.MBEv2.core.utils.Constants.*;
-import static com.MBEv2.core.utils.Settings.*;
+import static com.MBEv2.utils.Constants.*;
+import static com.MBEv2.utils.Settings.*;
 
-import com.MBEv2.core.entity.entities.Entity;
-import com.MBEv2.core.entity.particles.Particle;
-import com.MBEv2.core.utils.Transformation;
-import com.MBEv2.core.utils.Utils;
-import com.MBEv2.test.GameLogic;
-import com.MBEv2.test.Launcher;
+import com.MBEv2.entity.entities.Entity;
+import com.MBEv2.entity.particles.Particle;
+import com.MBEv2.generation.WorldGeneration;
+import com.MBEv2.utils.Transformation;
+import com.MBEv2.utils.Utils;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector3i;

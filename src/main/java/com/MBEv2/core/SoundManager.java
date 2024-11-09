@@ -1,15 +1,14 @@
 package com.MBEv2.core;
 
-import com.MBEv2.core.entity.AudioSource;
-import com.MBEv2.core.entity.Player;
+import com.MBEv2.entity.Player;
 import org.joml.Vector3f;
 import org.lwjgl.openal.*;
 import org.lwjgl.system.MemoryUtil;
 
 import java.nio.IntBuffer;
 
-import static com.MBEv2.core.utils.Constants.*;
-import static com.MBEv2.core.utils.Settings.*;
+import static com.MBEv2.utils.Constants.*;
+import static com.MBEv2.utils.Settings.*;
 
 public class SoundManager {
 

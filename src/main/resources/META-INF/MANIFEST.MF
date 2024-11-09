@@ -1,3 +1,3 @@
 Manifest-Version: 1.0
-Main-Class: com.MBEv2.test.Launcher
+Main-Class: com.MBEv2.core.Launcher
 

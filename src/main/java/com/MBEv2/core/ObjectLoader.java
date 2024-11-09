@@ -1,9 +1,9 @@
 package com.MBEv2.core;
 
-import com.MBEv2.core.entity.GUIElement;
-import com.MBEv2.core.entity.Model;
-import com.MBEv2.core.entity.SkyBox;
-import com.MBEv2.core.utils.Utils;
+import com.MBEv2.entity.GUIElement;
+import com.MBEv2.entity.Model;
+import com.MBEv2.entity.SkyBox;
+import com.MBEv2.utils.Utils;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.joml.Vector3i;
@@ -165,7 +165,6 @@ public class ObjectLoader {
     private static ShortBuffer readVorbis(String filename, STBVorbisInfo info) throws RuntimeException {
         MemoryStack stack = MemoryStack.stackPush();
         IntBuffer error = stack.mallocInt(1);
-        //noinspection DataFlowIssue
         long decoder = STBVorbis.stb_vorbis_open_filename(filename, error, null);
         if (decoder == MemoryUtil.NULL) {
             throw new RuntimeException("Failed to open Ogg Vorbis file. Error: " + error.get(0));

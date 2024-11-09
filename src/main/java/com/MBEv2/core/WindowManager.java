@@ -1,7 +1,7 @@
 package com.MBEv2.core;
 
-import static com.MBEv2.core.utils.Constants.*;
-import static com.MBEv2.core.utils.Settings.*;
+import static com.MBEv2.utils.Constants.*;
+import static com.MBEv2.utils.Settings.*;
 
 import org.joml.Matrix4f;
 import org.lwjgl.glfw.GLFW;

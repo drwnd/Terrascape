@@ -1,13 +1,14 @@
 package com.MBEv2.core;
 
-import com.MBEv2.core.entity.entities.Entity;
-import com.MBEv2.core.entity.particles.Particle;
-import com.MBEv2.test.GameLogic;
-import com.MBEv2.test.Launcher;
+import com.MBEv2.dataStorage.FileManager;
+import com.MBEv2.dataStorage.Structure;
+import com.MBEv2.entity.entities.Entity;
+import com.MBEv2.entity.particles.Particle;
+import com.MBEv2.generation.WorldGeneration;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;
 
-import static com.MBEv2.core.utils.Constants.*;
+import static com.MBEv2.utils.Constants.*;
 
 public class EngineManager {
 
@@ -24,6 +25,7 @@ public class EngineManager {
         WorldGeneration.init();
         FileManager.init();
         FileManager.loadSettings(true);
+        Structure.init();
         window = Launcher.getWindow();
         window.init();
         sound = Launcher.getSound();
