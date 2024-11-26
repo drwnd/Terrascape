@@ -18,6 +18,7 @@ import org.lwjgl.stb.STBVorbisInfo;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
@@ -186,15 +187,11 @@ public class ObjectLoader {
 
     public static String loadResources(String filename) throws Exception {
         String result;
-        try (InputStream in = Utils.class.getResourceAsStream(filename)) {
 
-            if (in == null)
-                throw new RuntimeException("Could not load resource " + filename);
+        InputStream in = new FileInputStream(filename);
+        Scanner scanner = new Scanner(in, StandardCharsets.UTF_8);
+        result = scanner.useDelimiter("\\A").next();
 
-            try (Scanner scanner = new Scanner(in, StandardCharsets.UTF_8)) {
-                result = scanner.useDelimiter("\\A").next();
-            }
-        }
         return result;
     }
 

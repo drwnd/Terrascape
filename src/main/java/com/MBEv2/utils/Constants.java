@@ -357,35 +357,35 @@ public class Constants {
 
     public static final int AMOUNT_OF_TO_PLACE_STANDARD_BLOCKS = 105;
 
-    public static final short NORTH_SOUTH_OAK_LOG = (short) (511 << BLOCK_TYPE_BITS);
-    public static final short EAST_WEST_OAK_LOG = (short) (510 << BLOCK_TYPE_BITS);
-    public static final short NORTH_SOUTH_STRIPPED_OAK_LOG = (short) (509 << BLOCK_TYPE_BITS);
-    public static final short EAST_WEST_STRIPPED_OAK_LOG = (short) (508 << BLOCK_TYPE_BITS);
-    public static final short NORTH_SOUTH_SPRUCE_LOG = (short) (507 << BLOCK_TYPE_BITS);
-    public static final short EAST_WEST_SPRUCE_LOG = (short) (506 << BLOCK_TYPE_BITS);
-    public static final short NORTH_SOUTH_STRIPPED_SPRUCE_LOG = (short) (505 << BLOCK_TYPE_BITS);
-    public static final short EAST_WEST_STRIPPED_SPRUCE_LOG = (short) (504 << BLOCK_TYPE_BITS);
-    public static final short NORTH_SOUTH_DARK_OAK_LOG = (short) (503 << BLOCK_TYPE_BITS);
-    public static final short EAST_WEST_DARK_OAK_LOG = (short) (502 << BLOCK_TYPE_BITS);
-    public static final short NORTH_SOUTH_STRIPPED_DARK_OAK_LOG = (short) (501 << BLOCK_TYPE_BITS);
-    public static final short EAST_WEST_STRIPPED_DARK_OAK_LOG = (short) (500 << BLOCK_TYPE_BITS);
-    public static final short NORTH_SOUTH_PINE_LOG = (short) (499 << BLOCK_TYPE_BITS);
-    public static final short EAST_WEST_PINE_LOG = (short) (498 << BLOCK_TYPE_BITS);
-    public static final short NORTH_SOUTH_STRIPPED_PINE_LOG = (short) (497 << BLOCK_TYPE_BITS);
-    public static final short EAST_WEST_STRIPPED_PINE_LOG = (short) (496 << BLOCK_TYPE_BITS);
-    public static final short NORTH_SOUTH_REDWOOD_LOG = (short) (495 << BLOCK_TYPE_BITS);
-    public static final short EAST_WEST_REDWOOD_LOG = (short) (494 << BLOCK_TYPE_BITS);
-    public static final short NORTH_SOUTH_STRIPPED_REDWOOD_LOG = (short) (493 << BLOCK_TYPE_BITS);
-    public static final short EAST_WEST_STRIPPED_REDWOOD_LOG = (short) (492 << BLOCK_TYPE_BITS);
-    public static final short NORTH_SOUTH_BLACK_WOOD_LOG = (short) (491 << BLOCK_TYPE_BITS);
-    public static final short EAST_WEST_BLACK_WOOD_LOG = (short) (490 << BLOCK_TYPE_BITS);
-    public static final short NORTH_SOUTH_STRIPPED_BLACK_WOOD_LOG = (short) (489 << BLOCK_TYPE_BITS);
-    public static final short EAST_WEST_STRIPPED_BLACK_WOOD_LOG = (short) (488 << BLOCK_TYPE_BITS);
-    public static final short SOUTH_FURNACE = (short) (487 << BLOCK_TYPE_BITS);
-    public static final short WEST_FURNACE = (short) (486 << BLOCK_TYPE_BITS);
-    public static final short EAST_FURNACE = (short) (485 << BLOCK_TYPE_BITS);
+    public static final short NORTH_SOUTH_OAK_LOG = (short) (255 << BLOCK_TYPE_BITS);
+    public static final short EAST_WEST_OAK_LOG = (short) (254 << BLOCK_TYPE_BITS);
+    public static final short NORTH_SOUTH_STRIPPED_OAK_LOG = (short) (253 << BLOCK_TYPE_BITS);
+    public static final short EAST_WEST_STRIPPED_OAK_LOG = (short) (252 << BLOCK_TYPE_BITS);
+    public static final short NORTH_SOUTH_SPRUCE_LOG = (short) (251 << BLOCK_TYPE_BITS);
+    public static final short EAST_WEST_SPRUCE_LOG = (short) (250 << BLOCK_TYPE_BITS);
+    public static final short NORTH_SOUTH_STRIPPED_SPRUCE_LOG = (short) (249 << BLOCK_TYPE_BITS);
+    public static final short EAST_WEST_STRIPPED_SPRUCE_LOG = (short) (248 << BLOCK_TYPE_BITS);
+    public static final short NORTH_SOUTH_DARK_OAK_LOG = (short) (247 << BLOCK_TYPE_BITS);
+    public static final short EAST_WEST_DARK_OAK_LOG = (short) (246 << BLOCK_TYPE_BITS);
+    public static final short NORTH_SOUTH_STRIPPED_DARK_OAK_LOG = (short) (245 << BLOCK_TYPE_BITS);
+    public static final short EAST_WEST_STRIPPED_DARK_OAK_LOG = (short) (244 << BLOCK_TYPE_BITS);
+    public static final short NORTH_SOUTH_PINE_LOG = (short) (243 << BLOCK_TYPE_BITS);
+    public static final short EAST_WEST_PINE_LOG = (short) (242 << BLOCK_TYPE_BITS);
+    public static final short NORTH_SOUTH_STRIPPED_PINE_LOG = (short) (241 << BLOCK_TYPE_BITS);
+    public static final short EAST_WEST_STRIPPED_PINE_LOG = (short) (240 << BLOCK_TYPE_BITS);
+    public static final short NORTH_SOUTH_REDWOOD_LOG = (short) (239 << BLOCK_TYPE_BITS);
+    public static final short EAST_WEST_REDWOOD_LOG = (short) (238 << BLOCK_TYPE_BITS);
+    public static final short NORTH_SOUTH_STRIPPED_REDWOOD_LOG = (short) (237 << BLOCK_TYPE_BITS);
+    public static final short EAST_WEST_STRIPPED_REDWOOD_LOG = (short) (236 << BLOCK_TYPE_BITS);
+    public static final short NORTH_SOUTH_BLACK_WOOD_LOG = (short) (235 << BLOCK_TYPE_BITS);
+    public static final short EAST_WEST_BLACK_WOOD_LOG = (short) (234 << BLOCK_TYPE_BITS);
+    public static final short NORTH_SOUTH_STRIPPED_BLACK_WOOD_LOG = (short) (233 << BLOCK_TYPE_BITS);
+    public static final short EAST_WEST_STRIPPED_BLACK_WOOD_LOG = (short) (232 << BLOCK_TYPE_BITS);
+    public static final short SOUTH_FURNACE = (short) (231 << BLOCK_TYPE_BITS);
+    public static final short WEST_FURNACE = (short) (230 << BLOCK_TYPE_BITS);
+    public static final short EAST_FURNACE = (short) (229 << BLOCK_TYPE_BITS);
 
-    public static final int AMOUNT_OF_STANDARD_BLOCKS = 512;
+    public static final int AMOUNT_OF_STANDARD_BLOCKS = 256;
 
     // Just pretend it doesn't exist
     public static final float[] SKY_BOX_VERTICES;

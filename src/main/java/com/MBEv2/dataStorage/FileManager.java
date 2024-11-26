@@ -35,7 +35,7 @@ public class FileManager {
     private static final Map<String, Integer> keyCodes = new HashMap<>(70);
 
     public static void init() {
-        seedFile = new File(System.getProperty("user.dir") + "/src/main/resources/Saves/" + SEED);
+        seedFile = new File("Saves/" + SEED);
         if (!seedFile.exists()) //noinspection ResultOfMethodCallIgnored
             seedFile.mkdirs();
 

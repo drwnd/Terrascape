@@ -1125,7 +1125,7 @@ public class Player {
     private boolean inInventory;
     private boolean headUnderWater, touchingWater;
     private short[] hotBar = new short[9];
-    private int selectedHotBarSlot = 0;
+    private int selectedHotBarSlot = -1; // No idea but when it's 0 there is a bug but anything else works
     private long lastFootstepTick = 0;
 
     // Debug

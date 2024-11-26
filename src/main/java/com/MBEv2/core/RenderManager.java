@@ -42,7 +42,6 @@ public class RenderManager {
     public int modelIndexBuffer;
     private int textRowVertexArray;
 
-    private Texture xRayAtlas;
     private Texture atlas;
     private Texture textAtlas;
     private boolean xRay;
@@ -90,15 +89,14 @@ public class RenderManager {
     }
 
     private void loadTextures() throws Exception {
-        xRayAtlas = new Texture(ObjectLoader.loadTexture("textures/XRayAtlas.png"));
         atlas = new Texture(ObjectLoader.loadTexture("textures/atlas256.png"));
         textAtlas = new Texture(ObjectLoader.loadTexture("textures/textAtlas.png"));
     }
 
     private void createParticleShader() throws Exception {
         particleShader = new ShaderManager();
-        particleShader.createVertexShader(ObjectLoader.loadResources("/shaders/ParticleVertex.glsl"));
-        particleShader.createFragmentShader(ObjectLoader.loadResources("/shaders/ParticleFragment.glsl"));
+        particleShader.createVertexShader(ObjectLoader.loadResources("shaders/ParticleVertex.glsl"));
+        particleShader.createFragmentShader(ObjectLoader.loadResources("shaders/ParticleFragment.glsl"));
         particleShader.link();
         particleShader.createUniform("projectionMatrix");
         particleShader.createUniform("viewMatrix");
@@ -113,8 +111,8 @@ public class RenderManager {
 
     private void createEntityShader() throws Exception {
         entityShader = new ShaderManager();
-        entityShader.createVertexShader(ObjectLoader.loadResources("/shaders/EntityVertex.glsl"));
-        entityShader.createFragmentShader(ObjectLoader.loadResources("/shaders/EntityFragment.glsl"));
+        entityShader.createVertexShader(ObjectLoader.loadResources("shaders/EntityVertex.glsl"));
+        entityShader.createFragmentShader(ObjectLoader.loadResources("shaders/EntityFragment.glsl"));
         entityShader.link();
         entityShader.createUniform("projectionMatrix");
         entityShader.createUniform("viewMatrix");
@@ -126,8 +124,8 @@ public class RenderManager {
 
     private void createTextShader() throws Exception {
         textShader = new ShaderManager();
-        textShader.createVertexShader(ObjectLoader.loadResources("/shaders/textVertex.glsl"));
-        textShader.createFragmentShader(ObjectLoader.loadResources("/shaders/textFragment.glsl"));
+        textShader.createVertexShader(ObjectLoader.loadResources("shaders/textVertex.glsl"));
+        textShader.createFragmentShader(ObjectLoader.loadResources("shaders/textFragment.glsl"));
         textShader.link();
         textShader.createUniform("screenSize");
         textShader.createUniform("charSize");
@@ -138,8 +136,8 @@ public class RenderManager {
 
     private void createGUIShader() throws Exception {
         GUIShader = new ShaderManager();
-        GUIShader.createVertexShader(ObjectLoader.loadResources("/shaders/GUIVertex.glsl"));
-        GUIShader.createFragmentShader(ObjectLoader.loadResources("/shaders/GUIFragment.glsl"));
+        GUIShader.createVertexShader(ObjectLoader.loadResources("shaders/GUIVertex.glsl"));
+        GUIShader.createFragmentShader(ObjectLoader.loadResources("shaders/GUIFragment.glsl"));
         GUIShader.link();
         GUIShader.createUniform("textureSampler");
         GUIShader.createUniform("position");
@@ -147,8 +145,8 @@ public class RenderManager {
 
     private void createSkyBoxShader() throws Exception {
         skyBoxShader = new ShaderManager();
-        skyBoxShader.createVertexShader(ObjectLoader.loadResources("/shaders/skyBoxVertex.glsl"));
-        skyBoxShader.createFragmentShader(ObjectLoader.loadResources("/shaders/skyBoxFragment.glsl"));
+        skyBoxShader.createVertexShader(ObjectLoader.loadResources("shaders/skyBoxVertex.glsl"));
+        skyBoxShader.createFragmentShader(ObjectLoader.loadResources("shaders/skyBoxFragment.glsl"));
         skyBoxShader.link();
         skyBoxShader.createUniform("textureSampler1");
         skyBoxShader.createUniform("textureSampler2");
@@ -160,8 +158,8 @@ public class RenderManager {
 
     private void createFoliageShader() throws Exception {
         foliageShader = new ShaderManager();
-        foliageShader.createVertexShader(ObjectLoader.loadResources("/shaders/FoliageVertex.glsl"));
-        foliageShader.createFragmentShader(ObjectLoader.loadResources("/shaders/blockFragment.glsl"));
+        foliageShader.createVertexShader(ObjectLoader.loadResources("shaders/FoliageVertex.glsl"));
+        foliageShader.createFragmentShader(ObjectLoader.loadResources("shaders/blockFragment.glsl"));
         foliageShader.link();
         foliageShader.createUniform("textureSampler");
         foliageShader.createUniform("projectionMatrix");
@@ -175,8 +173,8 @@ public class RenderManager {
 
     private void createWaterShader() throws Exception {
         waterShader = new ShaderManager();
-        waterShader.createVertexShader(ObjectLoader.loadResources("/shaders/waterVertex.glsl"));
-        waterShader.createFragmentShader(ObjectLoader.loadResources("/shaders/waterFragment.glsl"));
+        waterShader.createVertexShader(ObjectLoader.loadResources("shaders/waterVertex.glsl"));
+        waterShader.createFragmentShader(ObjectLoader.loadResources("shaders/waterFragment.glsl"));
         waterShader.link();
         waterShader.createUniform("textureSampler");
         waterShader.createUniform("projectionMatrix");
@@ -190,8 +188,8 @@ public class RenderManager {
 
     private void createBlockShader() throws Exception {
         blockShader = new ShaderManager();
-        blockShader.createVertexShader(ObjectLoader.loadResources("/shaders/blockVertex.glsl"));
-        blockShader.createFragmentShader(ObjectLoader.loadResources("/shaders/blockFragment.glsl"));
+        blockShader.createVertexShader(ObjectLoader.loadResources("shaders/blockVertex.glsl"));
+        blockShader.createFragmentShader(ObjectLoader.loadResources("shaders/blockFragment.glsl"));
         blockShader.link();
         blockShader.createUniform("textureSampler");
         blockShader.createUniform("projectionMatrix");
@@ -274,7 +272,7 @@ public class RenderManager {
         GL30.glBindVertexArray(0);
     }
 
-    public void render(Camera camera, float timeSinceLastTick) {
+    public void render(Camera camera, float passedTicks) {
         Matrix4f projectionMatrix = window.getProjectionMatrix();
         Matrix4f viewMatrix = Transformation.getViewMatrix(camera);
 
@@ -282,15 +280,15 @@ public class RenderManager {
 
         renderSkyBox(camera);
 
-        renderOpaqueChunks(projectionMatrix, viewMatrix, timeSinceLastTick);
+        renderOpaqueChunks(projectionMatrix, viewMatrix, passedTicks);
 
-        renderFoliageChunks(projectionMatrix, viewMatrix, timeSinceLastTick);
+        renderFoliageChunks(projectionMatrix, viewMatrix, passedTicks);
 
-        renderEntities(projectionMatrix, viewMatrix, timeSinceLastTick);
+        renderEntities(projectionMatrix, viewMatrix, passedTicks);
 
-        renderParticles(projectionMatrix, viewMatrix, timeSinceLastTick);
+        renderParticles(projectionMatrix, viewMatrix, passedTicks);
 
-        renderWaterChunks(projectionMatrix, viewMatrix, timeSinceLastTick);
+        renderWaterChunks(projectionMatrix, viewMatrix, passedTicks);
 
         renderGUIElements();
 
@@ -315,19 +313,19 @@ public class RenderManager {
         skyBoxShader.unBind();
     }
 
-    public void renderOpaqueChunks(Matrix4f projectionMatrix, Matrix4f viewMatrix, float timeSinceLastTick) {
+    public void renderOpaqueChunks(Matrix4f projectionMatrix, Matrix4f viewMatrix, float passedTicks) {
         blockShader.bind();
         blockShader.setUniform("projectionMatrix", projectionMatrix);
         blockShader.setUniform("viewMatrix", viewMatrix);
         blockShader.setUniform("textureSampler", 0);
-        blockShader.setUniform("time", time + TIME_SPEED * timeSinceLastTick);
+        blockShader.setUniform("time", time + TIME_SPEED * passedTicks);
         blockShader.setUniform("headUnderWater", headUnderWater ? 1 : 0);
         blockShader.setUniform("cameraPosition", player.getCamera().getPosition());
 
         GL11.glEnable(GL11.GL_DEPTH_TEST);
         GL11.glEnable(GL11.GL_CULL_FACE);
         GL13.glActiveTexture(GL13.GL_TEXTURE0);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, isxRay() ? xRayAtlas.id() : atlas.id());
+        GL11.glBindTexture(GL11.GL_TEXTURE_2D, atlas.id());
 
         for (Model model : chunkModels) {
             bindModel(model);
@@ -337,12 +335,12 @@ public class RenderManager {
         blockShader.unBind();
     }
 
-    public void renderFoliageChunks(Matrix4f projectionMatrix, Matrix4f viewMatrix, float timeSinceLastTick) {
+    public void renderFoliageChunks(Matrix4f projectionMatrix, Matrix4f viewMatrix, float passedTicks) {
         foliageShader.bind();
         foliageShader.setUniform("projectionMatrix", projectionMatrix);
         foliageShader.setUniform("viewMatrix", viewMatrix);
         foliageShader.setUniform("textureSampler", 0);
-        foliageShader.setUniform("time", time + TIME_SPEED * timeSinceLastTick);
+        foliageShader.setUniform("time", time + TIME_SPEED * passedTicks);
         foliageShader.setUniform("headUnderWater", headUnderWater ? 1 : 0);
         foliageShader.setUniform("cameraPosition", player.getCamera().getPosition());
 
@@ -361,7 +359,7 @@ public class RenderManager {
         foliageShader.unBind();
     }
 
-    public void renderEntities(Matrix4f projectionMatrix, Matrix4f viewMatrix, float timeSinceLastTick) {
+    public void renderEntities(Matrix4f projectionMatrix, Matrix4f viewMatrix, float passedTicks) {
         entityShader.bind();
         entityShader.setUniform("projectionMatrix", projectionMatrix);
         entityShader.setUniform("viewMatrix", viewMatrix);
@@ -372,18 +370,18 @@ public class RenderManager {
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, atlas.id());
         GL11.glEnable(GL11.GL_CULL_FACE);
 
-        for (Entity entity : entities) entity.render(entityShader, modelIndexBuffer, timeSinceLastTick);
+        for (Entity entity : entities) entity.render(entityShader, modelIndexBuffer, passedTicks);
 
         entityShader.unBind();
     }
 
-    public void renderParticles(Matrix4f projectionMatrix, Matrix4f viewMatrix, float timeSinceLastTick) {
+    public void renderParticles(Matrix4f projectionMatrix, Matrix4f viewMatrix, float passedTicks) {
         particleShader.bind();
         particleShader.setUniform("projectionMatrix", projectionMatrix);
         particleShader.setUniform("viewMatrix", viewMatrix);
         particleShader.setUniform("textureSampler", 0);
         particleShader.setUniform("cameraPosition", player.getCamera().getPosition());
-        particleShader.setUniform("time", time + TIME_SPEED * timeSinceLastTick);
+        particleShader.setUniform("time", time + TIME_SPEED * passedTicks);
 
         GL11.glDisable(GL11.GL_CULL_FACE);
         GL13.glActiveTexture(GL13.GL_TEXTURE0);
@@ -396,12 +394,12 @@ public class RenderManager {
         particleShader.unBind();
     }
 
-    public void renderWaterChunks(Matrix4f projectionMatrix, Matrix4f viewMatrix, float timeSinceLastTick) {
+    public void renderWaterChunks(Matrix4f projectionMatrix, Matrix4f viewMatrix, float passedTicks) {
         waterShader.bind();
         waterShader.setUniform("projectionMatrix", projectionMatrix);
         waterShader.setUniform("viewMatrix", viewMatrix);
         waterShader.setUniform("textureSampler", 0);
-        waterShader.setUniform("time", time + TIME_SPEED * timeSinceLastTick);
+        waterShader.setUniform("time", time + TIME_SPEED * passedTicks);
         waterShader.setUniform("headUnderWater", headUnderWater ? 1 : 0);
         waterShader.setUniform("cameraPosition", player.getCamera().getPosition());
 
@@ -469,13 +467,16 @@ public class RenderManager {
         double heightMapValue = WorldGeneration.heightMapValue(x, z);
         double erosionMapValue = WorldGeneration.erosionMapValue(x, z);
         double continentalMapValue = WorldGeneration.continentalMapValue(x, z);
+        double riverMapValue = WorldGeneration.riverMapValue(x, z);
+        double ridgeMapValue = WorldGeneration.ridgeMapValue(x, y);
 
         renderTextLine("Frame rate:" + EngineManager.currentFrameRate, ++line);
+        renderTextLine("Memory:" + (Runtime.getRuntime().totalMemory() / 1_000_000) + "MB", ++line);
         renderTextLine("Coordinates: X:" + Utils.floor(position.x * 10) / 10f + " Y:" + Utils.floor(position.y * 10) / 10f + " Z:" + Utils.floor(position.z * 10) / 10f, ++line);
-        renderTextLine("Chunk coordinates: X:" + chunkX + " Y:" + chunkY + " Z:" + chunkZ, ++line);
+        renderTextLine("Chunk coordinates: X:" + chunkX + " Y:" + chunkY + " Z:" + chunkZ + " Id" + GameLogic.getChunkId(chunkX, chunkY, chunkZ), ++line);
         renderTextLine("In Chunk coordinates: X:" + inChunkX + " Y:" + inChunkY + " Z:" + inChunkZ, ++line);
         renderTextLine("Looking at: X:" + Utils.floor(direction.x * 100) / 100f + " Y:" + Utils.floor(direction.y * 100) / 100f + " Z:" + Utils.floor(direction.z * 100) / 100f, ++line);
-        renderTextLine("Velocity: X:" + velocity.x + " Y:" + velocity.y + " Z:" + velocity.z, ++line) ;
+        renderTextLine("Velocity: X:" + velocity.x + " Y:" + velocity.y + " Z:" + velocity.z, ++line);
         if (chunk != null) {
             renderTextLine("OcclusionCullingData:" + Integer.toBinaryString(Chunk.getOcclusionCullingData(chunk.getIndex()) & 0x7FFF) + " Damping:" + (Chunk.getOcclusionCullingDamper(Chunk.getOcclusionCullingData(chunk.getIndex())) == 0 ? "false" : "true"), ++line);
             renderTextLine("Block optimized:" + (chunk.isBlockOptimized() ? "true" : "false") + " Light optimized:" + (chunk.isLightOptimized() ? "true" : "false"), ++line);
@@ -510,8 +511,9 @@ public class RenderManager {
         renderTextLine("To buffer chunks:" + GameLogic.getAmountOfToBufferChunks(), ++line);
         renderTextLine("Entities:" + GameLogic.getAmountOfEntities(), ++line);
         renderTextLine("Hei:" + Utils.floor(heightMapValue * 1000) / 1000d + " Ero:" + Utils.floor(erosionMapValue * 1000) / 1000d + " Con:" + Utils.floor(continentalMapValue * 1000) / 1000d, ++line);
+        renderTextLine("Riv:" + Utils.floor(riverMapValue * 1000) / 1000d + " Rid:" + Utils.floor(ridgeMapValue * 1000) / 1000d, ++line);
         renderTextLine("Tem:" + Utils.floor(WorldGeneration.temperatureMapValue(x, z) * 1000) / 1000d + " Hum:" + Utils.floor(WorldGeneration.humidityMapValue(x, z) * 1000) / 1000d, ++line);
-        renderTextLine("Resulting height: " + WorldGeneration.getResultingHeight(heightMapValue, erosionMapValue, continentalMapValue), ++line);
+        renderTextLine("Resulting height: " + WorldGeneration.getResultingHeight(heightMapValue, erosionMapValue, continentalMapValue, riverMapValue, ridgeMapValue), ++line);
 
         textShader.unBind();
     }
@@ -586,6 +588,8 @@ public class RenderManager {
 
     public void setXRay(boolean xRay) {
         this.xRay = xRay;
+        if (xRay) GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
+        else GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
     }
 
     public boolean isxRay() {

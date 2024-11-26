@@ -41,9 +41,9 @@ public class Camera {
         float x = Math.abs(cameraDirection.x);
         float z = Math.abs(cameraDirection.z);
         if (x > z)
-            return cameraDirection.x > 0 ? 2 : 5;
+            return cameraDirection.x > 0 ? WEST : EAST;
         else
-            return cameraDirection.z > 0 ? 0 : 3;
+            return cameraDirection.z > 0 ? NORTH : SOUTH;
     }
 
     public int getPrimaryDirection(Vector3f cameraDirection) {

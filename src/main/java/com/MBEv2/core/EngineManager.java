@@ -50,7 +50,7 @@ public class EngineManager {
             lastTime = currentTime;
 
             update(20 * passedTime / NANOSECONDS_PER_SECOND);
-            render((currentTime - lastGTTime) / NANOSECONDS_PER_SECOND);
+            render(20 * (currentTime - lastGTTime) / NANOSECONDS_PER_SECOND);
             frames++;
             if (window.windowShouldClose()) stop();
 
@@ -76,8 +76,8 @@ public class EngineManager {
         GameLogic.input();
     }
 
-    private void render(float timeSinceLastTick) {
-        GameLogic.render(timeSinceLastTick);
+    private void render(float passedTicks) {
+        GameLogic.render(passedTicks);
         window.update();
     }
 

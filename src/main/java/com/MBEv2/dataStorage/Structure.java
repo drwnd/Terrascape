@@ -8,12 +8,12 @@ public record Structure(short[] blocks, int lengthX, int lengthY, int lengthZ) {
 
     public static Structure testStructure;
 
-    public static byte OAK_TREE = 0;
-    public static byte SPRUCE_TREE = 1;
-    public static byte DARK_OAK_TREE = 2;
-//    public static byte PINE_TREE = 3;
-//    public static byte REDWOOD_TREE = 4;
-//    public static byte BLACK_WOOD_TREE = 5;
+    public static final byte OAK_TREE = 0;
+    public static final byte SPRUCE_TREE = 1;
+    public static final byte DARK_OAK_TREE = 2;
+    public static final byte PINE_TREE = 3;
+    public static final byte REDWOOD_TREE = 4;
+    public static final byte BLACK_WOOD_TREE = 5;
 
     public static final int MIRROR_X = 1;
     public static final int MIRROR_Z = 2;
@@ -22,45 +22,43 @@ public record Structure(short[] blocks, int lengthX, int lengthY, int lengthZ) {
 //    public static final int ROTATE_270 = ROTATE_180 | ROTATE_90;
 
     public static void init() throws Exception {
-        oakTrees[0] = FileManager.loadStructure("Structures/Oak_Tree_1");
-        oakTrees[1] = FileManager.loadStructure("Structures/Oak_Tree_2");
-        oakTrees[2] = FileManager.loadStructure("Structures/Oak_Tree_3");
-        oakTrees[3] = FileManager.loadStructure("Structures/Oak_Tree_4");
+        OAK_TREES[0] = FileManager.loadStructure("Structures/Oak_Tree_1");
+        OAK_TREES[1] = FileManager.loadStructure("Structures/Oak_Tree_2");
+        OAK_TREES[2] = FileManager.loadStructure("Structures/Oak_Tree_3");
+        OAK_TREES[3] = FileManager.loadStructure("Structures/Oak_Tree_4");
 
-        spruceTrees[0] = FileManager.loadStructure("Structures/Spruce_Tree_1");
-        spruceTrees[1] = FileManager.loadStructure("Structures/Spruce_Tree_2");
-        spruceTrees[2] = FileManager.loadStructure("Structures/Spruce_Tree_3");
-        spruceTrees[3] = FileManager.loadStructure("Structures/Spruce_Tree_4");
+        SPRUCE_TREES[0] = FileManager.loadStructure("Structures/Spruce_Tree_1");
+        SPRUCE_TREES[1] = FileManager.loadStructure("Structures/Spruce_Tree_2");
+        SPRUCE_TREES[2] = FileManager.loadStructure("Structures/Spruce_Tree_3");
+        SPRUCE_TREES[3] = FileManager.loadStructure("Structures/Spruce_Tree_4");
 
-        darkOakTrees[0] = FileManager.loadStructure("Structures/Dark_Oak_Tree_1");
-        darkOakTrees[1] = FileManager.loadStructure("Structures/Dark_Oak_Tree_2");
-        darkOakTrees[2] = FileManager.loadStructure("Structures/Dark_Oak_Tree_3");
-        darkOakTrees[3] = FileManager.loadStructure("Structures/Dark_Oak_Tree_4");
+        DARK_OAK_TREES[0] = FileManager.loadStructure("Structures/Dark_Oak_Tree_1");
+        DARK_OAK_TREES[1] = FileManager.loadStructure("Structures/Dark_Oak_Tree_2");
+        DARK_OAK_TREES[2] = FileManager.loadStructure("Structures/Dark_Oak_Tree_3");
+        DARK_OAK_TREES[3] = FileManager.loadStructure("Structures/Dark_Oak_Tree_4");
 
-        pineTrees[0] = FileManager.loadStructure("Structures/Pine_Tree_1");
-        pineTrees[1] = FileManager.loadStructure("Structures/Pine_Tree_2");
-        pineTrees[2] = FileManager.loadStructure("Structures/Pine_Tree_3");
-        pineTrees[3] = FileManager.loadStructure("Structures/Pine_Tree_4");
+        PINE_TREES[0] = FileManager.loadStructure("Structures/Pine_Tree_1");
+        PINE_TREES[1] = FileManager.loadStructure("Structures/Pine_Tree_2");
+        PINE_TREES[2] = FileManager.loadStructure("Structures/Pine_Tree_3");
+        PINE_TREES[3] = FileManager.loadStructure("Structures/Pine_Tree_4");
 
-        blackWoodTrees[0] = FileManager.loadStructure("Structures/Black_Wood_Tree_1");
-        blackWoodTrees[1] = FileManager.loadStructure("Structures/Black_Wood_Tree_2");
-        blackWoodTrees[2] = FileManager.loadStructure("Structures/Black_Wood_Tree_3");
-        blackWoodTrees[3] = FileManager.loadStructure("Structures/Black_Wood_Tree_4");
+        REDWOOD_TREES[0] = FileManager.loadStructure("Structures/Redwood_Tree_1");
+        REDWOOD_TREES[1] = FileManager.loadStructure("Structures/Redwood_Tree_2");
+        REDWOOD_TREES[2] = FileManager.loadStructure("Structures/Redwood_Tree_3");
+        REDWOOD_TREES[3] = FileManager.loadStructure("Structures/Redwood_Tree_4");
+
+        BLACK_WOOD_TREES[0] = FileManager.loadStructure("Structures/Black_Wood_Tree_1");
+        BLACK_WOOD_TREES[1] = FileManager.loadStructure("Structures/Black_Wood_Tree_2");
+        BLACK_WOOD_TREES[2] = FileManager.loadStructure("Structures/Black_Wood_Tree_3");
+        BLACK_WOOD_TREES[3] = FileManager.loadStructure("Structures/Black_Wood_Tree_4");
     }
-
 
     public static Structure getStructureVariation(byte name, int x, int y, int z) {
-        int positionHash = x + y + z;   // Good enough
-        int variationCount = structures[name].length;
+        int positionHash = Math.abs(x + y + z);   // Good enough
+        int variationCount = STRUCTURE_VARIATIONS[name].length;
 
-        return structures[name][positionHash % variationCount];
+        return STRUCTURE_VARIATIONS[name][positionHash % variationCount];
     }
-
-
-//    public short get(int structureX, int structureY, int structureZ) {
-//        int index = structureY * lengthX * lengthZ + structureX * lengthZ + structureZ;
-//        return blocks[index];
-//    }
 
     public short get(int structureX, int structureY, int structureZ, byte transform) {
         if (lengthX == lengthZ && (transform & ROTATE_90) != 0) {
@@ -414,12 +412,12 @@ public record Structure(short[] blocks, int lengthX, int lengthY, int lengthZ) {
         return block;
     }
 
-    private static final Structure[] oakTrees = new Structure[4];
-    private static final Structure[] spruceTrees = new Structure[4];
-    private static final Structure[] darkOakTrees = new Structure[4];
-    private static final Structure[] pineTrees = new Structure[4];
-    private static final Structure[] redwoodTrees = new Structure[4];
-    private static final Structure[] blackWoodTrees = new Structure[4];
+    private static final Structure[] OAK_TREES = new Structure[4];
+    private static final Structure[] SPRUCE_TREES = new Structure[4];
+    private static final Structure[] DARK_OAK_TREES = new Structure[4];
+    private static final Structure[] PINE_TREES = new Structure[4];
+    private static final Structure[] REDWOOD_TREES = new Structure[4];
+    private static final Structure[] BLACK_WOOD_TREES = new Structure[4];
 
-    private static final Structure[][] structures = {oakTrees, spruceTrees, darkOakTrees, pineTrees, redwoodTrees, blackWoodTrees};
+    private static final Structure[][] STRUCTURE_VARIATIONS = {OAK_TREES, SPRUCE_TREES, DARK_OAK_TREES, PINE_TREES, REDWOOD_TREES, BLACK_WOOD_TREES};
 }
