@@ -94,13 +94,14 @@ public class GameLogic {
         Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
         if (chunk == null) return;
 
+        short previousBlock = chunk.getSaveBlock(inChunkX, inChunkY, inChunkZ);
+        block = getToPlaceBlock(block, previousBlock);
+        if (previousBlock == block) return;
+
         int baseBlock = block & BASE_BLOCK_MASK;
         if ((Block.getBlockTypeData(block) & SMART_BLOCK_TYPE) != 0) {
             block = (short) (baseBlock | Block.getSmartBlockType(block, x, y, z));
         }
-
-        short previousBlock = chunk.getSaveBlock(inChunkX, inChunkY, inChunkZ);
-        if (previousBlock == block) return;
 
         chunk.placeBlock(inChunkX, inChunkY, inChunkZ, block);
 
@@ -134,16 +135,33 @@ public class GameLogic {
         if (highImportance) restartGeneratorNow(NONE);
         else restartGenerator(NONE);
 
-        if (highImportance && previousBlock != AIR) {
-            addParticle(new BlockBreakParticle(new Vector3f(x + 0.5f, y + 0.625f, z + 0.5f), previousBlock));
+        if (highImportance) {
+            boolean previousBlockWaterLogged = Block.isWaterLogged(previousBlock);
+            boolean newBlockWaterLogged = Block.isWaterLogged(block);
+
+            if (block == AIR)
+                addParticle(new BlockBreakParticle(new Vector3f(x + 0.5f, y + 0.625f, z + 0.5f), previousBlock));
+            else if (previousBlock == WATER)
+                addParticle(new BlockBreakParticle(new Vector3f(x + 0.5f, y + 0.625f, z + 0.5f), WATER));
+            else if (block == WATER && previousBlockWaterLogged)
+                addParticle(new BlockBreakParticle(new Vector3f(x + 0.5f, y + 0.625f, z + 0.5f), previousBlock));
 
             SoundManager sound = Launcher.getSound();
-            sound.playRandomSound(Block.getDigSound(previousBlock), x + 0.5f, y + 0.5f, z + 0.5f, 0.0f, 0.0f, 0.0f, DIG_GAIN);
+
+            if (previousBlockWaterLogged || !newBlockWaterLogged) {
+                sound.playRandomSound(Block.getDigSound(previousBlock), x + 0.5f, y + 0.5f, z + 0.5f, 0.0f, 0.0f, 0.0f, DIG_GAIN);
+                sound.playRandomSound(Block.getFootstepsSound(block), x + 0.5f, y + 0.5f, z + 0.5f, 0.0f, 0.0f, 0.0f, STEP_GAIN);
+            } else
+                sound.playRandomSound(Block.getFootstepsSound(WATER), x + 0.5f, y + 0.5f, z + 0.5f, 0.0f, 0.0f, 0.0f, STEP_GAIN);
         }
-        if (highImportance && block != AIR) {
-            SoundManager sound = Launcher.getSound();
-            sound.playRandomSound(Block.getFootstepsSound(block), x + 0.5f, y + 0.5f, z + 0.5f, 0.0f, 0.0f, 0.0f, PLACE_GAIN);
-        }
+    }
+
+    private static short getToPlaceBlock(short block, short previousBlock) {
+        if (block == AIR && Block.isWaterLogged(previousBlock)) return WATER;
+        if (previousBlock != WATER) return block;
+        if ((block & 0xFFFF) < STANDARD_BLOCKS_THRESHOLD) return block;
+        if ((block & BLOCK_TYPE_MASK) == FULL_BLOCK) return block;
+        return (short) (block | WATER_LOGGED_MASK);
     }
 
     public static void addBlockChange(int x, int y, int z, short previousBlock, short currentBlock) {

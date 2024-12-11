@@ -55,7 +55,7 @@ public class WindowManager {
 
         if (window == MemoryUtil.NULL) throw new RuntimeException("Failed to create GLFW window");
 
-        GLFW.glfwSetFramebufferSizeCallback(window, (window, width, height) -> {
+        GLFW.glfwSetFramebufferSizeCallback(window, (long window, int width, int height) -> {
             this.width = width;
             this.height = height;
             this.setResize(true);
@@ -79,6 +79,7 @@ public class WindowManager {
 
         GL11.glClearColor(0, 0, 0, 1);
         GL11.glEnable(GL11.GL_DEPTH_TEST);
+        GL11.glDepthFunc(GL11.GL_LESS);
         GL11.glEnable(GL11.GL_CULL_FACE);
         GL11.glCullFace(GL11.GL_BACK);
         GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);

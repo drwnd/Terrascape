@@ -24,17 +24,17 @@ public class MouseInput {
     }
 
     public void init() {
-        GLFW.glfwSetCursorPosCallback(Launcher.getWindow().getWindow(), (window, xPos, yPos) -> {
+        GLFW.glfwSetCursorPosCallback(Launcher.getWindow().getWindow(), (long window, double xPos, double yPos) -> {
             currentPos.x = (float) xPos;
             currentPos.y = (float) yPos;
 
             playHoverSelectionSound();
         });
 
-        GLFW.glfwSetMouseButtonCallback(Launcher.getWindow().getWindow(), (window, button, action, mods) ->
+        GLFW.glfwSetMouseButtonCallback(Launcher.getWindow().getWindow(), (long window, int button, int action, int mods) ->
                 player.handleNonMovementInputs(button | IS_MOUSE_BUTTON, action));
 
-        GLFW.glfwSetScrollCallback(Launcher.getWindow().getWindow(), (window, xPos, yPos) -> {
+        GLFW.glfwSetScrollCallback(Launcher.getWindow().getWindow(), (long window, double xPos, double yPos) -> {
             if (player.isInInventory()) {
                 float scrollValue = (float) yPos * -0.05f;
                 player.updateInventoryScroll(scrollValue);

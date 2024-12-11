@@ -9,17 +9,25 @@ import static terrascape.utils.Constants.*;
 
 public class Block {
 
-    public static final int[][] NORMALS = {{0, 0, 1}, {0, 1, 0}, {1, 0, 0}, {0, 0, -1}, {0, -1, 0}, {-1, 0, 0}};
-    public static final int[][] CORNERS_OF_SIDE = {{1, 0, 5, 4}, {2, 0, 3, 1}, {3, 1, 7, 5}, {2, 3, 6, 7}, {6, 4, 7, 5}, {2, 0, 6, 4}};
+    public static final byte[][] NORMALS = {{0, 0, 1}, {0, 1, 0}, {1, 0, 0}, {0, 0, -1}, {0, -1, 0}, {-1, 0, 0}};
+    public static final byte[][] CORNERS_OF_SIDE = {{1, 0, 5, 4}, {2, 0, 3, 1}, {3, 1, 7, 5}, {2, 3, 6, 7}, {6, 4, 7, 5}, {2, 0, 6, 4}};
+    public static final byte[][] SIDES_WITH_CORNER = {{0, 1, 5}, {0, 1, 2}, {1, 3, 5}, {1, 2, 3}, {0, 4, 5}, {0, 2, 4}, {3, 4, 5}, {2, 3, 4}};
 
-    public static boolean occludes(short toTestBlock, short occludingBlock, int side, int x, int y, int z, int aabbIndex) {
+    public static boolean occludesOpaque(short toTestBlock, short occludingBlock, int side, int aabbIndex, int x, int y, int z) {
+        if (BLOCK_TYPE_XYZ_SUB_DATA[getBlockType(toTestBlock)][sideToMinMaxXYZ(side) + aabbIndex] != 0)
+            return getBlockOcclusionData(toTestBlock, side) == -1L;
         int occludingBlockType = getBlockType(occludingBlock);
+        if (occludingBlockType == LIQUID_TYPE) {
+            if (isWaterLogged(occludingBlock)) return false;
+            if (getBlockType(toTestBlock) != LIQUID_TYPE) return false;
+            return occludesLava(occludingBlock, side, x, y, z);
+        }
         if (occludingBlockType == AIR_TYPE) return false;
 
-        long toTestOcclusionData = BLOCK_TYPE_OCCLUSION_DATA[getBlockType(toTestBlock)][side + aabbIndex];
+        long toTestOcclusionData = BLOCK_TYPE_OCCLUSION_DATA[getBlockType(toTestBlock)][side];
         byte blockTypeData = BLOCK_TYPE_DATA[occludingBlockType];
         int occludingSide = (side + 3) % 6;
-        long occludingOcclusionData = getBlockTypeOcclusionData(occludingBlock, occludingSide);
+        long occludingOcclusionData = getBlockOcclusionData(occludingBlock, occludingSide);
 
         if (isGlassType(occludingBlock))
             return isGlassType(toTestBlock) && (toTestOcclusionData | occludingOcclusionData) == occludingOcclusionData && toTestOcclusionData != 0L;
@@ -34,28 +42,43 @@ public class Block {
             return (toTestOcclusionData | occludingOcclusionData) == occludingOcclusionData;
         }
 
-        if ((blockTypeData & 3) == OCCLUDES_DYNAMIC_SELF)
-            return dynamicOcclusion(toTestBlock, occludingBlock, side, x, y, z);
         return true;
     }
 
-    public static boolean dynamicOcclusion(short toTestBlock, short occludingBlock, int side, int x, int y, int z) {
-        if (toTestBlock != occludingBlock) return false;
-        if (side == TOP || side == BOTTOM) return true;
+    public static boolean occludesWater(short occludingBlock, int side, int x, int y, int z) {
+        if (getBlockType(occludingBlock) == AIR_TYPE) return false;
+        if(isLeaveType(occludingBlock) || isGlassType(occludingBlock) && !isWaterLogged(occludingBlock)) return false;
+        if (occludingBlock == LAVA) return false;
+        if (side == TOP)
+            return isWaterLogged(occludingBlock) || getBlockOcclusionData(occludingBlock, BOTTOM) == -1L;
+        if (side == BOTTOM)
+            return isWaterLogged(occludingBlock) || getBlockOcclusionData(occludingBlock, TOP) == -1L;
+        if (!isWaterLogged(occludingBlock)) return getBlockOcclusionData(occludingBlock, (side + 3) % 6) == -1;
 
-        int[] normal = NORMALS[side];
+        byte[] normal = NORMALS[side];
         short blockAboveToTestBlock = Chunk.getBlockInWorld(x, y + 1, z);
         short blockAboveOccludingBlock = Chunk.getBlockInWorld(x + normal[0], y + 1, z + normal[2]);
 
-        int blockAboveToTestBlockType = getBlockType(blockAboveToTestBlock);
-        int blockAboveOccludingBlockType = getBlockType(blockAboveOccludingBlock);
+        boolean toTestBlockUp = isWaterLogged(blockAboveToTestBlock) || getBlockOcclusionData(blockAboveToTestBlock, BOTTOM) == -1L;
+        boolean occludingBlockUp = isWaterLogged(blockAboveOccludingBlock) || getBlockOcclusionData(blockAboveOccludingBlock, BOTTOM) == -1L;
 
-        if (getBlockTypeOcclusionData(blockAboveToTestBlock, BOTTOM) == -1 && getBlockTypeOcclusionData(blockAboveOccludingBlock, BOTTOM) != -1)
-            return false;
-        if ((blockAboveOccludingBlockType == LIQUID_TYPE) == (blockAboveToTestBlockType == LIQUID_TYPE)) return true;
-        if (getBlockTypeOcclusionData(blockAboveOccludingBlock, BOTTOM) == -1 && blockAboveToTestBlockType == LIQUID_TYPE)
-            return true;
-        return blockAboveToTestBlockType != LIQUID_TYPE;
+        return !(toTestBlockUp && !occludingBlockUp);
+    }
+
+    public static boolean occludesLava(short occludingBlock, int side, int x, int y, int z) {
+        if (getBlockType(occludingBlock) == AIR_TYPE) return false;
+        if (occludingBlock == WATER) return false;
+        if (side == TOP || side == BOTTOM) return true;
+        if (occludingBlock != LAVA) return getBlockOcclusionData(occludingBlock, (side + 3) % 6) == -1;
+
+        byte[] normal = NORMALS[side];
+        short blockAboveToTestBlock = Chunk.getBlockInWorld(x, y + 1, z);
+        short blockAboveOccludingBlock = Chunk.getBlockInWorld(x + normal[0], y + 1, z + normal[2]);
+
+        boolean toTestBlockUp = blockAboveToTestBlock == LAVA || getBlockOcclusionData(blockAboveToTestBlock, BOTTOM) == -1L;
+        boolean occludingBlockUp = blockAboveOccludingBlock == LAVA || getBlockOcclusionData(blockAboveOccludingBlock, BOTTOM) == -1L;
+
+        return !(toTestBlockUp && !occludingBlockUp);
     }
 
     public static int getTextureIndex(short block, int side) {
@@ -454,32 +477,34 @@ public class Block {
 
     public static int getSmartBlockType(short block, int x, int y, int z) {
         int blockType = getBlockType(block);
-        if (isNORTHSOUTHFenceType(blockType)) {
+        int waterLogged = (block & 0xFFFF) > STANDARD_BLOCKS_THRESHOLD ? block & WATER_LOGGED_MASK : 0;
+
+        if (isNorthSouthFenceType(blockType)) {
             int index = 0;
             short adjacentBlock;
             long adjacentMask;
 
             adjacentBlock = Chunk.getBlockInWorld(x, y + 1, z);
-            adjacentMask = getBlockTypeOcclusionData(adjacentBlock, BOTTOM);
-            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[EAST_WEST_WALL][TOP]) != 0 || isNORTHSOUTHFenceType(getBlockType(adjacentBlock)))
+            adjacentMask = getBlockType(adjacentBlock) == LIQUID_TYPE ? 0L : getBlockOcclusionData(adjacentBlock, BOTTOM);
+            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[EAST_WEST_WALL][TOP]) != 0 || isNorthSouthFenceType(getBlockType(adjacentBlock)))
                 index |= 1;
 
             adjacentBlock = Chunk.getBlockInWorld(x + 1, y, z);
-            adjacentMask = getBlockTypeOcclusionData(adjacentBlock, EAST);
-            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[UP_DOWN_WALL][WEST]) != 0 || isNORTHSOUTHFenceType(getBlockType(adjacentBlock)))
+            adjacentMask = getBlockType(adjacentBlock) == LIQUID_TYPE ? 0L : getBlockOcclusionData(adjacentBlock, EAST);
+            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[UP_DOWN_WALL][WEST]) != 0 || isNorthSouthFenceType(getBlockType(adjacentBlock)))
                 index |= 2;
 
             adjacentBlock = Chunk.getBlockInWorld(x, y - 1, z);
-            adjacentMask = getBlockTypeOcclusionData(adjacentBlock, TOP);
-            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[EAST_WEST_WALL][BOTTOM]) != 0 || isNORTHSOUTHFenceType(getBlockType(adjacentBlock)))
+            adjacentMask = getBlockType(adjacentBlock) == LIQUID_TYPE ? 0L : getBlockOcclusionData(adjacentBlock, TOP);
+            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[EAST_WEST_WALL][BOTTOM]) != 0 || isNorthSouthFenceType(getBlockType(adjacentBlock)))
                 index |= 4;
 
             adjacentBlock = Chunk.getBlockInWorld(x - 1, y, z);
-            adjacentMask = getBlockTypeOcclusionData(adjacentBlock, WEST);
-            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[UP_DOWN_WALL][EAST]) != 0 || isNORTHSOUTHFenceType(getBlockType(adjacentBlock)))
+            adjacentMask = getBlockType(adjacentBlock) == LIQUID_TYPE ? 0L : getBlockOcclusionData(adjacentBlock, WEST);
+            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[UP_DOWN_WALL][EAST]) != 0 || isNorthSouthFenceType(getBlockType(adjacentBlock)))
                 index |= 8;
 
-            return NORTH_SOUTH_FENCE + index;
+            return NORTH_SOUTH_FENCE + index | waterLogged;
         }
         if (isUpDownFenceType(blockType)) {
             int index = 0;
@@ -487,61 +512,62 @@ public class Block {
             long adjacentMask;
 
             adjacentBlock = Chunk.getBlockInWorld(x, y, z + 1);
-            adjacentMask = getBlockTypeOcclusionData(adjacentBlock, SOUTH);
+            adjacentMask = getBlockType(adjacentBlock) == LIQUID_TYPE ? 0L : getBlockOcclusionData(adjacentBlock, SOUTH);
             if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[EAST_WEST_WALL][NORTH]) != 0 || isUpDownFenceType(getBlockType(adjacentBlock)))
                 index |= 1;
 
             adjacentBlock = Chunk.getBlockInWorld(x + 1, y, z);
-            adjacentMask = getBlockTypeOcclusionData(adjacentBlock, EAST);
+            adjacentMask = getBlockType(adjacentBlock) == LIQUID_TYPE ? 0L : getBlockOcclusionData(adjacentBlock, EAST);
             if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[NORTH_SOUTH_WALL][WEST]) != 0 || isUpDownFenceType(getBlockType(adjacentBlock)))
                 index |= 2;
 
             adjacentBlock = Chunk.getBlockInWorld(x, y, z - 1);
-            adjacentMask = getBlockTypeOcclusionData(adjacentBlock, NORTH);
+            adjacentMask = getBlockType(adjacentBlock) == LIQUID_TYPE ? 0L : getBlockOcclusionData(adjacentBlock, NORTH);
             if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[EAST_WEST_WALL][SOUTH]) != 0 || isUpDownFenceType(getBlockType(adjacentBlock)))
                 index |= 4;
 
             adjacentBlock = Chunk.getBlockInWorld(x - 1, y, z);
-            adjacentMask = getBlockTypeOcclusionData(adjacentBlock, WEST);
+            adjacentMask = getBlockType(adjacentBlock) == LIQUID_TYPE ? 0L : getBlockOcclusionData(adjacentBlock, WEST);
             if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[NORTH_SOUTH_WALL][EAST]) != 0 || isUpDownFenceType(getBlockType(adjacentBlock)))
                 index |= 8;
 
-            return UP_DOWN_FENCE + index;
+            return UP_DOWN_FENCE + index | waterLogged;
         }
-        if (isEASTWESTFenceType(blockType)) {
+        if (isEastWestFenceType(blockType)) {
             int index = 0;
             short adjacentBlock;
             long adjacentMask;
 
             adjacentBlock = Chunk.getBlockInWorld(x, y, z + 1);
-            adjacentMask = getBlockTypeOcclusionData(adjacentBlock, SOUTH);
-            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[UP_DOWN_WALL][NORTH]) != 0 || isEASTWESTFenceType(getBlockType(adjacentBlock)))
+            adjacentMask = getBlockType(adjacentBlock) == LIQUID_TYPE ? 0L : getBlockOcclusionData(adjacentBlock, SOUTH);
+            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[UP_DOWN_WALL][NORTH]) != 0 || isEastWestFenceType(getBlockType(adjacentBlock)))
                 index |= 1;
 
             adjacentBlock = Chunk.getBlockInWorld(x, y + 1, z);
-            adjacentMask = getBlockTypeOcclusionData(adjacentBlock, BOTTOM);
-            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[NORTH_SOUTH_WALL][TOP]) != 0 || isEASTWESTFenceType(getBlockType(adjacentBlock)))
+            adjacentMask = getBlockType(adjacentBlock) == LIQUID_TYPE ? 0L : getBlockOcclusionData(adjacentBlock, BOTTOM);
+            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[NORTH_SOUTH_WALL][TOP]) != 0 || isEastWestFenceType(getBlockType(adjacentBlock)))
                 index |= 2;
 
             adjacentBlock = Chunk.getBlockInWorld(x, y, z - 1);
-            adjacentMask = getBlockTypeOcclusionData(adjacentBlock, NORTH);
-            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[UP_DOWN_WALL][SOUTH]) != 0 || isEASTWESTFenceType(getBlockType(adjacentBlock)))
+            adjacentMask = getBlockType(adjacentBlock) == LIQUID_TYPE ? 0L : getBlockOcclusionData(adjacentBlock, NORTH);
+            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[UP_DOWN_WALL][SOUTH]) != 0 || isEastWestFenceType(getBlockType(adjacentBlock)))
                 index |= 4;
 
             adjacentBlock = Chunk.getBlockInWorld(x, y - 1, z);
-            adjacentMask = getBlockTypeOcclusionData(adjacentBlock, TOP);
-            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[NORTH_SOUTH_WALL][BOTTOM]) != 0 || isEASTWESTFenceType(getBlockType(adjacentBlock)))
+            adjacentMask = getBlockType(adjacentBlock) == LIQUID_TYPE ? 0L : getBlockOcclusionData(adjacentBlock, TOP);
+            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[NORTH_SOUTH_WALL][BOTTOM]) != 0 || isEastWestFenceType(getBlockType(adjacentBlock)))
                 index |= 8;
 
-            return EAST_WEST_FENCE + index;
+            return EAST_WEST_FENCE + index | waterLogged;
         }
 
-        return blockType;
+        return blockType | waterLogged;
     }
 
     public static void updateSmartBlock(int x, int y, int z) {
         short block = Chunk.getBlockInWorld(x, y, z);
         int blockType = getBlockType(block);
+        int water_logged = block & WATER_LOGGED_MASK;
         if ((BLOCK_TYPE_DATA[blockType] & SMART_BLOCK_TYPE) == 0) return;
 
         int expectedBlockType = getSmartBlockType(block, x, y, z);
@@ -558,7 +584,7 @@ public class Block {
         int inChunkY = y & CHUNK_SIZE_MASK;
         int inChunkZ = z & CHUNK_SIZE_MASK;
 
-        chunk.placeBlock(inChunkX, inChunkY, inChunkZ, (short) (block & BASE_BLOCK_MASK | expectedBlockType));
+        chunk.placeBlock(inChunkX, inChunkY, inChunkZ, (short) (block & BASE_BLOCK_MASK | water_logged | expectedBlockType));
     }
 
     public static byte getBlockTypeData(short block) {
@@ -636,12 +662,8 @@ public class Block {
         return null;
     }
 
-    public static long getBlockTypeOcclusionData(short block, int side) {
-        long max = 0;
-        long[] occlusionData = BLOCK_TYPE_OCCLUSION_DATA[getBlockType(block)];
-        for (int aabbIndex = 0; aabbIndex < occlusionData.length; aabbIndex += 6)
-            max |= occlusionData[aabbIndex + side];
-        return max;
+    public static long getBlockOcclusionData(short block, int side) {
+        return BLOCK_TYPE_OCCLUSION_DATA[getBlockType(block)][side];
     }
 
     public static byte[] getXYZSubData(short block) {
@@ -651,6 +673,10 @@ public class Block {
     public static int getBlockType(short block) {
         if ((block & 0xFFFF) < STANDARD_BLOCKS_THRESHOLD) return NON_STANDARD_BLOCK_TYPE[block & 0xFFFF];
         return block & BLOCK_TYPE_MASK;
+    }
+
+    public static boolean isWaterLogged(short block) {
+        return block == WATER || (block & 0xFFFF) > STANDARD_BLOCKS_THRESHOLD && (block & WATER_LOGGED_MASK) != 0;
     }
 
     public static boolean isLeaveType(short block) {
@@ -667,16 +693,28 @@ public class Block {
         return blockType >= UP_DOWN_FENCE && blockType <= UP_DOWN_FENCE_NORTH_WEST_SOUTH_EAST;
     }
 
-    public static boolean isNORTHSOUTHFenceType(int blockType) {
+    public static boolean isNorthSouthFenceType(int blockType) {
         return blockType >= NORTH_SOUTH_FENCE && blockType <= NORTH_SOUTH_FENCE_UP_WEST_DOWN_EAST;
     }
 
-    public static boolean isEASTWESTFenceType(int blockType) {
+    public static boolean isEastWestFenceType(int blockType) {
         return blockType >= EAST_WEST_FENCE && blockType <= EAST_WEST_FENCE_NORTH_UP_SOUTH_DOWN;
     }
 
     public static int getFaceCount(int blockType) {
         return BLOCK_TYPE_XYZ_SUB_DATA[blockType].length;
+    }
+
+    public static int sideToMinMaxXYZ(int side) {
+        return switch (side) {
+            case NORTH -> MAX_Z;
+            case SOUTH -> MIN_Z;
+            case WEST -> MAX_X;
+            case EAST -> MIN_X;
+            case TOP -> MAX_Y;
+            case BOTTOM -> MIN_Y;
+            default -> -1;
+        };
     }
 
     private static long fillOcclusionBits(int minX, int maxX, int minY, int maxY) {
@@ -706,23 +744,23 @@ public class Block {
 
         for (int blockType = 0; blockType < TOTAL_AMOUNT_OF_BLOCK_TYPES; blockType++) {
             byte[] XYZSubData = BLOCK_TYPE_XYZ_SUB_DATA[blockType];
-            long[] occlusionData = new long[XYZSubData.length];
+            long[] occlusionData = new long[6];
 
             for (int aabbIndex = 0; aabbIndex < XYZSubData.length; aabbIndex += 6) {
                 if (XYZSubData[MIN_X + aabbIndex] == 0)
-                    occlusionData[EAST + aabbIndex] = fillOcclusionBits(XYZSubData[MIN_Z + aabbIndex], XYZSubData[MAX_Z + aabbIndex], XYZSubData[MIN_Y + aabbIndex], XYZSubData[MAX_Y + aabbIndex]);
+                    occlusionData[EAST] |= fillOcclusionBits(XYZSubData[MIN_Z + aabbIndex], XYZSubData[MAX_Z + aabbIndex], XYZSubData[MIN_Y + aabbIndex], XYZSubData[MAX_Y + aabbIndex]);
                 if (XYZSubData[MAX_X + aabbIndex] == 0)
-                    occlusionData[WEST + aabbIndex] = fillOcclusionBits(XYZSubData[MIN_Z + aabbIndex], XYZSubData[MAX_Z + aabbIndex], XYZSubData[MIN_Y + aabbIndex], XYZSubData[MAX_Y + aabbIndex]);
+                    occlusionData[WEST] |= fillOcclusionBits(XYZSubData[MIN_Z + aabbIndex], XYZSubData[MAX_Z + aabbIndex], XYZSubData[MIN_Y + aabbIndex], XYZSubData[MAX_Y + aabbIndex]);
 
                 if (XYZSubData[MIN_Y + aabbIndex] == 0)
-                    occlusionData[BOTTOM + aabbIndex] = fillOcclusionBits(XYZSubData[MIN_Z + aabbIndex], XYZSubData[MAX_Z + aabbIndex], XYZSubData[MIN_X + aabbIndex], XYZSubData[MAX_X + aabbIndex]);
+                    occlusionData[BOTTOM] |= fillOcclusionBits(XYZSubData[MIN_Z + aabbIndex], XYZSubData[MAX_Z + aabbIndex], XYZSubData[MIN_X + aabbIndex], XYZSubData[MAX_X + aabbIndex]);
                 if (XYZSubData[MAX_Y + aabbIndex] == 0)
-                    occlusionData[TOP + aabbIndex] = fillOcclusionBits(XYZSubData[MIN_Z + aabbIndex], XYZSubData[MAX_Z + aabbIndex], XYZSubData[MIN_X + aabbIndex], XYZSubData[MAX_X + aabbIndex]);
+                    occlusionData[TOP] |= fillOcclusionBits(XYZSubData[MIN_Z + aabbIndex], XYZSubData[MAX_Z + aabbIndex], XYZSubData[MIN_X + aabbIndex], XYZSubData[MAX_X + aabbIndex]);
 
                 if (XYZSubData[MIN_Z + aabbIndex] == 0)
-                    occlusionData[SOUTH + aabbIndex] = fillOcclusionBits(XYZSubData[MIN_X + aabbIndex], XYZSubData[MAX_X + aabbIndex], XYZSubData[MIN_Y + aabbIndex], XYZSubData[MAX_Y + aabbIndex]);
+                    occlusionData[SOUTH] |= fillOcclusionBits(XYZSubData[MIN_X + aabbIndex], XYZSubData[MAX_X + aabbIndex], XYZSubData[MIN_Y + aabbIndex], XYZSubData[MAX_Y + aabbIndex]);
                 if (XYZSubData[MAX_Z + aabbIndex] == 0)
-                    occlusionData[NORTH + aabbIndex] = fillOcclusionBits(XYZSubData[MIN_X + aabbIndex], XYZSubData[MAX_X + aabbIndex], XYZSubData[MIN_Y + aabbIndex], XYZSubData[MAX_Y + aabbIndex]);
+                    occlusionData[NORTH] |= fillOcclusionBits(XYZSubData[MIN_X + aabbIndex], XYZSubData[MAX_X + aabbIndex], XYZSubData[MIN_Y + aabbIndex], XYZSubData[MAX_Y + aabbIndex]);
             }
             BLOCK_TYPE_OCCLUSION_DATA[blockType] = occlusionData;
         }
@@ -938,8 +976,8 @@ public class Block {
         setNonStandardBlockData(SHRUB, NO_COLLISION | REPLACEABLE, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) 0xD1});
         setNonStandardBlockData(SUGAR_CANE, NO_COLLISION, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) 0xD2});
         setNonStandardBlockData(PATH_BLOCK, 0, sound.digGrass, sound.stepGrass, PATH_TYPE, new byte[]{(byte) -72, (byte) -88, (byte) -72, (byte) -72, (byte) 1, (byte) -72});
-        setNonStandardBlockData(BLACK_ROSE, NO_COLLISION | REPLACEABLE,sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) 0xD3});
-        setNonStandardBlockData(FLIELEN, NO_COLLISION | REPLACEABLE,sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) 0xD4});
+        setNonStandardBlockData(BLACK_ROSE, NO_COLLISION | REPLACEABLE, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) 0xD3});
+        setNonStandardBlockData(FLIELEN, NO_COLLISION | REPLACEABLE, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) 0xD4});
     }
 
     private static void initStandardBlocks() {

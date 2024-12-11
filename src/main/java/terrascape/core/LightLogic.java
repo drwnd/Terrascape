@@ -372,14 +372,14 @@ public class LightLogic {
         long occlusionData;
         boolean lightEmitting;
 
-        occlusionData = Block.getBlockTypeOcclusionData(originBlock, exitSide);
+        occlusionData = Block.getBlockOcclusionData(originBlock, exitSide);
         lightEmitting = (Block.getBlockProperties(originBlock) & LIGHT_EMITTING) != 0;
         blockType = Block.getBlockType(originBlock);
         boolean canExit = occlusionData != -1 || blockType == LIQUID_TYPE || lightEmitting ||
                 Block.isGlassType(originBlock) || Block.isLeaveType(originBlock);
         if (!canExit) return false;
 
-        occlusionData = Block.getBlockTypeOcclusionData(destinationBlock, enterSide);
+        occlusionData = Block.getBlockOcclusionData(destinationBlock, enterSide);
         lightEmitting = (Block.getBlockProperties(destinationBlock) & LIGHT_EMITTING) != 0;
         blockType = Block.getBlockType(destinationBlock);
         return occlusionData != -1  || blockType == LIQUID_TYPE || lightEmitting ||

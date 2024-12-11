@@ -67,7 +67,7 @@ public class Player {
 
         mouseInput.init();
 
-        GLFW.glfwSetKeyCallback(window.getWindow(), (window, key, scancode, action, mods) -> {
+        GLFW.glfwSetKeyCallback(window.getWindow(), (long window, int key, int scancode, int action, int mods) -> {
             if (key == GLFW.GLFW_KEY_ESCAPE && action == GLFW.GLFW_RELEASE) {
                 if (!isInInventory()) GLFW.glfwSetWindowShouldClose(window, true);
                 else toggleInventory();
@@ -202,7 +202,7 @@ public class Player {
 
     public void input() {
         Vector3f position = camera.getPosition();
-        boolean isInWater = collidesWithBlock(position.x, position.y, position.z, movementState, WATER);
+        boolean isInWater = collidesWithWater(position.x, position.y, position.z, movementState);
         Vector3f velocity = new Vector3f(0.0f, 0.0f, 0.0f);
 
         handleInputMovementStateChange(position);
@@ -256,7 +256,7 @@ public class Player {
         }
 
         if (movementState == SWIMMING && !window.isKeyPressed(SPRINT_BUTTON)) movementState = CRAWLING;
-        else if (movementState == SWIMMING && !collidesWithBlock(position.x, position.y, position.z, SWIMMING, WATER))
+        else if (movementState == SWIMMING && !collidesWithWater(position.x, position.y, position.z, SWIMMING))
             movementState = CRAWLING;
     }
 
@@ -333,16 +333,15 @@ public class Player {
                 float acceleration = SWIM_STRENGTH * accelerationModifier;
                 velocity.z += acceleration;
             }
-
-            if (window.isKeyPressed(MOVE_LEFT_BUTTON)) {
-                float acceleration = SWIM_STRENGTH * accelerationModifier;
-                velocity.x -= acceleration;
-            }
-            if (window.isKeyPressed(MOVE_RIGHT_BUTTON)) {
-                float acceleration = SWIM_STRENGTH * accelerationModifier;
-                velocity.x += acceleration;
-            }
             applyGravity();
+        }
+        if (window.isKeyPressed(MOVE_LEFT_BUTTON)) {
+            float acceleration = SWIM_STRENGTH * accelerationModifier;
+            velocity.x -= acceleration;
+        }
+        if (window.isKeyPressed(MOVE_RIGHT_BUTTON)) {
+            float acceleration = SWIM_STRENGTH * accelerationModifier;
+            velocity.x += acceleration;
         }
 
         long currentTime = System.nanoTime();
@@ -480,13 +479,13 @@ public class Player {
         if ((Block.getBlockProperties(target.block()) & INTERACTABLE) != 0) if (interactWithBlock(target)) return;
 
         if (hotBar[selectedHotBarSlot] == AIR) return;
-        final short toPlaceBlock;
+        short toPlaceBlock;
         short inventoryBlock = Block.getInInventoryBlockEquivalent(target.block());
         if (window.isKeyPressed(SPRINT_BUTTON) && Block.getBlockType(inventoryBlock) == Block.getBlockType(selectedBlock)
                 && (selectedBlock & 0xFFFF) >= STANDARD_BLOCKS_THRESHOLD) {
 
             if ((inventoryBlock & BASE_BLOCK_MASK) == (selectedBlock & BASE_BLOCK_MASK))
-                toPlaceBlock = target.block();
+                toPlaceBlock = (short) (target.block() & ~WATER_LOGGED_MASK);
             else toPlaceBlock = (short) (selectedBlock & BASE_BLOCK_MASK | target.block() & BLOCK_TYPE_MASK);
 
         } else
@@ -502,16 +501,33 @@ public class Player {
         int x = position.x;
         int y = position.y;
         int z = position.z;
+        boolean isWaterLogging = false;
+
         if ((Block.getBlockProperties(Chunk.getBlockInWorld(x, y, z)) & REPLACEABLE) == 0) {
-            int[] normal = Block.NORMALS[target.side()];
-            x = position.x + normal[0];
-            y = position.y + normal[1];
-            z = position.z + normal[2];
+
+            boolean blockCanBeWaterLogged = (target.block() & 0xFFFF) > STANDARD_BLOCKS_THRESHOLD && (target.block() & BLOCK_TYPE_MASK) != FULL_BLOCK;
+
+            if (!blockCanBeWaterLogged || selectedBlock != WATER || window.isKeyPressed(SNEAK_BUTTON)) {
+                byte[] normal = Block.NORMALS[target.side()];
+                x = position.x + normal[0];
+                y = position.y + normal[1];
+                z = position.z + normal[2];
+
+                if (selectedBlock == WATER) {
+                    short block = Chunk.getBlockInWorld(x, y, z);
+                    isWaterLogging = (block & 0xFFFF) > STANDARD_BLOCKS_THRESHOLD && (block & BLOCK_TYPE_MASK) != FULL_BLOCK;
+                    if (isWaterLogging) toPlaceBlock = (short) (block | WATER_LOGGED_MASK);
+                }
+
+            } else {
+                isWaterLogging = true;
+                toPlaceBlock = (short) (target.block() | WATER_LOGGED_MASK);
+            }
         }
         if (hasCollision() && Block.entityIntersectsBlock(minX, maxX, minY, maxY, minZ, maxZ, x, y, z, toPlaceBlock))
             return;
 
-        if ((Block.getBlockProperties(Chunk.getBlockInWorld(x, y, z)) & REPLACEABLE) != 0)
+        if (isWaterLogging || (Block.getBlockProperties(Chunk.getBlockInWorld(x, y, z)) & REPLACEABLE) != 0)
             GameLogic.placeBlock(toPlaceBlock, x, y, z, true);
     }
 
@@ -733,7 +749,7 @@ public class Player {
                 velocity.y = 0.0f;
             }
         }
-        if (movementState == SWIMMING && y > 0.0f && !collidesWithBlock(position.x, position.y, position.z, SWIMMING, WATER)) {
+        if (movementState == SWIMMING && y > 0.0f && !collidesWithWater(position.x, position.y, position.z, SWIMMING)) {
             position.y = oldPosition.y;
             velocity.y = 0.0f;
         }
@@ -781,7 +797,7 @@ public class Player {
         return false;
     }
 
-    public boolean collidesWithBlock(float x, float y, float z, int movementState, short block) {
+    public boolean collidesWithWater(float x, float y, float z, int movementState) {
         if (noClip) return false;
 
         final float minX = x - HALF_PLAYER_WIDTH;
@@ -794,7 +810,7 @@ public class Player {
         for (int blockX = Utils.floor(minX), maxBlockX = Utils.floor(maxX); blockX <= maxBlockX; blockX++)
             for (int blockY = Utils.floor(minY), maxBlockY = Utils.floor(maxY); blockY <= maxBlockY; blockY++)
                 for (int blockZ = Utils.floor(minZ), maxBlockZ = Utils.floor(maxZ); blockZ <= maxBlockZ; blockZ++)
-                    if (Chunk.getBlockInWorld(blockX, blockY, blockZ) == block) return true;
+                    if (Block.isWaterLogged(Chunk.getBlockInWorld(blockX, blockY, blockZ))) return true;
         return false;
     }
 
@@ -869,7 +885,7 @@ public class Player {
 
         renderer.processGUIElement(hotBarSelectionIndicator);
 
-        boolean headUnderWater = Chunk.getBlockInWorld(Utils.floor(cameraPosition.x), Utils.floor(cameraPosition.y), Utils.floor(cameraPosition.z)) == WATER;
+        boolean headUnderWater = Block.isWaterLogged(Chunk.getBlockInWorld(Utils.floor(cameraPosition.x), Utils.floor(cameraPosition.y), Utils.floor(cameraPosition.z)));
         if (headUnderWater && !this.headUnderWater)
             sound.playRandomSound(sound.submerge, cameraPosition.x, cameraPosition.y, cameraPosition.z, 0.0f, 0.0f, 0.0f, MISCELLANEOUS_GAIN);
         else if (this.headUnderWater && !headUnderWater)

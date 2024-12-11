@@ -239,7 +239,8 @@ public class Constants {
 
     public static final byte[] TO_PLACE_BLOCK_TYPES = new byte[]{FULL_BLOCK, BOTTOM_PLAYER_HEAD, BOTTOM_SOCKET, BOTTOM_SLAB, BOTTOM_PLATE, NORTH_SOUTH_WALL, UP_DOWN_POST, THICK_BOTTOM_SOUTH_STAIR, BOTTOM_SOUTH_STAIR, THIN_BOTTOM_SOUTH_STAIR, UP_DOWN_FENCE_NORTH_WEST};
     public static final int BLOCK_TYPE_BITS = 8;
-    public static final int BLOCK_TYPE_MASK = (1 << BLOCK_TYPE_BITS) - 1;
+    public static final int WATER_LOGGED_MASK = (1 << BLOCK_TYPE_BITS - 1);
+    public static final int BLOCK_TYPE_MASK = (1 << BLOCK_TYPE_BITS - 1) - 1;
     public static final int BASE_BLOCK_MASK = -1 << BLOCK_TYPE_BITS;
     public static final int STANDARD_BLOCKS_THRESHOLD = 1 << BLOCK_TYPE_BITS;
 

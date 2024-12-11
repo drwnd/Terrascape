@@ -152,7 +152,7 @@ public class TNT_Entity extends Entity {
         while (blastResistance < blastStrength && length < 8.0) {
             short block = Chunk.getBlockInWorld(x, y, z);
             int blockType = Block.getBlockType(block);
-            if ((Block.getBlockProperties(block) & BLAST_RESISTANT) != 0) return;
+            if ((Block.getBlockProperties(block) & BLAST_RESISTANT) != 0 || Block.isWaterLogged(block)) return;
             if (blockType != AIR_TYPE) {
                 blastResistance++;
                 GameLogic.placeBlock(AIR, x, y, z, false);

@@ -11,15 +11,6 @@ import static terrascape.utils.Constants.*;
 
 public class MeshGenerator {
 
-    private Chunk chunk;
-    private Vector3i worldCoordinate;
-
-    private int blockX, blockY, blockZ;
-    private int side, aabbIndex;
-    private short block;
-    private ArrayList<Integer> list;
-    private final Random random = new Random();
-
     public void setChunk(Chunk chunk) {
         this.chunk = chunk;
         worldCoordinate = chunk.getWorldCoordinate();
@@ -58,23 +49,8 @@ public class MeshGenerator {
 
                     int faceCount = Block.getFaceCount(blockType);
 
-                    for (aabbIndex = 0; aabbIndex < faceCount; aabbIndex += 6)
-                        for (side = 0; side < 6; side++) {
-
-                            int[] normal = Block.NORMALS[side];
-                            short occludingBlock = chunk.getBlock(blockX + normal[0], blockY + normal[1], blockZ + normal[2]);
-                            if (Block.occludes(block, occludingBlock, side, worldCoordinate.x | blockX, worldCoordinate.y | blockY, worldCoordinate.z | blockZ, aabbIndex))
-                                continue;
-
-                            int texture = Block.getTextureIndex(block, side);
-
-                            int u = texture & 15;
-                            int v = texture >> 4 & 15;
-
-                            if (block == WATER) addWaterSideToList(waterVerticesList);
-                            else if (Block.isLeaveType(block)) addFoliageSideToList(foliageVerticesList, u, v);
-                            else addSideToList(u, v, verticesLists[side]);
-                        }
+                    if (block != WATER) addOpaqueBlock(faceCount, foliageVerticesList, verticesLists);
+                    if (Block.isWaterLogged(block)) addWaterBlock(waterVerticesList);
                 }
 
         for (int side = 0; side < 6; side++) {
@@ -96,59 +72,91 @@ public class MeshGenerator {
         chunk.setFoliageVertices(foliageVertices);
     }
 
+    private void addOpaqueBlock(int faceCount, ArrayList<Integer> foliageVerticesList, ArrayList<Integer>[] verticesLists) {
+        for (aabbIndex = 0; aabbIndex < faceCount; aabbIndex += 6)
+            for (side = 0; side < 6; side++) {
+                byte[] normal = Block.NORMALS[side];
+                short occludingBlock = chunk.getBlock(blockX + normal[0], blockY + normal[1], blockZ + normal[2]);
+                if (Block.occludesOpaque(block, occludingBlock, side, aabbIndex, worldCoordinate.x | blockX, worldCoordinate.y | blockY, worldCoordinate.z | blockZ))
+                    continue;
+
+                int texture = Block.getTextureIndex(block, side);
+
+                int u = texture & 15;
+                int v = texture >> 4 & 15;
+
+                if (Block.isLeaveType(block)) addFoliageSideToList(foliageVerticesList, u, v);
+                else addSideToList(u, v, verticesLists[side]);
+            }
+    }
+
+    private void addWaterBlock(ArrayList<Integer> waterVerticesList) {
+        for (side = 0; side < 6; side++) {
+            if (block != WATER && Block.getBlockOcclusionData(block, side) == -1L) continue;
+
+            byte[] normal = Block.NORMALS[side];
+            short occludingBlock = chunk.getBlock(blockX + normal[0], blockY + normal[1], blockZ + normal[2]);
+
+            if (Block.occludesWater(occludingBlock, side, worldCoordinate.x | blockX, worldCoordinate.y | blockY, worldCoordinate.z | blockZ))
+                continue;
+
+            addWaterSideToList(waterVerticesList);
+        }
+    }
+
 
     private void addSideToList(int u, int v, ArrayList<Integer> list) {
         this.list = list;
 
         switch (side) {
             case NORTH:
-                addVertexToList(blockX + 1, blockY + 1, blockZ + 1, u + 1, v, 0, aabbIndex);
-                addVertexToList(blockX, blockY + 1, blockZ + 1, u, v, 1, aabbIndex);
-                addVertexToList(blockX + 1, blockY, blockZ + 1, u + 1, v + 1, 2, aabbIndex);
-                addVertexToList(blockX, blockY, blockZ + 1, u, v + 1, 3, aabbIndex);
+                addVertexToList(blockX + 1, blockY + 1, blockZ + 1, u + 1, v, 0);
+                addVertexToList(blockX, blockY + 1, blockZ + 1, u, v, 1);
+                addVertexToList(blockX + 1, blockY, blockZ + 1, u + 1, v + 1, 2);
+                addVertexToList(blockX, blockY, blockZ + 1, u, v + 1, 3);
                 break;
             case TOP:
-                addVertexToList(blockX, blockY + 1, blockZ, u + 1, v, 0, aabbIndex);
-                addVertexToList(blockX, blockY + 1, blockZ + 1, u, v, 1, aabbIndex);
-                addVertexToList(blockX + 1, blockY + 1, blockZ, u + 1, v + 1, 2, aabbIndex);
-                addVertexToList(blockX + 1, blockY + 1, blockZ + 1, u, v + 1, 3, aabbIndex);
+                addVertexToList(blockX, blockY + 1, blockZ, u + 1, v, 0);
+                addVertexToList(blockX, blockY + 1, blockZ + 1, u, v, 1);
+                addVertexToList(blockX + 1, blockY + 1, blockZ, u + 1, v + 1, 2);
+                addVertexToList(blockX + 1, blockY + 1, blockZ + 1, u, v + 1, 3);
                 break;
             case WEST:
-                addVertexToList(blockX + 1, blockY + 1, blockZ, u + 1, v, 0, aabbIndex);
-                addVertexToList(blockX + 1, blockY + 1, blockZ + 1, u, v, 1, aabbIndex);
-                addVertexToList(blockX + 1, blockY, blockZ, u + 1, v + 1, 2, aabbIndex);
-                addVertexToList(blockX + 1, blockY, blockZ + 1, u, v + 1, 3, aabbIndex);
+                addVertexToList(blockX + 1, blockY + 1, blockZ, u + 1, v, 0);
+                addVertexToList(blockX + 1, blockY + 1, blockZ + 1, u, v, 1);
+                addVertexToList(blockX + 1, blockY, blockZ, u + 1, v + 1, 2);
+                addVertexToList(blockX + 1, blockY, blockZ + 1, u, v + 1, 3);
                 break;
             case SOUTH:
-                addVertexToList(blockX, blockY + 1, blockZ, u + 1, v, 0, aabbIndex);
-                addVertexToList(blockX + 1, blockY + 1, blockZ, u, v, 1, aabbIndex);
-                addVertexToList(blockX, blockY, blockZ, u + 1, v + 1, 2, aabbIndex);
-                addVertexToList(blockX + 1, blockY, blockZ, u, v + 1, 3, aabbIndex);
+                addVertexToList(blockX, blockY + 1, blockZ, u + 1, v, 0);
+                addVertexToList(blockX + 1, blockY + 1, blockZ, u, v, 1);
+                addVertexToList(blockX, blockY, blockZ, u + 1, v + 1, 2);
+                addVertexToList(blockX + 1, blockY, blockZ, u, v + 1, 3);
                 break;
             case BOTTOM:
-                addVertexToList(blockX + 1, blockY, blockZ + 1, u + 1, v, 3, aabbIndex);
-                addVertexToList(blockX, blockY, blockZ + 1, u, v, 1, aabbIndex);
-                addVertexToList(blockX + 1, blockY, blockZ, u + 1, v + 1, 2, aabbIndex);
-                addVertexToList(blockX, blockY, blockZ, u, v + 1, 0, aabbIndex);
+                addVertexToList(blockX + 1, blockY, blockZ + 1, u + 1, v, 3);
+                addVertexToList(blockX, blockY, blockZ + 1, u, v, 1);
+                addVertexToList(blockX + 1, blockY, blockZ, u + 1, v + 1, 2);
+                addVertexToList(blockX, blockY, blockZ, u, v + 1, 0);
                 break;
             case EAST:
-                addVertexToList(blockX, blockY + 1, blockZ + 1, u + 1, v, 1, aabbIndex);
-                addVertexToList(blockX, blockY + 1, blockZ, u, v, 0, aabbIndex);
-                addVertexToList(blockX, blockY, blockZ + 1, u + 1, v + 1, 3, aabbIndex);
-                addVertexToList(blockX, blockY, blockZ, u, v + 1, 2, aabbIndex);
+                addVertexToList(blockX, blockY + 1, blockZ + 1, u + 1, v, 1);
+                addVertexToList(blockX, blockY + 1, blockZ, u, v, 0);
+                addVertexToList(blockX, blockY, blockZ + 1, u + 1, v + 1, 3);
+                addVertexToList(blockX, blockY, blockZ, u, v + 1, 2);
                 break;
         }
     }
 
-    private void addVertexToList(int inChunkX, int inChunkY, int inChunkZ, int u, int v, int corner, int subDataAddend) {
+    private void addVertexToList(int inChunkX, int inChunkY, int inChunkZ, int u, int v, int corner) {
         int x = worldCoordinate.x + inChunkX;
         int y = worldCoordinate.y + inChunkY;
         int z = worldCoordinate.z + inChunkZ;
 
         int blockType = Block.getBlockType(block);
-        int subX = Block.getSubX(blockType, side, corner, subDataAddend);
-        int subY = Block.getSubY(blockType, side, corner, subDataAddend);
-        int subZ = Block.getSubZ(blockType, side, corner, subDataAddend);
+        int subX = Block.getSubX(blockType, side, corner, aabbIndex);
+        int subY = Block.getSubY(blockType, side, corner, aabbIndex);
+        int subZ = Block.getSubZ(blockType, side, corner, aabbIndex);
 
         int skyLight = getVertexSkyLightInWorld(x, y, z, subX, subY, subZ);
         int blockLight = getVertexBlockLightInWorld(x, y, z, subX, subY, subZ);
@@ -158,8 +166,8 @@ public class MeshGenerator {
             return;
         }
 
-        int subU = Block.getSubU(blockType, side, corner, subDataAddend);
-        int subV = Block.getSubV(blockType, side, corner, subDataAddend);
+        int subU = Block.getSubU(blockType, side, corner, aabbIndex);
+        int subV = Block.getSubV(blockType, side, corner, aabbIndex);
 
         int ambientOcclusionLevel = getAmbientOcclusionLevel(inChunkX, inChunkY, inChunkZ, subX, subY, subZ);
         list.add(packData1(ambientOcclusionLevel, (inChunkX << 4) + subX + 15, (inChunkY << 4) + subY + 15, (inChunkZ << 4) + subZ + 15));
@@ -174,17 +182,18 @@ public class MeshGenerator {
         int subV = 0;
 
         if (Block.getBlockType(block) == LIQUID_TYPE) {
+            short blockAbove = chunk.getBlock(blockX, blockY + 1, blockZ);
             if (side == TOP) {
-                subY = -2;
+                if (Block.getBlockType(blockAbove) != LIQUID_TYPE && !Block.isWaterLogged(block) && Block.getBlockOcclusionData(blockAbove, BOTTOM) != -1L)
+                    subY = -2;
             } else if (side != BOTTOM) {
-                short blockAbove = chunk.getBlock(blockX, blockY + 1, blockZ);
-                if ((corner == 0 || corner == 1) && blockAbove != block && Block.getBlockTypeOcclusionData(blockAbove, BOTTOM) == 0) {
+                if ((corner == 0 || corner == 1) && blockAbove != block && Block.getBlockOcclusionData(blockAbove, BOTTOM) != -1L) {
                     subY = -2;
                     subV = 2;
                 } else if (corner == 2 || corner == 3) {
-                    int[] normal = Block.NORMALS[side];
+                    byte[] normal = Block.NORMALS[side];
                     short adjacentBlock = chunk.getBlock(blockX + normal[0], blockY, blockZ + normal[2]);
-                    if (adjacentBlock == block && (blockAbove == block || Block.getBlockTypeOcclusionData(blockAbove, BOTTOM) != 0)) {
+                    if (adjacentBlock == block && (blockAbove == block || Block.getBlockOcclusionData(blockAbove, BOTTOM) != 0)) {
                         subY = 14;
                         subV = -14;
                     }
@@ -217,45 +226,45 @@ public class MeshGenerator {
 
         switch (side) {
             case NORTH:
-                addWaterVertexToList(blockX + 1, blockY + 1, blockZ + 1, u + 1, v, 0);
-                addWaterVertexToList(blockX, blockY + 1, blockZ + 1, u, v, 1);
-                addWaterVertexToList(blockX + 1, blockY, blockZ + 1, u + 1, v + 1, 2);
-                addWaterVertexToList(blockX, blockY, blockZ + 1, u, v + 1, 3);
+                addWaterVertexToList(blockX + 1, blockY + 1, blockZ + 1, u + 1, v, 0, Block.SIDES_WITH_CORNER[1]);
+                addWaterVertexToList(blockX, blockY + 1, blockZ + 1, u, v, 1, Block.SIDES_WITH_CORNER[0]);
+                addWaterVertexToList(blockX + 1, blockY, blockZ + 1, u + 1, v + 1, 2, Block.SIDES_WITH_CORNER[5]);
+                addWaterVertexToList(blockX, blockY, blockZ + 1, u, v + 1, 3, Block.SIDES_WITH_CORNER[4]);
                 break;
             case TOP:
-                addWaterVertexToList(blockX, blockY + 1, blockZ, u + 1, v, 0);
-                addWaterVertexToList(blockX, blockY + 1, blockZ + 1, u, v, 1);
-                addWaterVertexToList(blockX + 1, blockY + 1, blockZ, u + 1, v + 1, 2);
-                addWaterVertexToList(blockX + 1, blockY + 1, blockZ + 1, u, v + 1, 3);
+                addWaterVertexToList(blockX, blockY + 1, blockZ, u + 1, v, 0, Block.SIDES_WITH_CORNER[2]);
+                addWaterVertexToList(blockX, blockY + 1, blockZ + 1, u, v, 1, Block.SIDES_WITH_CORNER[0]);
+                addWaterVertexToList(blockX + 1, blockY + 1, blockZ, u + 1, v + 1, 2, Block.SIDES_WITH_CORNER[3]);
+                addWaterVertexToList(blockX + 1, blockY + 1, blockZ + 1, u, v + 1, 3, Block.SIDES_WITH_CORNER[1]);
                 break;
             case WEST:
-                addWaterVertexToList(blockX + 1, blockY + 1, blockZ, u + 1, v, 0);
-                addWaterVertexToList(blockX + 1, blockY + 1, blockZ + 1, u, v, 1);
-                addWaterVertexToList(blockX + 1, blockY, blockZ, u + 1, v + 1, 2);
-                addWaterVertexToList(blockX + 1, blockY, blockZ + 1, u, v + 1, 3);
+                addWaterVertexToList(blockX + 1, blockY + 1, blockZ, u + 1, v, 0, Block.SIDES_WITH_CORNER[3]);
+                addWaterVertexToList(blockX + 1, blockY + 1, blockZ + 1, u, v, 1, Block.SIDES_WITH_CORNER[1]);
+                addWaterVertexToList(blockX + 1, blockY, blockZ, u + 1, v + 1, 2, Block.SIDES_WITH_CORNER[7]);
+                addWaterVertexToList(blockX + 1, blockY, blockZ + 1, u, v + 1, 3, Block.SIDES_WITH_CORNER[5]);
                 break;
             case SOUTH:
-                addWaterVertexToList(blockX, blockY + 1, blockZ, u + 1, v, 0);
-                addWaterVertexToList(blockX + 1, blockY + 1, blockZ, u, v, 1);
-                addWaterVertexToList(blockX, blockY, blockZ, u + 1, v + 1, 2);
-                addWaterVertexToList(blockX + 1, blockY, blockZ, u, v + 1, 3);
+                addWaterVertexToList(blockX, blockY + 1, blockZ, u + 1, v, 0, Block.SIDES_WITH_CORNER[2]);
+                addWaterVertexToList(blockX + 1, blockY + 1, blockZ, u, v, 1, Block.SIDES_WITH_CORNER[3]);
+                addWaterVertexToList(blockX, blockY, blockZ, u + 1, v + 1, 2, Block.SIDES_WITH_CORNER[6]);
+                addWaterVertexToList(blockX + 1, blockY, blockZ, u, v + 1, 3, Block.SIDES_WITH_CORNER[7]);
                 break;
             case BOTTOM:
-                addWaterVertexToList(blockX + 1, blockY, blockZ + 1, u + 1, v, 3);
-                addWaterVertexToList(blockX, blockY, blockZ + 1, u, v, 1);
-                addWaterVertexToList(blockX + 1, blockY, blockZ, u + 1, v + 1, 2);
-                addWaterVertexToList(blockX, blockY, blockZ, u, v + 1, 0);
+                addWaterVertexToList(blockX + 1, blockY, blockZ + 1, u + 1, v, 3, Block.SIDES_WITH_CORNER[5]);
+                addWaterVertexToList(blockX, blockY, blockZ + 1, u, v, 1, Block.SIDES_WITH_CORNER[4]);
+                addWaterVertexToList(blockX + 1, blockY, blockZ, u + 1, v + 1, 2, Block.SIDES_WITH_CORNER[7]);
+                addWaterVertexToList(blockX, blockY, blockZ, u, v + 1, 0, Block.SIDES_WITH_CORNER[6]);
                 break;
             case EAST:
-                addWaterVertexToList(blockX, blockY + 1, blockZ + 1, u + 1, v, 1);
-                addWaterVertexToList(blockX, blockY + 1, blockZ, u, v, 0);
-                addWaterVertexToList(blockX, blockY, blockZ + 1, u + 1, v + 1, 3);
-                addWaterVertexToList(blockX, blockY, blockZ, u, v + 1, 2);
+                addWaterVertexToList(blockX, blockY + 1, blockZ + 1, u + 1, v, 1, Block.SIDES_WITH_CORNER[0]);
+                addWaterVertexToList(blockX, blockY + 1, blockZ, u, v, 0, Block.SIDES_WITH_CORNER[2]);
+                addWaterVertexToList(blockX, blockY, blockZ + 1, u + 1, v + 1, 3, Block.SIDES_WITH_CORNER[4]);
+                addWaterVertexToList(blockX, blockY, blockZ, u, v + 1, 2, Block.SIDES_WITH_CORNER[6]);
                 break;
         }
     }
 
-    private void addWaterVertexToList(int inChunkX, int inChunkY, int inChunkZ, int u, int v, int corner) {
+    private void addWaterVertexToList(int inChunkX, int inChunkY, int inChunkZ, int u, int v, int corner, byte[] adjacentSides) {
         int x = worldCoordinate.x + inChunkX;
         int y = worldCoordinate.y + inChunkY;
         int z = worldCoordinate.z + inChunkZ;
@@ -267,34 +276,45 @@ public class MeshGenerator {
         int subV = 0;
 
         boolean shouldSimulateWaves = false;
+        short blockAbove = chunk.getBlock(blockX, blockY + 1, blockZ);
 
         if (side == TOP) {
-            subY = -2;
-            shouldSimulateWaves = true;
+            if (Block.getBlockOcclusionData(blockAbove, BOTTOM) != -1L) {
+                subY = -2;
+                shouldSimulateWaves = true;
+            }
         } else if (side != BOTTOM) {
-            short blockAbove = chunk.getBlock(blockX, blockY + 1, blockZ);
-            if ((corner == 0 || corner == 1)) {
-                if (blockAbove == WATER) shouldSimulateWaves = true;
-                else if (Block.getBlockTypeOcclusionData(blockAbove, BOTTOM) != -1L) {
+            if ((corner == 0 || corner == 1)) { // Top corners
+                if (Block.isWaterLogged(blockAbove)) shouldSimulateWaves = true;
+                else if (Block.getBlockOcclusionData(blockAbove, BOTTOM) != -1L) {
                     shouldSimulateWaves = true;
                     subY = -2;
                     subV = 2;
                 }
-
-            } else {
-                int[] normal = Block.NORMALS[side];
+            } else { // Bottom corners
+                byte[] normal = Block.NORMALS[side];
                 short adjacentBlock = chunk.getBlock(blockX + normal[0], blockY, blockZ + normal[2]);
                 short blockBelow = chunk.getBlock(blockX, blockY - 1, blockZ);
 
-                if (adjacentBlock == WATER && (blockAbove == WATER || Block.getBlockTypeOcclusionData(blockAbove, BOTTOM) == -1L)) {
+                if (Block.isWaterLogged(adjacentBlock) && (Block.isWaterLogged(blockAbove) || Block.getBlockOcclusionData(blockAbove, BOTTOM) == -1L)) {
                     subY = 14;
                     subV = -14;
                     shouldSimulateWaves = true;
                 }
-                if (blockBelow == WATER || Block.getBlockTypeOcclusionData(blockBelow, TOP) != -1)
+                if (Block.isWaterLogged(blockBelow) || Block.getBlockOcclusionData(blockBelow, TOP) != -1)
                     shouldSimulateWaves = true;
             }
-        } else shouldSimulateWaves = true;
+        } else {
+            short blockBelow = chunk.getBlock(blockX, blockY - 1, blockZ);
+            shouldSimulateWaves = Block.getBlockOcclusionData(blockBelow, TOP) != -1L;
+        }
+
+        if (block != WATER && Block.isWaterLogged(block))
+            for (int side : adjacentSides) {
+                if (Block.getBlockOcclusionData(block, side) != -1L) continue;
+                shouldSimulateWaves = false;
+                break;
+            }
 
         if (inChunkX == 0 || inChunkX == CHUNK_SIZE || inChunkZ == 0 || inChunkZ == CHUNK_SIZE)
             shouldSimulateWaves = false;
@@ -395,7 +415,7 @@ public class MeshGenerator {
         random.setSeed((long) (z * 5135.64843) << 24 | (long) (x * 18941.484138) << 5);
         int randomX = (int) (random.nextDouble() * 8 - 4);
         int randomZ = (int) (random.nextDouble() * 8 - 4);
-        int bottomWindMultiplier = Block.getBlockTypeOcclusionData(Chunk.getBlockInWorld(x, y - 1, z), TOP) == -1 ? 0 : 1;
+        int bottomWindMultiplier = Block.getBlockOcclusionData(Chunk.getBlockInWorld(x, y - 1, z), TOP) == -1 ? 0 : 1;
         int topWindMultiplier = 1;
 
         list.add(packData1(0, (blockX << 4) + 3 + 15 + randomX, (blockY + 1 << 4) + 15, (blockZ << 4) + 3 + 15 + randomZ));
@@ -576,4 +596,13 @@ public class MeshGenerator {
                 }
         return max;
     }
+
+    private Chunk chunk;
+    private Vector3i worldCoordinate;
+
+    private int blockX, blockY, blockZ;
+    private int side, aabbIndex;
+    private short block;
+    private ArrayList<Integer> list;
+    private final Random random = new Random();
 }
