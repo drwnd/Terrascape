@@ -1,9 +1,9 @@
 package terrascape.entity;
 
-import terrascape.core.Block;
-import terrascape.core.ObjectLoader;
-import terrascape.core.WindowManager;
-import terrascape.core.Launcher;
+import terrascape.server.Block;
+import terrascape.player.ObjectLoader;
+import terrascape.player.WindowManager;
+import terrascape.server.Launcher;
 import org.joml.Vector2f;
 import org.lwjgl.glfw.GLFW;
 

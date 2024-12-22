@@ -1,6 +1,6 @@
 package terrascape.dataStorage;
 
-import terrascape.core.Block;
+import terrascape.server.Block;
 
 import static terrascape.utils.Constants.*;
 

@@ -1,11 +1,11 @@
 package terrascape.dataStorage;
 
-import terrascape.core.Block;
-import terrascape.core.LightLogic;
+import terrascape.server.Block;
+import terrascape.server.LightLogic;
 import terrascape.entity.entities.Entity;
 import terrascape.entity.Model;
 import terrascape.generation.WorldGeneration;
-import terrascape.core.GameLogic;
+import terrascape.server.GameLogic;
 import org.joml.Vector3i;
 
 import java.util.LinkedList;
@@ -199,7 +199,7 @@ public class Chunk {
                     Chunk chunk = getChunk(index);
 
                     if (chunk == null) {
-                        System.out.println("surrounding Chunk is null");
+                        System.err.println("surrounding Chunk is null");
                         chunk = FileManager.getChunk(expectedId);
                         if (chunk == null) chunk = new Chunk(chunkX, chunkY, chunkZ);
                         else WorldGeneration.generateSurroundingChunkStructureBlocks(chunk);
@@ -208,7 +208,7 @@ public class Chunk {
                         if (!chunk.isGenerated) WorldGeneration.generate(chunk);
 
                     } else if (chunk.id != expectedId) {
-                        System.out.println("surrounding Chunk is not correct");
+                        System.err.println("surrounding Chunk is not correct");
                         GameLogic.addToUnloadChunk(chunk);
 
                         chunk = FileManager.getChunk(expectedId);
@@ -219,7 +219,7 @@ public class Chunk {
                         if (!chunk.isGenerated) WorldGeneration.generate(chunk);
 
                     } else if (!chunk.isGenerated) {
-                        System.out.println("surrounding Chunk is not generated");
+                        System.err.println("surrounding Chunk is not generated");
                         WorldGeneration.generate(chunk);
                     }
                 }

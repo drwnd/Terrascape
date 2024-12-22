@@ -1,7 +1,8 @@
 package terrascape.entity.entities;
 
-import terrascape.core.*;
+import terrascape.server.*;
 import terrascape.dataStorage.Chunk;
+import terrascape.player.ShaderManager;
 import terrascape.utils.Utils;
 import org.joml.Vector3f;
 
@@ -16,6 +17,7 @@ public abstract class Entity {
 
     public static void initAll() {
         TNT_Entity.init();
+        FallingBlockEntity.init();
     }
 
     public abstract void update();
@@ -75,7 +77,7 @@ public abstract class Entity {
                 for (int z = Utils.floor(minZ), maxBlockZ = Utils.floor(maxZ); z <= maxBlockZ; z++) {
                     short block = Chunk.getBlockInWorld(x, y, z);
 
-                    if (Block.entityIntersectsBlock(minX, maxX, minY, maxY, minZ, maxZ, x, y, z, block))
+                    if (Block.playerIntersectsBlock(minX, maxX, minY, maxY, minZ, maxZ, x, y, z, block))
                         return true;
                 }
         return false;
@@ -95,5 +97,17 @@ public abstract class Entity {
 
     public void addVelocity(float x, float y, float z) {
         velocity.add(x, y, z);
+    }
+
+    public static int packData(int x, int y, int z) {
+        return x + 511 << 20 | y + 511 << 10 | z + 511;
+    }
+
+    public static int packData(int u, int v) {
+        return u + 15 << 9 | v + 15;
+    }
+
+    public float[] getAabb() {
+        return aabb;
     }
 }

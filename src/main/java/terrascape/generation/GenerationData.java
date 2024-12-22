@@ -1,6 +1,6 @@
 package terrascape.generation;
 
-import terrascape.core.GameLogic;
+import terrascape.server.GameLogic;
 import terrascape.dataStorage.Chunk;
 
 import java.util.Random;

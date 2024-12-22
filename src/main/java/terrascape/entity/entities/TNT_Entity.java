@@ -1,11 +1,14 @@
 package terrascape.entity.entities;
 
-import terrascape.core.*;
+import terrascape.server.*;
 import terrascape.dataStorage.Chunk;
 import terrascape.entity.particles.ExplosionParticle;
+import terrascape.player.ObjectLoader;
+import terrascape.player.ShaderManager;
+import terrascape.player.SoundManager;
 import terrascape.utils.Utils;
-import terrascape.core.GameLogic;
-import terrascape.core.Launcher;
+import terrascape.server.GameLogic;
+import terrascape.server.Launcher;
 import org.joml.Vector3f;
 import org.joml.Vector3i;
 import org.lwjgl.opengl.GL11;
@@ -58,7 +61,7 @@ public class TNT_Entity extends Entity {
     }
 
     public static void init() {
-        long vao_vbo = ObjectLoader.loadVAO_VBO(0, 2, TNT_Entity.TNTEntityVertices());
+        long vao_vbo = ObjectLoader.loadVAO_VBO(0, 2, getTNTEntityVertices());
         vao = (int) (vao_vbo >> 32 & 0xFFFFFFFFL);
         vbo = (int) (vao_vbo & 0xFFFFFFFFL);
     }
@@ -213,7 +216,7 @@ public class TNT_Entity extends Entity {
 
     }
 
-    public static int[] TNTEntityVertices() {
+    private static int[] getTNTEntityVertices() {
         int sideTL = Byte.toUnsignedInt((byte) -106);
         int sideTR = Byte.toUnsignedInt((byte) -106) + 1;
         int sideBL = Byte.toUnsignedInt((byte) -106) + 16;
@@ -260,14 +263,6 @@ public class TNT_Entity extends Entity {
                 packData((sideTR & 15) << 4, (sideTR >> 4) << 4), packData(-8, 12, -8),
                 packData((sideBR & 15) << 4, (sideBR >> 4) << 4), packData(-8, -4, -8),
         };
-    }
-
-    public static int packData(int x, int y, int z) {
-        return x + 511 << 20 | y + 511 << 10 | z + 511;
-    }
-
-    public static int packData(int u, int v) {
-        return u + 15 << 9 | v + 15;
     }
 
     public static void spawnTNTEntity(Vector3i targetPosition, int fuse) {

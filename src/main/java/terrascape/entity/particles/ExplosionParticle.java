@@ -1,7 +1,7 @@
 package terrascape.entity.particles;
 
-import terrascape.core.ObjectLoader;
-import terrascape.core.ShaderManager;
+import terrascape.player.ObjectLoader;
+import terrascape.player.ShaderManager;
 import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;

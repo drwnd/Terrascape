@@ -1,6 +1,6 @@
 package terrascape.generation;
 
-import terrascape.core.Block;
+import terrascape.server.Block;
 import terrascape.dataStorage.Chunk;
 import terrascape.dataStorage.Structure;
 import terrascape.utils.Utils;

@@ -1,11 +1,11 @@
 package terrascape.generation;
 
-import terrascape.core.*;
+import terrascape.server.*;
 import terrascape.dataStorage.Chunk;
 import terrascape.dataStorage.FileManager;
 import terrascape.dataStorage.HeightMap;
 import terrascape.utils.Utils;
-import terrascape.core.GameLogic;
+import terrascape.server.GameLogic;
 import org.joml.Vector3f;
 import org.joml.Vector4i;
 
@@ -73,7 +73,7 @@ public class ChunkGenerator {
             //noinspection ResultOfMethodCallIgnored
             executor.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
         } catch (InterruptedException e) {
-            System.out.println("Crashed when awaiting termination");
+            System.err.println("Crashed when awaiting termination");
             e.printStackTrace();
         }
         synchronized (starterThread) {
@@ -134,18 +134,16 @@ public class ChunkGenerator {
                     if (chunk == null) {
                         chunk = FileManager.getChunk(expectedId);
                         if (chunk == null) chunk = new Chunk(chunkX, chunkY, chunkZ);
-                        else
-                            WorldGeneration.generateSurroundingChunkStructureBlocks(chunk, generationData);
+                        else WorldGeneration.generateSurroundingChunkStructureBlocks(chunk, generationData);
 
                         Chunk.storeChunk(chunk);
                     } else if (chunk.id != expectedId) {
-                        System.out.println("found chunk has wrong id");
+                        System.err.println("found chunk has wrong id");
                         GameLogic.addToUnloadChunk(chunk);
 
                         chunk = FileManager.getChunk(expectedId);
                         if (chunk == null) chunk = new Chunk(chunkX, chunkY, chunkZ);
-                        else
-                            WorldGeneration.generateSurroundingChunkStructureBlocks(chunk, generationData);
+                        else WorldGeneration.generateSurroundingChunkStructureBlocks(chunk, generationData);
 
                         Chunk.storeChunk(chunk);
                     }
@@ -155,9 +153,9 @@ public class ChunkGenerator {
                     }
                 } catch (Exception exception) {
                     exception.printStackTrace();
-                    System.out.println("Generator:");
-                    System.out.println(exception.getClass());
-                    System.out.println(chunkX + " " + chunkY + " " + chunkZ);
+                    System.err.println("Generator:");
+                    System.err.println(exception.getClass());
+                    System.err.println(chunkX + " " + chunkY + " " + chunkZ);
                 }
             }
 
@@ -200,7 +198,7 @@ public class ChunkGenerator {
                 if (travelDirection == BOTTOM) handleSkyLightBottom();
                 handleSkyLightTop();
             } catch (Exception e) {
-                System.out.println(e.getClass());
+                System.err.println(e.getClass());
                 e.printStackTrace();
             }
 
@@ -210,13 +208,13 @@ public class ChunkGenerator {
                 try {
                     Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
                     if (chunk == null) {
-                        System.out.println("to mesh chunk is null");
-                        System.out.println(chunkX + " " + chunkY + " " + chunkZ);
+                        System.err.println("to mesh chunk is null");
+                        System.err.println(chunkX + " " + chunkY + " " + chunkZ);
                         continue;
                     }
                     if (!chunk.isGenerated()) {
-                        System.out.println("to mesh chunk hasn't been generated");
-                        System.out.println(chunkX + " " + chunkY + " " + chunkZ);
+                        System.err.println("to mesh chunk hasn't been generated");
+                        System.err.println(chunkX + " " + chunkY + " " + chunkZ);
                         WorldGeneration.generate(chunk);
                     }
                     if (!chunk.hasPropagatedBlockLight()) {
@@ -227,10 +225,10 @@ public class ChunkGenerator {
                     meshChunk(meshGenerator, chunk);
 
                 } catch (Exception exception) {
-                    System.out.println("Meshing:");
-                    System.out.println(exception.getClass());
+                    System.err.println("Meshing:");
+                    System.err.println(exception.getClass());
                     exception.printStackTrace();
-                    System.out.println(chunkX + " " + chunkY + " " + chunkZ);
+                    System.err.println(chunkX + " " + chunkY + " " + chunkZ);
                 }
             }
         }
@@ -331,55 +329,76 @@ public class ChunkGenerator {
 
                     if (blockEmitsLight && !previousBlockEmitsLight)
                         LightLogic.setBlockLight(x, y, z, MAX_BLOCK_LIGHT_VALUE);
-                    else if (block == AIR)
-                        if (previousBlockEmitsLight)
-                            LightLogic.dePropagateBlockLight(x, y, z);
-                        else
-                            LightLogic.setBlockLight(x, y, z, LightLogic.getMaxSurroundingBlockLight(x, y, z) - 1);
-                    else if (!blockEmitsLight)
-                        LightLogic.dePropagateBlockLight(x, y, z);
+                    else if (block == AIR) if (previousBlockEmitsLight) LightLogic.dePropagateBlockLight(x, y, z);
+                    else LightLogic.setBlockLight(x, y, z, LightLogic.getMaxSurroundingBlockLight(x, y, z) - 1);
+                    else if (!blockEmitsLight) LightLogic.dePropagateBlockLight(x, y, z);
 
                     if (block == AIR)
                         LightLogic.setSkyLight(x, y, z, LightLogic.getMaxSurroundingSkyLight(x, y, z) - 1);
-                    else
-                        LightLogic.dePropagateSkyLight(x, y, z);
+                    else LightLogic.dePropagateSkyLight(x, y, z);
                 }
             }
         }
 
         private void submitTasks(int playerX, int playerY, int playerZ, int travelDirection) {
-            if (shouldFinish && !executor.isShutdown()) executor.submit(new Generator(playerX, playerY, playerZ));
+            if (shouldFinish && !executor.isShutdown() && columnRequiresGeneration(playerX, playerY, playerZ))
+                executor.submit(new Generator(playerX, playerY, playerZ));
             for (int ring = 1; ring <= RENDER_DISTANCE_XZ + 1 && shouldFinish; ring++) {
 
                 for (int chunkX = -ring; chunkX < ring && shouldFinish && !executor.isShutdown(); chunkX++)
-                    executor.submit(new Generator(chunkX + playerX, playerY, ring + playerZ));
+                    if (columnRequiresGeneration(chunkX + playerX, playerY, ring + playerZ))
+                        executor.submit(new Generator(chunkX + playerX, playerY, ring + playerZ));
 
                 for (int chunkZ = ring; chunkZ > -ring && shouldFinish && !executor.isShutdown(); chunkZ--)
-                    executor.submit(new Generator(ring + playerX, playerY, chunkZ + playerZ));
+                    if (columnRequiresGeneration(ring + playerX, playerY, chunkZ + playerZ))
+                        executor.submit(new Generator(ring + playerX, playerY, chunkZ + playerZ));
 
                 for (int chunkX = ring; chunkX > -ring && shouldFinish && !executor.isShutdown(); chunkX--)
-                    executor.submit(new Generator(chunkX + playerX, playerY, -ring + playerZ));
+                    if (columnRequiresGeneration(chunkX + playerX, playerY, -ring + playerZ))
+                        executor.submit(new Generator(chunkX + playerX, playerY, -ring + playerZ));
 
                 for (int chunkZ = -ring; chunkZ < ring && shouldFinish && !executor.isShutdown(); chunkZ++)
-                    executor.submit(new Generator(-ring + playerX, playerY, chunkZ + playerZ));
+                    if (columnRequiresGeneration(-ring + playerX, playerY, chunkZ + playerZ))
+                        executor.submit(new Generator(-ring + playerX, playerY, chunkZ + playerZ));
 
                 if (ring == 1 && shouldFinish && !executor.isShutdown()) {
-                    executor.submit(new MeshHandler(playerX, playerY, playerZ, travelDirection));
+                    if (columnRequiresMeshing(playerX, playerY, playerZ))
+                        executor.submit(new MeshHandler(playerX, playerY, playerZ, travelDirection));
                     continue;
                 }
                 int meshRing = ring - 1;
                 for (int chunkX = -meshRing; chunkX < meshRing && shouldFinish && !executor.isShutdown(); chunkX++)
-                    executor.submit(new MeshHandler(chunkX + playerX, playerY, meshRing + playerZ, travelDirection));
+                    if (columnRequiresMeshing(chunkX + playerX, playerY, meshRing + playerZ))
+                        executor.submit(new MeshHandler(chunkX + playerX, playerY, meshRing + playerZ, travelDirection));
 
                 for (int chunkZ = meshRing; chunkZ > -meshRing && shouldFinish && !executor.isShutdown(); chunkZ--)
-                    executor.submit(new MeshHandler(meshRing + playerX, playerY, chunkZ + playerZ, travelDirection));
+                    if (columnRequiresMeshing(meshRing + playerX, playerY, chunkZ + playerZ))
+                        executor.submit(new MeshHandler(meshRing + playerX, playerY, chunkZ + playerZ, travelDirection));
 
                 for (int chunkX = meshRing; chunkX > -meshRing && shouldFinish && !executor.isShutdown(); chunkX--)
-                    executor.submit(new MeshHandler(chunkX + playerX, playerY, -meshRing + playerZ, travelDirection));
+                    if (columnRequiresMeshing(chunkX + playerX, playerY, -meshRing + playerZ))
+                        executor.submit(new MeshHandler(chunkX + playerX, playerY, -meshRing + playerZ, travelDirection));
 
                 for (int chunkZ = -meshRing; chunkZ < meshRing && shouldFinish && !executor.isShutdown(); chunkZ++)
-                    executor.submit(new MeshHandler(-meshRing + playerX, playerY, chunkZ + playerZ, travelDirection));
+                    if (columnRequiresMeshing(-meshRing + playerX, playerY, chunkZ + playerZ))
+                        executor.submit(new MeshHandler(-meshRing + playerX, playerY, chunkZ + playerZ, travelDirection));
             }
+        }
+
+        private boolean columnRequiresGeneration(int chunkX, int playerY, int chunkZ) {
+            for (int chunkY = playerY + RENDER_DISTANCE_Y + 1; chunkY >= playerY - RENDER_DISTANCE_Y - 1 && shouldFinish; chunkY--) {
+                Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
+                if (chunk == null || !chunk.isGenerated()) return true;
+            }
+            return false;
+        }
+
+        private boolean columnRequiresMeshing(int chunkX, int playerY, int chunkZ) {
+            for (int chunkY = playerY + RENDER_DISTANCE_Y; chunkY >= playerY - RENDER_DISTANCE_Y && shouldFinish; chunkY--) {
+                Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
+                if (chunk == null || !chunk.isMeshed()) return true;
+            }
+            return false;
         }
 
         public void stop() {

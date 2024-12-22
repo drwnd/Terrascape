@@ -1,6 +1,6 @@
 package terrascape.generation;
 
-import terrascape.core.Block;
+import terrascape.server.Block;
 import terrascape.dataStorage.Chunk;
 import org.joml.Vector3i;
 

@@ -1,7 +1,7 @@
 package terrascape.entity.particles;
 
 import terrascape.dataStorage.Chunk;
-import terrascape.core.ShaderManager;
+import terrascape.player.ShaderManager;
 import terrascape.utils.Utils;
 import org.joml.Vector3f;
 

@@ -1,7 +1,7 @@
 package terrascape.dataStorage;
 
-import terrascape.entity.Player;
-import terrascape.core.GameLogic;
+import terrascape.player.Player;
+import terrascape.server.GameLogic;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;

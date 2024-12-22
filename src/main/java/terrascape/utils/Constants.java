@@ -90,6 +90,7 @@ public class Constants {
     public static final int INTERACTABLE = 4;
     public static final int REPLACEABLE = 8;
     public static final int BLAST_RESISTANT = 16;
+    public static final int HAS_GRAVITY = 32;
 
     // Indices for information on block types
     public static final byte FULL_BLOCK = 0;

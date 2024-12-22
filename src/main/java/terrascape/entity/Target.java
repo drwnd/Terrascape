@@ -1,6 +1,6 @@
 package terrascape.entity;
 
-import terrascape.core.Block;
+import terrascape.server.Block;
 import terrascape.dataStorage.Chunk;
 import terrascape.utils.Utils;
 import org.joml.Vector3f;
