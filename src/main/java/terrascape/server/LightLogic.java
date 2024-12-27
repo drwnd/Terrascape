@@ -1,9 +1,8 @@
 package terrascape.server;
 
 import terrascape.dataStorage.Chunk;
+import terrascape.utils.ArrayQueue;
 import org.joml.Vector4i;
-
-import java.util.LinkedList;
 
 import static terrascape.utils.Constants.*;
 import static terrascape.utils.Settings.*;
@@ -13,15 +12,15 @@ public class LightLogic {
     public static void setBlockLight(int x, int y, int z, int blockLight) {
         if (blockLight <= 0)
             return;
-        LinkedList<Vector4i> toPlaceLights = new LinkedList<>();
-        toPlaceLights.add(new Vector4i(x, y, z, blockLight));
+        ArrayQueue<Vector4i> toPlaceLights = new ArrayQueue<>(10);
+        toPlaceLights.enqueue(new Vector4i(x, y, z, blockLight));
         setBlockLight(toPlaceLights);
     }
 
-    public static void setBlockLight(LinkedList<Vector4i> toPlaceLights) {
+    public static void setBlockLight(ArrayQueue<Vector4i> toPlaceLights) {
         int ignoreChecksCounter = toPlaceLights.size();
         while (!toPlaceLights.isEmpty()) {
-            Vector4i toPlaceLight = toPlaceLights.removeFirst();
+            Vector4i toPlaceLight = toPlaceLights.dequeue();
             int x = toPlaceLight.x;
             int y = toPlaceLight.y;
             int z = toPlaceLight.z;
@@ -44,43 +43,43 @@ public class LightLogic {
 
             short nextBlock = Chunk.getBlockInWorld(x + 1, y, z);
             if (Chunk.getBlockLightInWorld(x + 1, y, z) < nextBlockLight && canLightTravel(nextBlock, EAST, currentBlock, WEST))
-                toPlaceLights.add(new Vector4i(x + 1, y, z, nextBlockLight));
+                toPlaceLights.enqueue(new Vector4i(x + 1, y, z, nextBlockLight));
             nextBlock = Chunk.getBlockInWorld(x - 1, y, z);
             if (Chunk.getBlockLightInWorld(x - 1, y, z) < nextBlockLight && canLightTravel(nextBlock, WEST, currentBlock, EAST))
-                toPlaceLights.add(new Vector4i(x - 1, y, z, nextBlockLight));
+                toPlaceLights.enqueue(new Vector4i(x - 1, y, z, nextBlockLight));
 
             nextBlock = Chunk.getBlockInWorld(x, y + 1, z);
             if (Chunk.getBlockLightInWorld(x, y + 1, z) < nextBlockLight && canLightTravel(nextBlock, BOTTOM, currentBlock, TOP))
-                toPlaceLights.add(new Vector4i(x, y + 1, z, nextBlockLight));
+                toPlaceLights.enqueue(new Vector4i(x, y + 1, z, nextBlockLight));
             nextBlock = Chunk.getBlockInWorld(x, y - 1, z);
             if (Chunk.getBlockLightInWorld(x, y - 1, z) < nextBlockLight && canLightTravel(nextBlock, TOP, currentBlock, BOTTOM))
-                toPlaceLights.add(new Vector4i(x, y - 1, z, nextBlockLight));
+                toPlaceLights.enqueue(new Vector4i(x, y - 1, z, nextBlockLight));
 
             nextBlock = Chunk.getBlockInWorld(x, y, z + 1);
             if (Chunk.getBlockLightInWorld(x, y, z + 1) < nextBlockLight && canLightTravel(nextBlock, SOUTH, currentBlock, NORTH))
-                toPlaceLights.add(new Vector4i(x, y, z + 1, nextBlockLight));
+                toPlaceLights.enqueue(new Vector4i(x, y, z + 1, nextBlockLight));
             nextBlock = Chunk.getBlockInWorld(x, y, z - 1);
             if (Chunk.getBlockLightInWorld(x, y, z - 1) < nextBlockLight && canLightTravel(nextBlock, NORTH, currentBlock, SOUTH))
-                toPlaceLights.add(new Vector4i(x, y, z - 1, nextBlockLight));
+                toPlaceLights.enqueue(new Vector4i(x, y, z - 1, nextBlockLight));
 
             ignoreChecksCounter--;
         }
     }
 
     public static void dePropagateBlockLight(int x, int y, int z) {
-        LinkedList<Vector4i> toRePropagate = new LinkedList<>();
-        LinkedList<Vector4i> toDePropagate = new LinkedList<>();
-        toDePropagate.add(new Vector4i(x, y, z, Chunk.getBlockLightInWorld(x, y, z) + 1));
+        ArrayQueue<Vector4i> toRePropagate = new ArrayQueue<>(10);
+        ArrayQueue<Vector4i> toDePropagate = new ArrayQueue<>(10);
+        toDePropagate.enqueue(new Vector4i(x, y, z, Chunk.getBlockLightInWorld(x, y, z) + 1));
 
         dePropagateBlockLight(toRePropagate, toDePropagate);
 
         setBlockLight(toRePropagate);
     }
 
-    public static void dePropagateBlockLight(LinkedList<Vector4i> toRePropagate, LinkedList<Vector4i> toDePropagate) {
+    public static void dePropagateBlockLight(ArrayQueue<Vector4i> toRePropagate, ArrayQueue<Vector4i> toDePropagate) {
         boolean onFirstIteration = true;
         while (!toDePropagate.isEmpty()) {
-            Vector4i position = toDePropagate.removeFirst();
+            Vector4i position = toDePropagate.dequeue();
             int x = position.x;
             int y = position.y;
             int z = position.z;
@@ -93,9 +92,11 @@ public class LightLogic {
             if (currentBlockLight == 0) continue;
 
             if (currentBlockLight >= lastBlockLight) {
-                Vector4i nextPosition = new Vector4i(x, y, z, currentBlockLight);
-                if (notContainsToRePropagatePosition(toRePropagate, nextPosition))
-                    toRePropagate.add(nextPosition);
+                if (currentBlockLight > 1) {
+                    Vector4i nextPosition = new Vector4i(x, y, z, currentBlockLight);
+                    if (notContainsToRePropagatePosition(toRePropagate, nextPosition))
+                        toRePropagate.enqueue(nextPosition);
+                }
                 continue;
             }
 
@@ -107,24 +108,24 @@ public class LightLogic {
 
             short nextBlock = Chunk.getBlockInWorld(x + 1, y, z);
             if (canLightTravel(nextBlock, EAST, currentBlock, WEST))
-                toDePropagate.add(new Vector4i(x + 1, y, z, currentBlockLight));
+                toDePropagate.enqueue(new Vector4i(x + 1, y, z, currentBlockLight));
             nextBlock = Chunk.getBlockInWorld(x - 1, y, z);
             if (canLightTravel(nextBlock, WEST, currentBlock, EAST))
-                toDePropagate.add(new Vector4i(x - 1, y, z, currentBlockLight));
+                toDePropagate.enqueue(new Vector4i(x - 1, y, z, currentBlockLight));
 
             nextBlock = Chunk.getBlockInWorld(x, y + 1, z);
             if (canLightTravel(nextBlock, BOTTOM, currentBlock, TOP))
-                toDePropagate.add(new Vector4i(x, y + 1, z, currentBlockLight));
+                toDePropagate.enqueue(new Vector4i(x, y + 1, z, currentBlockLight));
             nextBlock = Chunk.getBlockInWorld(x, y - 1, z);
             if (canLightTravel(nextBlock, TOP, currentBlock, BOTTOM))
-                toDePropagate.add(new Vector4i(x, y - 1, z, currentBlockLight));
+                toDePropagate.enqueue(new Vector4i(x, y - 1, z, currentBlockLight));
 
             nextBlock = Chunk.getBlockInWorld(x, y, z + 1);
             if (canLightTravel(nextBlock, SOUTH, currentBlock, NORTH))
-                toDePropagate.add(new Vector4i(x, y, z + 1, currentBlockLight));
+                toDePropagate.enqueue(new Vector4i(x, y, z + 1, currentBlockLight));
             nextBlock = Chunk.getBlockInWorld(x, y, z - 1);
             if (canLightTravel(nextBlock, NORTH, currentBlock, SOUTH))
-                toDePropagate.add(new Vector4i(x, y, z - 1, currentBlockLight));
+                toDePropagate.enqueue(new Vector4i(x, y, z - 1, currentBlockLight));
 
             onFirstIteration = false;
         }
@@ -159,7 +160,7 @@ public class LightLogic {
 
 
     public static void propagateChunkSkyLight(final int chunkX, final int chunkY, final int chunkZ) {
-        LinkedList<Vector4i> toPlaceLights = new LinkedList<>();
+        ArrayQueue<Vector4i> toPlaceLights = new ArrayQueue<>(10);
 
         int x = chunkX << CHUNK_SIZE_BITS;
         int y = (chunkY << CHUNK_SIZE_BITS) + CHUNK_SIZE - 1;
@@ -177,7 +178,7 @@ public class LightLogic {
                     byte skyLight = Chunk.getSkyLightInWorld(totalX, totalY, totalZ);
                     if (skyLightAbove == skyLight) continue;
 
-                    toPlaceLights.add(new Vector4i(totalX, totalY, totalZ, skyLightAbove));
+                    toPlaceLights.enqueue(new Vector4i(totalX, totalY, totalZ, skyLightAbove));
                 }
 
             setSkyLight(toPlaceLights);
@@ -185,7 +186,7 @@ public class LightLogic {
     }
 
     public static void setChunkColumnSkyLight(final int chunkX, int chunkY, final int chunkZ) {
-        LinkedList<Vector4i> toPlaceLights = new LinkedList<>();
+        ArrayQueue<Vector4i> toPlaceLights = new ArrayQueue<>(10);
         int[] heightMap = Chunk.getHeightMap(chunkX, chunkZ).map;
 
         int x = chunkX << CHUNK_SIZE_BITS;
@@ -200,7 +201,7 @@ public class LightLogic {
 
                     if (Chunk.getSkyLightInWorld(totalX, totalY, totalZ) == MAX_SKY_LIGHT_VALUE) continue;
 
-                    toPlaceLights.add(new Vector4i(totalX, totalY, totalZ, MAX_SKY_LIGHT_VALUE));
+                    toPlaceLights.enqueue(new Vector4i(totalX, totalY, totalZ, MAX_SKY_LIGHT_VALUE));
                 }
 
             setSkyLight(toPlaceLights);
@@ -210,15 +211,15 @@ public class LightLogic {
     public static void setSkyLight(int x, int y, int z, int skyLight) {
         if (skyLight <= 0)
             return;
-        LinkedList<Vector4i> toPlaceLights = new LinkedList<>();
-        toPlaceLights.add(new Vector4i(x, y, z, skyLight));
+        ArrayQueue<Vector4i> toPlaceLights = new ArrayQueue<>(10);
+        toPlaceLights.enqueue(new Vector4i(x, y, z, skyLight));
         setSkyLight(toPlaceLights);
     }
 
-    public static void setSkyLight(LinkedList<Vector4i> toPlaceLights) {
+    public static void setSkyLight(ArrayQueue<Vector4i> toPlaceLights) {
         int ignoreChecksCounter = toPlaceLights.size();
         while (!toPlaceLights.isEmpty()) {
-            Vector4i toPlaceLight = toPlaceLights.removeFirst();
+            Vector4i toPlaceLight = toPlaceLights.dequeue();
             int x = toPlaceLight.x;
             int y = toPlaceLight.y;
             int z = toPlaceLight.z;
@@ -243,46 +244,46 @@ public class LightLogic {
 
             short nextBlock = Chunk.getBlockInWorld(x + 1, y, z);
             if (Chunk.getSkyLightInWorld(x + 1, y, z) < nextSkyLight && canLightTravel(nextBlock, EAST, currentBlock, WEST))
-                toPlaceLights.add(new Vector4i(x + 1, y, z, nextSkyLight));
+                toPlaceLights.enqueue(new Vector4i(x + 1, y, z, nextSkyLight));
             nextBlock = Chunk.getBlockInWorld(x - 1, y, z);
             if (Chunk.getSkyLightInWorld(x - 1, y, z) < nextSkyLight && canLightTravel(nextBlock, WEST, currentBlock, EAST))
-                toPlaceLights.add(new Vector4i(x - 1, y, z, nextSkyLight));
+                toPlaceLights.enqueue(new Vector4i(x - 1, y, z, nextSkyLight));
 
             nextBlock = Chunk.getBlockInWorld(x, y + 1, z);
             if (Chunk.getSkyLightInWorld(x, y + 1, z) < nextSkyLight && canLightTravel(nextBlock, BOTTOM, currentBlock, TOP))
-                toPlaceLights.add(new Vector4i(x, y + 1, z, nextSkyLight));
+                toPlaceLights.enqueue(new Vector4i(x, y + 1, z, nextSkyLight));
 
             nextBlock = Chunk.getBlockInWorld(x, y - 1, z);
             if (Block.isLeaveType(nextBlock) || Block.getBlockType(nextBlock) == LIQUID_TYPE)
                 currentSkyLight--;
             if (Chunk.getSkyLightInWorld(x, y - 1, z) < currentSkyLight && canLightTravel(nextBlock, TOP, currentBlock, BOTTOM))
-                toPlaceLights.add(new Vector4i(x, y - 1, z, currentSkyLight));
+                toPlaceLights.enqueue(new Vector4i(x, y - 1, z, currentSkyLight));
 
             nextBlock = Chunk.getBlockInWorld(x, y, z + 1);
             if (Chunk.getSkyLightInWorld(x, y, z + 1) < nextSkyLight && canLightTravel(nextBlock, SOUTH, currentBlock, NORTH))
-                toPlaceLights.add(new Vector4i(x, y, z + 1, nextSkyLight));
+                toPlaceLights.enqueue(new Vector4i(x, y, z + 1, nextSkyLight));
             nextBlock = Chunk.getBlockInWorld(x, y, z - 1);
             if (Chunk.getSkyLightInWorld(x, y, z - 1) < nextSkyLight && canLightTravel(nextBlock, NORTH, currentBlock, SOUTH))
-                toPlaceLights.add(new Vector4i(x, y, z - 1, nextSkyLight));
+                toPlaceLights.enqueue(new Vector4i(x, y, z - 1, nextSkyLight));
 
             ignoreChecksCounter--;
         }
     }
 
     public static void dePropagateSkyLight(int x, int y, int z) {
-        LinkedList<Vector4i> toRePropagate = new LinkedList<>();
-        LinkedList<Vector4i> toDePropagate = new LinkedList<>();
-        toDePropagate.add(new Vector4i(x, y, z, Chunk.getSkyLightInWorld(x, y, z) + 1));
+        ArrayQueue<Vector4i> toRePropagate = new ArrayQueue<>(10);
+        ArrayQueue<Vector4i> toDePropagate = new ArrayQueue<>(10);
+        toDePropagate.enqueue(new Vector4i(x, y, z, Chunk.getSkyLightInWorld(x, y, z) + 1));
 
         dePropagateSkyLight(toRePropagate, toDePropagate);
 
         setSkyLight(toRePropagate);
     }
 
-    public static void dePropagateSkyLight(LinkedList<Vector4i> toRePropagate, LinkedList<Vector4i> toDePropagate) {
+    public static void dePropagateSkyLight(ArrayQueue<Vector4i> toRePropagate, ArrayQueue<Vector4i> toDePropagate) {
         boolean onFirstIteration = true;
         while (!toDePropagate.isEmpty()) {
-            Vector4i position = toDePropagate.removeFirst();
+            Vector4i position = toDePropagate.dequeue();
             int x = position.x;
             int y = position.y;
             int z = position.z;
@@ -295,9 +296,11 @@ public class LightLogic {
             if (currentSkyLight == 0) continue;
 
             if (currentSkyLight >= lastSkyLight) {
-                Vector4i nextPosition = new Vector4i(x, y, z, currentSkyLight);
-                if (notContainsToRePropagatePosition(toRePropagate, nextPosition))
-                    toRePropagate.add(nextPosition);
+                if (currentSkyLight > 1) {
+                    Vector4i nextPosition = new Vector4i(x, y, z, currentSkyLight);
+                    if (notContainsToRePropagatePosition(toRePropagate, nextPosition))
+                        toRePropagate.enqueue(nextPosition);
+                }
                 continue;
             }
 
@@ -309,24 +312,24 @@ public class LightLogic {
 
             short nextBlock = Chunk.getBlockInWorld(x + 1, y, z);
             if (canLightTravel(nextBlock, EAST, currentBlock, WEST))
-                toDePropagate.add(new Vector4i(x + 1, y, z, currentSkyLight));
+                toDePropagate.enqueue(new Vector4i(x + 1, y, z, currentSkyLight));
             nextBlock = Chunk.getBlockInWorld(x - 1, y, z);
             if (canLightTravel(nextBlock, WEST, currentBlock, EAST))
-                toDePropagate.add(new Vector4i(x - 1, y, z, currentSkyLight));
+                toDePropagate.enqueue(new Vector4i(x - 1, y, z, currentSkyLight));
 
             nextBlock = Chunk.getBlockInWorld(x, y + 1, z);
             if (canLightTravel(nextBlock, BOTTOM, currentBlock, TOP))
-                toDePropagate.add(new Vector4i(x, y + 1, z, currentSkyLight));
+                toDePropagate.enqueue(new Vector4i(x, y + 1, z, currentSkyLight));
             nextBlock = Chunk.getBlockInWorld(x, y - 1, z);
             if (canLightTravel(nextBlock, TOP, currentBlock, BOTTOM))
-                toDePropagate.add(new Vector4i(x, y - 1, z, currentSkyLight + 1));
+                toDePropagate.enqueue(new Vector4i(x, y - 1, z, currentSkyLight + 1));
 
             nextBlock = Chunk.getBlockInWorld(x, y, z + 1);
             if (canLightTravel(nextBlock, SOUTH, currentBlock, NORTH))
-                toDePropagate.add(new Vector4i(x, y, z + 1, currentSkyLight));
+                toDePropagate.enqueue(new Vector4i(x, y, z + 1, currentSkyLight));
             nextBlock = Chunk.getBlockInWorld(x, y, z - 1);
             if (canLightTravel(nextBlock, NORTH, currentBlock, SOUTH))
-                toDePropagate.add(new Vector4i(x, y, z - 1, currentSkyLight));
+                toDePropagate.enqueue(new Vector4i(x, y, z - 1, currentSkyLight));
 
             onFirstIteration = false;
         }
@@ -360,11 +363,16 @@ public class LightLogic {
     }
 
 
-    private static boolean notContainsToRePropagatePosition(LinkedList<Vector4i> toRePropagate, Vector4i position) {
-        for (Vector4i vec : toRePropagate)
-            if (vec.x == position.x && vec.y == position.y && vec.z == position.z && vec.w >= position.w)
-                return false;
-        return true;
+    private static boolean notContainsToRePropagatePosition(ArrayQueue<Vector4i> toRePropagate, Vector4i position) {
+//        for (Object object : toRePropagate.getElements()) {
+//            if (object == null) continue;
+//            Vector4i vec = (Vector4i) object;
+//
+//            if (vec.x == position.x && vec.y == position.y && vec.z == position.z && vec.w >= position.w)
+//                return false;
+//        }
+//        return true;
+        return toRePropagate.notContainsToRePropagatePosition(position);
     }
 
     public static boolean canLightTravel(short destinationBlock, int enterSide, short originBlock, int exitSide) {
@@ -375,14 +383,14 @@ public class LightLogic {
         occlusionData = Block.getBlockOcclusionData(originBlock, exitSide);
         lightEmitting = (Block.getBlockProperties(originBlock) & LIGHT_EMITTING) != 0;
         blockType = Block.getBlockType(originBlock);
-        boolean canExit = occlusionData != -1 || blockType == LIQUID_TYPE || lightEmitting ||
+        boolean canExit = lightEmitting || occlusionData != -1L || Block.isLiquidType(blockType) ||
                 Block.isGlassType(originBlock) || Block.isLeaveType(originBlock);
         if (!canExit) return false;
 
         occlusionData = Block.getBlockOcclusionData(destinationBlock, enterSide);
         lightEmitting = (Block.getBlockProperties(destinationBlock) & LIGHT_EMITTING) != 0;
         blockType = Block.getBlockType(destinationBlock);
-        return occlusionData != -1  || blockType == LIQUID_TYPE || lightEmitting ||
+        return lightEmitting || occlusionData != -1L || Block.isLiquidType(blockType) ||
                 Block.isGlassType(destinationBlock) || Block.isLeaveType(destinationBlock);
     }
 

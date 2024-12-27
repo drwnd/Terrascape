@@ -511,13 +511,13 @@ public class Player {
 
             boolean blockCanBeWaterLogged = (target.block() & 0xFFFF) > STANDARD_BLOCKS_THRESHOLD && (target.block() & BLOCK_TYPE_MASK) != FULL_BLOCK;
 
-            if (!blockCanBeWaterLogged || selectedBlock != WATER || window.isKeyPressed(SNEAK_BUTTON)) {
+            if (!blockCanBeWaterLogged || selectedBlock != WATER_SOURCE || window.isKeyPressed(SNEAK_BUTTON)) {
                 byte[] normal = Block.NORMALS[target.side()];
                 x = position.x + normal[0];
                 y = position.y + normal[1];
                 z = position.z + normal[2];
 
-                if (selectedBlock == WATER) {
+                if (selectedBlock == WATER_SOURCE) {
                     short block = Chunk.getBlockInWorld(x, y, z);
                     isWaterLogging = (block & 0xFFFF) > STANDARD_BLOCKS_THRESHOLD && (block & BLOCK_TYPE_MASK) != FULL_BLOCK;
                     if (isWaterLogging) toPlaceBlock = (short) (block | WATER_LOGGED_MASK);
@@ -528,9 +528,11 @@ public class Player {
                 toPlaceBlock = (short) (target.block() | WATER_LOGGED_MASK);
             }
         }
-        if (hasCollision() && Block.playerIntersectsBlock(minX, maxX, minY, maxY, minZ, maxZ, x, y, z, toPlaceBlock)
-        || Block.entityIntersectsBlock(x, y, z, toPlaceBlock))
+        if (hasCollision() && Block.entityIntersectsBlock(minX, maxX, minY, maxY, minZ, maxZ, x, y, z, toPlaceBlock)
+                || Block.entityIntersectsBlock(x, y, z, toPlaceBlock))
             return;
+
+        if (!Block.isSupported(hotBar[selectedHotBarSlot], x, y, z)) return;
 
         if (isWaterLogging || (Block.getBlockProperties(Chunk.getBlockInWorld(x, y, z)) & REPLACEABLE) != 0)
             GameLogic.placeBlock(toPlaceBlock, x, y, z, true);
@@ -796,7 +798,7 @@ public class Player {
 
                     short block = Chunk.getBlockInWorld(blockX, blockY, blockZ);
 
-                    if (hasCollision() && Block.playerIntersectsBlock(minX, maxX, minY, maxY, minZ, maxZ, blockX, blockY, blockZ, block))
+                    if (hasCollision() && Block.entityIntersectsBlock(minX, maxX, minY, maxY, minZ, maxZ, blockX, blockY, blockZ, block))
                         return true;
                 }
         return false;

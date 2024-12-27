@@ -49,7 +49,7 @@ public class MeshGenerator {
 
                     int faceCount = Block.getFaceCount(blockType);
 
-                    if (block != WATER) addOpaqueBlock(faceCount, foliageVerticesList, verticesLists);
+                    if (!Block.isWaterBlock(block)) addOpaqueBlock(faceCount, foliageVerticesList, verticesLists);
                     if (Block.isWaterLogged(block)) addWaterBlock(waterVerticesList);
                 }
 
@@ -92,12 +92,12 @@ public class MeshGenerator {
 
     private void addWaterBlock(ArrayList<Integer> waterVerticesList) {
         for (side = 0; side < 6; side++) {
-            if (block != WATER && Block.getBlockOcclusionData(block, side) == -1L) continue;
+            if (!Block.isWaterBlock(block) && Block.getBlockOcclusionData(block, side) == -1L) continue;
 
             byte[] normal = Block.NORMALS[side];
             short occludingBlock = chunk.getBlock(blockX + normal[0], blockY + normal[1], blockZ + normal[2]);
 
-            if (Block.occludesWater(occludingBlock, side, worldCoordinate.x | blockX, worldCoordinate.y | blockY, worldCoordinate.z | blockZ))
+            if (Block.occludesWater(block, occludingBlock, side, worldCoordinate.x | blockX, worldCoordinate.y | blockY, worldCoordinate.z | blockZ))
                 continue;
 
             addWaterSideToList(waterVerticesList);
@@ -175,25 +175,33 @@ public class MeshGenerator {
     }
 
     private void addVertexToListDynamic(int inChunkX, int inChunkY, int inChunkZ, int u, int v, int skyLight, int blockLight, int corner) {
+        int x = worldCoordinate.x + inChunkX;
+        int z = worldCoordinate.z + inChunkZ;
+
         int subX = 0;
         int subY = 0;
         int subZ = 0;
         int subU = 0;
         int subV = 0;
 
-        if (Block.getBlockType(block) == LIQUID_TYPE) {
+        if (Block.isLavaBlock(block)) {
             short blockAbove = chunk.getBlock(blockX, blockY + 1, blockZ);
             if (side == TOP) {
-                if (Block.getBlockType(blockAbove) != LIQUID_TYPE && !Block.isWaterLogged(block) && Block.getBlockOcclusionData(blockAbove, BOTTOM) != -1L)
-                    subY = -2;
+                if (Block.getBlockOcclusionData(blockAbove, BOTTOM) != -1L || block != LAVA_SOURCE) {
+                    subY = getVertexLavaLevelInWorld(x, blockY + worldCoordinate.y, z) - 16;
+                }
             } else if (side != BOTTOM) {
-                if ((corner == 0 || corner == 1) && blockAbove != block && Block.getBlockOcclusionData(blockAbove, BOTTOM) != -1L) {
-                    subY = -2;
-                    subV = 2;
-                } else if (corner == 2 || corner == 3) {
+                if ((corner == 0 || corner == 1)) { // Top corners
+                    if (!Block.isLavaBlock(blockAbove) && (Block.getBlockOcclusionData(blockAbove, BOTTOM) != -1L || block != LAVA_SOURCE)) {
+                        int lavaLevel = getVertexLavaLevelInWorld(x, blockY + worldCoordinate.y, z);
+                        subY = lavaLevel - 16;
+                        subV = -lavaLevel + 16;
+                    }
+                } else { // Bottom corners
                     byte[] normal = Block.NORMALS[side];
                     short adjacentBlock = chunk.getBlock(blockX + normal[0], blockY, blockZ + normal[2]);
-                    if (adjacentBlock == block && (blockAbove == block || Block.getBlockOcclusionData(blockAbove, BOTTOM) != 0)) {
+
+                    if (Block.isLavaBlock(adjacentBlock) && (Block.isLavaBlock(blockAbove) || Block.getBlockOcclusionData(blockAbove, BOTTOM) == -1L)) {
                         subY = 14;
                         subV = -14;
                     }
@@ -213,6 +221,7 @@ public class MeshGenerator {
                 case WEST, EAST -> subX = Block.getSubX(blockType, side, corner, 0);
             }
         }
+
         int ambientOcclusionLevel = getAmbientOcclusionLevel(inChunkX, inChunkY, inChunkZ, subX, subY, subZ);
         list.add(packData1(ambientOcclusionLevel, (inChunkX << 4) + subX + 15, (inChunkY << 4) + subY + 15, (inChunkZ << 4) + subZ + 15));
         list.add(packData2(skyLight, blockLight, (u << 4) + subU + 15, (v << 4) + subV + 15));
@@ -279,17 +288,18 @@ public class MeshGenerator {
         short blockAbove = chunk.getBlock(blockX, blockY + 1, blockZ);
 
         if (side == TOP) {
-            if (Block.getBlockOcclusionData(blockAbove, BOTTOM) != -1L) {
-                subY = -2;
+            if (Block.getBlockOcclusionData(blockAbove, BOTTOM) != -1L || !Block.isWaterSource(block)) {
+                subY = getVertexWaterLevelInWorld(x, blockY + worldCoordinate.y, z) - 16;
                 shouldSimulateWaves = true;
             }
         } else if (side != BOTTOM) {
             if ((corner == 0 || corner == 1)) { // Top corners
                 if (Block.isWaterLogged(blockAbove)) shouldSimulateWaves = true;
-                else if (Block.getBlockOcclusionData(blockAbove, BOTTOM) != -1L) {
+                else if (Block.getBlockOcclusionData(blockAbove, BOTTOM) != -1L || !Block.isWaterSource(block)) {
                     shouldSimulateWaves = true;
-                    subY = -2;
-                    subV = 2;
+                    int waterLevel = getVertexWaterLevelInWorld(x, blockY + worldCoordinate.y, z);
+                    subY = waterLevel - 16;
+                    subV = -waterLevel + 16;
                 }
             } else { // Bottom corners
                 byte[] normal = Block.NORMALS[side];
@@ -309,7 +319,7 @@ public class MeshGenerator {
             shouldSimulateWaves = Block.getBlockOcclusionData(blockBelow, TOP) != -1L;
         }
 
-        if (block != WATER && Block.isWaterLogged(block))
+        if (!Block.isWaterBlock(block) && Block.isWaterLogged(block))
             for (int side : adjacentSides) {
                 if (Block.getBlockOcclusionData(block, side) != -1L) continue;
                 shouldSimulateWaves = false;
@@ -594,6 +604,30 @@ public class MeshGenerator {
                     byte currentBlockLight = Chunk.getSkyLightInWorld(lightX, lightY, lightZ);
                     if (max < currentBlockLight) max = currentBlockLight;
                 }
+        return max;
+    }
+
+    public static int getVertexWaterLevelInWorld(int x, int blockY, int z) {
+        int max = 0;
+
+        for (int blockX = x - 1; blockX <= x; blockX++)
+            for (int blockZ = z - 1; blockZ <= z; blockZ++) {
+
+                int currentWaterLevel = Block.getWaterLevel(blockX, blockY, blockZ);
+                if (currentWaterLevel > max) max = currentWaterLevel;
+            }
+        return max;
+    }
+
+    public static int getVertexLavaLevelInWorld(int x, int blockY, int z) {
+        int max = 0;
+
+        for (int blockX = x - 1; blockX <= x; blockX++)
+            for (int blockZ = z - 1; blockZ <= z; blockZ++) {
+
+                int currentLavaLevel = Block.getLavaLevel(blockX, blockY, blockZ);
+                if (currentLavaLevel > max) max = currentLavaLevel;
+            }
         return max;
     }
 

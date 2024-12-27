@@ -21,10 +21,10 @@ public class Block {
         if (BLOCK_TYPE_XYZ_SUB_DATA[getBlockType(toTestBlock)][sideToMinMaxXYZ(side) + aabbIndex] != 0)
             return getBlockOcclusionData(toTestBlock, side) == -1L;
         int occludingBlockType = getBlockType(occludingBlock);
-        if (occludingBlockType == LIQUID_TYPE) {
+        if (isLiquidType(occludingBlockType)) {
             if (isWaterLogged(occludingBlock)) return false;
-            if (getBlockType(toTestBlock) != LIQUID_TYPE) return false;
-            return occludesLava(occludingBlock, side, x, y, z);
+            if (!isLiquidType(getBlockType(toTestBlock))) return false;
+            return occludesLava(toTestBlock, occludingBlock, side, x, y, z);
         }
         if (occludingBlockType == AIR_TYPE) return false;
 
@@ -49,12 +49,12 @@ public class Block {
         return true;
     }
 
-    public static boolean occludesWater(short occludingBlock, int side, int x, int y, int z) {
+    public static boolean occludesWater(short toTestBlock, short occludingBlock, int side, int x, int y, int z) {
         if (getBlockType(occludingBlock) == AIR_TYPE) return false;
         if (isLeaveType(occludingBlock) || isGlassType(occludingBlock) && !isWaterLogged(occludingBlock)) return false;
-        if (occludingBlock == LAVA) return false;
+        if (occludingBlock == LAVA_SOURCE) return false;
         if (side == TOP)
-            return isWaterLogged(occludingBlock) || getBlockOcclusionData(occludingBlock, BOTTOM) == -1L;
+            return isWaterLogged(occludingBlock) || getBlockOcclusionData(occludingBlock, BOTTOM) == -1L && isWaterSource(toTestBlock);
         if (side == BOTTOM)
             return isWaterLogged(occludingBlock) || getBlockOcclusionData(occludingBlock, TOP) == -1L;
         if (!isWaterLogged(occludingBlock)) return getBlockOcclusionData(occludingBlock, (side + 3) % 6) == -1;
@@ -63,24 +63,24 @@ public class Block {
         short blockAboveToTestBlock = Chunk.getBlockInWorld(x, y + 1, z);
         short blockAboveOccludingBlock = Chunk.getBlockInWorld(x + normal[0], y + 1, z + normal[2]);
 
-        boolean toTestBlockUp = isWaterLogged(blockAboveToTestBlock) || getBlockOcclusionData(blockAboveToTestBlock, BOTTOM) == -1L;
-        boolean occludingBlockUp = isWaterLogged(blockAboveOccludingBlock) || getBlockOcclusionData(blockAboveOccludingBlock, BOTTOM) == -1L;
+        boolean toTestBlockUp = isWaterSource(toTestBlock) && (isWaterLogged(blockAboveToTestBlock) || getBlockOcclusionData(blockAboveToTestBlock, BOTTOM) == -1L);
+        boolean occludingBlockUp = isWaterSource(occludingBlock) && (isWaterLogged(blockAboveOccludingBlock) || getBlockOcclusionData(blockAboveOccludingBlock, BOTTOM) == -1L);
 
         return !(toTestBlockUp && !occludingBlockUp);
     }
 
-    public static boolean occludesLava(short occludingBlock, int side, int x, int y, int z) {
+    public static boolean occludesLava(short toTestBlock, short occludingBlock, int side, int x, int y, int z) {
         if (getBlockType(occludingBlock) == AIR_TYPE) return false;
-        if (occludingBlock == WATER) return false;
+        if (occludingBlock == WATER_SOURCE) return false;
         if (side == TOP || side == BOTTOM) return true;
-        if (occludingBlock != LAVA) return getBlockOcclusionData(occludingBlock, (side + 3) % 6) == -1;
+        if (!isLavaBlock(occludingBlock)) return getBlockOcclusionData(occludingBlock, (side + 3) % 6) == -1;
 
         byte[] normal = NORMALS[side];
         short blockAboveToTestBlock = Chunk.getBlockInWorld(x, y + 1, z);
         short blockAboveOccludingBlock = Chunk.getBlockInWorld(x + normal[0], y + 1, z + normal[2]);
 
-        boolean toTestBlockUp = blockAboveToTestBlock == LAVA || getBlockOcclusionData(blockAboveToTestBlock, BOTTOM) == -1L;
-        boolean occludingBlockUp = blockAboveOccludingBlock == LAVA || getBlockOcclusionData(blockAboveOccludingBlock, BOTTOM) == -1L;
+        boolean toTestBlockUp = toTestBlock == LAVA_SOURCE && blockAboveToTestBlock == LAVA_SOURCE || getBlockOcclusionData(blockAboveToTestBlock, BOTTOM) == -1L;
+        boolean occludingBlockUp = blockAboveOccludingBlock == LAVA_SOURCE || getBlockOcclusionData(blockAboveOccludingBlock, BOTTOM) == -1L;
 
         return !(toTestBlockUp && !occludingBlockUp);
     }
@@ -93,7 +93,7 @@ public class Block {
         return blockTextureIndices[side >= blockTextureIndices.length ? 0 : side];
     }
 
-    public static boolean playerIntersectsBlock(float minX, float maxX, float minY, float maxY, float minZ, float maxZ, int blockX, int blockY, int blockZ, short block) {
+    public static boolean entityIntersectsBlock(float minX, float maxX, float minY, float maxY, float minZ, float maxZ, int blockX, int blockY, int blockZ, short block) {
 
         int blockProperties = getBlockProperties(block);
         if ((blockProperties & NO_COLLISION) != 0) return false;
@@ -526,22 +526,22 @@ public class Block {
             long adjacentMask;
 
             adjacentBlock = Chunk.getBlockInWorld(x, y + 1, z);
-            adjacentMask = getBlockType(adjacentBlock) == LIQUID_TYPE ? 0L : getBlockOcclusionData(adjacentBlock, BOTTOM);
+            adjacentMask = isLiquidType(getBlockType(adjacentBlock)) ? 0L : getBlockOcclusionData(adjacentBlock, BOTTOM);
             if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[EAST_WEST_WALL][TOP]) != 0 || isNorthSouthFenceType(getBlockType(adjacentBlock)))
                 index |= 1;
 
             adjacentBlock = Chunk.getBlockInWorld(x + 1, y, z);
-            adjacentMask = getBlockType(adjacentBlock) == LIQUID_TYPE ? 0L : getBlockOcclusionData(adjacentBlock, EAST);
+            adjacentMask = isLiquidType(getBlockType(adjacentBlock)) ? 0L : getBlockOcclusionData(adjacentBlock, EAST);
             if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[UP_DOWN_WALL][WEST]) != 0 || isNorthSouthFenceType(getBlockType(adjacentBlock)))
                 index |= 2;
 
             adjacentBlock = Chunk.getBlockInWorld(x, y - 1, z);
-            adjacentMask = getBlockType(adjacentBlock) == LIQUID_TYPE ? 0L : getBlockOcclusionData(adjacentBlock, TOP);
+            adjacentMask = isLiquidType(getBlockType(adjacentBlock)) ? 0L : getBlockOcclusionData(adjacentBlock, TOP);
             if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[EAST_WEST_WALL][BOTTOM]) != 0 || isNorthSouthFenceType(getBlockType(adjacentBlock)))
                 index |= 4;
 
             adjacentBlock = Chunk.getBlockInWorld(x - 1, y, z);
-            adjacentMask = getBlockType(adjacentBlock) == LIQUID_TYPE ? 0L : getBlockOcclusionData(adjacentBlock, WEST);
+            adjacentMask = isLiquidType(getBlockType(adjacentBlock)) ? 0L : getBlockOcclusionData(adjacentBlock, WEST);
             if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[UP_DOWN_WALL][EAST]) != 0 || isNorthSouthFenceType(getBlockType(adjacentBlock)))
                 index |= 8;
 
@@ -553,22 +553,22 @@ public class Block {
             long adjacentMask;
 
             adjacentBlock = Chunk.getBlockInWorld(x, y, z + 1);
-            adjacentMask = getBlockType(adjacentBlock) == LIQUID_TYPE ? 0L : getBlockOcclusionData(adjacentBlock, SOUTH);
+            adjacentMask = isLiquidType(getBlockType(adjacentBlock)) ? 0L : getBlockOcclusionData(adjacentBlock, SOUTH);
             if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[EAST_WEST_WALL][NORTH]) != 0 || isUpDownFenceType(getBlockType(adjacentBlock)))
                 index |= 1;
 
             adjacentBlock = Chunk.getBlockInWorld(x + 1, y, z);
-            adjacentMask = getBlockType(adjacentBlock) == LIQUID_TYPE ? 0L : getBlockOcclusionData(adjacentBlock, EAST);
+            adjacentMask = isLiquidType(getBlockType(adjacentBlock)) ? 0L : getBlockOcclusionData(adjacentBlock, EAST);
             if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[NORTH_SOUTH_WALL][WEST]) != 0 || isUpDownFenceType(getBlockType(adjacentBlock)))
                 index |= 2;
 
             adjacentBlock = Chunk.getBlockInWorld(x, y, z - 1);
-            adjacentMask = getBlockType(adjacentBlock) == LIQUID_TYPE ? 0L : getBlockOcclusionData(adjacentBlock, NORTH);
+            adjacentMask = isLiquidType(getBlockType(adjacentBlock)) ? 0L : getBlockOcclusionData(adjacentBlock, NORTH);
             if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[EAST_WEST_WALL][SOUTH]) != 0 || isUpDownFenceType(getBlockType(adjacentBlock)))
                 index |= 4;
 
             adjacentBlock = Chunk.getBlockInWorld(x - 1, y, z);
-            adjacentMask = getBlockType(adjacentBlock) == LIQUID_TYPE ? 0L : getBlockOcclusionData(adjacentBlock, WEST);
+            adjacentMask = isLiquidType(getBlockType(adjacentBlock)) ? 0L : getBlockOcclusionData(adjacentBlock, WEST);
             if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[NORTH_SOUTH_WALL][EAST]) != 0 || isUpDownFenceType(getBlockType(adjacentBlock)))
                 index |= 8;
 
@@ -580,22 +580,22 @@ public class Block {
             long adjacentMask;
 
             adjacentBlock = Chunk.getBlockInWorld(x, y, z + 1);
-            adjacentMask = getBlockType(adjacentBlock) == LIQUID_TYPE ? 0L : getBlockOcclusionData(adjacentBlock, SOUTH);
+            adjacentMask = isLiquidType(getBlockType(adjacentBlock)) ? 0L : getBlockOcclusionData(adjacentBlock, SOUTH);
             if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[UP_DOWN_WALL][NORTH]) != 0 || isEastWestFenceType(getBlockType(adjacentBlock)))
                 index |= 1;
 
             adjacentBlock = Chunk.getBlockInWorld(x, y + 1, z);
-            adjacentMask = getBlockType(adjacentBlock) == LIQUID_TYPE ? 0L : getBlockOcclusionData(adjacentBlock, BOTTOM);
+            adjacentMask = isLiquidType(getBlockType(adjacentBlock)) ? 0L : getBlockOcclusionData(adjacentBlock, BOTTOM);
             if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[NORTH_SOUTH_WALL][TOP]) != 0 || isEastWestFenceType(getBlockType(adjacentBlock)))
                 index |= 2;
 
             adjacentBlock = Chunk.getBlockInWorld(x, y, z - 1);
-            adjacentMask = getBlockType(adjacentBlock) == LIQUID_TYPE ? 0L : getBlockOcclusionData(adjacentBlock, NORTH);
+            adjacentMask = isLiquidType(getBlockType(adjacentBlock)) ? 0L : getBlockOcclusionData(adjacentBlock, NORTH);
             if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[UP_DOWN_WALL][SOUTH]) != 0 || isEastWestFenceType(getBlockType(adjacentBlock)))
                 index |= 4;
 
             adjacentBlock = Chunk.getBlockInWorld(x, y - 1, z);
-            adjacentMask = getBlockType(adjacentBlock) == LIQUID_TYPE ? 0L : getBlockOcclusionData(adjacentBlock, TOP);
+            adjacentMask = isLiquidType(getBlockType(adjacentBlock)) ? 0L : getBlockOcclusionData(adjacentBlock, TOP);
             if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[NORTH_SOUTH_WALL][BOTTOM]) != 0 || isEastWestFenceType(getBlockType(adjacentBlock)))
                 index |= 8;
 
@@ -637,7 +637,7 @@ public class Block {
         if (isLeaveType(block)) return false;
         if (isGlassType(block)) return false;
         int blockType = getBlockType(block);
-        if (blockType == LIQUID_TYPE || blockType == FLOWER_TYPE) return false;
+        if (isLiquidType(blockType) || blockType == FLOWER_TYPE) return false;
         if (blockType != FULL_BLOCK && blockType == getBlockType(referenceBlock)) return false;
         return (getBlockProperties(block) & LIGHT_EMITTING) == 0;
     }
@@ -717,7 +717,124 @@ public class Block {
     }
 
     public static boolean isWaterLogged(short block) {
-        return block == WATER || (block & 0xFFFF) > STANDARD_BLOCKS_THRESHOLD && (block & WATER_LOGGED_MASK) != 0;
+        return isWaterBlock(block) || (block & 0xFFFF) > STANDARD_BLOCKS_THRESHOLD && (block & WATER_LOGGED_MASK) != 0;
+    }
+
+    public static boolean isWaterBlock(short block) {
+        return block >= WATER_SOURCE && block <= FLOWING_WATER_LEVEL_1;
+    }
+
+    public static int getWaterLevel(int x, int y, int z) {
+        short block = Chunk.getBlockInWorld(x, y, z);
+        if (isWaterLogged(block) && !isWaterBlock(block)) {
+            short blockAbove = Chunk.getBlockInWorld(x, y + 1, z);
+            return Block.isWaterLogged(blockAbove) ? 16 : 14;
+        }
+        return switch (block) {
+            case FLOWING_WATER_LEVEL_8 -> 16;
+            case WATER_SOURCE, FLOWING_WATER_LEVEL_7 -> 14;
+            case FLOWING_WATER_LEVEL_6 -> 12;
+            case FLOWING_WATER_LEVEL_5 -> 10;
+            case FLOWING_WATER_LEVEL_4 -> 8;
+            case FLOWING_WATER_LEVEL_3 -> 6;
+            case FLOWING_WATER_LEVEL_2 -> 4;
+            case FLOWING_WATER_LEVEL_1 -> 2;
+            default -> 0;
+        };
+    }
+
+    public static boolean canWaterFlow(short sourceBlock, short targetBlock, short blockBelow, int entrySide) {
+        if (isLavaBlock(targetBlock)) return false;
+        if (sourceBlock == FLOWING_WATER_LEVEL_1 && entrySide != TOP) return false;
+        if (blockBelow == FLOWING_WATER_LEVEL_8 || blockBelow == WATER_SOURCE || Block.getBlockOcclusionData(blockBelow, TOP) == 0L && entrySide != TOP)
+            return false;
+        if (isWaterBlock(targetBlock))
+            return targetBlock > sourceBlock + 1 || entrySide == TOP && targetBlock != WATER_SOURCE && targetBlock != FLOWING_WATER_LEVEL_8;
+        if (entrySide == TOP && (Block.getBlockProperties(blockBelow) & REPLACEABLE) != 0)
+            return true;
+
+        return (getBlockProperties(targetBlock) & REPLACEABLE) != 0;
+    }
+
+    public static boolean isWaterSupported(short block, int x, int y, int z) {
+        if (block == WATER_SOURCE || !isWaterBlock(block)) return true;
+        short blockAbove = Chunk.getBlockInWorld(x, y + 1, z);
+        if (isWaterLogged(blockAbove) && (isWaterBlock(blockAbove) || Block.getBlockOcclusionData(blockAbove, BOTTOM) != -1L))
+            return true;
+
+        short adjacentBlock = Chunk.getBlockInWorld(x + 1, y, z);
+        if (!isWaterBlock(adjacentBlock) && isWaterLogged(adjacentBlock) && Block.getBlockOcclusionData(adjacentBlock, EAST) != -1L
+                || isWaterBlock(adjacentBlock) && adjacentBlock < block)
+            return true;
+
+        adjacentBlock = Chunk.getBlockInWorld(x - 1, y, z);
+        if (!isWaterBlock(adjacentBlock) && isWaterLogged(adjacentBlock) && Block.getBlockOcclusionData(adjacentBlock, WEST) != -1L
+                || isWaterBlock(adjacentBlock) && adjacentBlock < block)
+            return true;
+
+        adjacentBlock = Chunk.getBlockInWorld(x, y, z + 1);
+        if (!isWaterBlock(adjacentBlock) && isWaterLogged(adjacentBlock) && Block.getBlockOcclusionData(adjacentBlock, SOUTH) != -1L
+                || isWaterBlock(adjacentBlock) && adjacentBlock < block)
+            return true;
+
+        adjacentBlock = Chunk.getBlockInWorld(x, y, z - 1);
+        return !isWaterBlock(adjacentBlock) && isWaterLogged(adjacentBlock) && Block.getBlockOcclusionData(adjacentBlock, NORTH) != -1L
+                || isWaterBlock(adjacentBlock) && adjacentBlock < block;
+    }
+
+    public static boolean isWaterSource(short block) {
+        return block == WATER_SOURCE || isWaterLogged(block) && !isWaterBlock(block);
+    }
+
+    public static boolean isLavaBlock(short block) {
+        return block >= LAVA_SOURCE && block <= FLOWING_LAVA_LEVEL_1;
+    }
+
+    public static int getLavaLevel(int x, int y, int z) {
+        short block = Chunk.getBlockInWorld(x, y, z);
+        return switch (block) {
+            case FLOWING_LAVA_LEVEL_4 -> 16;
+            case LAVA_SOURCE -> 14;
+            case FLOWING_LAVA_LEVEL_3 -> 10;
+            case FLOWING_LAVA_LEVEL_2 -> 6;
+            case FLOWING_LAVA_LEVEL_1 -> 2;
+            default -> 0;
+        };
+    }
+
+    public static boolean canLavaFlow(short sourceBlock, short targetBlock, short blockBelow, int entrySide) {
+        if (isWaterBlock(targetBlock)) return false;
+        if (sourceBlock == FLOWING_LAVA_LEVEL_1 && entrySide != TOP) return false;
+        if (blockBelow == FLOWING_LAVA_LEVEL_4 || blockBelow == LAVA_SOURCE || Block.getBlockOcclusionData(blockBelow, TOP) == 0L && entrySide != TOP)
+            return false;
+        if (isLavaBlock(targetBlock))
+            return targetBlock > sourceBlock + 1 || entrySide == TOP && targetBlock != LAVA_SOURCE && targetBlock != FLOWING_LAVA_LEVEL_4;
+        if (entrySide == TOP && (Block.getBlockProperties(blockBelow) & REPLACEABLE) != 0)
+            return true;
+
+        return (getBlockProperties(targetBlock) & REPLACEABLE) != 0;
+    }
+
+    public static boolean isLavaSupported(short block, int x, int y, int z) {
+        if (block == LAVA_SOURCE) return true;
+        short blockAbove = Chunk.getBlockInWorld(x, y + 1, z);
+        if (isLavaBlock(blockAbove)) return true;
+
+        short adjacentBlock = Chunk.getBlockInWorld(x + 1, y, z);
+        if (isLavaBlock(adjacentBlock) && adjacentBlock < block) return true;
+
+        adjacentBlock = Chunk.getBlockInWorld(x - 1, y, z);
+        if (isLavaBlock(adjacentBlock) && adjacentBlock < block) return true;
+
+        adjacentBlock = Chunk.getBlockInWorld(x, y, z + 1);
+        if (isLavaBlock(adjacentBlock) && adjacentBlock < block) return true;
+
+        adjacentBlock = Chunk.getBlockInWorld(x, y, z - 1);
+        return isLavaBlock(adjacentBlock) && adjacentBlock < block;
+    }
+
+    public static boolean isLiquidType(int blockType) {
+        return blockType >= LIQUID_TYPE && blockType <= LIQUID_LEVEL_8;
     }
 
     public static boolean isLeaveType(short block) {
@@ -758,6 +875,26 @@ public class Block {
         };
     }
 
+    public static int minMaxXYZToSide(int minMaxXYZ) {
+        return switch (minMaxXYZ) {
+            case MAX_Z -> NORTH;
+            case MIN_Z -> SOUTH;
+            case MAX_X -> WEST;
+            case MIN_X -> EAST;
+            case MAX_Y -> TOP;
+            case MIN_Y -> BOTTOM;
+            default -> -1;
+        };
+    }
+
+    public static boolean isSupported(short block, int x, int y, int z) {
+        if ((getBlockProperties(block) & REQUIRES_SUPPORT) == 0) return true;
+
+        short blochBelow = Chunk.getBlockInWorld(x, y - 1, z);
+        if (blochBelow == block) return true;
+        return getBlockOcclusionData(blochBelow, TOP) == -1L;
+    }
+
     private static long fillOcclusionBits(int minX, int maxX, int minY, int maxY) {
         minX = minX >> 1;
         maxX = 16 + maxX >> 1;
@@ -774,6 +911,14 @@ public class Block {
     private static void initBlockTypeData() {
 
         BLOCK_TYPE_DATA[LIQUID_TYPE] = (byte) (DYNAMIC_SHAPE_MASK | OCCLUDES_DYNAMIC_SELF);
+        BLOCK_TYPE_DATA[LIQUID_LEVEL_8] = (byte) (DYNAMIC_SHAPE_MASK | OCCLUDES_DYNAMIC_SELF);
+        BLOCK_TYPE_DATA[LIQUID_LEVEL_7] = (byte) (DYNAMIC_SHAPE_MASK | OCCLUDES_DYNAMIC_SELF);
+        BLOCK_TYPE_DATA[LIQUID_LEVEL_6] = (byte) (DYNAMIC_SHAPE_MASK | OCCLUDES_DYNAMIC_SELF);
+        BLOCK_TYPE_DATA[LIQUID_LEVEL_5] = (byte) (DYNAMIC_SHAPE_MASK | OCCLUDES_DYNAMIC_SELF);
+        BLOCK_TYPE_DATA[LIQUID_LEVEL_4] = (byte) (DYNAMIC_SHAPE_MASK | OCCLUDES_DYNAMIC_SELF);
+        BLOCK_TYPE_DATA[LIQUID_LEVEL_3] = (byte) (DYNAMIC_SHAPE_MASK | OCCLUDES_DYNAMIC_SELF);
+        BLOCK_TYPE_DATA[LIQUID_LEVEL_2] = (byte) (DYNAMIC_SHAPE_MASK | OCCLUDES_DYNAMIC_SELF);
+        BLOCK_TYPE_DATA[LIQUID_LEVEL_1] = (byte) (DYNAMIC_SHAPE_MASK | OCCLUDES_DYNAMIC_SELF);
         BLOCK_TYPE_DATA[CACTUS_TYPE] = (byte) (DYNAMIC_SHAPE_MASK | OCCLUDES_ALL);
 
         for (int upDownFenceType = UP_DOWN_FENCE; upDownFenceType <= UP_DOWN_FENCE_NORTH_WEST_SOUTH_EAST; upDownFenceType++)
@@ -941,6 +1086,15 @@ public class Block {
 
         BLOCK_TYPE_XYZ_SUB_DATA[FULL_BLOCK] = new byte[]{0, 0, 0, 0, 0, 0};
         BLOCK_TYPE_XYZ_SUB_DATA[LIQUID_TYPE] = new byte[]{0, 0, 0, 0, 0, 0};
+
+        BLOCK_TYPE_XYZ_SUB_DATA[LIQUID_LEVEL_1] = new byte[]{0, 0, 0, -14, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[LIQUID_LEVEL_2] = new byte[]{0, 0, 0, -12, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[LIQUID_LEVEL_3] = new byte[]{0, 0, 0, -10, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[LIQUID_LEVEL_4] = new byte[]{0, 0, 0, -8, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[LIQUID_LEVEL_5] = new byte[]{0, 0, 0, -6, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[LIQUID_LEVEL_6] = new byte[]{0, 0, 0, -4, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[LIQUID_LEVEL_7] = new byte[]{0, 0, 0, -2, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[LIQUID_LEVEL_8] = new byte[]{0, 0, 0, 0, 0, 0};
     }
 
     private static void initUVSubData() {
@@ -998,27 +1152,40 @@ public class Block {
 
         setNonStandardBlockData(AIR, NO_COLLISION | REPLACEABLE, null, null, AIR_TYPE, null);
         setNonStandardBlockData(OUT_OF_WORLD, 0, null, null, FULL_BLOCK, null);
-        setNonStandardBlockData(WATER, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT, sound.splash, sound.splash, LIQUID_TYPE, new byte[]{(byte) 64});
-        setNonStandardBlockData(LAVA, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT | LIGHT_EMITTING, sound.lavaPop, sound.lavaPop, LIQUID_TYPE, new byte[]{(byte) -127});
-        setNonStandardBlockData(CACTUS, 0, sound.digWood, sound.stepWood, CACTUS_TYPE, new byte[]{(byte) 113, (byte) -92, (byte) 113, (byte) 113, (byte) -92, (byte) 113});
         setNonStandardBlockData(NORTH_CREATOR_HEAD, 0, sound.digWood, sound.stepWood, BOTTOM_PLAYER_HEAD, new byte[]{(byte) -124, (byte) -109, (byte) -123, (byte) -108, (byte) -107, (byte) -125});
         setNonStandardBlockData(WEST_CREATOR_HEAD, 0, sound.digWood, sound.stepWood, BOTTOM_PLAYER_HEAD, new byte[]{(byte) -125, (byte) -109, (byte) -124, (byte) -123, (byte) -91, (byte) -108});
         setNonStandardBlockData(SOUTH_CREATOR_HEAD, 0, sound.digWood, sound.stepWood, BOTTOM_PLAYER_HEAD, new byte[]{(byte) -108, (byte) -109, (byte) -125, (byte) -124, (byte) -107, (byte) -123});
         setNonStandardBlockData(EAST_CREATOR_HEAD, 0, sound.digWood, sound.stepWood, BOTTOM_PLAYER_HEAD, new byte[]{(byte) -123, (byte) -109, (byte) -108, (byte) -125, (byte) -91, (byte) -124});
-        setNonStandardBlockData(TORCH, NO_COLLISION | LIGHT_EMITTING, sound.digWood, sound.stepWood, TORCH_TYPE, new byte[]{(byte) -80});
-        setNonStandardBlockData(TALL_GRASS, NO_COLLISION | REPLACEABLE, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) -64});
-        setNonStandardBlockData(RED_TULIP, NO_COLLISION | REPLACEABLE, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) -63});
-        setNonStandardBlockData(YELLOW_TULIP, NO_COLLISION | REPLACEABLE, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) -62});
-        setNonStandardBlockData(ORANGE_TULIP, NO_COLLISION | REPLACEABLE, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) -61});
-        setNonStandardBlockData(MAGENTA_TULIP, NO_COLLISION | REPLACEABLE, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) -60});
-        setNonStandardBlockData(ROSE, NO_COLLISION | REPLACEABLE, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) -59});
-        setNonStandardBlockData(HYACINTH, NO_COLLISION | REPLACEABLE, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) -58});
-        setNonStandardBlockData(DRISLY, NO_COLLISION | REPLACEABLE, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) 0xD0});
-        setNonStandardBlockData(SHRUB, NO_COLLISION | REPLACEABLE, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) 0xD1});
-        setNonStandardBlockData(SUGAR_CANE, NO_COLLISION, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) 0xD2});
+        setNonStandardBlockData(TORCH, NO_COLLISION | LIGHT_EMITTING | REQUIRES_SUPPORT, sound.digWood, sound.stepWood, TORCH_TYPE, new byte[]{(byte) -80});
+        setNonStandardBlockData(TALL_GRASS, NO_COLLISION | REPLACEABLE | REQUIRES_SUPPORT, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) -64});
+        setNonStandardBlockData(RED_TULIP, NO_COLLISION | REPLACEABLE | REQUIRES_SUPPORT, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) -63});
+        setNonStandardBlockData(YELLOW_TULIP, NO_COLLISION | REPLACEABLE | REQUIRES_SUPPORT, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) -62});
+        setNonStandardBlockData(ORANGE_TULIP, NO_COLLISION | REPLACEABLE | REQUIRES_SUPPORT, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) -61});
+        setNonStandardBlockData(MAGENTA_TULIP, NO_COLLISION | REPLACEABLE | REQUIRES_SUPPORT, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) -60});
+        setNonStandardBlockData(ROSE, NO_COLLISION | REPLACEABLE | REQUIRES_SUPPORT, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) -59});
+        setNonStandardBlockData(HYACINTH, NO_COLLISION | REPLACEABLE | REQUIRES_SUPPORT, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) -58});
+        setNonStandardBlockData(DRISLY, NO_COLLISION | REPLACEABLE | REQUIRES_SUPPORT, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) 0xD0});
+        setNonStandardBlockData(SHRUB, NO_COLLISION | REPLACEABLE | REQUIRES_SUPPORT, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) 0xD1});
+        setNonStandardBlockData(SUGAR_CANE, NO_COLLISION | REQUIRES_SUPPORT, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) 0xD2});
         setNonStandardBlockData(PATH_BLOCK, 0, sound.digGrass, sound.stepGrass, PATH_TYPE, new byte[]{(byte) -72, (byte) -88, (byte) -72, (byte) -72, (byte) 1, (byte) -72});
-        setNonStandardBlockData(BLACK_ROSE, NO_COLLISION | REPLACEABLE, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) 0xD3});
-        setNonStandardBlockData(FLIELEN, NO_COLLISION | REPLACEABLE, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) 0xD4});
+        setNonStandardBlockData(BLACK_ROSE, NO_COLLISION | REPLACEABLE | REQUIRES_SUPPORT, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) 0xD3});
+        setNonStandardBlockData(FLIELEN, NO_COLLISION | REPLACEABLE | REQUIRES_SUPPORT, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) 0xD4});
+        setNonStandardBlockData(CACTUS, REQUIRES_SUPPORT, sound.digWood, sound.stepWood, CACTUS_TYPE, new byte[]{(byte) 113, (byte) -92, (byte) 113, (byte) 113, (byte) -92, (byte) 113});
+
+        setNonStandardBlockData(WATER_SOURCE, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT, sound.splash, sound.splash, LIQUID_TYPE, new byte[]{(byte) 64});
+        setNonStandardBlockData(FLOWING_WATER_LEVEL_1, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT, sound.splash, sound.splash, LIQUID_LEVEL_1, new byte[]{(byte) 64});
+        setNonStandardBlockData(FLOWING_WATER_LEVEL_2, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT, sound.splash, sound.splash, LIQUID_LEVEL_2, new byte[]{(byte) 64});
+        setNonStandardBlockData(FLOWING_WATER_LEVEL_3, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT, sound.splash, sound.splash, LIQUID_LEVEL_3, new byte[]{(byte) 64});
+        setNonStandardBlockData(FLOWING_WATER_LEVEL_4, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT, sound.splash, sound.splash, LIQUID_LEVEL_4, new byte[]{(byte) 64});
+        setNonStandardBlockData(FLOWING_WATER_LEVEL_5, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT, sound.splash, sound.splash, LIQUID_LEVEL_5, new byte[]{(byte) 64});
+        setNonStandardBlockData(FLOWING_WATER_LEVEL_6, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT, sound.splash, sound.splash, LIQUID_LEVEL_6, new byte[]{(byte) 64});
+        setNonStandardBlockData(FLOWING_WATER_LEVEL_7, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT, sound.splash, sound.splash, LIQUID_LEVEL_7, new byte[]{(byte) 64});
+        setNonStandardBlockData(FLOWING_WATER_LEVEL_8, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT, sound.splash, sound.splash, LIQUID_LEVEL_8, new byte[]{(byte) 64});
+        setNonStandardBlockData(LAVA_SOURCE, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT | LIGHT_EMITTING, sound.lavaPop, sound.lavaPop, LIQUID_TYPE, new byte[]{(byte) -127});
+        setNonStandardBlockData(FLOWING_LAVA_LEVEL_1, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT | LIGHT_EMITTING, sound.lavaPop, sound.lavaPop, LIQUID_LEVEL_1, new byte[]{(byte) -127});
+        setNonStandardBlockData(FLOWING_LAVA_LEVEL_2, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT | LIGHT_EMITTING, sound.lavaPop, sound.lavaPop, LIQUID_LEVEL_3, new byte[]{(byte) -127});
+        setNonStandardBlockData(FLOWING_LAVA_LEVEL_3, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT | LIGHT_EMITTING, sound.lavaPop, sound.lavaPop, LIQUID_LEVEL_5, new byte[]{(byte) -127});
+        setNonStandardBlockData(FLOWING_LAVA_LEVEL_4, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT | LIGHT_EMITTING, sound.lavaPop, sound.lavaPop, LIQUID_LEVEL_8, new byte[]{(byte) -127});
     }
 
     private static void initStandardBlocks() {

@@ -9,6 +9,7 @@ public class Constants {
     public static final float TIME_SPEED = 0.00008333f;
     public static final float NANOSECONDS_PER_SECOND = 1_000_000_000;
     public static final float SPAWN_RADIUS = 150.0f; // More like halfSideLengthOfSpawnSquare
+    public static final int TARGET_TPS = 20;
 
     // DO NOT CHANGE THESE VALUES (like really, it will crash)
     public static final int CHUNK_SIZE_BITS = 5;
@@ -91,6 +92,7 @@ public class Constants {
     public static final int REPLACEABLE = 8;
     public static final int BLAST_RESISTANT = 16;
     public static final int HAS_GRAVITY = 32;
+    public static final int REQUIRES_SUPPORT = 64;
 
     // Indices for information on block types
     public static final byte FULL_BLOCK = 0;
@@ -232,11 +234,19 @@ public class Constants {
     public static final short FLOWER_TYPE = 256;
     public static final short CACTUS_TYPE = 257;
     public static final short AIR_TYPE = 258;
-    public static final short LIQUID_TYPE = 259;
-    public static final short TORCH_TYPE = 260;
-    public static final short PATH_TYPE = 261;
+    public static final short TORCH_TYPE = 259;
+    public static final short PATH_TYPE = 260;
+    public static final short LIQUID_TYPE = 261;
+    public static final short LIQUID_LEVEL_1 = 262;
+    public static final short LIQUID_LEVEL_2 = 263;
+    public static final short LIQUID_LEVEL_3 = 264;
+    public static final short LIQUID_LEVEL_4 = 265;
+    public static final short LIQUID_LEVEL_5 = 266;
+    public static final short LIQUID_LEVEL_6 = 267;
+    public static final short LIQUID_LEVEL_7 = 268;
+    public static final short LIQUID_LEVEL_8 = 269;
 
-    public static final int TOTAL_AMOUNT_OF_BLOCK_TYPES = 264;
+    public static final int TOTAL_AMOUNT_OF_BLOCK_TYPES = 270;
 
     public static final byte[] TO_PLACE_BLOCK_TYPES = new byte[]{FULL_BLOCK, BOTTOM_PLAYER_HEAD, BOTTOM_SOCKET, BOTTOM_SLAB, BOTTOM_PLATE, NORTH_SOUTH_WALL, UP_DOWN_POST, THICK_BOTTOM_SOUTH_STAIR, BOTTOM_SOUTH_STAIR, THIN_BOTTOM_SOUTH_STAIR, UP_DOWN_FENCE_NORTH_WEST};
     public static final int BLOCK_TYPE_BITS = 8;
@@ -248,8 +258,8 @@ public class Constants {
     // Non standard block, aka blocks without blockTypes
     public static final short AIR = 0;
     public static final short OUT_OF_WORLD = 1;
-    public static final short WATER = 2;
-    public static final short LAVA = 3;
+    // TODO Non-Standard block 2 unused
+    // TODO Non-Standard block 3 unused
     public static final short CACTUS = 4;
     public static final short NORTH_CREATOR_HEAD = 5;
     public static final short SOUTH_CREATOR_HEAD = 6;
@@ -269,7 +279,21 @@ public class Constants {
     public static final short PATH_BLOCK = 20;
     public static final short BLACK_ROSE = 21;
     public static final short FLIELEN = 22;
-    public static final short[] TO_PLACE_NON_STANDARD_BLOCKS = new short[]{WATER, LAVA, CACTUS, NORTH_CREATOR_HEAD, TORCH, TALL_GRASS, RED_TULIP, YELLOW_TULIP, ORANGE_TULIP, MAGENTA_TULIP, ROSE, HYACINTH, DRISLY, SHRUB, SUGAR_CANE, PATH_BLOCK, BLACK_ROSE, FLIELEN};
+    public static final short WATER_SOURCE = 23;
+    public static final short FLOWING_WATER_LEVEL_8 = 24;
+    public static final short FLOWING_WATER_LEVEL_7 = 25;
+    public static final short FLOWING_WATER_LEVEL_6 = 26;
+    public static final short FLOWING_WATER_LEVEL_5 = 27;
+    public static final short FLOWING_WATER_LEVEL_4 = 28;
+    public static final short FLOWING_WATER_LEVEL_3 = 29;
+    public static final short FLOWING_WATER_LEVEL_2 = 30;
+    public static final short FLOWING_WATER_LEVEL_1 = 31;
+    public static final short LAVA_SOURCE = 32;
+    public static final short FLOWING_LAVA_LEVEL_4 = 33;
+    public static final short FLOWING_LAVA_LEVEL_3 = 34;
+    public static final short FLOWING_LAVA_LEVEL_2 = 35;
+    public static final short FLOWING_LAVA_LEVEL_1 = 36;
+    public static final short[] TO_PLACE_NON_STANDARD_BLOCKS = new short[]{WATER_SOURCE, LAVA_SOURCE, CACTUS, NORTH_CREATOR_HEAD, TORCH, TALL_GRASS, RED_TULIP, YELLOW_TULIP, ORANGE_TULIP, MAGENTA_TULIP, ROSE, HYACINTH, DRISLY, SHRUB, SUGAR_CANE, PATH_BLOCK, BLACK_ROSE, FLIELEN};
 
     // Standard blocks, aka blocks with blockTypes
     public static final short GRASS = (short) (1 << BLOCK_TYPE_BITS);

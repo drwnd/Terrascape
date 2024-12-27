@@ -96,18 +96,12 @@ public class GameLogic {
         if (chunk == null) return;
 
         short previousBlock = chunk.getSaveBlock(inChunkX, inChunkY, inChunkZ);
-        block = getToPlaceBlock(block, previousBlock);
+        if (highImportance) block = getToPlaceBlock(block, previousBlock);
         if (previousBlock == block) return;
 
-        if ((Block.getBlockTypeData(block) & SMART_BLOCK_TYPE) != 0)
-            BlockEvent.add(new BlockEvent(x, y, z, BlockEvent.SMART_BLOCK_EVENT), EngineManager.getTick());
-
-        if (((Block.getBlockProperties(block) & HAS_GRAVITY) != 0))
-            BlockEvent.add(new BlockEvent(x, y, z, BlockEvent.GRAVITY_BLOCK_FALL_EVENT), EngineManager.getTick());
-
-        BlockEvent.updateSurrounding(x, y, z);
-
         chunk.placeBlock(inChunkX, inChunkY, inChunkZ, block);
+        BlockEvent.updateSurrounding(x, y, z);
+        addBlockChange(x, y, z, previousBlock, block);
 
         int minX = chunkX, maxX = chunkX;
         int minY = chunkY, maxY = chunkY;
@@ -119,8 +113,6 @@ public class GameLogic {
         else if (inChunkY == CHUNK_SIZE - 1) maxY = chunkY + 1;
         if (inChunkZ == 0) minZ = chunkZ - 1;
         else if (inChunkZ == CHUNK_SIZE - 1) maxZ = chunkZ + 1;
-
-        addBlockChange(x, y, z, previousBlock, block);
 
         for (chunkX = minX; chunkX <= maxX; chunkX++)
             for (chunkY = minY; chunkY <= maxY; chunkY++)
@@ -137,9 +129,11 @@ public class GameLogic {
 
             if (block == AIR)
                 addParticle(new BlockBreakParticle(new Vector3f(x + 0.5f, y + 0.625f, z + 0.5f), previousBlock));
-            else if (previousBlock == WATER)
-                addParticle(new BlockBreakParticle(new Vector3f(x + 0.5f, y + 0.625f, z + 0.5f), WATER));
-            else if (block == WATER && previousBlockWaterLogged)
+            else if (Block.isWaterBlock(previousBlock))
+                addParticle(new BlockBreakParticle(new Vector3f(x + 0.5f, y + 0.625f, z + 0.5f), WATER_SOURCE));
+            else if (Block.isLavaBlock(previousBlock))
+                addParticle(new BlockBreakParticle(new Vector3f(x + 0.5f, y + 0.625f, z + 0.5f), LAVA_SOURCE));
+            else if (Block.isWaterBlock(block) && previousBlockWaterLogged)
                 addParticle(new BlockBreakParticle(new Vector3f(x + 0.5f, y + 0.625f, z + 0.5f), previousBlock));
 
             SoundManager sound = Launcher.getSound();
@@ -148,13 +142,13 @@ public class GameLogic {
                 sound.playRandomSound(Block.getDigSound(previousBlock), x + 0.5f, y + 0.5f, z + 0.5f, 0.0f, 0.0f, 0.0f, DIG_GAIN);
                 sound.playRandomSound(Block.getFootstepsSound(block), x + 0.5f, y + 0.5f, z + 0.5f, 0.0f, 0.0f, 0.0f, STEP_GAIN);
             } else
-                sound.playRandomSound(Block.getFootstepsSound(WATER), x + 0.5f, y + 0.5f, z + 0.5f, 0.0f, 0.0f, 0.0f, STEP_GAIN);
+                sound.playRandomSound(Block.getFootstepsSound(WATER_SOURCE), x + 0.5f, y + 0.5f, z + 0.5f, 0.0f, 0.0f, 0.0f, STEP_GAIN);
         }
     }
 
     private static short getToPlaceBlock(short block, short previousBlock) {
-        if (block == AIR && Block.isWaterLogged(previousBlock)) return WATER;
-        if (previousBlock != WATER) return block;
+        if (block == AIR && Block.isWaterLogged(previousBlock)) return WATER_SOURCE;
+        if (previousBlock != WATER_SOURCE) return block;
         if ((block & 0xFFFF) < STANDARD_BLOCKS_THRESHOLD) return block;
         if ((block & BLOCK_TYPE_MASK) == FULL_BLOCK) return block;
         return (short) (block | WATER_LOGGED_MASK);

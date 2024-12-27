@@ -486,6 +486,7 @@ public class RenderManager {
             renderTextLine("Block optimized:" + (chunk.isBlockOptimized() ? "true" : "false") + " Light optimized:" + (chunk.isLightOptimized() ? "true" : "false"), ++line);
             renderTextLine("HeightMap:" + Chunk.getHeightMap(chunkX, chunkZ).map[inChunkX << CHUNK_SIZE_BITS | inChunkZ], ++line);
             renderTextLine("BlockLight:" + Chunk.getBlockLightInWorld(x, y, z) + " SkyLight:" + Chunk.getSkyLightInWorld(x, y, z), ++line);
+            renderTextLine("Block in Head:" + Chunk.getBlockInWorld(x, y, z), ++line);
         }
         if (target != null) {
             renderTextLine("Looking at block: X:" + target.position().x + " Y:" + target.position().y + " Z:" + target.position().z, ++line);
@@ -513,6 +514,7 @@ public class RenderManager {
         //This one line literally quarters the fps when debug screen is open
 //        renderTextLine("Saved chunks memory:" + FileManager.getSeedFileSize() / 1_000_000 + "MB", ++line);
         renderTextLine("To buffer chunks:" + GameLogic.getAmountOfToBufferChunks(), ++line);
+        renderTextLine("Scheduled blockEvents:" + BlockEvent.getAmountOfScheduledEvents(EngineManager.getTick()), ++line);
         renderTextLine("Entities:" + GameLogic.getAmountOfEntities(), ++line);
         renderTextLine("Hei:" + Utils.floor(heightMapValue * 1000) / 1000d + " Ero:" + Utils.floor(erosionMapValue * 1000) / 1000d + " Con:" + Utils.floor(continentalMapValue * 1000) / 1000d, ++line);
         renderTextLine("Riv:" + Utils.floor(riverMapValue * 1000) / 1000d + " Rid:" + Utils.floor(ridgeMapValue * 1000) / 1000d, ++line);

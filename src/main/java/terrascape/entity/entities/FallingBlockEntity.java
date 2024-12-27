@@ -44,7 +44,12 @@ public class FallingBlockEntity extends Entity {
         if (velocity.y != 0.0f) return;
 
         isDead = true;
-        GameLogic.placeBlock(block, Utils.floor(position.x), Utils.floor(position.y), Utils.floor(position.z), false);
+        short previousBlock = Chunk.getBlockInWorld(Utils.floor(position.x), Utils.floor(position.y), Utils.floor(position.z));
+        if ((Block.getBlockProperties(previousBlock) & REPLACEABLE) != 0)
+            GameLogic.placeBlock(block, Utils.floor(position.x), Utils.floor(position.y), Utils.floor(position.z), false);
+//        else
+//            // TODO Spawn item
+
     }
 
     @Override

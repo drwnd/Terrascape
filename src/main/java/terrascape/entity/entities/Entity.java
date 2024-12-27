@@ -32,9 +32,9 @@ public abstract class Entity {
         int z = Utils.floor(position.z);
 
         shader.setUniform("position",
-                position.x - (0.05f - timeSinceLastTick) * velocity.x,
-                position.y - (0.05f - timeSinceLastTick) * velocity.y,
-                position.z - (0.05f - timeSinceLastTick) * velocity.z);
+                position.x - (1.0f / TARGET_TPS - timeSinceLastTick) * velocity.x,
+                position.y - (1.0f / TARGET_TPS - timeSinceLastTick) * velocity.y,
+                position.z - (1.0f / TARGET_TPS - timeSinceLastTick) * velocity.z);
         shader.setUniform("lightLevel", Chunk.getLightInWorld(x, y, z));
 
         renderUnique(shader, modelIndexBuffer, timeSinceLastTick);
@@ -44,43 +44,136 @@ public abstract class Entity {
         velocity.mul(AIR_FRICTION);
         velocity.y -= GRAVITY_ACCELERATION;
 
-        float minX = position.x + aabb[MIN_X];
-        float maxX = position.x + aabb[MAX_X];
-        float minY = position.y + aabb[MIN_Y];
-        float maxY = position.y + aabb[MAX_Y];
-        float minZ = position.z + aabb[MIN_Z];
-        float maxZ = position.z + aabb[MAX_Z];
+        float intersection;
 
-        if (velocity.x != 0.0f && collidesWithBlock(minX + velocity.x, maxX + velocity.x, minY, maxY, minZ, maxZ))
-            velocity.x = 0.0f;
-        else {
-            minX += velocity.x;
-            maxX += velocity.x;
-        }
+        position.x += velocity.x;
+        intersection = getIntersectionX(position, aabb);
+        position.x -= intersection;
+        if (intersection != 0.0f) velocity.x = 0.0f;
 
-        if (velocity.y != 0.0f && collidesWithBlock(minX, maxX, minY + velocity.y, maxY + velocity.y, minZ, maxZ))
-            velocity.y = 0.0f;
-        else {
-            minY += velocity.y;
-            maxY += velocity.y;
-        }
+        position.y += velocity.y;
+        intersection = getIntersectionY(position, aabb);
+        position.y -= intersection;
+        if (intersection != 0.0f) velocity.y = 0.0f;
 
-        if (velocity.z != 0.0f && collidesWithBlock(minX, maxX, minY, maxY, minZ + velocity.z, maxZ + velocity.z))
-            velocity.z = 0.0f;
-
-        position.add(velocity);
+        position.z += velocity.z;
+        intersection = getIntersectionZ(position, aabb);
+        position.z -= intersection;
+        if (intersection != 0.0f) velocity.z = 0.0f;
     }
 
-    public boolean collidesWithBlock(float minX, float maxX, float minY, float maxY, float minZ, float maxZ) {
+    public static float getIntersectionX(Vector3f position, float[] aabb) {
+        float intersection = 0.0f;
+
+        float minX = aabb[MIN_X] + position.x;
+        float maxX = aabb[MAX_X] + position.x;
+        float minY = aabb[MIN_Y] + position.y;
+        float maxY = aabb[MAX_Y] + position.y;
+        float minZ = aabb[MIN_Z] + position.z;
+        float maxZ = aabb[MAX_Z] + position.z;
+
         for (int x = Utils.floor(minX), maxBlockX = Utils.floor(maxX); x <= maxBlockX; x++)
             for (int y = Utils.floor(minY), maxBlockY = Utils.floor(maxY); y <= maxBlockY; y++)
                 for (int z = Utils.floor(minZ), maxBlockZ = Utils.floor(maxZ); z <= maxBlockZ; z++) {
-                    short block = Chunk.getBlockInWorld(x, y, z);
 
-                    if (Block.playerIntersectsBlock(minX, maxX, minY, maxY, minZ, maxZ, x, y, z, block))
-                        return true;
+                    short block = Chunk.getBlockInWorld(x, y, z);
+                    int blockProperties = Block.getBlockProperties(block);
+                    if ((blockProperties & NO_COLLISION) != 0) continue;
+
+                    byte[] blockXYZSubData = Block.getXYZSubData(block);
+                    for (int aabbIndex = 0; aabbIndex < blockXYZSubData.length; aabbIndex += 6) {
+                        float blockMinX = x + blockXYZSubData[MIN_X + aabbIndex] * 0.0625f;
+                        float blockMaxX = 1 + x + blockXYZSubData[MAX_X + aabbIndex] * 0.0625f;
+                        float blockMinY = y + blockXYZSubData[MIN_Y + aabbIndex] * 0.0625f;
+                        float blockMaxY = 1 + y + blockXYZSubData[MAX_Y + aabbIndex] * 0.0625f;
+                        float blockMinZ = z + blockXYZSubData[MIN_Z + aabbIndex] * 0.0625f;
+                        float blockMaxZ = 1 + z + blockXYZSubData[MAX_Z + aabbIndex] * 0.0625f;
+
+                        if (minX < blockMaxX && maxX > blockMinX
+                                && minY < blockMaxY && maxY > blockMinY
+                                && minZ < blockMaxZ && maxZ > blockMinZ) {
+
+                            intersection = Utils.absMax(intersection, Utils.absMin(minX - blockMaxX, maxX - blockMinX));
+                        }
+                    }
                 }
-        return false;
+        return intersection;
+    }
+
+    public static float getIntersectionY(Vector3f position, float[] aabb) {
+        float intersection = 0.0f;
+
+        float minX = aabb[MIN_X] + position.x;
+        float maxX = aabb[MAX_X] + position.x;
+        float minY = aabb[MIN_Y] + position.y;
+        float maxY = aabb[MAX_Y] + position.y;
+        float minZ = aabb[MIN_Z] + position.z;
+        float maxZ = aabb[MAX_Z] + position.z;
+
+        for (int x = Utils.floor(minX), maxBlockX = Utils.floor(maxX); x <= maxBlockX; x++)
+            for (int y = Utils.floor(minY), maxBlockY = Utils.floor(maxY); y <= maxBlockY; y++)
+                for (int z = Utils.floor(minZ), maxBlockZ = Utils.floor(maxZ); z <= maxBlockZ; z++) {
+
+                    short block = Chunk.getBlockInWorld(x, y, z);
+                    int blockProperties = Block.getBlockProperties(block);
+                    if ((blockProperties & NO_COLLISION) != 0) continue;
+
+                    byte[] blockXYZSubData = Block.getXYZSubData(block);
+                    for (int aabbIndex = 0; aabbIndex < blockXYZSubData.length; aabbIndex += 6) {
+                        float blockMinX = x + blockXYZSubData[MIN_X + aabbIndex] * 0.0625f;
+                        float blockMaxX = 1 + x + blockXYZSubData[MAX_X + aabbIndex] * 0.0625f;
+                        float blockMinY = y + blockXYZSubData[MIN_Y + aabbIndex] * 0.0625f;
+                        float blockMaxY = 1 + y + blockXYZSubData[MAX_Y + aabbIndex] * 0.0625f;
+                        float blockMinZ = z + blockXYZSubData[MIN_Z + aabbIndex] * 0.0625f;
+                        float blockMaxZ = 1 + z + blockXYZSubData[MAX_Z + aabbIndex] * 0.0625f;
+
+                        if (minX < blockMaxX && maxX > blockMinX
+                                && minY < blockMaxY && maxY > blockMinY
+                                && minZ < blockMaxZ && maxZ > blockMinZ) {
+
+                            intersection = Utils.absMax(intersection, Utils.absMin(minY - blockMaxY, maxY - blockMinY));
+                        }
+                    }
+                }
+        return intersection;
+    }
+
+    public static float getIntersectionZ(Vector3f position, float[] aabb) {
+        float intersection = 0.0f;
+
+        float minX = aabb[MIN_X] + position.x;
+        float maxX = aabb[MAX_X] + position.x;
+        float minY = aabb[MIN_Y] + position.y;
+        float maxY = aabb[MAX_Y] + position.y;
+        float minZ = aabb[MIN_Z] + position.z;
+        float maxZ = aabb[MAX_Z] + position.z;
+
+        for (int x = Utils.floor(minX), maxBlockX = Utils.floor(maxX); x <= maxBlockX; x++)
+            for (int y = Utils.floor(minY), maxBlockY = Utils.floor(maxY); y <= maxBlockY; y++)
+                for (int z = Utils.floor(minZ), maxBlockZ = Utils.floor(maxZ); z <= maxBlockZ; z++) {
+
+                    short block = Chunk.getBlockInWorld(x, y, z);
+                    int blockProperties = Block.getBlockProperties(block);
+                    if ((blockProperties & NO_COLLISION) != 0) continue;
+
+                    byte[] blockXYZSubData = Block.getXYZSubData(block);
+                    for (int aabbIndex = 0; aabbIndex < blockXYZSubData.length; aabbIndex += 6) {
+                        float blockMinX = x + blockXYZSubData[MIN_X + aabbIndex] * 0.0625f;
+                        float blockMaxX = 1 + x + blockXYZSubData[MAX_X + aabbIndex] * 0.0625f;
+                        float blockMinY = y + blockXYZSubData[MIN_Y + aabbIndex] * 0.0625f;
+                        float blockMaxY = 1 + y + blockXYZSubData[MAX_Y + aabbIndex] * 0.0625f;
+                        float blockMinZ = z + blockXYZSubData[MIN_Z + aabbIndex] * 0.0625f;
+                        float blockMaxZ = 1 + z + blockXYZSubData[MAX_Z + aabbIndex] * 0.0625f;
+
+                        if (minX < blockMaxX && maxX > blockMinX
+                                && minY < blockMaxY && maxY > blockMinY
+                                && minZ < blockMaxZ && maxZ > blockMinZ) {
+
+                            intersection = Utils.absMax(intersection, Utils.absMin(minZ - blockMaxZ, maxZ - blockMinZ));
+                        }
+                    }
+                }
+        return intersection;
     }
 
     public boolean isDead() {

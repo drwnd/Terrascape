@@ -44,4 +44,12 @@ public class Utils {
         double oneMinusX = 1 - x;
         return 1 - 2 * oneMinusX * oneMinusX;
     }
+
+    public static float absMax(float a, float b) {
+        return Math.abs(a) > Math.abs(b) ? a : b;
+    }
+
+    public static float absMin(float a, float b) {
+        return Math.abs(a) < Math.abs(b) ? a : b;
+    }
 }

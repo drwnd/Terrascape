@@ -43,7 +43,7 @@ public record Target(Vector3i position, Vector3f inBlockPosition, int side, shor
             short block = Chunk.getBlockInWorld(x, y, z);
             int blockType = Block.getBlockType(block);
 
-            if (blockType != AIR_TYPE && blockType != LIQUID_TYPE) {
+            if (blockType != AIR_TYPE && !Block.isLiquidType(blockType)) {
 
                 Vector3f currentPosition = new Vector3f(
                         (float) (origin.x + (length + 0.01) * dir.x),

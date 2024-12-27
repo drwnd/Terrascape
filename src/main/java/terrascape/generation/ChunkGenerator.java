@@ -20,7 +20,6 @@ import static terrascape.utils.Settings.*;
 public class ChunkGenerator {
 
     private final ThreadPoolExecutor executor;
-
     private final LinkedList<Vector4i> blockChanges;
 
     private final GenerationStarter generationStarter;
@@ -34,7 +33,7 @@ public class ChunkGenerator {
     public ChunkGenerator() {
         blockChanges = new LinkedList<>();
         executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(NUMBER_OF_GENERATION_THREADS);
-        generationStarter = new GenerationStarter(blockChanges, executor);
+        generationStarter = new GenerationStarter();
         starterThread = new Thread(generationStarter);
     }
 
@@ -266,16 +265,8 @@ public class ChunkGenerator {
 
     class GenerationStarter implements Runnable {
 
-        private final ThreadPoolExecutor executor;
-        private final LinkedList<Vector4i> changes;
         private int travelDirection;
         private int playerX, playerY, playerZ;
-
-
-        public GenerationStarter(LinkedList<Vector4i> changes, ThreadPoolExecutor executor) {
-            this.changes = changes;
-            this.executor = executor;
-        }
 
         public void restart(int travelDirection, int playerX, int playerY, int playerZ) {
             shouldRestart = true;
@@ -314,24 +305,26 @@ public class ChunkGenerator {
         }
 
         private void handleBlockChanges() {
-            synchronized (changes) {
-                while (!changes.isEmpty()) {
+            synchronized (blockChanges) {
+                while (!blockChanges.isEmpty()) {
 
-                    Vector4i blockChange = changes.removeFirst();
+                    Vector4i blockChange = blockChanges.removeFirst();
                     int x = blockChange.x;
                     int y = blockChange.y;
                     int z = blockChange.z;
                     short previousBlock = (short) (blockChange.w >> 16 & 0xFFFF);
                     short block = (short) (blockChange.w & 0xFFFF);
+                    if (Chunk.getBlockInWorld(x, y, z) != block) continue;
 
                     boolean blockEmitsLight = (Block.getBlockProperties(block) & LIGHT_EMITTING) != 0;
                     boolean previousBlockEmitsLight = (Block.getBlockProperties(previousBlock) & LIGHT_EMITTING) != 0;
 
                     if (blockEmitsLight && !previousBlockEmitsLight)
                         LightLogic.setBlockLight(x, y, z, MAX_BLOCK_LIGHT_VALUE);
-                    else if (block == AIR) if (previousBlockEmitsLight) LightLogic.dePropagateBlockLight(x, y, z);
-                    else LightLogic.setBlockLight(x, y, z, LightLogic.getMaxSurroundingBlockLight(x, y, z) - 1);
-                    else if (!blockEmitsLight) LightLogic.dePropagateBlockLight(x, y, z);
+                    else if (block == AIR) {
+                        if (previousBlockEmitsLight) LightLogic.dePropagateBlockLight(x, y, z);
+                        else LightLogic.setBlockLight(x, y, z, LightLogic.getMaxSurroundingBlockLight(x, y, z) - 1);
+                    } else if (!blockEmitsLight) LightLogic.dePropagateBlockLight(x, y, z);
 
                     if (block == AIR)
                         LightLogic.setSkyLight(x, y, z, LightLogic.getMaxSurroundingSkyLight(x, y, z) - 1);

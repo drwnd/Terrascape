@@ -48,8 +48,8 @@ public class EngineManager {
             long passedTime = currentTime - lastTime;
             lastTime = currentTime;
 
-            update(20 * passedTime / NANOSECONDS_PER_SECOND);
-            render(20 * (currentTime - lastGTTime) / NANOSECONDS_PER_SECOND);
+            update(TARGET_TPS * passedTime / NANOSECONDS_PER_SECOND);
+            render(TARGET_TPS * (currentTime - lastGTTime) / NANOSECONDS_PER_SECOND);
             frames++;
 
             if (currentTime - lastFrameRateUpdateTime > NANOSECONDS_PER_SECOND * 0.25f) {
@@ -57,7 +57,7 @@ public class EngineManager {
                 currentFrameRate = frames * 4;
                 frames = 0;
             }
-            if (currentTime - lastGTTime > NANOSECONDS_PER_SECOND * 0.05f) {
+            if (currentTime - lastGTTime > NANOSECONDS_PER_SECOND * (1.0f / TARGET_TPS)) {
                 lastGTTime = currentTime;
                 input();
                 updateGT();

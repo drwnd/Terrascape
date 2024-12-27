@@ -140,14 +140,14 @@ public class WorldGeneration {
                 }
 
             } else if (caveType == WATER_CAVE && totalY <= WATER_LEVEL)
-                data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, WATER);
+                data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, WATER_SOURCE);
 
             else if (caveType == LAVA_CAVE && totalY <= WATER_LEVEL)
-                data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, LAVA);
+                data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, LAVA_SOURCE);
 
             // Filling Oceans with water
             if (totalY > data.height && totalY <= WATER_LEVEL && !placedBlock)
-                data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, WATER);
+                data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, WATER_SOURCE);
         }
     }
 
