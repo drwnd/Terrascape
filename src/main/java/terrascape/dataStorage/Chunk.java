@@ -183,10 +183,11 @@ public class Chunk {
     public void propagateBlockLight() {
         for (int inChunkX = 0; inChunkX < CHUNK_SIZE; inChunkX++)
             for (int inChunkZ = 0; inChunkZ < CHUNK_SIZE; inChunkZ++)
-                for (int inChunkY = 0; inChunkY < CHUNK_SIZE; inChunkY++)
-
-                    if ((Block.getBlockProperties(getSaveBlock(inChunkX, inChunkY, inChunkZ)) & LIGHT_EMITTING) != 0)
-                        LightLogic.setBlockLight(worldCoordinate.x | inChunkX, worldCoordinate.y | inChunkY, worldCoordinate.z | inChunkZ, MAX_BLOCK_LIGHT_VALUE);
+                for (int inChunkY = 0; inChunkY < CHUNK_SIZE; inChunkY++) {
+                    int properties = Block.getBlockProperties(getSaveBlock(inChunkX, inChunkY, inChunkZ));
+                    if ((properties & LIGHT_EMITTING) != 0)
+                        LightLogic.setBlockLight(worldCoordinate.x | inChunkX, worldCoordinate.y | inChunkY, worldCoordinate.z | inChunkZ, properties & LIGHT_EMITTING);
+                }
     }
 
     public void generateSurroundingChunks() {

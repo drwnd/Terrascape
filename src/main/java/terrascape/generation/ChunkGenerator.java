@@ -316,15 +316,26 @@ public class ChunkGenerator {
                     short block = (short) (blockChange.w & 0xFFFF);
                     if (Chunk.getBlockInWorld(x, y, z) != block) continue;
 
-                    boolean blockEmitsLight = (Block.getBlockProperties(block) & LIGHT_EMITTING) != 0;
-                    boolean previousBlockEmitsLight = (Block.getBlockProperties(previousBlock) & LIGHT_EMITTING) != 0;
+                    int blockLightLevel = Block.getBlockProperties(block) & LIGHT_EMITTING;
+                    int previousBlockLightLevel = Block.getBlockProperties(previousBlock) & LIGHT_EMITTING;
+                    boolean blockEmitsLight = blockLightLevel != 0;
+                    boolean previousBlockEmitsLight = previousBlockLightLevel != 0;
 
-                    if (blockEmitsLight && !previousBlockEmitsLight)
-                        LightLogic.setBlockLight(x, y, z, MAX_BLOCK_LIGHT_VALUE);
-                    else if (block == AIR) {
+                    if (blockEmitsLight && previousBlockEmitsLight) {
+                        if (blockLightLevel > previousBlockLightLevel)
+                            LightLogic.setBlockLight(x, y, z, blockLightLevel);
+                        else if (previousBlockLightLevel > blockLightLevel) {
+                            LightLogic.dePropagateBlockLight(x, y, z);
+                            LightLogic.setBlockLight(x, y, z, blockLightLevel);
+                        }
+                    } else if (blockEmitsLight) {
+                        if (Chunk.getBlockLightInWorld(x, y, z) > blockLightLevel) LightLogic.dePropagateBlockLight(x, y, z);
+                        LightLogic.setBlockLight(x, y, z, blockLightLevel);
+                    } else if (block == AIR) {
                         if (previousBlockEmitsLight) LightLogic.dePropagateBlockLight(x, y, z);
                         else LightLogic.setBlockLight(x, y, z, LightLogic.getMaxSurroundingBlockLight(x, y, z) - 1);
-                    } else if (!blockEmitsLight) LightLogic.dePropagateBlockLight(x, y, z);
+                    } else
+                        LightLogic.dePropagateBlockLight(x, y, z);
 
                     if (block == AIR)
                         LightLogic.setSkyLight(x, y, z, LightLogic.getMaxSurroundingSkyLight(x, y, z) - 1);

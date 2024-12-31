@@ -37,6 +37,7 @@ public class MeshGenerator {
                 for (blockY = 0; blockY < CHUNK_SIZE; blockY++) {
 
                     block = chunk.getSaveBlock(blockX, blockY, blockZ);
+                    properties = Block.getBlockProperties(block);
 
                     int blockType = Block.getBlockType(block);
                     if (blockType == AIR_TYPE) continue;
@@ -44,6 +45,11 @@ public class MeshGenerator {
                     if (blockType == FLOWER_TYPE) {
                         list = foliageVerticesList;
                         addFlowerToList();
+                        continue;
+                    }
+                    if (blockType == VINE_TYPE) {
+                        list = foliageVerticesList;
+                        addVineToList();
                         continue;
                     }
 
@@ -107,43 +113,56 @@ public class MeshGenerator {
 
     private void addSideToList(int u, int v, ArrayList<Integer> list) {
         this.list = list;
+        int adder1, adder2;
 
         switch (side) {
             case NORTH:
-                addVertexToList(blockX + 1, blockY + 1, blockZ + 1, u + 1, v, 0);
+                adder1 = (properties & ROTATE_NORTH_TEXTURE) != 0 ? 0 : 1;
+                adder2 = 1 - adder1;
+                addVertexToList(blockX + 1, blockY + 1, blockZ + 1, u + adder1, v + adder2, 0);
                 addVertexToList(blockX, blockY + 1, blockZ + 1, u, v, 1);
                 addVertexToList(blockX + 1, blockY, blockZ + 1, u + 1, v + 1, 2);
-                addVertexToList(blockX, blockY, blockZ + 1, u, v + 1, 3);
+                addVertexToList(blockX, blockY, blockZ + 1, u + adder2, v + adder1, 3);
                 break;
             case TOP:
-                addVertexToList(blockX, blockY + 1, blockZ, u + 1, v, 0);
+                adder1 = (properties & ROTATE_TOP_TEXTURE) != 0 ? 0 : 1;
+                adder2 = 1 - adder1;
+                addVertexToList(blockX, blockY + 1, blockZ, u + adder1, v + adder2, 0);
                 addVertexToList(blockX, blockY + 1, blockZ + 1, u, v, 1);
                 addVertexToList(blockX + 1, blockY + 1, blockZ, u + 1, v + 1, 2);
-                addVertexToList(blockX + 1, blockY + 1, blockZ + 1, u, v + 1, 3);
+                addVertexToList(blockX + 1, blockY + 1, blockZ + 1, u + adder2, v + adder1, 3);
                 break;
             case WEST:
-                addVertexToList(blockX + 1, blockY + 1, blockZ, u + 1, v, 0);
+                adder1 = (properties & ROTATE_WEST_TEXTURE) != 0 ? 0 : 1;
+                adder2 = 1 - adder1;
+                addVertexToList(blockX + 1, blockY + 1, blockZ, u + adder1, v + adder2, 0);
                 addVertexToList(blockX + 1, blockY + 1, blockZ + 1, u, v, 1);
                 addVertexToList(blockX + 1, blockY, blockZ, u + 1, v + 1, 2);
-                addVertexToList(blockX + 1, blockY, blockZ + 1, u, v + 1, 3);
+                addVertexToList(blockX + 1, blockY, blockZ + 1, u + adder2, v + adder1, 3);
                 break;
             case SOUTH:
-                addVertexToList(blockX, blockY + 1, blockZ, u + 1, v, 0);
+                adder1 = (properties & ROTATE_SOUTH_TEXTURE) != 0 ? 0 : 1;
+                adder2 = 1 - adder1;
+                addVertexToList(blockX, blockY + 1, blockZ, u + adder1, v + adder2, 0);
                 addVertexToList(blockX + 1, blockY + 1, blockZ, u, v, 1);
                 addVertexToList(blockX, blockY, blockZ, u + 1, v + 1, 2);
-                addVertexToList(blockX + 1, blockY, blockZ, u, v + 1, 3);
+                addVertexToList(blockX + 1, blockY, blockZ, u + adder2, v + adder1, 3);
                 break;
             case BOTTOM:
-                addVertexToList(blockX + 1, blockY, blockZ + 1, u + 1, v, 3);
+                adder1 = (properties & ROTATE_BOTTOM_TEXTURE) != 0 ? 0 : 1;
+                adder2 = 1 - adder1;
+                addVertexToList(blockX + 1, blockY, blockZ + 1, u + adder1, v + adder2, 3);
                 addVertexToList(blockX, blockY, blockZ + 1, u, v, 1);
                 addVertexToList(blockX + 1, blockY, blockZ, u + 1, v + 1, 2);
-                addVertexToList(blockX, blockY, blockZ, u, v + 1, 0);
+                addVertexToList(blockX, blockY, blockZ, u + adder2, v + adder1, 0);
                 break;
             case EAST:
-                addVertexToList(blockX, blockY + 1, blockZ + 1, u + 1, v, 1);
+                adder1 = (properties & ROTATE_EAST_TEXTURE) != 0 ? 0 : 1;
+                adder2 = 1 - adder1;
+                addVertexToList(blockX, blockY + 1, blockZ + 1, u + adder1, v + adder2, 1);
                 addVertexToList(blockX, blockY + 1, blockZ, u, v, 0);
                 addVertexToList(blockX, blockY, blockZ + 1, u + 1, v + 1, 3);
-                addVertexToList(blockX, blockY, blockZ, u, v + 1, 2);
+                addVertexToList(blockX, blockY, blockZ, u + adder2, v + adder1, 2);
                 break;
         }
     }
@@ -340,56 +359,69 @@ public class MeshGenerator {
 
     private void addFoliageSideToList(ArrayList<Integer> list, int u, int v) {
         this.list = list;
+        int adder1, adder2;
 
         switch (side) {
             case NORTH:
-                addFoliageVertexToList(blockX + 1, blockY + 1, blockZ + 1, u + 1, v, 0, aabbIndex);
-                addFoliageVertexToList(blockX, blockY + 1, blockZ + 1, u, v, 1, aabbIndex);
-                addFoliageVertexToList(blockX + 1, blockY, blockZ + 1, u + 1, v + 1, 2, aabbIndex);
-                addFoliageVertexToList(blockX, blockY, blockZ + 1, u, v + 1, 3, aabbIndex);
+                adder1 = (properties & ROTATE_NORTH_TEXTURE) != 0 ? 0 : 1;
+                adder2 = 1 - adder1;
+                addFoliageVertexToList(blockX + 1, blockY + 1, blockZ + 1, u + adder1, v + adder2, 0);
+                addFoliageVertexToList(blockX, blockY + 1, blockZ + 1, u, v, 1);
+                addFoliageVertexToList(blockX + 1, blockY, blockZ + 1, u + 1, v + 1, 2);
+                addFoliageVertexToList(blockX, blockY, blockZ + 1, u + adder2, v + adder1, 3);
                 break;
             case TOP:
-                addFoliageVertexToList(blockX, blockY + 1, blockZ, u + 1, v, 0, aabbIndex);
-                addFoliageVertexToList(blockX, blockY + 1, blockZ + 1, u, v, 1, aabbIndex);
-                addFoliageVertexToList(blockX + 1, blockY + 1, blockZ, u + 1, v + 1, 2, aabbIndex);
-                addFoliageVertexToList(blockX + 1, blockY + 1, blockZ + 1, u, v + 1, 3, aabbIndex);
+                adder1 = (properties & ROTATE_TOP_TEXTURE) != 0 ? 0 : 1;
+                adder2 = 1 - adder1;
+                addFoliageVertexToList(blockX, blockY + 1, blockZ, u + adder1, v + adder2, 0);
+                addFoliageVertexToList(blockX, blockY + 1, blockZ + 1, u, v, 1);
+                addFoliageVertexToList(blockX + 1, blockY + 1, blockZ, u + 1, v + 1, 2);
+                addFoliageVertexToList(blockX + 1, blockY + 1, blockZ + 1, u + adder2, v + adder1, 3);
                 break;
             case WEST:
-                addFoliageVertexToList(blockX + 1, blockY + 1, blockZ, u + 1, v, 0, aabbIndex);
-                addFoliageVertexToList(blockX + 1, blockY + 1, blockZ + 1, u, v, 1, aabbIndex);
-                addFoliageVertexToList(blockX + 1, blockY, blockZ, u + 1, v + 1, 2, aabbIndex);
-                addFoliageVertexToList(blockX + 1, blockY, blockZ + 1, u, v + 1, 3, aabbIndex);
+                adder1 = (properties & ROTATE_WEST_TEXTURE) != 0 ? 0 : 1;
+                adder2 = 1 - adder1;
+                addFoliageVertexToList(blockX + 1, blockY + 1, blockZ, u + adder1, v + adder2, 0);
+                addFoliageVertexToList(blockX + 1, blockY + 1, blockZ + 1, u, v, 1);
+                addFoliageVertexToList(blockX + 1, blockY, blockZ, u + 1, v + 1, 2);
+                addFoliageVertexToList(blockX + 1, blockY, blockZ + 1, u + adder2, v + adder1, 3);
                 break;
             case SOUTH:
-                addFoliageVertexToList(blockX, blockY + 1, blockZ, u + 1, v, 0, aabbIndex);
-                addFoliageVertexToList(blockX + 1, blockY + 1, blockZ, u, v, 1, aabbIndex);
-                addFoliageVertexToList(blockX, blockY, blockZ, u + 1, v + 1, 2, aabbIndex);
-                addFoliageVertexToList(blockX + 1, blockY, blockZ, u, v + 1, 3, aabbIndex);
+                adder1 = (properties & ROTATE_SOUTH_TEXTURE) != 0 ? 0 : 1;
+                adder2 = 1 - adder1;
+                addFoliageVertexToList(blockX, blockY + 1, blockZ, u + adder1, v + adder2, 0);
+                addFoliageVertexToList(blockX + 1, blockY + 1, blockZ, u, v, 1);
+                addFoliageVertexToList(blockX, blockY, blockZ, u + 1, v + 1, 2);
+                addFoliageVertexToList(blockX + 1, blockY, blockZ, u + adder2, v + adder1, 3);
                 break;
             case BOTTOM:
-                addFoliageVertexToList(blockX + 1, blockY, blockZ + 1, u + 1, v, 3, aabbIndex);
-                addFoliageVertexToList(blockX, blockY, blockZ + 1, u, v, 1, aabbIndex);
-                addFoliageVertexToList(blockX + 1, blockY, blockZ, u + 1, v + 1, 2, aabbIndex);
-                addFoliageVertexToList(blockX, blockY, blockZ, u, v + 1, 0, aabbIndex);
+                adder1 = (properties & ROTATE_BOTTOM_TEXTURE) != 0 ? 0 : 1;
+                adder2 = 1 - adder1;
+                addFoliageVertexToList(blockX + 1, blockY, blockZ + 1, u + adder1, v + adder2, 3);
+                addFoliageVertexToList(blockX, blockY, blockZ + 1, u, v, 1);
+                addFoliageVertexToList(blockX + 1, blockY, blockZ, u + 1, v + 1, 2);
+                addFoliageVertexToList(blockX, blockY, blockZ, u + adder2, v + adder1, 0);
                 break;
             case EAST:
-                addFoliageVertexToList(blockX, blockY + 1, blockZ + 1, u + 1, v, 1, aabbIndex);
-                addFoliageVertexToList(blockX, blockY + 1, blockZ, u, v, 0, aabbIndex);
-                addFoliageVertexToList(blockX, blockY, blockZ + 1, u + 1, v + 1, 3, aabbIndex);
-                addFoliageVertexToList(blockX, blockY, blockZ, u, v + 1, 2, aabbIndex);
+                adder1 = (properties & ROTATE_EAST_TEXTURE) != 0 ? 0 : 1;
+                adder2 = 1 - adder1;
+                addFoliageVertexToList(blockX, blockY + 1, blockZ + 1, u + adder1, v + adder2, 1);
+                addFoliageVertexToList(blockX, blockY + 1, blockZ, u, v, 0);
+                addFoliageVertexToList(blockX, blockY, blockZ + 1, u + 1, v + 1, 3);
+                addFoliageVertexToList(blockX, blockY, blockZ, u + adder2, v + adder1, 2);
                 break;
         }
     }
 
-    private void addFoliageVertexToList(int inChunkX, int inChunkY, int inChunkZ, int u, int v, int corner, int subDataAddend) {
+    private void addFoliageVertexToList(int inChunkX, int inChunkY, int inChunkZ, int u, int v, int corner) {
         int x = worldCoordinate.x + inChunkX;
         int y = worldCoordinate.y + inChunkY;
         int z = worldCoordinate.z + inChunkZ;
 
         int blockType = Block.getBlockType(block);
-        int subX = Block.getSubX(blockType, side, corner, subDataAddend);
-        int subY = Block.getSubY(blockType, side, corner, subDataAddend);
-        int subZ = Block.getSubZ(blockType, side, corner, subDataAddend);
+        int subX = Block.getSubX(blockType, side, corner, aabbIndex);
+        int subY = Block.getSubY(blockType, side, corner, aabbIndex);
+        int subZ = Block.getSubZ(blockType, side, corner, aabbIndex);
 
         int skyLight = getVertexSkyLightInWorld(x, y, z, subX, subY, subZ);
         int blockLight = getVertexBlockLightInWorld(x, y, z, subX, subY, subZ);
@@ -399,8 +431,8 @@ public class MeshGenerator {
             return;
         }
 
-        int subU = Block.getSubU(blockType, side, corner, subDataAddend);
-        int subV = Block.getSubV(blockType, side, corner, subDataAddend);
+        int subU = Block.getSubU(blockType, side, corner, aabbIndex);
+        int subV = Block.getSubV(blockType, side, corner, aabbIndex);
 
         int ambientOcclusionLevel = getAmbientOcclusionLevel(inChunkX, inChunkY, inChunkZ, subX, subY, subZ);
         list.add(packData1(ambientOcclusionLevel, (inChunkX << 4) + subX + 15, (inChunkY << 4) + subY + 15, (inChunkZ << 4) + subZ + 15));
@@ -447,6 +479,86 @@ public class MeshGenerator {
         list.add(packFoliageData(bottomWindMultiplier, skyLight, blockLight, (u + 1 << 4) + 15, (v + 1 << 4) + 15));
     }
 
+    private void addVineToList() {
+        int texture = Block.getTextureIndex(block, side);
+
+        int u = texture & 15;
+        int v = texture >> 4 & 15;
+
+        int x = worldCoordinate.x + blockX;
+        int y = worldCoordinate.y + blockY;
+        int z = worldCoordinate.z + blockZ;
+
+        int skyLight = Chunk.getSkyLightInWorld(x, y, z);
+        int blockLight = Chunk.getBlockLightInWorld(x, y, z);
+
+        if (Block.getBlockOcclusionData(chunk.getBlock(blockX, blockY - 1, blockZ), TOP) == -1L) {
+            side = TOP;
+            list.add(packData1(0, (blockX << 4) + 15, (blockY << 4) + 1 + 15, (blockZ << 4) + 15));
+            list.add(packFoliageData(1, skyLight, blockLight, (u << 4) + 15, (v << 4) + 15));
+            list.add(packData1(0, (blockX << 4) + 15, (blockY << 4) + 1 + 15, (blockZ + 1 << 4) + 15));
+            list.add(packFoliageData(1, skyLight, blockLight, (u << 4) + 15, (v + 1 << 4) + 15));
+            list.add(packData1(0, (blockX + 1 << 4) + 15, (blockY << 4) + 1 + 15, (blockZ << 4) + 15));
+            list.add(packFoliageData(1, skyLight, blockLight, (u + 1 << 4) + 15, (v << 4) + 15));
+            list.add(packData1(0, (blockX + 1 << 4) + 15, (blockY << 4) + 1 + 15, (blockZ + 1 << 4) + 15));
+            list.add(packFoliageData(1, skyLight, blockLight, (u + 1 << 4) + 15, (v + 1 << 4) + 15));
+        }
+        if (Block.getBlockOcclusionData(chunk.getBlock(blockX, blockY + 1, blockZ), BOTTOM) == -1L) {
+            side = BOTTOM;
+            list.add(packData1(0, (blockX << 4) + 15, (blockY + 1 << 4) - 1 + 15, (blockZ << 4) + 15));
+            list.add(packFoliageData(1, skyLight, blockLight, (u << 4) + 15, (v << 4) + 15));
+            list.add(packData1(0, (blockX << 4) + 15, (blockY + 1 << 4) - 1 + 15, (blockZ + 1 << 4) + 15));
+            list.add(packFoliageData(1, skyLight, blockLight, (u << 4) + 15, (v + 1 << 4) + 15));
+            list.add(packData1(0, (blockX + 1 << 4) + 15, (blockY + 1 << 4) - 1 + 15, (blockZ << 4) + 15));
+            list.add(packFoliageData(1, skyLight, blockLight, (u + 1 << 4) + 15, (v << 4) + 15));
+            list.add(packData1(0, (blockX + 1 << 4) + 15, (blockY + 1 << 4) - 1 + 15, (blockZ + 1 << 4) + 15));
+            list.add(packFoliageData(1, skyLight, blockLight, (u + 1 << 4) + 15, (v + 1 << 4) + 15));
+        }
+        if (Block.getBlockOcclusionData(chunk.getBlock(blockX - 1, blockY, blockZ), WEST) == -1L) {
+            side = WEST;
+            list.add(packData1(0, (blockX << 4) + 1 + 15, (blockY << 4) + 15, (blockZ << 4) + 15));
+            list.add(packFoliageData(1, skyLight, blockLight, (u << 4) + 15, (v << 4) + 15));
+            list.add(packData1(0, (blockX << 4) + 1 + 15, (blockY << 4) + 15, (blockZ + 1 << 4) + 15));
+            list.add(packFoliageData(1, skyLight, blockLight, (u << 4) + 15, (v + 1 << 4) + 15));
+            list.add(packData1(0, (blockX << 4) + 1 + 15, (blockY + 1 << 4) + 15, (blockZ << 4) + 15));
+            list.add(packFoliageData(1, skyLight, blockLight, (u + 1 << 4) + 15, (v << 4) + 15));
+            list.add(packData1(0, (blockX << 4) + 1 + 15, (blockY + 1 << 4) + 15, (blockZ + 1 << 4) + 15));
+            list.add(packFoliageData(1, skyLight, blockLight, (u + 1 << 4) + 15, (v + 1 << 4) + 15));
+        }
+        if (Block.getBlockOcclusionData(chunk.getBlock(blockX + 1, blockY, blockZ), EAST) == -1L) {
+            side = EAST;
+            list.add(packData1(0, (blockX + 1 << 4) - 1 + 15, (blockY << 4) + 15, (blockZ << 4) + 15));
+            list.add(packFoliageData(1, skyLight, blockLight, (u << 4) + 15, (v << 4) + 15));
+            list.add(packData1(0, (blockX + 1 << 4) - 1 + 15, (blockY << 4) + 15, (blockZ + 1 << 4) + 15));
+            list.add(packFoliageData(1, skyLight, blockLight, (u << 4) + 15, (v + 1 << 4) + 15));
+            list.add(packData1(0, (blockX + 1 << 4) - 1 + 15, (blockY + 1 << 4) + 15, (blockZ << 4) + 15));
+            list.add(packFoliageData(1, skyLight, blockLight, (u + 1 << 4) + 15, (v << 4) + 15));
+            list.add(packData1(0, (blockX + 1 << 4) - 1 + 15, (blockY + 1 << 4) + 15, (blockZ + 1 << 4) + 15));
+            list.add(packFoliageData(1, skyLight, blockLight, (u + 1 << 4) + 15, (v + 1 << 4) + 15));
+        }
+        if (Block.getBlockOcclusionData(chunk.getBlock(blockX, blockY, blockZ - 1), NORTH) == -1L) {
+            side = NORTH;
+            list.add(packData1(0, (blockX << 4) + 15, (blockY << 4) + 15, (blockZ << 4) + 1 + 15));
+            list.add(packFoliageData(1, skyLight, blockLight, (u << 4) + 15, (v << 4) + 15));
+            list.add(packData1(0, (blockX << 4) + 15, (blockY + 1 << 4) + 15, (blockZ << 4) + 1 + 15));
+            list.add(packFoliageData(1, skyLight, blockLight, (u << 4) + 15, (v + 1 << 4) + 15));
+            list.add(packData1(0, (blockX + 1 << 4) + 15, (blockY << 4) + 15, (blockZ << 4) + 1 + 15));
+            list.add(packFoliageData(1, skyLight, blockLight, (u + 1 << 4) + 15, (v << 4) + 15));
+            list.add(packData1(0, (blockX + 1 << 4) + 15, (blockY + 1 << 4) + 15, (blockZ << 4) + 1 + 15));
+            list.add(packFoliageData(1, skyLight, blockLight, (u + 1 << 4) + 15, (v + 1 << 4) + 15));
+        }
+        if (Block.getBlockOcclusionData(chunk.getBlock(blockX, blockY, blockZ + 1), SOUTH) == -1L) {
+            side = SOUTH;
+            list.add(packData1(0, (blockX << 4) + 15, (blockY << 4) + 15, (blockZ + 1 << 4) - 1 + 15));
+            list.add(packFoliageData(1, skyLight, blockLight, (u << 4) + 15, (v << 4) + 15));
+            list.add(packData1(0, (blockX << 4) + 15, (blockY + 1 << 4) + 15, (blockZ + 1 << 4) - 1 + 15));
+            list.add(packFoliageData(1, skyLight, blockLight, (u << 4) + 15, (v + 1 << 4) + 15));
+            list.add(packData1(0, (blockX + 1 << 4) + 15, (blockY << 4) + 15, (blockZ + 1 << 4) - 1 + 15));
+            list.add(packFoliageData(1, skyLight, blockLight, (u + 1 << 4) + 15, (v << 4) + 15));
+            list.add(packData1(0, (blockX + 1 << 4) + 15, (blockY + 1 << 4) + 15, (blockZ + 1 << 4) - 1 + 15));
+            list.add(packFoliageData(1, skyLight, blockLight, (u + 1 << 4) + 15, (v + 1 << 4) + 15));
+        }
+    }
 
     private int packData1(int ambientOcclusionLevel, int inChunkX, int inChunkY, int inChunkZ) {
         return ambientOcclusionLevel << 30 | inChunkX << 20 | inChunkY << 10 | inChunkZ;
@@ -475,15 +587,15 @@ public class MeshGenerator {
             case NORTH -> {
                 startX = subX == 0 ? x - 1 : subX < 0 ? --x : x;
                 startY = subY == 0 ? y - 1 : subY < 0 ? --y : y;
-                startZ = subZ != 0 ? --z : z;
+                startZ = subZ == 0 ? z : --z;
             }
             case TOP -> {
                 startX = subX == 0 ? x - 1 : subX < 0 ? --x : x;
-                startY = subY != 0 ? --y : y;
+                startY = subY == 0 ? y : --y;
                 startZ = subZ == 0 ? z - 1 : subZ < 0 ? --z : z;
             }
             case WEST -> {
-                startX = subX != 0 ? --x : x;
+                startX = subX == 0 ? x : --x;
                 startY = subY == 0 ? y - 1 : subY < 0 ? --y : y;
                 startZ = subZ == 0 ? z - 1 : subZ < 0 ? --z : z;
             }
@@ -523,7 +635,7 @@ public class MeshGenerator {
             case NORTH -> {
                 startX = x - 1;
                 startY = y - 1;
-                startZ = subZ == 0 ? z : ++z;
+                startZ = subZ == 0 ? z : --z;
             }
             case SOUTH -> {
                 startX = x - 1;
@@ -533,7 +645,7 @@ public class MeshGenerator {
             case TOP -> {
                 startX = x - 1;
                 startZ = z - 1;
-                startY = subY == 0 ? y : ++y;
+                startY = subY == 0 ? y : --y;
             }
             case BOTTOM -> {
                 startX = x - 1;
@@ -543,7 +655,7 @@ public class MeshGenerator {
             case WEST -> {
                 startY = y - 1;
                 startZ = z - 1;
-                startX = subX == 0 ? x : ++x;
+                startX = subX == 0 ? x : --x;
             }
             default -> { // EAST
                 startY = y - 1;
@@ -569,7 +681,7 @@ public class MeshGenerator {
             case NORTH -> {
                 startX = x - 1;
                 startY = y - 1;
-                startZ = subZ == 0 ? z : ++z;
+                startZ = subZ == 0 ? z : --z;
             }
             case SOUTH -> {
                 startX = x - 1;
@@ -579,7 +691,7 @@ public class MeshGenerator {
             case TOP -> {
                 startX = x - 1;
                 startZ = z - 1;
-                startY = subY == 0 ? y : ++y;
+                startY = subY == 0 ? y : --y;
             }
             case BOTTOM -> {
                 startX = x - 1;
@@ -589,7 +701,7 @@ public class MeshGenerator {
             case WEST -> {
                 startY = y - 1;
                 startZ = z - 1;
-                startX = subX == 0 ? x : ++x;
+                startX = subX == 0 ? x : --x;
             }
             default -> { // EAST
                 startY = y - 1;
@@ -635,7 +747,7 @@ public class MeshGenerator {
     private Vector3i worldCoordinate;
 
     private int blockX, blockY, blockZ;
-    private int side, aabbIndex;
+    private int side, aabbIndex, properties;
     private short block;
     private ArrayList<Integer> list;
     private final Random random = new Random();

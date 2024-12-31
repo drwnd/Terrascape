@@ -29,7 +29,6 @@ public class Block {
         if (occludingBlockType == AIR_TYPE) return false;
 
         long toTestOcclusionData = BLOCK_TYPE_OCCLUSION_DATA[getBlockType(toTestBlock)][side];
-        byte blockTypeData = BLOCK_TYPE_DATA[occludingBlockType];
         int occludingSide = (side + 3) % 6;
         long occludingOcclusionData = getBlockOcclusionData(occludingBlock, occludingSide);
 
@@ -41,12 +40,9 @@ public class Block {
             return false;
         }
 
-        if ((blockTypeData & 3) == OCCLUDES_ALL) {
-            if (toTestOcclusionData == 0) return false;
-            return (toTestOcclusionData | occludingOcclusionData) == occludingOcclusionData;
-        }
-
-        return true;
+        if (toTestOcclusionData == 0)
+            return occludingBlockType == CARPET && getBlockType(toTestBlock) == CARPET;   // Hotfix for carpets
+        return (toTestOcclusionData | occludingOcclusionData) == occludingOcclusionData;
     }
 
     public static boolean occludesWater(short toTestBlock, short occludingBlock, int side, int x, int y, int z) {
@@ -63,8 +59,8 @@ public class Block {
         short blockAboveToTestBlock = Chunk.getBlockInWorld(x, y + 1, z);
         short blockAboveOccludingBlock = Chunk.getBlockInWorld(x + normal[0], y + 1, z + normal[2]);
 
-        boolean toTestBlockUp = isWaterSource(toTestBlock) && (isWaterLogged(blockAboveToTestBlock) || getBlockOcclusionData(blockAboveToTestBlock, BOTTOM) == -1L);
-        boolean occludingBlockUp = isWaterSource(occludingBlock) && (isWaterLogged(blockAboveOccludingBlock) || getBlockOcclusionData(blockAboveOccludingBlock, BOTTOM) == -1L);
+        boolean toTestBlockUp = toTestBlock == FLOWING_WATER_LEVEL_8 || isWaterSource(toTestBlock) && (isWaterLogged(blockAboveToTestBlock) || getBlockOcclusionData(blockAboveToTestBlock, BOTTOM) == -1L);
+        boolean occludingBlockUp = occludingBlock == FLOWING_WATER_LEVEL_8 || isWaterSource(occludingBlock) && (isWaterLogged(blockAboveOccludingBlock) || getBlockOcclusionData(blockAboveOccludingBlock, BOTTOM) == -1L);
 
         return !(toTestBlockUp && !occludingBlockUp);
     }
@@ -402,6 +398,15 @@ public class Block {
             case BOTTOM_PLATE -> PLATES[primaryCameraDirection + addend];
             case BOTTOM_SOCKET -> SOCKETS[primaryCameraDirection + addend];
             case NORTH_SOUTH_WALL -> WALLS[primaryCameraDirection];
+            case NORTH_WEST_DOOR_NORTH -> {
+                if (target.inBlockPosition().x > 0.5f && target.inBlockPosition().z > 0.5f)
+                    yield NORTH_WEST_DOOR_NORTH;
+                if (target.inBlockPosition().x > 0.5f && target.inBlockPosition().z <= 0.5f)
+                    yield SOUTH_WEST_DOOR_SOUTH;
+                if (target.inBlockPosition().x <= 0.5f && target.inBlockPosition().z > 0.5f)
+                    yield NORTH_EAST_DOOR_NORTH;
+                yield SOUTH_EAST_DOOR_SOUTH;
+            }
             default -> blockType;
         };
     }
@@ -495,6 +500,10 @@ public class Block {
                  EAST_WEST_FENCE_NORTH_UP_SOUTH_DOWN -> {
                 return (short) (baseBlock | UP_DOWN_FENCE_NORTH_WEST);
             }
+            case NORTH_WEST_DOOR_NORTH, NORTH_WEST_DOOR_WEST, NORTH_EAST_DOOR_NORTH, NORTH_EAST_DOOR_EAST,
+                 SOUTH_WEST_DOOR_SOUTH, SOUTH_WEST_DOOR_WEST, SOUTH_EAST_DOOR_SOUTH, SOUTH_EAST_DOOR_EAST -> {
+                return (short) (baseBlock | NORTH_WEST_DOOR_NORTH);
+            }
 
         }
         return AIR;
@@ -514,118 +523,6 @@ public class Block {
         if (side != WEST) return !(Utils.fraction(inBlockPosition.x) > 0.5f) ? 3 : 0;
         else return target.side() > 2 ? 0 : 3;
 
-    }
-
-    public static int getSmartBlockType(short block, int x, int y, int z) {
-        int blockType = getBlockType(block);
-        int waterLogged = (block & 0xFFFF) > STANDARD_BLOCKS_THRESHOLD ? block & WATER_LOGGED_MASK : 0;
-
-        if (isNorthSouthFenceType(blockType)) {
-            int index = 0;
-            short adjacentBlock;
-            long adjacentMask;
-
-            adjacentBlock = Chunk.getBlockInWorld(x, y + 1, z);
-            adjacentMask = isLiquidType(getBlockType(adjacentBlock)) ? 0L : getBlockOcclusionData(adjacentBlock, BOTTOM);
-            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[EAST_WEST_WALL][TOP]) != 0 || isNorthSouthFenceType(getBlockType(adjacentBlock)))
-                index |= 1;
-
-            adjacentBlock = Chunk.getBlockInWorld(x + 1, y, z);
-            adjacentMask = isLiquidType(getBlockType(adjacentBlock)) ? 0L : getBlockOcclusionData(adjacentBlock, EAST);
-            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[UP_DOWN_WALL][WEST]) != 0 || isNorthSouthFenceType(getBlockType(adjacentBlock)))
-                index |= 2;
-
-            adjacentBlock = Chunk.getBlockInWorld(x, y - 1, z);
-            adjacentMask = isLiquidType(getBlockType(adjacentBlock)) ? 0L : getBlockOcclusionData(adjacentBlock, TOP);
-            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[EAST_WEST_WALL][BOTTOM]) != 0 || isNorthSouthFenceType(getBlockType(adjacentBlock)))
-                index |= 4;
-
-            adjacentBlock = Chunk.getBlockInWorld(x - 1, y, z);
-            adjacentMask = isLiquidType(getBlockType(adjacentBlock)) ? 0L : getBlockOcclusionData(adjacentBlock, WEST);
-            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[UP_DOWN_WALL][EAST]) != 0 || isNorthSouthFenceType(getBlockType(adjacentBlock)))
-                index |= 8;
-
-            return NORTH_SOUTH_FENCE + index | waterLogged;
-        }
-        if (isUpDownFenceType(blockType)) {
-            int index = 0;
-            short adjacentBlock;
-            long adjacentMask;
-
-            adjacentBlock = Chunk.getBlockInWorld(x, y, z + 1);
-            adjacentMask = isLiquidType(getBlockType(adjacentBlock)) ? 0L : getBlockOcclusionData(adjacentBlock, SOUTH);
-            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[EAST_WEST_WALL][NORTH]) != 0 || isUpDownFenceType(getBlockType(adjacentBlock)))
-                index |= 1;
-
-            adjacentBlock = Chunk.getBlockInWorld(x + 1, y, z);
-            adjacentMask = isLiquidType(getBlockType(adjacentBlock)) ? 0L : getBlockOcclusionData(adjacentBlock, EAST);
-            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[NORTH_SOUTH_WALL][WEST]) != 0 || isUpDownFenceType(getBlockType(adjacentBlock)))
-                index |= 2;
-
-            adjacentBlock = Chunk.getBlockInWorld(x, y, z - 1);
-            adjacentMask = isLiquidType(getBlockType(adjacentBlock)) ? 0L : getBlockOcclusionData(adjacentBlock, NORTH);
-            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[EAST_WEST_WALL][SOUTH]) != 0 || isUpDownFenceType(getBlockType(adjacentBlock)))
-                index |= 4;
-
-            adjacentBlock = Chunk.getBlockInWorld(x - 1, y, z);
-            adjacentMask = isLiquidType(getBlockType(adjacentBlock)) ? 0L : getBlockOcclusionData(adjacentBlock, WEST);
-            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[NORTH_SOUTH_WALL][EAST]) != 0 || isUpDownFenceType(getBlockType(adjacentBlock)))
-                index |= 8;
-
-            return UP_DOWN_FENCE + index | waterLogged;
-        }
-        if (isEastWestFenceType(blockType)) {
-            int index = 0;
-            short adjacentBlock;
-            long adjacentMask;
-
-            adjacentBlock = Chunk.getBlockInWorld(x, y, z + 1);
-            adjacentMask = isLiquidType(getBlockType(adjacentBlock)) ? 0L : getBlockOcclusionData(adjacentBlock, SOUTH);
-            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[UP_DOWN_WALL][NORTH]) != 0 || isEastWestFenceType(getBlockType(adjacentBlock)))
-                index |= 1;
-
-            adjacentBlock = Chunk.getBlockInWorld(x, y + 1, z);
-            adjacentMask = isLiquidType(getBlockType(adjacentBlock)) ? 0L : getBlockOcclusionData(adjacentBlock, BOTTOM);
-            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[NORTH_SOUTH_WALL][TOP]) != 0 || isEastWestFenceType(getBlockType(adjacentBlock)))
-                index |= 2;
-
-            adjacentBlock = Chunk.getBlockInWorld(x, y, z - 1);
-            adjacentMask = isLiquidType(getBlockType(adjacentBlock)) ? 0L : getBlockOcclusionData(adjacentBlock, NORTH);
-            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[UP_DOWN_WALL][SOUTH]) != 0 || isEastWestFenceType(getBlockType(adjacentBlock)))
-                index |= 4;
-
-            adjacentBlock = Chunk.getBlockInWorld(x, y - 1, z);
-            adjacentMask = isLiquidType(getBlockType(adjacentBlock)) ? 0L : getBlockOcclusionData(adjacentBlock, TOP);
-            if ((adjacentMask & BLOCK_TYPE_OCCLUSION_DATA[NORTH_SOUTH_WALL][BOTTOM]) != 0 || isEastWestFenceType(getBlockType(adjacentBlock)))
-                index |= 8;
-
-            return EAST_WEST_FENCE + index | waterLogged;
-        }
-
-        return blockType | waterLogged;
-    }
-
-    public static void updateSmartBlock(int x, int y, int z) {
-        short block = Chunk.getBlockInWorld(x, y, z);
-        int blockType = getBlockType(block);
-        int water_logged = block & WATER_LOGGED_MASK;
-        if ((BLOCK_TYPE_DATA[blockType] & SMART_BLOCK_TYPE) == 0) return;
-
-        int expectedBlockType = getSmartBlockType(block, x, y, z);
-        if (expectedBlockType == blockType) return;
-
-        int chunkX = x >> CHUNK_SIZE_BITS;
-        int chunkY = y >> CHUNK_SIZE_BITS;
-        int chunkZ = z >> CHUNK_SIZE_BITS;
-
-        Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
-        if (chunk == null) return;
-
-        int inChunkX = x & CHUNK_SIZE_MASK;
-        int inChunkY = y & CHUNK_SIZE_MASK;
-        int inChunkZ = z & CHUNK_SIZE_MASK;
-
-        chunk.placeBlock(inChunkX, inChunkY, inChunkZ, (short) (block & BASE_BLOCK_MASK | water_logged | expectedBlockType));
     }
 
     public static byte getBlockTypeData(short block) {
@@ -705,6 +602,10 @@ public class Block {
 
     public static long getBlockOcclusionData(short block, int side) {
         return BLOCK_TYPE_OCCLUSION_DATA[getBlockType(block)][side];
+    }
+
+    public static long getBlockTypeOcclusionData(int blockType, int side) {
+        return BLOCK_TYPE_OCCLUSION_DATA[blockType][side];
     }
 
     public static byte[] getXYZSubData(short block) {
@@ -839,7 +740,7 @@ public class Block {
 
     public static boolean isLeaveType(short block) {
         int baseBlock = block & BASE_BLOCK_MASK;
-        return baseBlock >= OAK_LEAVES && baseBlock <= BLACK_WOOD_LEAVES;
+        return baseBlock >= OAK_LEAVES && baseBlock <= BLACK_WOOD_LEAVES || getBlockType(block) == VINE_TYPE;
     }
 
     public static boolean isGlassType(short block) {
@@ -888,11 +789,42 @@ public class Block {
     }
 
     public static boolean isSupported(short block, int x, int y, int z) {
-        if ((getBlockProperties(block) & REQUIRES_SUPPORT) == 0) return true;
+        int properties = getBlockProperties(block);
+        if ((properties & REQUIRES_BOTTOM_SUPPORT) != 0) {
+            short blochBelow = Chunk.getBlockInWorld(x, y - 1, z);
+            if (blochBelow == block) return true;
+            return getBlockOcclusionData(blochBelow, TOP) == -1L;
+        } else if ((properties & REQUIRES_AND_SIDE_SUPPORT) != 0) {
+            if (getBlockOcclusionData(Chunk.getBlockInWorld(x, y, z - 1), NORTH) == -1L) return true;
+            if (getBlockOcclusionData(Chunk.getBlockInWorld(x, y, z + 1), SOUTH) == -1L) return true;
+            if (getBlockOcclusionData(Chunk.getBlockInWorld(x, y - 1, z), TOP) == -1L) return true;
+            if (getBlockOcclusionData(Chunk.getBlockInWorld(x, y + 1, z), BOTTOM) == -1L) return true;
+            if (getBlockOcclusionData(Chunk.getBlockInWorld(x - 1, y, z), WEST) == -1L) return true;
+            return getBlockOcclusionData(Chunk.getBlockInWorld(x + 1, y, z), EAST) == -1L;
+        }
+        return true;
+    }
 
-        short blochBelow = Chunk.getBlockInWorld(x, y - 1, z);
-        if (blochBelow == block) return true;
-        return getBlockOcclusionData(blochBelow, TOP) == -1L;
+    public static boolean isInteractable(short block) {
+        return (getBlockProperties(block) & INTERACTABLE) != 0 || (getBlockTypeData(block) & INTERACTABLE) != 0;
+    }
+
+    public static boolean isDoorType(short block) {
+        return (block & 0xFFFF) > STANDARD_BLOCKS_THRESHOLD && (block & BLOCK_TYPE_MASK) >= NORTH_WEST_DOOR_NORTH && (block & BLOCK_TYPE_MASK) <= SOUTH_EAST_DOOR_EAST;
+    }
+
+    public static int getOpenClosedDoorType(int doorType) {
+        return switch (doorType) {
+            case NORTH_WEST_DOOR_NORTH -> NORTH_WEST_DOOR_WEST;
+            case NORTH_WEST_DOOR_WEST -> NORTH_WEST_DOOR_NORTH;
+            case NORTH_EAST_DOOR_NORTH -> NORTH_EAST_DOOR_EAST;
+            case NORTH_EAST_DOOR_EAST -> NORTH_EAST_DOOR_NORTH;
+            case SOUTH_WEST_DOOR_SOUTH -> SOUTH_WEST_DOOR_WEST;
+            case SOUTH_WEST_DOOR_WEST -> SOUTH_WEST_DOOR_SOUTH;
+            case SOUTH_EAST_DOOR_SOUTH -> SOUTH_EAST_DOOR_EAST;
+            case SOUTH_EAST_DOOR_EAST -> SOUTH_EAST_DOOR_SOUTH;
+            default -> -1;
+        };
     }
 
     private static long fillOcclusionBits(int minX, int maxX, int minY, int maxY) {
@@ -910,23 +842,31 @@ public class Block {
 
     private static void initBlockTypeData() {
 
-        BLOCK_TYPE_DATA[LIQUID_TYPE] = (byte) (DYNAMIC_SHAPE_MASK | OCCLUDES_DYNAMIC_SELF);
-        BLOCK_TYPE_DATA[LIQUID_LEVEL_8] = (byte) (DYNAMIC_SHAPE_MASK | OCCLUDES_DYNAMIC_SELF);
-        BLOCK_TYPE_DATA[LIQUID_LEVEL_7] = (byte) (DYNAMIC_SHAPE_MASK | OCCLUDES_DYNAMIC_SELF);
-        BLOCK_TYPE_DATA[LIQUID_LEVEL_6] = (byte) (DYNAMIC_SHAPE_MASK | OCCLUDES_DYNAMIC_SELF);
-        BLOCK_TYPE_DATA[LIQUID_LEVEL_5] = (byte) (DYNAMIC_SHAPE_MASK | OCCLUDES_DYNAMIC_SELF);
-        BLOCK_TYPE_DATA[LIQUID_LEVEL_4] = (byte) (DYNAMIC_SHAPE_MASK | OCCLUDES_DYNAMIC_SELF);
-        BLOCK_TYPE_DATA[LIQUID_LEVEL_3] = (byte) (DYNAMIC_SHAPE_MASK | OCCLUDES_DYNAMIC_SELF);
-        BLOCK_TYPE_DATA[LIQUID_LEVEL_2] = (byte) (DYNAMIC_SHAPE_MASK | OCCLUDES_DYNAMIC_SELF);
-        BLOCK_TYPE_DATA[LIQUID_LEVEL_1] = (byte) (DYNAMIC_SHAPE_MASK | OCCLUDES_DYNAMIC_SELF);
-        BLOCK_TYPE_DATA[CACTUS_TYPE] = (byte) (DYNAMIC_SHAPE_MASK | OCCLUDES_ALL);
+        BLOCK_TYPE_DATA[LIQUID_TYPE] = DYNAMIC_SHAPE_MASK;
+        BLOCK_TYPE_DATA[LIQUID_LEVEL_8] = DYNAMIC_SHAPE_MASK;
+        BLOCK_TYPE_DATA[LIQUID_LEVEL_7] = DYNAMIC_SHAPE_MASK;
+        BLOCK_TYPE_DATA[LIQUID_LEVEL_6] = DYNAMIC_SHAPE_MASK;
+        BLOCK_TYPE_DATA[LIQUID_LEVEL_5] = DYNAMIC_SHAPE_MASK;
+        BLOCK_TYPE_DATA[LIQUID_LEVEL_4] = DYNAMIC_SHAPE_MASK;
+        BLOCK_TYPE_DATA[LIQUID_LEVEL_3] = DYNAMIC_SHAPE_MASK;
+        BLOCK_TYPE_DATA[LIQUID_LEVEL_2] = DYNAMIC_SHAPE_MASK;
+        BLOCK_TYPE_DATA[LIQUID_LEVEL_1] = DYNAMIC_SHAPE_MASK;
+        BLOCK_TYPE_DATA[CACTUS_TYPE] = DYNAMIC_SHAPE_MASK;
+        BLOCK_TYPE_DATA[NORTH_WEST_DOOR_NORTH] = INTERACTABLE;
+        BLOCK_TYPE_DATA[NORTH_WEST_DOOR_WEST] = INTERACTABLE;
+        BLOCK_TYPE_DATA[NORTH_EAST_DOOR_NORTH] = INTERACTABLE;
+        BLOCK_TYPE_DATA[NORTH_EAST_DOOR_EAST] = INTERACTABLE;
+        BLOCK_TYPE_DATA[SOUTH_WEST_DOOR_SOUTH] = INTERACTABLE;
+        BLOCK_TYPE_DATA[SOUTH_WEST_DOOR_WEST] = INTERACTABLE;
+        BLOCK_TYPE_DATA[SOUTH_EAST_DOOR_SOUTH] = INTERACTABLE;
+        BLOCK_TYPE_DATA[SOUTH_EAST_DOOR_EAST] = INTERACTABLE;
 
         for (int upDownFenceType = UP_DOWN_FENCE; upDownFenceType <= UP_DOWN_FENCE_NORTH_WEST_SOUTH_EAST; upDownFenceType++)
-            BLOCK_TYPE_DATA[upDownFenceType] = SMART_BLOCK_TYPE | OCCLUDES_ALL;
+            BLOCK_TYPE_DATA[upDownFenceType] = SMART_BLOCK_TYPE;
         for (int EASTWESTFenceType = EAST_WEST_FENCE; EASTWESTFenceType <= EAST_WEST_FENCE_NORTH_UP_SOUTH_DOWN; EASTWESTFenceType++)
-            BLOCK_TYPE_DATA[EASTWESTFenceType] = SMART_BLOCK_TYPE | OCCLUDES_ALL;
+            BLOCK_TYPE_DATA[EASTWESTFenceType] = SMART_BLOCK_TYPE;
         for (int NORTHSOUTHFenceType = NORTH_SOUTH_FENCE; NORTHSOUTHFenceType <= NORTH_SOUTH_FENCE_UP_WEST_DOWN_EAST; NORTHSOUTHFenceType++)
-            BLOCK_TYPE_DATA[NORTHSOUTHFenceType] = SMART_BLOCK_TYPE | OCCLUDES_ALL;
+            BLOCK_TYPE_DATA[NORTHSOUTHFenceType] = SMART_BLOCK_TYPE;
 
         for (int blockType = 0; blockType < TOTAL_AMOUNT_OF_BLOCK_TYPES; blockType++) {
             byte[] XYZSubData = BLOCK_TYPE_XYZ_SUB_DATA[blockType];
@@ -1075,7 +1015,11 @@ public class Block {
         BLOCK_TYPE_XYZ_SUB_DATA[CACTUS_TYPE] = new byte[]{1, -1, 0, 0, 1, -1};
         BLOCK_TYPE_XYZ_SUB_DATA[TORCH_TYPE] = new byte[]{7, -7, 0, -4, 7, -7};
         BLOCK_TYPE_XYZ_SUB_DATA[FLOWER_TYPE] = new byte[]{4, -4, 0, 0, 4, -4};
-        BLOCK_TYPE_XYZ_SUB_DATA[PATH_TYPE] = new byte[]{0, 0, 0, -2, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[PATH_TYPE] = new byte[]{0, 0, 0, -1, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[FULL_BLOCK] = new byte[]{0, 0, 0, 0, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[LIQUID_TYPE] = new byte[]{0, 0, 0, 0, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[VINE_TYPE] = new byte[]{1, -1, 1, -1, 1, -1};
+        BLOCK_TYPE_XYZ_SUB_DATA[CARPET] = new byte[]{0, 0, 0, -15, 0, 0};
 
         BLOCK_TYPE_XYZ_SUB_DATA[TOP_PLAYER_HEAD] = new byte[]{4, -4, 8, 0, 4, -4};
         BLOCK_TYPE_XYZ_SUB_DATA[BOTTOM_PLAYER_HEAD] = new byte[]{4, -4, 0, -8, 4, -4};
@@ -1083,9 +1027,6 @@ public class Block {
         BLOCK_TYPE_XYZ_SUB_DATA[SOUTH_PLAYER_HEAD] = new byte[]{4, -4, 4, -4, 0, -8};
         BLOCK_TYPE_XYZ_SUB_DATA[WEST_PLAYER_HEAD] = new byte[]{8, 0, 4, -4, 4, -4};
         BLOCK_TYPE_XYZ_SUB_DATA[EAST_PLAYER_HEAD] = new byte[]{0, -8, 4, -4, 4, -4};
-
-        BLOCK_TYPE_XYZ_SUB_DATA[FULL_BLOCK] = new byte[]{0, 0, 0, 0, 0, 0};
-        BLOCK_TYPE_XYZ_SUB_DATA[LIQUID_TYPE] = new byte[]{0, 0, 0, 0, 0, 0};
 
         BLOCK_TYPE_XYZ_SUB_DATA[LIQUID_LEVEL_1] = new byte[]{0, 0, 0, -14, 0, 0};
         BLOCK_TYPE_XYZ_SUB_DATA[LIQUID_LEVEL_2] = new byte[]{0, 0, 0, -12, 0, 0};
@@ -1095,6 +1036,16 @@ public class Block {
         BLOCK_TYPE_XYZ_SUB_DATA[LIQUID_LEVEL_6] = new byte[]{0, 0, 0, -4, 0, 0};
         BLOCK_TYPE_XYZ_SUB_DATA[LIQUID_LEVEL_7] = new byte[]{0, 0, 0, -2, 0, 0};
         BLOCK_TYPE_XYZ_SUB_DATA[LIQUID_LEVEL_8] = new byte[]{0, 0, 0, 0, 0, 0};
+
+        BLOCK_TYPE_XYZ_SUB_DATA[NORTH_WEST_DOOR_NORTH] = new byte[]{0, 0, 0, 0, 12, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[NORTH_WEST_DOOR_WEST] = new byte[]{12, 0, 0, 0, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[NORTH_EAST_DOOR_NORTH] = new byte[]{0, 0, 0, 0, 12, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[NORTH_EAST_DOOR_EAST] = new byte[]{0, -12, 0, 0, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[SOUTH_WEST_DOOR_SOUTH] = new byte[]{0, 0, 0, 0, 0, -12};
+        BLOCK_TYPE_XYZ_SUB_DATA[SOUTH_WEST_DOOR_WEST] = new byte[]{12, 0, 0, 0, 0, 0};
+        BLOCK_TYPE_XYZ_SUB_DATA[SOUTH_EAST_DOOR_SOUTH] = new byte[]{0, 0, 0, 0, 0, -12};
+        BLOCK_TYPE_XYZ_SUB_DATA[SOUTH_EAST_DOOR_EAST] = new byte[]{0, -12, 0, 0, 0, 0};
+
     }
 
     private static void initUVSubData() {
@@ -1129,10 +1080,10 @@ public class Block {
         if (stepSounds != null) STANDARD_BLOCK_STEP_SOUNDS[(block & 0xFFFF) >> BLOCK_TYPE_BITS] = stepSounds;
     }
 
-    private static void setLogData(short upDownLog, short northSouthLog, short eastWestLog, byte topTexture, byte sideTexture, byte rotatedSideTexture, SoundManager sound) {
+    private static void setLogData(short upDownLog, short northSouthLog, short eastWestLog, byte topTexture, byte sideTexture, SoundManager sound) {
         STANDARD_BLOCK_TEXTURE_INDICES[(upDownLog & 0xFFFF) >> BLOCK_TYPE_BITS] = new byte[]{sideTexture, topTexture, sideTexture, sideTexture, topTexture, sideTexture};
-        STANDARD_BLOCK_TEXTURE_INDICES[(northSouthLog & 0xFFFF) >> BLOCK_TYPE_BITS] = new byte[]{topTexture, rotatedSideTexture, rotatedSideTexture, topTexture, sideTexture, rotatedSideTexture};
-        STANDARD_BLOCK_TEXTURE_INDICES[(eastWestLog & 0xFFFF) >> BLOCK_TYPE_BITS] = new byte[]{rotatedSideTexture, sideTexture, topTexture, rotatedSideTexture, rotatedSideTexture, topTexture};
+        STANDARD_BLOCK_TEXTURE_INDICES[(northSouthLog & 0xFFFF) >> BLOCK_TYPE_BITS] = new byte[]{topTexture, sideTexture, sideTexture, topTexture, sideTexture, sideTexture};
+        STANDARD_BLOCK_TEXTURE_INDICES[(eastWestLog & 0xFFFF) >> BLOCK_TYPE_BITS] = new byte[]{sideTexture, sideTexture, topTexture, sideTexture, sideTexture, topTexture};
 
         STANDARD_BLOCK_DIG_SOUNDS[(upDownLog & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.digWood;
         STANDARD_BLOCK_DIG_SOUNDS[(northSouthLog & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.digWood;
@@ -1143,8 +1094,8 @@ public class Block {
         STANDARD_BLOCK_STEP_SOUNDS[(eastWestLog & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.stepWood;
 
         STANDARD_BLOCK_PROPERTIES[(upDownLog & 0xFFFF) >> BLOCK_TYPE_BITS] = 0;
-        STANDARD_BLOCK_PROPERTIES[(northSouthLog & 0xFFFF) >> BLOCK_TYPE_BITS] = 0;
-        STANDARD_BLOCK_PROPERTIES[(eastWestLog & 0xFFFF) >> BLOCK_TYPE_BITS] = 0;
+        STANDARD_BLOCK_PROPERTIES[(northSouthLog & 0xFFFF) >> BLOCK_TYPE_BITS] = ROTATE_TOP_TEXTURE | ROTATE_WEST_TEXTURE | ROTATE_EAST_TEXTURE;
+        STANDARD_BLOCK_PROPERTIES[(eastWestLog & 0xFFFF) >> BLOCK_TYPE_BITS] = ROTATE_NORTH_TEXTURE | ROTATE_SOUTH_TEXTURE | ROTATE_BOTTOM_TEXTURE;
     }
 
     private static void initNonStandardBlocks() {
@@ -1156,21 +1107,23 @@ public class Block {
         setNonStandardBlockData(WEST_CREATOR_HEAD, 0, sound.digWood, sound.stepWood, BOTTOM_PLAYER_HEAD, new byte[]{(byte) -125, (byte) -109, (byte) -124, (byte) -123, (byte) -91, (byte) -108});
         setNonStandardBlockData(SOUTH_CREATOR_HEAD, 0, sound.digWood, sound.stepWood, BOTTOM_PLAYER_HEAD, new byte[]{(byte) -108, (byte) -109, (byte) -125, (byte) -124, (byte) -107, (byte) -123});
         setNonStandardBlockData(EAST_CREATOR_HEAD, 0, sound.digWood, sound.stepWood, BOTTOM_PLAYER_HEAD, new byte[]{(byte) -123, (byte) -109, (byte) -108, (byte) -125, (byte) -91, (byte) -124});
-        setNonStandardBlockData(TORCH, NO_COLLISION | LIGHT_EMITTING | REQUIRES_SUPPORT, sound.digWood, sound.stepWood, TORCH_TYPE, new byte[]{(byte) -80});
-        setNonStandardBlockData(TALL_GRASS, NO_COLLISION | REPLACEABLE | REQUIRES_SUPPORT, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) -64});
-        setNonStandardBlockData(RED_TULIP, NO_COLLISION | REPLACEABLE | REQUIRES_SUPPORT, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) -63});
-        setNonStandardBlockData(YELLOW_TULIP, NO_COLLISION | REPLACEABLE | REQUIRES_SUPPORT, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) -62});
-        setNonStandardBlockData(ORANGE_TULIP, NO_COLLISION | REPLACEABLE | REQUIRES_SUPPORT, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) -61});
-        setNonStandardBlockData(MAGENTA_TULIP, NO_COLLISION | REPLACEABLE | REQUIRES_SUPPORT, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) -60});
-        setNonStandardBlockData(ROSE, NO_COLLISION | REPLACEABLE | REQUIRES_SUPPORT, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) -59});
-        setNonStandardBlockData(HYACINTH, NO_COLLISION | REPLACEABLE | REQUIRES_SUPPORT, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) -58});
-        setNonStandardBlockData(DRISLY, NO_COLLISION | REPLACEABLE | REQUIRES_SUPPORT, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) 0xD0});
-        setNonStandardBlockData(SHRUB, NO_COLLISION | REPLACEABLE | REQUIRES_SUPPORT, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) 0xD1});
-        setNonStandardBlockData(SUGAR_CANE, NO_COLLISION | REQUIRES_SUPPORT, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) 0xD2});
+        setNonStandardBlockData(TORCH, NO_COLLISION | LIGHT_LEVEL_15 | REQUIRES_BOTTOM_SUPPORT, sound.digWood, sound.stepWood, TORCH_TYPE, new byte[]{(byte) -80});
+        setNonStandardBlockData(TALL_GRASS, NO_COLLISION | REPLACEABLE | REQUIRES_BOTTOM_SUPPORT, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) -64});
+        setNonStandardBlockData(RED_TULIP, NO_COLLISION | REPLACEABLE | REQUIRES_BOTTOM_SUPPORT, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) -63});
+        setNonStandardBlockData(YELLOW_TULIP, NO_COLLISION | REPLACEABLE | REQUIRES_BOTTOM_SUPPORT, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) -62});
+        setNonStandardBlockData(ORANGE_TULIP, NO_COLLISION | REPLACEABLE | REQUIRES_BOTTOM_SUPPORT, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) -61});
+        setNonStandardBlockData(MAGENTA_TULIP, NO_COLLISION | REPLACEABLE | REQUIRES_BOTTOM_SUPPORT, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) -60});
+        setNonStandardBlockData(ROSE, NO_COLLISION | REPLACEABLE | REQUIRES_BOTTOM_SUPPORT, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) -59});
+        setNonStandardBlockData(HYACINTH, NO_COLLISION | REPLACEABLE | REQUIRES_BOTTOM_SUPPORT, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) -58});
+        setNonStandardBlockData(DRISLY, NO_COLLISION | REPLACEABLE | REQUIRES_BOTTOM_SUPPORT, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) 0xD0});
+        setNonStandardBlockData(SHRUB, NO_COLLISION | REPLACEABLE | REQUIRES_BOTTOM_SUPPORT, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) 0xD1});
+        setNonStandardBlockData(SUGAR_CANE, NO_COLLISION | REQUIRES_BOTTOM_SUPPORT, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) 0xD2});
         setNonStandardBlockData(PATH_BLOCK, 0, sound.digGrass, sound.stepGrass, PATH_TYPE, new byte[]{(byte) -72, (byte) -88, (byte) -72, (byte) -72, (byte) 1, (byte) -72});
-        setNonStandardBlockData(BLACK_ROSE, NO_COLLISION | REPLACEABLE | REQUIRES_SUPPORT, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) 0xD3});
-        setNonStandardBlockData(FLIELEN, NO_COLLISION | REPLACEABLE | REQUIRES_SUPPORT, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) 0xD4});
-        setNonStandardBlockData(CACTUS, REQUIRES_SUPPORT, sound.digWood, sound.stepWood, CACTUS_TYPE, new byte[]{(byte) 113, (byte) -92, (byte) 113, (byte) 113, (byte) -92, (byte) 113});
+        setNonStandardBlockData(BLACK_ROSE, NO_COLLISION | REPLACEABLE | REQUIRES_BOTTOM_SUPPORT, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) 0xD3});
+        setNonStandardBlockData(FLIELEN, NO_COLLISION | REPLACEABLE | REQUIRES_BOTTOM_SUPPORT, sound.digFoliage, sound.stepFoliage, FLOWER_TYPE, new byte[]{(byte) 0xD4});
+        setNonStandardBlockData(CACTUS, REQUIRES_BOTTOM_SUPPORT, sound.digWood, sound.stepWood, CACTUS_TYPE, new byte[]{(byte) 113, (byte) -92, (byte) 113, (byte) 113, (byte) -92, (byte) 113});
+        setNonStandardBlockData(VINES, REQUIRES_AND_SIDE_SUPPORT | REPLACEABLE | NO_COLLISION, sound.digFoliage, sound.stepFoliage, VINE_TYPE, new byte[]{(byte) 0xB5});
+        setNonStandardBlockData(GLOW_LICHEN, REQUIRES_AND_SIDE_SUPPORT | REPLACEABLE | NO_COLLISION | LIGHT_LEVEL_7, sound.digFoliage, sound.stepFoliage, VINE_TYPE, new byte[]{(byte) 0xB7});
 
         setNonStandardBlockData(WATER_SOURCE, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT, sound.splash, sound.splash, LIQUID_TYPE, new byte[]{(byte) 64});
         setNonStandardBlockData(FLOWING_WATER_LEVEL_1, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT, sound.splash, sound.splash, LIQUID_LEVEL_1, new byte[]{(byte) 64});
@@ -1181,11 +1134,11 @@ public class Block {
         setNonStandardBlockData(FLOWING_WATER_LEVEL_6, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT, sound.splash, sound.splash, LIQUID_LEVEL_6, new byte[]{(byte) 64});
         setNonStandardBlockData(FLOWING_WATER_LEVEL_7, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT, sound.splash, sound.splash, LIQUID_LEVEL_7, new byte[]{(byte) 64});
         setNonStandardBlockData(FLOWING_WATER_LEVEL_8, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT, sound.splash, sound.splash, LIQUID_LEVEL_8, new byte[]{(byte) 64});
-        setNonStandardBlockData(LAVA_SOURCE, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT | LIGHT_EMITTING, sound.lavaPop, sound.lavaPop, LIQUID_TYPE, new byte[]{(byte) -127});
-        setNonStandardBlockData(FLOWING_LAVA_LEVEL_1, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT | LIGHT_EMITTING, sound.lavaPop, sound.lavaPop, LIQUID_LEVEL_1, new byte[]{(byte) -127});
-        setNonStandardBlockData(FLOWING_LAVA_LEVEL_2, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT | LIGHT_EMITTING, sound.lavaPop, sound.lavaPop, LIQUID_LEVEL_3, new byte[]{(byte) -127});
-        setNonStandardBlockData(FLOWING_LAVA_LEVEL_3, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT | LIGHT_EMITTING, sound.lavaPop, sound.lavaPop, LIQUID_LEVEL_5, new byte[]{(byte) -127});
-        setNonStandardBlockData(FLOWING_LAVA_LEVEL_4, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT | LIGHT_EMITTING, sound.lavaPop, sound.lavaPop, LIQUID_LEVEL_8, new byte[]{(byte) -127});
+        setNonStandardBlockData(LAVA_SOURCE, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT | LIGHT_LEVEL_15, sound.lavaPop, sound.lavaPop, LIQUID_TYPE, new byte[]{(byte) -127});
+        setNonStandardBlockData(FLOWING_LAVA_LEVEL_1, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT | LIGHT_LEVEL_15, sound.lavaPop, sound.lavaPop, LIQUID_LEVEL_1, new byte[]{(byte) -127});
+        setNonStandardBlockData(FLOWING_LAVA_LEVEL_2, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT | LIGHT_LEVEL_15, sound.lavaPop, sound.lavaPop, LIQUID_LEVEL_3, new byte[]{(byte) -127});
+        setNonStandardBlockData(FLOWING_LAVA_LEVEL_3, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT | LIGHT_LEVEL_15, sound.lavaPop, sound.lavaPop, LIQUID_LEVEL_5, new byte[]{(byte) -127});
+        setNonStandardBlockData(FLOWING_LAVA_LEVEL_4, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT | LIGHT_LEVEL_15, sound.lavaPop, sound.lavaPop, LIQUID_LEVEL_8, new byte[]{(byte) -127});
     }
 
     private static void initStandardBlocks() {
@@ -1221,18 +1174,18 @@ public class Block {
         setStandardBlockData(IRON_ORE, 0, sound.digStone, sound.stepStone, (byte) -111);
         setStandardBlockData(DIAMOND_ORE, 0, sound.digStone, sound.stepStone, (byte) -110);
 
-        setLogData(UP_DOWN_OAK_LOG, NORTH_SOUTH_OAK_LOG, EAST_WEST_OAK_LOG, (byte) 19, (byte) 3, (byte) 99, sound);
-        setLogData(UP_DOWN_STRIPPED_OAK_LOG, NORTH_SOUTH_STRIPPED_OAK_LOG, EAST_WEST_STRIPPED_OAK_LOG, (byte) 51, (byte) 35, (byte) 115, sound);
-        setLogData(UP_DOWN_SPRUCE_LOG, NORTH_SOUTH_SPRUCE_LOG, EAST_WEST_SPRUCE_LOG, (byte) 20, (byte) 4, (byte) 100, sound);
-        setLogData(UP_DOWN_STRIPPED_SPRUCE_LOG, NORTH_SOUTH_STRIPPED_SPRUCE_LOG, EAST_WEST_STRIPPED_SPRUCE_LOG, (byte) 52, (byte) 36, (byte) 116, sound);
-        setLogData(UP_DOWN_DARK_OAK_LOG, NORTH_SOUTH_DARK_OAK_LOG, EAST_WEST_DARK_OAK_LOG, (byte) 21, (byte) 5, (byte) 101, sound);
-        setLogData(UP_DOWN_STRIPPED_DARK_OAK_LOG, NORTH_SOUTH_STRIPPED_DARK_OAK_LOG, EAST_WEST_STRIPPED_DARK_OAK_LOG, (byte) 53, (byte) 37, (byte) 117, sound);
-        setLogData(UP_DOWN_PINE_LOG, NORTH_SOUTH_PINE_LOG, EAST_WEST_PINE_LOG, (byte) 22, (byte) 6, (byte) 102, sound);
-        setLogData(UP_DOWN_STRIPPED_PINE_LOG, NORTH_SOUTH_STRIPPED_PINE_LOG, EAST_WEST_STRIPPED_PINE_LOG, (byte) 54, (byte) 38, (byte) 118, sound);
-        setLogData(UP_DOWN_REDWOOD_LOG, NORTH_SOUTH_REDWOOD_LOG, EAST_WEST_REDWOOD_LOG, (byte) 23, (byte) 7, (byte) 103, sound);
-        setLogData(UP_DOWN_STRIPPED_REDWOOD_LOG, NORTH_SOUTH_STRIPPED_REDWOOD_LOG, EAST_WEST_STRIPPED_REDWOOD_LOG, (byte) 55, (byte) 39, (byte) 119, sound);
-        setLogData(UP_DOWN_BLACK_WOOD_LOG, NORTH_SOUTH_BLACK_WOOD_LOG, EAST_WEST_BLACK_WOOD_LOG, (byte) 24, (byte) 8, (byte) 104, sound);
-        setLogData(UP_DOWN_STRIPPED_BLACK_WOOD_LOG, NORTH_SOUTH_STRIPPED_BLACK_WOOD_LOG, EAST_WEST_STRIPPED_BLACK_WOOD_LOG, (byte) 56, (byte) 40, (byte) 120, sound);
+        setLogData(UP_DOWN_OAK_LOG, NORTH_SOUTH_OAK_LOG, EAST_WEST_OAK_LOG, (byte) 19, (byte) 3, sound);
+        setLogData(UP_DOWN_STRIPPED_OAK_LOG, NORTH_SOUTH_STRIPPED_OAK_LOG, EAST_WEST_STRIPPED_OAK_LOG, (byte) 51, (byte) 35, sound);
+        setLogData(UP_DOWN_SPRUCE_LOG, NORTH_SOUTH_SPRUCE_LOG, EAST_WEST_SPRUCE_LOG, (byte) 20, (byte) 4, sound);
+        setLogData(UP_DOWN_STRIPPED_SPRUCE_LOG, NORTH_SOUTH_STRIPPED_SPRUCE_LOG, EAST_WEST_STRIPPED_SPRUCE_LOG, (byte) 52, (byte) 36, sound);
+        setLogData(UP_DOWN_DARK_OAK_LOG, NORTH_SOUTH_DARK_OAK_LOG, EAST_WEST_DARK_OAK_LOG, (byte) 21, (byte) 5, sound);
+        setLogData(UP_DOWN_STRIPPED_DARK_OAK_LOG, NORTH_SOUTH_STRIPPED_DARK_OAK_LOG, EAST_WEST_STRIPPED_DARK_OAK_LOG, (byte) 53, (byte) 37, sound);
+        setLogData(UP_DOWN_PINE_LOG, NORTH_SOUTH_PINE_LOG, EAST_WEST_PINE_LOG, (byte) 22, (byte) 6, sound);
+        setLogData(UP_DOWN_STRIPPED_PINE_LOG, NORTH_SOUTH_STRIPPED_PINE_LOG, EAST_WEST_STRIPPED_PINE_LOG, (byte) 54, (byte) 38, sound);
+        setLogData(UP_DOWN_REDWOOD_LOG, NORTH_SOUTH_REDWOOD_LOG, EAST_WEST_REDWOOD_LOG, (byte) 23, (byte) 7, sound);
+        setLogData(UP_DOWN_STRIPPED_REDWOOD_LOG, NORTH_SOUTH_STRIPPED_REDWOOD_LOG, EAST_WEST_STRIPPED_REDWOOD_LOG, (byte) 55, (byte) 39, sound);
+        setLogData(UP_DOWN_BLACK_WOOD_LOG, NORTH_SOUTH_BLACK_WOOD_LOG, EAST_WEST_BLACK_WOOD_LOG, (byte) 24, (byte) 8, sound);
+        setLogData(UP_DOWN_STRIPPED_BLACK_WOOD_LOG, NORTH_SOUTH_STRIPPED_BLACK_WOOD_LOG, EAST_WEST_STRIPPED_BLACK_WOOD_LOG, (byte) 56, (byte) 40, sound);
 
         setStandardBlockData(OAK_LEAVES, 0, sound.digFoliage, sound.stepFoliage, (byte) 83);
         setStandardBlockData(SPRUCE_LEAVES, 0, sound.digFoliage, sound.stepFoliage, (byte) 84);
@@ -1269,12 +1222,12 @@ public class Block {
         setStandardBlockData(MOSSY_SLATE_BRICKS, 0, sound.digStone, sound.stepStone, (byte) -25);
         setStandardBlockData(MOSSY_CHISELED_SLATE, 0, sound.digStone, sound.stepStone, (byte) -26);
         setStandardBlockData(MOSSY_POLISHED_SLATE, 0, sound.digStone, sound.stepStone, (byte) -27);
-        setStandardBlockData(MOSSY_DIRT, 0, sound.digGrass, sound.stepDirt, (byte) -28);
-        setStandardBlockData(MOSSY_GRAVEL, 0, sound.digGravel, sound.stepGravel, (byte) -29);
-        setStandardBlockData(MOSSY_OBSIDIAN, BLAST_RESISTANT, sound.digStone, sound.stepStone, (byte) -30);
-        setStandardBlockData(MOSSY_CRACKED_ANDESITE, 0, sound.digStone, sound.stepStone, (byte) -31);
-        setStandardBlockData(MOSSY_COBBLESTONE, 0, sound.digStone, sound.stepStone, (byte) -32);
-        setStandardBlockData(SEA_LIGHT, LIGHT_EMITTING, sound.digGlass, sound.stepGlass, (byte) -120);
+        setStandardBlockData(MOSSY_POLISHED_SANDSTONE, 0, sound.digStone, sound.stepStone, (byte) 0xE4);
+        setStandardBlockData(MOSSY_SANDSTONE, 0, sound.digStone, sound.stepStone, (byte) 0xE3);
+        setStandardBlockData(MOSSY_OBSIDIAN, BLAST_RESISTANT, sound.digStone, sound.stepStone, (byte) 0xE2);
+        setStandardBlockData(MOSSY_CRACKED_ANDESITE, 0, sound.digStone, sound.stepStone, (byte) 0xE1);
+        setStandardBlockData(MOSSY_COBBLESTONE, 0, sound.digStone, sound.stepStone, (byte) 0xE0);
+        setStandardBlockData(SEA_LIGHT, LIGHT_LEVEL_15, sound.digGlass, sound.stepGlass, (byte) -120);
         setStandardBlockData(PODZOL, 0, sound.digGrass, sound.stepGrass, new byte[]{(byte) 0xB9, (byte) 0xA9, (byte) 0xB9, (byte) 0xB9, (byte) 0x01, (byte) 0xB9});
         setStandardBlockData(RED_SAND, HAS_GRAVITY, sound.digSand, sound.stepSand, (byte) 0xBE);
         setStandardBlockData(RED_POLISHED_SANDSTONE, 0, sound.digStone, sound.stepStone, (byte) 0xBD);
@@ -1296,6 +1249,12 @@ public class Block {
         setStandardBlockData(CYAN_WOOL, 0, sound.digCloth, sound.stepCloth, (byte) 0xC9);
         setStandardBlockData(WHITE_WOOL, 0, sound.digCloth, sound.stepCloth, (byte) 0xC8);
         setStandardBlockData(BLACK_WOOL, 0, sound.digCloth, sound.stepCloth, (byte) 0xC7);
+        setStandardBlockData(MOSSY_SANDSTONE_BRICKS, 0, sound.digStone, sound.stepStone, (byte) 0xF0);
+        setStandardBlockData(MOSSY_RED_SANDSTONE, 0, sound.digStone, sound.stepStone, (byte) 0xF1);
+        setStandardBlockData(MOSSY_RED_POLISHED_SANDSTONE, 0, sound.digStone, sound.stepStone, (byte) 0xF2);
+        setStandardBlockData(MOSSY_RED_SANDSTONE_BRICKS, 0, sound.digStone, sound.stepStone, (byte) 0xF3);
+        setStandardBlockData(SANDSTONE_BRICKS, 0, sound.digStone, sound.stepStone, (byte) 0xB6);
+        setStandardBlockData(RED_SANDSTONE_BRICKS, 0, sound.digStone, sound.stepStone, (byte) 0xBF);
 
         setStandardBlockData(NORTH_FURNACE, INTERACTABLE, sound.digStone, sound.stepStone, new byte[]{(byte) -104, (byte) -121, (byte) -105, (byte) -105, (byte) -89, (byte) -105});
         setStandardBlockData(SOUTH_FURNACE, INTERACTABLE, sound.digStone, sound.stepStone, new byte[]{(byte) -105, (byte) -121, (byte) -105, (byte) -104, (byte) -89, (byte) -105});

@@ -9,7 +9,6 @@ import terrascape.entity.SkyBox;
 import terrascape.entity.Target;
 import terrascape.entity.Texture;
 import terrascape.entity.entities.Entity;
-import terrascape.entity.entities.TNT_Entity;
 import terrascape.generation.WorldGeneration;
 import terrascape.utils.Transformation;
 import terrascape.utils.Utils;
@@ -480,7 +479,7 @@ public class Player {
 
         short selectedBlock = hotBar[selectedHotBarSlot];
 
-        if ((Block.getBlockProperties(target.block()) & INTERACTABLE) != 0) if (interactWithBlock(target)) return;
+        if (Block.isInteractable(target.block())) if (BlockEvent.interactWithBlock(target, hotBar[selectedHotBarSlot])) return;
 
         if (hotBar[selectedHotBarSlot] == AIR) return;
         short toPlaceBlock;
@@ -536,29 +535,6 @@ public class Player {
 
         if (isWaterLogging || (Block.getBlockProperties(Chunk.getBlockInWorld(x, y, z)) & REPLACEABLE) != 0)
             GameLogic.placeBlock(toPlaceBlock, x, y, z, true);
-    }
-
-    private boolean interactWithBlock(Target target) {
-        if (window.isKeyPressed(SNEAK_BUTTON)) return false;
-        short block = target.block();
-
-        if (block == CRAFTING_TABLE) {
-            if (hotBar[selectedHotBarSlot] == CRAFTING_TABLE) return false;
-            System.out.println("You interacted with a crafting table");
-            return true;
-        }
-        if (block == TNT) {
-            if (hotBar[selectedHotBarSlot] == TNT) return false;
-            TNT_Entity.spawnTNTEntity(target.position(), 80);
-            sound.playSound(sound.fuse, target.position().x, target.position().y, target.position().z, 0.0f, 0.0f, 0.0f, MISCELLANEOUS_GAIN);
-            return true;
-        }
-        if (block == NORTH_FURNACE || block == WEST_FURNACE || block == SOUTH_FURNACE || block == EAST_FURNACE) {
-            if (hotBar[selectedHotBarSlot] == NORTH_FURNACE) return false;
-            System.out.println("You interacted with a furnace");
-            return true;
-        }
-        return false;
     }
 
     private void handlePickBlock() {
@@ -992,7 +968,8 @@ public class Player {
             GUIElement element;
 
             short block = hotBar[i];
-            if (Block.getBlockType(block) == FLOWER_TYPE) {
+            int blockType = Block.getBlockType(block);
+            if (blockType == FLOWER_TYPE || blockType == VINE_TYPE) {
                 int textureIndex = Block.getTextureIndex(block, 0);
                 float[] textureCoordinates = GUIElement.getFlatDisplayTextureCoordinates(textureIndex);
                 element = ObjectLoader.loadGUIElement(GUIElement.getFlatDisplayVertices(), textureCoordinates, new Vector2f(xOffset, yOffset));

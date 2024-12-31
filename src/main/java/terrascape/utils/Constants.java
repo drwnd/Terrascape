@@ -9,18 +9,18 @@ public class Constants {
     public static final float TIME_SPEED = 0.00008333f;
     public static final float NANOSECONDS_PER_SECOND = 1_000_000_000;
     public static final float SPAWN_RADIUS = 150.0f; // More like halfSideLengthOfSpawnSquare
-    public static final int TARGET_TPS = 20;
+    public static final byte TARGET_TPS = 20;
 
     // DO NOT CHANGE THESE VALUES (like really, it will crash)
-    public static final int CHUNK_SIZE_BITS = 5;
-    public static final int CHUNK_SIZE = 1 << CHUNK_SIZE_BITS;
-    public static final int CHUNK_SIZE_MASK = CHUNK_SIZE - 1;
-    public static final int CHUNK_COORDINATE_MASK = -1 << CHUNK_SIZE_BITS;
+    public static final byte CHUNK_SIZE_BITS = 5;
+    public static final byte CHUNK_SIZE = 1 << CHUNK_SIZE_BITS;
+    public static final byte CHUNK_SIZE_MASK = CHUNK_SIZE - 1;
+    public static final byte CHUNK_COORDINATE_MASK = -1 << CHUNK_SIZE_BITS;
     public static final int MAX_CHUNKS_XZ = 0x7FFFFFF;
     public static final int MAX_CHUNKS_Y = 0x3FF;
-    public static final int ENTITY_CLUSTER_SIZE_BITS = 3;
-    public static final int IN_CHUNK_ENTITY_CLUSTER_MASK = 3;
-    public static final int ENTITY_CLUSTER_TO_CHUNK_BITS = CHUNK_SIZE_BITS - ENTITY_CLUSTER_SIZE_BITS;
+    public static final byte ENTITY_CLUSTER_SIZE_BITS = 3;
+    public static final byte IN_CHUNK_ENTITY_CLUSTER_MASK = 3;
+    public static final byte ENTITY_CLUSTER_TO_CHUNK_BITS = CHUNK_SIZE_BITS - ENTITY_CLUSTER_SIZE_BITS;
 
     //Movement
     public static final float AIR_FRICTION = 0.91f;
@@ -30,69 +30,89 @@ public class Constants {
     public static final float GRAVITY_ACCELERATION = 0.08f;
 
     // Change based on computing power
-    public static final int MAX_CHUNKS_TO_BUFFER_PER_FRAME = 15;
+    public static final byte MAX_CHUNKS_TO_BUFFER_PER_FRAME = 15;
 
-    public static final int NUMBER_OF_GENERATION_THREADS = 3;
-    public static final int MAX_OCCLUSION_CULLING_DAMPER = 6;
+    public static final byte NUMBER_OF_GENERATION_THREADS = 3;
+    public static final byte MAX_OCCLUSION_CULLING_DAMPER = 6;
 
     public static final float MAX_SOUND_DISTANCE = 30.0f * 30.0f;
 
     // Other useful stuff
-    public static final int MAX_BLOCK_LIGHT_VALUE = 15;
-    public static final int MAX_SKY_LIGHT_VALUE = 15;
+    public static final byte MAX_SKY_LIGHT_VALUE = 15;
 
     // Indices for the sides of blocks
     /**
      * Positive Z.
      */
-    public static final int NORTH = 0;
+    public static final byte NORTH = 0;
     /**
      * Positive Y.
      */
-    public static final int TOP = 1;
+    public static final byte TOP = 1;
     /**
      * Positive X.
      */
-    public static final int WEST = 2;
+    public static final byte WEST = 2;
     /**
      * Negative Z.
      */
-    public static final int SOUTH = 3;
+    public static final byte SOUTH = 3;
     /**
      * Negative Y.
      */
-    public static final int BOTTOM = 4;
+    public static final byte BOTTOM = 4;
     /**
      * Negative X.
      */
-    public static final int EAST = 5;
-    public static final int NONE = 6;
-
-    // BLOCK_TYPE_OCCLUSION_DATA
-    public static final int OCCLUDES_ALL = 0;
-    //    public static final int OCCLUDES_SELF = 1;
-    public static final int OCCLUDES_DYNAMIC_SELF = 3;
+    public static final byte EAST = 5;
+    public static final byte NONE = 6;
 
     // BLOCK_TYPE_DATA
-    public static final int SMART_BLOCK_TYPE = 64;
-    public static final int DYNAMIC_SHAPE_MASK = 128;
+
+    //    public static final int INTERACTABLE = 4;
+    public static final byte SMART_BLOCK_TYPE = 64;
+    public static final byte DYNAMIC_SHAPE_MASK = -128;
 
     // BLOCK_XYZ_SUB_DATA
-    public static final int MIN_X = 0;
-    public static final int MAX_X = 1;
-    public static final int MIN_Y = 2;
-    public static final int MAX_Y = 3;
-    public static final int MIN_Z = 4;
-    public static final int MAX_Z = 5;
+    public static final byte MIN_X = 0;
+    public static final byte MAX_X = 1;
+    public static final byte MIN_Y = 2;
+    public static final byte MAX_Y = 3;
+    public static final byte MIN_Z = 4;
+    public static final byte MAX_Z = 5;
 
     // BLOCK_PROPERTIES
-    public static final int LIGHT_EMITTING = 1;
-    public static final int NO_COLLISION = 2;
-    public static final int INTERACTABLE = 4;
-    public static final int REPLACEABLE = 8;
-    public static final int BLAST_RESISTANT = 16;
-    public static final int HAS_GRAVITY = 32;
-    public static final int REQUIRES_SUPPORT = 64;
+    public static final int LIGHT_EMITTING = 15;
+    public static final int NO_COLLISION = 16;
+    public static final int INTERACTABLE = 32;
+    public static final int REPLACEABLE = 64;
+    public static final int BLAST_RESISTANT = 128;
+    public static final int HAS_GRAVITY = 256;
+    public static final int REQUIRES_BOTTOM_SUPPORT = 512;
+    public static final int REQUIRES_AND_SIDE_SUPPORT = 1024;
+    public static final int ROTATE_NORTH_TEXTURE = 2048;
+    public static final int ROTATE_TOP_TEXTURE = 4096;
+    public static final int ROTATE_WEST_TEXTURE = 8192;
+    public static final int ROTATE_SOUTH_TEXTURE = 16384;
+    public static final int ROTATE_BOTTOM_TEXTURE = 32768;
+    public static final int ROTATE_EAST_TEXTURE = 65536;
+
+    // Block emitted light levels
+    public static final byte LIGHT_LEVEL_1 = 1;
+    public static final byte LIGHT_LEVEL_2 = 2;
+    public static final byte LIGHT_LEVEL_3 = 3;
+    public static final byte LIGHT_LEVEL_4 = 4;
+    public static final byte LIGHT_LEVEL_5 = 5;
+    public static final byte LIGHT_LEVEL_6 = 6;
+    public static final byte LIGHT_LEVEL_7 = 7;
+    public static final byte LIGHT_LEVEL_8 = 8;
+    public static final byte LIGHT_LEVEL_9 = 9;
+    public static final byte LIGHT_LEVEL_10 = 10;
+    public static final byte LIGHT_LEVEL_11 = 11;
+    public static final byte LIGHT_LEVEL_12 = 12;
+    public static final byte LIGHT_LEVEL_13 = 13;
+    public static final byte LIGHT_LEVEL_14 = 14;
+    public static final byte LIGHT_LEVEL_15 = 15;
 
     // Indices for information on block types
     public static final byte FULL_BLOCK = 0;
@@ -142,9 +162,7 @@ public class Constants {
     public static final byte SOUTH_PLAYER_HEAD = 34;
     public static final byte WEST_PLAYER_HEAD = 35;
     public static final byte EAST_PLAYER_HEAD = 36;
-
-    // TODO block type 37 unused
-
+    public static final byte CARPET = 37;
     public static final byte NORTH_SOCKET = 38;
     public static final byte TOP_SOCKET = 39;
     public static final byte WEST_SOCKET = 40;
@@ -231,35 +249,45 @@ public class Constants {
     public static final byte EAST_WEST_FENCE_NORTH_UP_SOUTH_DOWN = 115;
     public static final byte[] FENCES = new byte[]{NORTH_SOUTH_FENCE, UP_DOWN_FENCE, EAST_WEST_FENCE};
 
-    public static final short FLOWER_TYPE = 256;
-    public static final short CACTUS_TYPE = 257;
-    public static final short AIR_TYPE = 258;
-    public static final short TORCH_TYPE = 259;
-    public static final short PATH_TYPE = 260;
-    public static final short LIQUID_TYPE = 261;
-    public static final short LIQUID_LEVEL_1 = 262;
-    public static final short LIQUID_LEVEL_2 = 263;
-    public static final short LIQUID_LEVEL_3 = 264;
-    public static final short LIQUID_LEVEL_4 = 265;
-    public static final short LIQUID_LEVEL_5 = 266;
-    public static final short LIQUID_LEVEL_6 = 267;
-    public static final short LIQUID_LEVEL_7 = 268;
-    public static final short LIQUID_LEVEL_8 = 269;
+    public static final byte NORTH_WEST_DOOR_NORTH = 116;
+    public static final byte NORTH_WEST_DOOR_WEST = 117;
+    public static final byte NORTH_EAST_DOOR_NORTH = 118;
+    public static final byte NORTH_EAST_DOOR_EAST = 119;
+    public static final byte SOUTH_WEST_DOOR_SOUTH = 120;
+    public static final byte SOUTH_WEST_DOOR_WEST = 121;
+    public static final byte SOUTH_EAST_DOOR_SOUTH = 122;
+    public static final byte SOUTH_EAST_DOOR_EAST = 123;
 
-    public static final int TOTAL_AMOUNT_OF_BLOCK_TYPES = 270;
+    public static final short FLOWER_TYPE = 128;
+    public static final short CACTUS_TYPE = 129;
+    public static final short AIR_TYPE = 130;
+    public static final short TORCH_TYPE = 131;
+    public static final short PATH_TYPE = 132;
+    public static final short LIQUID_TYPE = 133;
+    public static final short LIQUID_LEVEL_1 = 134;
+    public static final short LIQUID_LEVEL_2 = 135;
+    public static final short LIQUID_LEVEL_3 = 136;
+    public static final short LIQUID_LEVEL_4 = 137;
+    public static final short LIQUID_LEVEL_5 = 138;
+    public static final short LIQUID_LEVEL_6 = 139;
+    public static final short LIQUID_LEVEL_7 = 140;
+    public static final short LIQUID_LEVEL_8 = 141;
+    public static final short VINE_TYPE = 142;
 
-    public static final byte[] TO_PLACE_BLOCK_TYPES = new byte[]{FULL_BLOCK, BOTTOM_PLAYER_HEAD, BOTTOM_SOCKET, BOTTOM_SLAB, BOTTOM_PLATE, NORTH_SOUTH_WALL, UP_DOWN_POST, THICK_BOTTOM_SOUTH_STAIR, BOTTOM_SOUTH_STAIR, THIN_BOTTOM_SOUTH_STAIR, UP_DOWN_FENCE_NORTH_WEST};
-    public static final int BLOCK_TYPE_BITS = 8;
-    public static final int WATER_LOGGED_MASK = (1 << BLOCK_TYPE_BITS - 1);
-    public static final int BLOCK_TYPE_MASK = (1 << BLOCK_TYPE_BITS - 1) - 1;
-    public static final int BASE_BLOCK_MASK = -1 << BLOCK_TYPE_BITS;
-    public static final int STANDARD_BLOCKS_THRESHOLD = 1 << BLOCK_TYPE_BITS;
+    public static final int TOTAL_AMOUNT_OF_BLOCK_TYPES = 143;
+
+    public static final byte[] TO_PLACE_BLOCK_TYPES = new byte[]{FULL_BLOCK, BOTTOM_PLAYER_HEAD, BOTTOM_SOCKET, BOTTOM_SLAB, BOTTOM_PLATE, NORTH_SOUTH_WALL, UP_DOWN_POST, THICK_BOTTOM_SOUTH_STAIR, BOTTOM_SOUTH_STAIR, THIN_BOTTOM_SOUTH_STAIR, UP_DOWN_FENCE_NORTH_WEST, NORTH_WEST_DOOR_NORTH, CARPET};
+    public static final byte BLOCK_TYPE_BITS = 8;
+    public static final short WATER_LOGGED_MASK = (1 << BLOCK_TYPE_BITS - 1);
+    public static final byte BLOCK_TYPE_MASK = (1 << BLOCK_TYPE_BITS - 1) - 1;
+    public static final short BASE_BLOCK_MASK = -1 << BLOCK_TYPE_BITS;
+    public static final short STANDARD_BLOCKS_THRESHOLD = 1 << BLOCK_TYPE_BITS;
 
     // Non standard block, aka blocks without blockTypes
     public static final short AIR = 0;
     public static final short OUT_OF_WORLD = 1;
-    // TODO Non-Standard block 2 unused
-    // TODO Non-Standard block 3 unused
+    public static final short VINES = 2;
+    public static final short GLOW_LICHEN = 3;
     public static final short CACTUS = 4;
     public static final short NORTH_CREATOR_HEAD = 5;
     public static final short SOUTH_CREATOR_HEAD = 6;
@@ -293,7 +321,7 @@ public class Constants {
     public static final short FLOWING_LAVA_LEVEL_3 = 34;
     public static final short FLOWING_LAVA_LEVEL_2 = 35;
     public static final short FLOWING_LAVA_LEVEL_1 = 36;
-    public static final short[] TO_PLACE_NON_STANDARD_BLOCKS = new short[]{WATER_SOURCE, LAVA_SOURCE, CACTUS, NORTH_CREATOR_HEAD, TORCH, TALL_GRASS, RED_TULIP, YELLOW_TULIP, ORANGE_TULIP, MAGENTA_TULIP, ROSE, HYACINTH, DRISLY, SHRUB, SUGAR_CANE, PATH_BLOCK, BLACK_ROSE, FLIELEN};
+    public static final short[] TO_PLACE_NON_STANDARD_BLOCKS = new short[]{WATER_SOURCE, LAVA_SOURCE, CACTUS, NORTH_CREATOR_HEAD, TORCH, TALL_GRASS, RED_TULIP, YELLOW_TULIP, ORANGE_TULIP, MAGENTA_TULIP, ROSE, HYACINTH, DRISLY, SHRUB, SUGAR_CANE, PATH_BLOCK, BLACK_ROSE, FLIELEN, VINES, GLOW_LICHEN};
 
     // Standard blocks, aka blocks with blockTypes
     public static final short GRASS = (short) (1 << BLOCK_TYPE_BITS);
@@ -372,8 +400,8 @@ public class Constants {
     public static final short MOSSY_SLATE_BRICKS = (short) (74 << BLOCK_TYPE_BITS);
     public static final short MOSSY_CHISELED_SLATE = (short) (75 << BLOCK_TYPE_BITS);
     public static final short MOSSY_POLISHED_SLATE = (short) (76 << BLOCK_TYPE_BITS);
-    public static final short MOSSY_DIRT = (short) (77 << BLOCK_TYPE_BITS);
-    public static final short MOSSY_GRAVEL = (short) (78 << BLOCK_TYPE_BITS);
+    public static final short MOSSY_SANDSTONE_BRICKS = (short) (77 << BLOCK_TYPE_BITS);
+    public static final short MOSSY_RED_SANDSTONE_BRICKS = (short) (78 << BLOCK_TYPE_BITS);
     public static final short MOSSY_OBSIDIAN = (short) (79 << BLOCK_TYPE_BITS);
     public static final short MOSSY_CRACKED_ANDESITE = (short) (80 << BLOCK_TYPE_BITS);
     public static final short MOSSY_COBBLESTONE = (short) (81 << BLOCK_TYPE_BITS);
@@ -400,8 +428,14 @@ public class Constants {
     public static final short CYAN_WOOL = (short) (102 << BLOCK_TYPE_BITS);
     public static final short WHITE_WOOL = (short) (103 << BLOCK_TYPE_BITS);
     public static final short BLACK_WOOL = (short) (104 << BLOCK_TYPE_BITS);
+    public static final short SANDSTONE_BRICKS = (short) (105 << BLOCK_TYPE_BITS);
+    public static final short RED_SANDSTONE_BRICKS = (short) (106 << BLOCK_TYPE_BITS);
+    public static final short MOSSY_SANDSTONE = (short) (107 << BLOCK_TYPE_BITS);
+    public static final short MOSSY_POLISHED_SANDSTONE = (short) (108 << BLOCK_TYPE_BITS);
+    public static final short MOSSY_RED_SANDSTONE = (short) (109 << BLOCK_TYPE_BITS);
+    public static final short MOSSY_RED_POLISHED_SANDSTONE = (short) (110 << BLOCK_TYPE_BITS);
 
-    public static final int AMOUNT_OF_TO_PLACE_STANDARD_BLOCKS = 105;
+    public static final int AMOUNT_OF_TO_PLACE_STANDARD_BLOCKS = 111;
 
     public static final short NORTH_SOUTH_OAK_LOG = (short) (255 << BLOCK_TYPE_BITS);
     public static final short EAST_WEST_OAK_LOG = (short) (254 << BLOCK_TYPE_BITS);

@@ -344,7 +344,8 @@ public class GUIElement {
         for (int i = 0; i < TO_PLACE_NON_STANDARD_BLOCKS.length; i++) {
             short block = TO_PLACE_NON_STANDARD_BLOCKS[i];
             GUIElement element;
-            if (Block.getBlockType(block) == FLOWER_TYPE) {
+            int blockType = Block.getBlockType(block);
+            if (blockType == FLOWER_TYPE || blockType == VINE_TYPE) {
                 int textureIndex = Block.getTextureIndex(block, 0);
                 float[] textureCoordinates = GUIElement.getFlatDisplayTextureCoordinates(textureIndex);
                 element = ObjectLoader.loadGUIElement(GUIElement.getFlatDisplayVertices(), textureCoordinates, new Vector2f(0.5f - (i + 1) * 0.02f * GUI_SIZE, 0.5f - GUI_SIZE * 0.04f));
