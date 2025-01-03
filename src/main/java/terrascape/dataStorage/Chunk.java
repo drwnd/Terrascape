@@ -352,8 +352,7 @@ public class Chunk {
         } else {
             if (chunk.saved) return;
             if (chunk.getSaveBlock(inChunkX, inChunkY, inChunkZ) != AIR && Block.isLeaveType(block)) return;
-            short[] blocks = chunk.blocks;
-            if (blocks.length == 1) chunk.blocks = new short[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
+            if (chunk.blocks.length == 1) chunk.blocks = new short[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
             chunk.storeSave(inChunkX, inChunkY, inChunkZ, block);
 
             int[] heightMap = getHeightMap(chunk.X, chunk.Z).map;

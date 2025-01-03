@@ -12,11 +12,6 @@ import static terrascape.utils.Settings.*;
 
 public class MouseInput {
 
-    private final Vector2f previousPos, currentPos;
-    private Vector2f displayVec;
-    private final Player player;
-    private short hoveredOverBlock = AIR;
-
     public MouseInput(Player player) {
         this.player = player;
         previousPos = new Vector2f(0, 0);
@@ -69,6 +64,14 @@ public class MouseInput {
         return returns;
     }
 
+    public int getX() {
+        return (int) (currentPos.x);
+    }
+
+    public int getY() {
+        return (int) (currentPos.y);
+    }
+
     private void playHoverSelectionSound() {
         if (!player.isInInventory()) return;
         short currentHoveredOverBlock = GUIElement.getHoveredOverBlock(player.getInventoryScroll());
@@ -79,4 +82,9 @@ public class MouseInput {
         Launcher.getSound().playRandomSound(Block.getFootstepsSound(hoveredOverBlock),
                 position.x, position.y, position.z, 0.0f, 0.0f, 0.0f, INVENTORY_GAIN);
     }
+
+    private final Vector2f previousPos, currentPos;
+    private Vector2f displayVec;
+    private final Player player;
+    private short hoveredOverBlock = AIR;
 }

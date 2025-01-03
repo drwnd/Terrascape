@@ -117,7 +117,7 @@ public class MeshGenerator {
 
         switch (side) {
             case NORTH:
-                adder1 = (properties & ROTATE_NORTH_TEXTURE) != 0 ? 0 : 1;
+                adder1 = (properties & ROTATE_NORTH_TEXTURE) == 0 ? 1 : 0;
                 adder2 = 1 - adder1;
                 addVertexToList(blockX + 1, blockY + 1, blockZ + 1, u + adder1, v + adder2, 0);
                 addVertexToList(blockX, blockY + 1, blockZ + 1, u, v, 1);
@@ -125,7 +125,7 @@ public class MeshGenerator {
                 addVertexToList(blockX, blockY, blockZ + 1, u + adder2, v + adder1, 3);
                 break;
             case TOP:
-                adder1 = (properties & ROTATE_TOP_TEXTURE) != 0 ? 0 : 1;
+                adder1 = (properties & ROTATE_TOP_TEXTURE) == 0 ? 1 : 0;
                 adder2 = 1 - adder1;
                 addVertexToList(blockX, blockY + 1, blockZ, u + adder1, v + adder2, 0);
                 addVertexToList(blockX, blockY + 1, blockZ + 1, u, v, 1);
@@ -133,7 +133,7 @@ public class MeshGenerator {
                 addVertexToList(blockX + 1, blockY + 1, blockZ + 1, u + adder2, v + adder1, 3);
                 break;
             case WEST:
-                adder1 = (properties & ROTATE_WEST_TEXTURE) != 0 ? 0 : 1;
+                adder1 = (properties & ROTATE_WEST_TEXTURE) == 0 ? 1 : 0;
                 adder2 = 1 - adder1;
                 addVertexToList(blockX + 1, blockY + 1, blockZ, u + adder1, v + adder2, 0);
                 addVertexToList(blockX + 1, blockY + 1, blockZ + 1, u, v, 1);
@@ -141,7 +141,7 @@ public class MeshGenerator {
                 addVertexToList(blockX + 1, blockY, blockZ + 1, u + adder2, v + adder1, 3);
                 break;
             case SOUTH:
-                adder1 = (properties & ROTATE_SOUTH_TEXTURE) != 0 ? 0 : 1;
+                adder1 = (properties & ROTATE_SOUTH_TEXTURE) == 0 ? 1 : 0;
                 adder2 = 1 - adder1;
                 addVertexToList(blockX, blockY + 1, blockZ, u + adder1, v + adder2, 0);
                 addVertexToList(blockX + 1, blockY + 1, blockZ, u, v, 1);
@@ -149,7 +149,7 @@ public class MeshGenerator {
                 addVertexToList(blockX + 1, blockY, blockZ, u + adder2, v + adder1, 3);
                 break;
             case BOTTOM:
-                adder1 = (properties & ROTATE_BOTTOM_TEXTURE) != 0 ? 0 : 1;
+                adder1 = (properties & ROTATE_BOTTOM_TEXTURE) == 0 ? 1 : 0;
                 adder2 = 1 - adder1;
                 addVertexToList(blockX + 1, blockY, blockZ + 1, u + adder1, v + adder2, 3);
                 addVertexToList(blockX, blockY, blockZ + 1, u, v, 1);
@@ -157,7 +157,7 @@ public class MeshGenerator {
                 addVertexToList(blockX, blockY, blockZ, u + adder2, v + adder1, 0);
                 break;
             case EAST:
-                adder1 = (properties & ROTATE_EAST_TEXTURE) != 0 ? 0 : 1;
+                adder1 = (properties & ROTATE_EAST_TEXTURE) == 0 ? 1 : 0;
                 adder2 = 1 - adder1;
                 addVertexToList(blockX, blockY + 1, blockZ + 1, u + adder1, v + adder2, 1);
                 addVertexToList(blockX, blockY + 1, blockZ, u, v, 0);
@@ -185,8 +185,15 @@ public class MeshGenerator {
             return;
         }
 
-        int subU = Block.getSubU(blockType, side, corner, aabbIndex);
-        int subV = Block.getSubV(blockType, side, corner, aabbIndex);
+        int subU;
+        int subV;
+        if ((properties & 1 << side + 11) == 0) {
+            subU = Block.getSubU(blockType, side, corner, aabbIndex);
+            subV = Block.getSubV(blockType, side, corner, aabbIndex);
+        } else {
+            subV = Block.getSubU(blockType, side, corner, aabbIndex);
+            subU = Block.getSubV(blockType, side, corner, aabbIndex);
+        }
 
         int ambientOcclusionLevel = getAmbientOcclusionLevel(inChunkX, inChunkY, inChunkZ, subX, subY, subZ);
         list.add(packData1(ambientOcclusionLevel, (inChunkX << 4) + subX + 15, (inChunkY << 4) + subY + 15, (inChunkZ << 4) + subZ + 15));
@@ -431,8 +438,15 @@ public class MeshGenerator {
             return;
         }
 
-        int subU = Block.getSubU(blockType, side, corner, aabbIndex);
-        int subV = Block.getSubV(blockType, side, corner, aabbIndex);
+        int subU;
+        int subV;
+        if ((properties & 1 << side + 11) == 0) {
+            subU = Block.getSubU(blockType, side, corner, aabbIndex);
+            subV = Block.getSubV(blockType, side, corner, aabbIndex);
+        } else {
+            subV = Block.getSubU(blockType, side, corner, aabbIndex);
+            subU = Block.getSubV(blockType, side, corner, aabbIndex);
+        }
 
         int ambientOcclusionLevel = getAmbientOcclusionLevel(inChunkX, inChunkY, inChunkZ, subX, subY, subZ);
         list.add(packData1(ambientOcclusionLevel, (inChunkX << 4) + subX + 15, (inChunkY << 4) + subY + 15, (inChunkZ << 4) + subZ + 15));

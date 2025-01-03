@@ -26,6 +26,7 @@ public class EngineManager {
         WorldGeneration.init();
         FileManager.init();
         FileManager.loadSettings(true);
+        FileManager.loadNames();
         Structure.init();
         window = Launcher.getWindow();
         window.init();

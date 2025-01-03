@@ -1,13 +1,10 @@
 package terrascape.player;
 
+import terrascape.entity.*;
 import terrascape.server.*;
 import terrascape.dataStorage.Chunk;
 import terrascape.dataStorage.FileManager;
 import terrascape.dataStorage.Structure;
-import terrascape.entity.GUIElement;
-import terrascape.entity.SkyBox;
-import terrascape.entity.Target;
-import terrascape.entity.Texture;
 import terrascape.entity.entities.Entity;
 import terrascape.generation.WorldGeneration;
 import terrascape.utils.Transformation;
@@ -479,7 +476,8 @@ public class Player {
 
         short selectedBlock = hotBar[selectedHotBarSlot];
 
-        if (Block.isInteractable(target.block())) if (BlockEvent.interactWithBlock(target, hotBar[selectedHotBarSlot])) return;
+        if (Block.isInteractable(target.block()))
+            if (BlockEvent.interactWithBlock(target, hotBar[selectedHotBarSlot])) return;
 
         if (hotBar[selectedHotBarSlot] == AIR) return;
         short toPlaceBlock;
@@ -876,18 +874,38 @@ public class Player {
         this.headUnderWater = headUnderWater;
         renderer.setHeadUnderWater(headUnderWater);
 
-        if (inInventory) for (GUIElement element : inventoryElements) renderer.processGUIElement(element);
+        if (inInventory) renderInventoryElements();
+    }
+
+    private void renderInventoryElements() {
+        for (GUIElement element : inventoryElements) {
+            if (element.getPosition().y > 0.55f || element.getPosition().y < -0.55f) continue;
+            renderer.processGUIElement(element);
+        }
+        short hoveredBlock = GUIElement.getHoveredOverBlock(inventoryScroll);
+        if (hoveredBlock == AIR) return;
+        String name = Block.getBlockName(hoveredBlock);
+        renderer.processDisplayString(new DisplayString(mouseInput.getX() - name.length() * TEXT_CHAR_SIZE_X, mouseInput.getY(), name));
     }
 
     private void renderChunkColumn(int chunkX, int chunkZ, int cameraX, int cameraY, int cameraZ, FrustumIntersection frustumIntersection) {
+        int x = chunkX << CHUNK_SIZE_BITS;
+        int minY = cameraY - RENDER_DISTANCE_Y - 2 << CHUNK_SIZE_BITS;
+        int maxY = cameraY + RENDER_DISTANCE_Y + 2 << CHUNK_SIZE_BITS;
+        int z = chunkZ << CHUNK_SIZE_BITS;
+
+        int intersectionType = frustumIntersection.intersectAab(x, minY, z, x + CHUNK_SIZE, maxY, z + CHUNK_SIZE);
+        if (intersectionType != FrustumIntersection.INTERSECT && intersectionType != FrustumIntersection.INSIDE)
+            return;
+
         for (int chunkY = cameraY + RENDER_DISTANCE_Y + 2; chunkY >= cameraY - RENDER_DISTANCE_Y - 2; chunkY--) {
             Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
             if (chunk == null) continue;
             int chunkIndex = chunk.getIndex();
             if ((visibleChunks[chunkIndex >> 6] & 1L << (chunkIndex & 63)) == 0) continue;
 
-            Vector3f position = new Vector3f(chunk.getWorldCoordinate());
-            int intersectionType = frustumIntersection.intersectAab(position, new Vector3f(position.x + CHUNK_SIZE, position.y + CHUNK_SIZE, position.z + CHUNK_SIZE));
+            Vector3i position = chunk.getWorldCoordinate();
+            intersectionType = frustumIntersection.intersectAab(position.x, position.y, position.z, position.x + CHUNK_SIZE, position.y + CHUNK_SIZE, position.z + CHUNK_SIZE);
             if (intersectionType != FrustumIntersection.INTERSECT && intersectionType != FrustumIntersection.INSIDE)
                 continue;
 

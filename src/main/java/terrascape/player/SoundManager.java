@@ -40,6 +40,7 @@ public class SoundManager {
     public final int[] splash = new int[1];
     public final int[] lavaPop = new int[1];
     public final int[] submerge = new int[4];
+    public final int[] fizz = new int[1];
 
     public int fuse;
 
@@ -208,7 +209,7 @@ public class SoundManager {
         submerge[2] = ObjectLoader.loadSound("Sounds/random/splash3.ogg");
         submerge[3] = ObjectLoader.loadSound("Sounds/random/splash4.ogg");
 
-
+        fizz[0] = ObjectLoader.loadSound("Sounds/random/fizz.ogg");
     }
 
     public void setListenerData(Player player) {

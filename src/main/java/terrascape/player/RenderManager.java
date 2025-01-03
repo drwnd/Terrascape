@@ -34,6 +34,7 @@ public class RenderManager {
     private final List<Entity> entities = new ArrayList<>();
     private final List<Particle> particles = new ArrayList<>();
     private final List<GUIElement> GUIElements = new ArrayList<>();
+    private final List<DisplayString> displayStrings = new ArrayList<>();
     private final Player player;
     private GUIElement inventoryOverlay;
     private SkyBox skyBox;
@@ -134,6 +135,7 @@ public class RenderManager {
         textShader.createUniform("string");
         textShader.createUniform("yOffset");
         textShader.createUniform("textureSampler");
+        textShader.createUniform("xOffset");
     }
 
     private void createGUIShader() throws Exception {
@@ -441,6 +443,22 @@ public class RenderManager {
             GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, element.getVertexCount());
         }
         GUIShader.unBind();
+
+        if (player.isInInventory()) {
+            textShader.bind();
+            GL11.glDisable(GL11.GL_DEPTH_TEST);
+            GL11.glDisable(GL11.GL_CULL_FACE);
+            GL11.glEnable(GL11.GL_BLEND);
+            GL11.glBindTexture(GL11.GL_TEXTURE_2D, textAtlas.id());
+
+            textShader.setUniform("screenSize", Launcher.getWindow().getWidth() / 2, Launcher.getWindow().getHeight() / 2);
+            textShader.setUniform("charSize", TEXT_CHAR_SIZE_X, TEXT_CHAR_SIZE_Y);
+
+            for (DisplayString string : displayStrings) renderDisplayString(string);
+            displayStrings.clear();
+
+            textShader.unBind();
+        }
     }
 
     public void renderDebugText() {
@@ -452,6 +470,7 @@ public class RenderManager {
 
         textShader.setUniform("screenSize", Launcher.getWindow().getWidth() / 2, Launcher.getWindow().getHeight() / 2);
         textShader.setUniform("charSize", TEXT_CHAR_SIZE_X, TEXT_CHAR_SIZE_Y);
+        textShader.setUniform("xOffset", 0);
 
         int line = -1;
         final Vector3f position = player.getCamera().getPosition();
@@ -511,8 +530,6 @@ public class RenderManager {
         renderTextLine("Render distance XZ:" + RENDER_DISTANCE_XZ + " Render distance Y:" + RENDER_DISTANCE_Y, ++line);
         renderTextLine("Concurrent played sounds:" + sourceCounter, ++line);
         renderTextLine("Time:" + time, ++line);
-        //This one line literally quarters the fps when debug screen is open
-//        renderTextLine("Saved chunks memory:" + FileManager.getSeedFileSize() / 1_000_000 + "MB", ++line);
         renderTextLine("To buffer chunks:" + GameLogic.getAmountOfToBufferChunks(), ++line);
         renderTextLine("Scheduled blockEvents:" + BlockEvent.getAmountOfScheduledEvents(EngineManager.getTick()), ++line);
         renderTextLine("Entities:" + GameLogic.getAmountOfEntities(), ++line);
@@ -524,9 +541,22 @@ public class RenderManager {
         textShader.unBind();
     }
 
-    public void renderTextLine(String text, int textLine) {
+    private void renderTextLine(String text, int textLine) {
         textShader.setUniform("string", toIntFormat(text));
         textShader.setUniform("yOffset", textLine * TEXT_LINE_SPACING);
+
+        GL30.glBindVertexArray(textRowVertexArray);
+        GL20.glEnableVertexAttribArray(0);
+        GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, modelIndexBuffer);
+
+        GL11.glDrawElements(GL11.GL_TRIANGLES, 384, GL11.GL_UNSIGNED_INT, 0);
+    }
+
+    private void renderDisplayString(DisplayString string) {
+        if (string.string() == null) return;
+        textShader.setUniform("string", toIntFormat(string.string()));
+        textShader.setUniform("yOffset", string.y());
+        textShader.setUniform("xOffset", string.x());
 
         GL30.glBindVertexArray(textRowVertexArray);
         GL20.glEnableVertexAttribArray(0);
@@ -572,6 +602,10 @@ public class RenderManager {
 
     public void processGUIElement(GUIElement element) {
         GUIElements.add(element);
+    }
+
+    public void processDisplayString(DisplayString string) {
+        displayStrings.add(string);
     }
 
     public void setHeadUnderWater(boolean headUnderWater) {

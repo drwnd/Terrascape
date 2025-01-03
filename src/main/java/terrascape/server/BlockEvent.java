@@ -17,12 +17,6 @@ import java.util.Iterator;
 
 public record BlockEvent(int x, int y, int z, byte type) {
 
-    public static final byte GRAVITY_BLOCK_FALL_EVENT = 1;
-    public static final byte WATER_FLOW_EVENT = 2;
-    public static final byte LAVA_FLOW_EVENT = 3;
-    public static final byte SMART_BLOCK_EVENT = 4;
-    public static final byte UNSUPPORTED_BLOCK_BREAK_EVENT = 5;
-
     public static void add(BlockEvent event, long tick) {
         if (tick < EngineManager.getTick()) System.err.println("Event scheduled in the past");
 
@@ -61,6 +55,8 @@ public record BlockEvent(int x, int y, int z, byte type) {
                 case WATER_FLOW_EVENT -> executeWaterFlowEvent(event);
                 case LAVA_FLOW_EVENT -> executeLavaFlowEvent(event);
                 case UNSUPPORTED_BLOCK_BREAK_EVENT -> executeUnsupportedBlockBreakEvent(event);
+                case LAVA_FREEZE_EVENT -> executeLavaFreezeEvent(event);
+                case WATER_SOLIDIFY_EVENT -> executeWaterSolidifyEvent(event);
             }
         }
         events.remove(queue);
@@ -81,6 +77,48 @@ public record BlockEvent(int x, int y, int z, byte type) {
         addCorrectEvents(x, y - 1, z);
         addCorrectEvents(x, y, z + 1);
         addCorrectEvents(x, y, z - 1);
+    }
+
+    private static void addCorrectEvents(int x, int y, int z) {
+        short block = Chunk.getBlockInWorld(x, y, z);
+        int properties = Block.getBlockProperties(block);
+        byte blockTypeData = Block.getBlockTypeData(block);
+
+        if ((blockTypeData & SMART_BLOCK_TYPE) != 0)
+            add(new BlockEvent(x, y, z, SMART_BLOCK_EVENT), EngineManager.getTick());
+        if ((properties & HAS_GRAVITY) != 0)
+            add(new BlockEvent(x, y, z, GRAVITY_BLOCK_FALL_EVENT), EngineManager.getTick() + 1);
+        if (Block.isWaterLogged(block)) add(new BlockEvent(x, y, z, WATER_FLOW_EVENT), EngineManager.getTick() + 4);
+        if (Block.isWaterBlock(block)) add(new BlockEvent(x, y, z, WATER_SOLIDIFY_EVENT), EngineManager.getTick());
+        if (Block.isLavaBlock(block)) add(new BlockEvent(x, y, z, LAVA_FREEZE_EVENT), EngineManager.getTick());
+        if (Block.isLavaBlock(block)) add(new BlockEvent(x, y, z, LAVA_FLOW_EVENT), EngineManager.getTick() + 8);
+        if ((properties & REQUIRES_BOTTOM_SUPPORT) != 0 || (properties & REQUIRES_AND_SIDE_SUPPORT) != 0)
+            add(new BlockEvent(x, y, z, UNSUPPORTED_BLOCK_BREAK_EVENT), EngineManager.getTick() + 1);
+    }
+
+
+    private static void executeWaterSolidifyEvent(BlockEvent event) {
+        short block = Chunk.getBlockInWorld(event.x, event.y, event.z);
+        if (!Block.isWaterBlock(block)) return;
+        if (!Block.isLavaBlock(Chunk.getBlockInWorld(event.x, event.y + 1, event.z))) return;
+
+        GameLogic.placeBlock(block == WATER_SOURCE ? SLATE : STONE, event.x, event.y, event.z, false);
+        SoundManager sound = Launcher.getSound();
+        sound.playRandomSound(sound.fizz, event.x, event.y, event.z, 0.0f, 0.0f, 0.0f, MISCELLANEOUS_GAIN);
+    }
+
+    private static void executeLavaFreezeEvent(BlockEvent event) {
+        short block = Chunk.getBlockInWorld(event.x, event.y, event.z);
+        if (!Block.isLavaBlock(block)) return;
+        if (!(Block.isWaterLogged(Chunk.getBlockInWorld(event.x, event.y, event.z + 1))
+                || Block.isWaterLogged(Chunk.getBlockInWorld(event.x, event.y, event.z - 1))
+                || Block.isWaterLogged(Chunk.getBlockInWorld(event.x, event.y + 1, event.z))
+                || Block.isWaterLogged(Chunk.getBlockInWorld(event.x + 1, event.y, event.z))
+                || Block.isWaterLogged(Chunk.getBlockInWorld(event.x - 1, event.y, event.z)))) return;
+
+        GameLogic.placeBlock(block == LAVA_SOURCE ? OBSIDIAN : COBBLESTONE, event.x, event.y, event.z, false);
+        SoundManager sound = Launcher.getSound();
+        sound.playRandomSound(sound.fizz, event.x, event.y, event.z, 0.0f, 0.0f, 0.0f, MISCELLANEOUS_GAIN);
     }
 
     public static boolean interactWithBlock(Target target, short heldBlock) {
@@ -246,21 +284,6 @@ public record BlockEvent(int x, int y, int z, byte type) {
         return blockType | waterLogged;
     }
 
-    private static void addCorrectEvents(int x, int y, int z) {
-        short block = Chunk.getBlockInWorld(x, y, z);
-        int properties = Block.getBlockProperties(block);
-        byte blockTypeData = Block.getBlockTypeData(block);
-
-        if ((blockTypeData & SMART_BLOCK_TYPE) != 0)
-            add(new BlockEvent(x, y, z, SMART_BLOCK_EVENT), EngineManager.getTick());
-        if ((properties & HAS_GRAVITY) != 0)
-            add(new BlockEvent(x, y, z, GRAVITY_BLOCK_FALL_EVENT), EngineManager.getTick() + 1);
-        if (Block.isWaterLogged(block)) add(new BlockEvent(x, y, z, WATER_FLOW_EVENT), EngineManager.getTick() + 4);
-        if (Block.isLavaBlock(block)) add(new BlockEvent(x, y, z, LAVA_FLOW_EVENT), EngineManager.getTick() + 8);
-        if ((properties & REQUIRES_BOTTOM_SUPPORT) != 0 || (properties & REQUIRES_AND_SIDE_SUPPORT) != 0)
-            add(new BlockEvent(x, y, z, UNSUPPORTED_BLOCK_BREAK_EVENT), EngineManager.getTick() + 1);
-    }
-
     private static void flickDoors(int x, int y, int z) {
         short currentBlock = Chunk.getBlockInWorld(x, y, z);
         Vector3f position = GameLogic.getPlayer().getCamera().getPosition();
@@ -398,4 +421,11 @@ public record BlockEvent(int x, int y, int z, byte type) {
     }
 
     private static final ArrayList<EventQueue> events = new ArrayList<>();
+    private static final byte GRAVITY_BLOCK_FALL_EVENT = 1;
+    private static final byte WATER_FLOW_EVENT = 2;
+    private static final byte LAVA_FLOW_EVENT = 3;
+    private static final byte SMART_BLOCK_EVENT = 4;
+    private static final byte UNSUPPORTED_BLOCK_BREAK_EVENT = 5;
+    private static final byte LAVA_FREEZE_EVENT = 6;
+    private static final byte WATER_SOLIDIFY_EVENT = 7;
 }

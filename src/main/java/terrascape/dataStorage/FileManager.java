@@ -1,6 +1,7 @@
 package terrascape.dataStorage;
 
 import terrascape.player.Player;
+import terrascape.server.Block;
 import terrascape.server.GameLogic;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
@@ -339,14 +340,34 @@ public class FileManager {
         return hotBar;
     }
 
+    public static void loadNames() throws Exception {
+        File blockTypeNames = new File("textData/BlockTypeNames");
+        if (!blockTypeNames.exists()) throw new FileNotFoundException("Need to have block type names file");
+
+        BufferedReader reader = new BufferedReader(new FileReader(blockTypeNames.getPath()));
+        for (int blockType = 0; blockType < TO_PLACE_BLOCK_TYPES.length; blockType++)
+            Block.setBlockTypeName(blockType, reader.readLine());
+
+
+        File nonStandardBlockNames = new File("textData/NonStandardBlockNames");
+        if (!nonStandardBlockNames.exists()) throw new FileNotFoundException("Need to have non standard block names file");
+
+        reader = new BufferedReader(new FileReader(nonStandardBlockNames.getPath()));
+        for (int nonStandardBlock = 0; nonStandardBlock < AMOUNT_OF_NON_STANDARD_BLOCKS; nonStandardBlock++)
+            Block.setNonStandardBlockName(nonStandardBlock, reader.readLine());
+
+
+        File StandardBlockNames = new File("textData/StandardBlockNames");
+        if (!StandardBlockNames.exists()) throw new FileNotFoundException("Need to have standard block names file");
+
+        reader = new BufferedReader(new FileReader(StandardBlockNames.getPath()));
+        for (int standardBlock = 0; standardBlock < AMOUNT_OF_TO_PLACE_STANDARD_BLOCKS; standardBlock++)
+            Block.setStandardBlockName(standardBlock, reader.readLine());
+    }
 
     public static void loadSettings(boolean initialLoad) throws Exception {
-        File settings = new File("Settings");
-        if (!settings.exists()) {
-            //noinspection ResultOfMethodCallIgnored
-            settings.createNewFile();
-            throw new FileNotFoundException("Need to have settings file");
-        }
+        File settings = new File("textData/Settings");
+        if (!settings.exists()) throw new FileNotFoundException("Need to have settings file");
 
         BufferedReader reader = new BufferedReader(new FileReader(settings.getPath()));
 

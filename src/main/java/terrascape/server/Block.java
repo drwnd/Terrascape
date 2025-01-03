@@ -75,7 +75,7 @@ public class Block {
         short blockAboveToTestBlock = Chunk.getBlockInWorld(x, y + 1, z);
         short blockAboveOccludingBlock = Chunk.getBlockInWorld(x + normal[0], y + 1, z + normal[2]);
 
-        boolean toTestBlockUp = toTestBlock == LAVA_SOURCE && blockAboveToTestBlock == LAVA_SOURCE || getBlockOcclusionData(blockAboveToTestBlock, BOTTOM) == -1L;
+        boolean toTestBlockUp = toTestBlock == LAVA_SOURCE && (blockAboveToTestBlock == LAVA_SOURCE || getBlockOcclusionData(blockAboveToTestBlock, BOTTOM) == -1L);
         boolean occludingBlockUp = blockAboveOccludingBlock == LAVA_SOURCE || getBlockOcclusionData(blockAboveOccludingBlock, BOTTOM) == -1L;
 
         return !(toTestBlockUp && !occludingBlockUp);
@@ -417,8 +417,13 @@ public class Block {
             if (block >= NORTH_CREATOR_HEAD && block <= EAST_CREATOR_HEAD) return NORTH_CREATOR_HEAD;
             return block;
         }
-        int blockType = block & BLOCK_TYPE_MASK;
-        int baseBlock = switch (block & BASE_BLOCK_MASK) {
+        int baseBlock = getInInventoryBaseBlock(block);
+
+        return (short) (baseBlock | getInInventoryBlockType(block));
+    }
+
+    private static int getInInventoryBaseBlock(short block) {
+        return switch (block & BASE_BLOCK_MASK) {
             case UP_DOWN_OAK_LOG, NORTH_SOUTH_OAK_LOG, EAST_WEST_OAK_LOG -> UP_DOWN_OAK_LOG;
             case UP_DOWN_STRIPPED_OAK_LOG, NORTH_SOUTH_STRIPPED_OAK_LOG, EAST_WEST_STRIPPED_OAK_LOG ->
                     UP_DOWN_STRIPPED_OAK_LOG;
@@ -442,45 +447,30 @@ public class Block {
 
             default -> block & BASE_BLOCK_MASK;
         };
+    }
 
-        switch (blockType) {
-            case FULL_BLOCK -> {
-                return (short) baseBlock;
-            }
+    private static int getInInventoryBlockType(short block) {
+        return switch (block & BLOCK_TYPE_MASK) {
+            case FULL_BLOCK -> FULL_BLOCK;
             case TOP_PLAYER_HEAD, BOTTOM_PLAYER_HEAD, NORTH_PLAYER_HEAD, SOUTH_PLAYER_HEAD, WEST_PLAYER_HEAD,
-                 EAST_PLAYER_HEAD -> {
-                return (short) (baseBlock | BOTTOM_PLAYER_HEAD);
-            }
-            case NORTH_SLAB, TOP_SLAB, WEST_SLAB, SOUTH_SLAB, BOTTOM_SLAB, EAST_SLAB -> {
-                return (short) (baseBlock | BOTTOM_SLAB);
-            }
-            case NORTH_PLATE, TOP_PLATE, WEST_PLATE, SOUTH_PLATE, BOTTOM_PLATE, EAST_PLATE -> {
-                return (short) (baseBlock | BOTTOM_PLATE);
-            }
-            case NORTH_SOCKET, TOP_SOCKET, WEST_SOCKET, SOUTH_SOCKET, BOTTOM_SOCKET, EAST_SOCKET -> {
-                return (short) (baseBlock | BOTTOM_SOCKET);
-            }
-            case NORTH_SOUTH_WALL, UP_DOWN_WALL, EAST_WEST_WALL -> {
-                return (short) (baseBlock | NORTH_SOUTH_WALL);
-            }
-            case UP_DOWN_POST, NORTH_SOUTH_POST, EAST_WEST_POST -> {
-                return (short) (baseBlock | UP_DOWN_POST);
-            }
+                 EAST_PLAYER_HEAD -> BOTTOM_PLAYER_HEAD;
+            case NORTH_SLAB, TOP_SLAB, WEST_SLAB, SOUTH_SLAB, BOTTOM_SLAB, EAST_SLAB -> BOTTOM_SLAB;
+            case NORTH_PLATE, TOP_PLATE, WEST_PLATE, SOUTH_PLATE, BOTTOM_PLATE, EAST_PLATE -> BOTTOM_PLATE;
+
+            case NORTH_SOCKET, TOP_SOCKET, WEST_SOCKET, SOUTH_SOCKET, BOTTOM_SOCKET, EAST_SOCKET -> BOTTOM_SOCKET;
+            case NORTH_SOUTH_WALL, UP_DOWN_WALL, EAST_WEST_WALL -> NORTH_SOUTH_WALL;
+            case UP_DOWN_POST, NORTH_SOUTH_POST, EAST_WEST_POST -> UP_DOWN_POST;
             case BOTTOM_NORTH_STAIR, BOTTOM_WEST_STAIR, BOTTOM_SOUTH_STAIR, BOTTOM_EAST_STAIR, TOP_NORTH_STAIR,
                  TOP_WEST_STAIR, TOP_SOUTH_STAIR, TOP_EAST_STAIR, NORTH_WEST_STAIR, NORTH_EAST_STAIR, SOUTH_WEST_STAIR,
-                 SOUTH_EAST_STAIR -> {
-                return (short) (baseBlock | BOTTOM_SOUTH_STAIR);
-            }
+                 SOUTH_EAST_STAIR -> BOTTOM_SOUTH_STAIR;
             case THIN_BOTTOM_NORTH_STAIR, THIN_BOTTOM_WEST_STAIR, THIN_BOTTOM_SOUTH_STAIR, THIN_BOTTOM_EAST_STAIR,
                  THIN_TOP_NORTH_STAIR, THIN_TOP_WEST_STAIR, THIN_TOP_SOUTH_STAIR, THIN_TOP_EAST_STAIR,
-                 THIN_NORTH_WEST_STAIR, THIN_NORTH_EAST_STAIR, THIN_SOUTH_WEST_STAIR, THIN_SOUTH_EAST_STAIR -> {
-                return (short) (baseBlock | THIN_BOTTOM_SOUTH_STAIR);
-            }
+                 THIN_NORTH_WEST_STAIR, THIN_NORTH_EAST_STAIR, THIN_SOUTH_WEST_STAIR, THIN_SOUTH_EAST_STAIR ->
+                    THIN_BOTTOM_SOUTH_STAIR;
             case THICK_BOTTOM_NORTH_STAIR, THICK_BOTTOM_WEST_STAIR, THICK_BOTTOM_SOUTH_STAIR, THICK_BOTTOM_EAST_STAIR,
                  THICK_TOP_NORTH_STAIR, THICK_TOP_WEST_STAIR, THICK_TOP_SOUTH_STAIR, THICK_TOP_EAST_STAIR,
-                 THICK_NORTH_WEST_STAIR, THICK_NORTH_EAST_STAIR, THICK_SOUTH_WEST_STAIR, THICK_SOUTH_EAST_STAIR -> {
-                return (short) (baseBlock | THICK_BOTTOM_SOUTH_STAIR);
-            }
+                 THICK_NORTH_WEST_STAIR, THICK_NORTH_EAST_STAIR, THICK_SOUTH_WEST_STAIR, THICK_SOUTH_EAST_STAIR ->
+                    THICK_BOTTOM_SOUTH_STAIR;
             //Not scuffed at all
             case UP_DOWN_FENCE, UP_DOWN_FENCE_NORTH, UP_DOWN_FENCE_WEST, UP_DOWN_FENCE_NORTH_WEST, UP_DOWN_FENCE_SOUTH,
                  UP_DOWN_FENCE_NORTH_SOUTH, UP_DOWN_FENCE_WEST_SOUTH, UP_DOWN_FENCE_NORTH_WEST_SOUTH,
@@ -497,16 +487,13 @@ public class Block {
                  EAST_WEST_FENCE_UP_SOUTH, EAST_WEST_FENCE_NORTH_UP_SOUTH, EAST_WEST_FENCE_DOWN,
                  EAST_WEST_FENCE_NORTH_DOWN, EAST_WEST_FENCE_UP_DOWN, EAST_WEST_FENCE_NORTH_UP_DOWN,
                  EAST_WEST_FENCE_SOUTH_DOWN, EAST_WEST_FENCE_NORTH_SOUTH_DOWN, EAST_WEST_FENCE_UP_SOUTH_DOWN,
-                 EAST_WEST_FENCE_NORTH_UP_SOUTH_DOWN -> {
-                return (short) (baseBlock | UP_DOWN_FENCE_NORTH_WEST);
-            }
+                 EAST_WEST_FENCE_NORTH_UP_SOUTH_DOWN -> UP_DOWN_FENCE_NORTH_WEST;
             case NORTH_WEST_DOOR_NORTH, NORTH_WEST_DOOR_WEST, NORTH_EAST_DOOR_NORTH, NORTH_EAST_DOOR_EAST,
-                 SOUTH_WEST_DOOR_SOUTH, SOUTH_WEST_DOOR_WEST, SOUTH_EAST_DOOR_SOUTH, SOUTH_EAST_DOOR_EAST -> {
-                return (short) (baseBlock | NORTH_WEST_DOOR_NORTH);
-            }
-
-        }
-        return AIR;
+                 SOUTH_WEST_DOOR_SOUTH, SOUTH_WEST_DOOR_WEST, SOUTH_EAST_DOOR_SOUTH, SOUTH_EAST_DOOR_EAST ->
+                    NORTH_WEST_DOOR_NORTH;
+            case CARPET -> CARPET;
+            default -> 0; // Unreachable
+        };
     }
 
     public static int getToPlaceBlockAddend(int primaryCameraDirection, Target target) {
@@ -825,6 +812,30 @@ public class Block {
             case SOUTH_EAST_DOOR_EAST -> SOUTH_EAST_DOOR_SOUTH;
             default -> -1;
         };
+    }
+
+    public static void setBlockTypeName(int index, String name) {
+        BLOCK_TYPE_NAMES[index] = name;
+    }
+
+    public static void setNonStandardBlockName(int index, String name) {
+        NON_STANDARD_BLOCK_NAMES[index] = name;
+    }
+
+    public static void setStandardBlockName(int index, String name) {
+        STANDARD_BLOCK_NAMES[index] = name;
+    }
+
+    public static String getBlockName(short block) {
+        block = getInInventoryBlockEquivalent(block);
+        if ((block & 0xFFFF) < STANDARD_BLOCKS_THRESHOLD) return NON_STANDARD_BLOCK_NAMES[block];
+
+        int blockTypeIndex = 0, targetBlockType = getInInventoryBlockType(block);
+        for (; blockTypeIndex < TO_PLACE_BLOCK_TYPES.length; blockTypeIndex++)
+            if (TO_PLACE_BLOCK_TYPES[blockTypeIndex] == targetBlockType) break;
+
+        return STANDARD_BLOCK_NAMES[((block & 0xFFFF) >> BLOCK_TYPE_BITS) - 1]
+                + " " + BLOCK_TYPE_NAMES[blockTypeIndex];
     }
 
     private static long fillOcclusionBits(int minX, int maxX, int minY, int maxY) {
@@ -1147,7 +1158,7 @@ public class Block {
         setStandardBlockData(GRASS, 0, sound.digGrass, sound.stepGrass, new byte[]{(byte) 0xBA, (byte) 0xAA, (byte) 0xBA, (byte) 0xBA, (byte) 1, (byte) 0xBA});
         setStandardBlockData(DIRT, 0, sound.digGrass, sound.stepDirt, (byte) 1);
         setStandardBlockData(STONE, 0, sound.digStone, sound.stepStone, (byte) 2);
-        setStandardBlockData(STONE_BRICK, 0, sound.digStone, sound.stepStone, (byte) 34);
+        setStandardBlockData(STONE_BRICKS, 0, sound.digStone, sound.stepStone, (byte) 34);
         setStandardBlockData(COBBLESTONE, 0, sound.digStone, sound.stepStone, (byte) 50);
         setStandardBlockData(CHISELED_STONE, 0, sound.digStone, sound.stepStone, (byte) 81);
         setStandardBlockData(POLISHED_STONE, 0, sound.digStone, sound.stepStone, (byte) 66);
@@ -1213,7 +1224,7 @@ public class Block {
         setStandardBlockData(OBSIDIAN, BLAST_RESISTANT, sound.digStone, sound.stepStone, (byte) -76);
         setStandardBlockData(MOSSY_STONE, 0, sound.digStone, sound.stepStone, (byte) -17);
         setStandardBlockData(MOSSY_ANDESITE, 0, sound.digStone, sound.stepStone, (byte) -18);
-        setStandardBlockData(MOSSY_STONE_BRICK, 0, sound.digStone, sound.stepStone, (byte) -19);
+        setStandardBlockData(MOSSY_STONE_BRICKS, 0, sound.digStone, sound.stepStone, (byte) -19);
         setStandardBlockData(MOSSY_POLISHED_STONE, 0, sound.digStone, sound.stepStone, (byte) -20);
         setStandardBlockData(MOSSY_CHISELED_POLISHED_STONE, 0, sound.digStone, sound.stepStone, (byte) -21);
         setStandardBlockData(MOSSY_CHISELED_STONE, 0, sound.digStone, sound.stepStone, (byte) -22);
@@ -1272,16 +1283,20 @@ public class Block {
         initBlockTypeData();
     }
 
-    private static final int[] NON_STANDARD_BLOCK_TYPE = new int[STANDARD_BLOCKS_THRESHOLD];
-    private static final byte[][] NON_STANDARD_BLOCK_TEXTURE_INDICES = new byte[STANDARD_BLOCKS_THRESHOLD][1];
+    private static final int[] NON_STANDARD_BLOCK_TYPE = new int[AMOUNT_OF_NON_STANDARD_BLOCKS];
+    private static final byte[][] NON_STANDARD_BLOCK_TEXTURE_INDICES = new byte[AMOUNT_OF_NON_STANDARD_BLOCKS][1];
     private static final byte[][] STANDARD_BLOCK_TEXTURE_INDICES = new byte[AMOUNT_OF_STANDARD_BLOCKS][1];
-    private static final int[] NON_STANDARD_BLOCK_PROPERTIES = new int[STANDARD_BLOCKS_THRESHOLD];
+    private static final int[] NON_STANDARD_BLOCK_PROPERTIES = new int[AMOUNT_OF_NON_STANDARD_BLOCKS];
     private static final int[] STANDARD_BLOCK_PROPERTIES = new int[AMOUNT_OF_STANDARD_BLOCKS];
 
-    private static final int[][] NON_STANDARD_BLOCK_DIG_SOUNDS = new int[STANDARD_BLOCKS_THRESHOLD][0];
+    private static final int[][] NON_STANDARD_BLOCK_DIG_SOUNDS = new int[AMOUNT_OF_NON_STANDARD_BLOCKS][0];
     private static final int[][] STANDARD_BLOCK_DIG_SOUNDS = new int[AMOUNT_OF_STANDARD_BLOCKS][0];
-    private static final int[][] NON_STANDARD_BLOCK_STEP_SOUNDS = new int[STANDARD_BLOCKS_THRESHOLD][0];
+    private static final int[][] NON_STANDARD_BLOCK_STEP_SOUNDS = new int[AMOUNT_OF_NON_STANDARD_BLOCKS][0];
     private static final int[][] STANDARD_BLOCK_STEP_SOUNDS = new int[AMOUNT_OF_STANDARD_BLOCKS][0];
+
+    private static final String[] NON_STANDARD_BLOCK_NAMES = new String[AMOUNT_OF_NON_STANDARD_BLOCKS];
+    private static final String[] STANDARD_BLOCK_NAMES = new String[AMOUNT_OF_TO_PLACE_STANDARD_BLOCKS];
+    private static final String[] BLOCK_TYPE_NAMES = new String[TO_PLACE_BLOCK_TYPES.length];
 
     private static final long[][] BLOCK_TYPE_OCCLUSION_DATA = new long[TOTAL_AMOUNT_OF_BLOCK_TYPES][0];
     private static final byte[] BLOCK_TYPE_DATA = new byte[TOTAL_AMOUNT_OF_BLOCK_TYPES];

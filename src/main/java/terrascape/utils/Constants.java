@@ -3,7 +3,7 @@ package terrascape.utils;
 public class Constants {
 
     // Literally do whatever
-    public static final String TITLE = "Minecräft Bad Edition v2";
+    public static final String TITLE = "Terrascape";
     public static final float Z_NEAR = 0.01f;
     public static final float Z_FAR = 1000.0f;
     public static final float TIME_SPEED = 0.00008333f;
@@ -321,13 +321,15 @@ public class Constants {
     public static final short FLOWING_LAVA_LEVEL_3 = 34;
     public static final short FLOWING_LAVA_LEVEL_2 = 35;
     public static final short FLOWING_LAVA_LEVEL_1 = 36;
+
     public static final short[] TO_PLACE_NON_STANDARD_BLOCKS = new short[]{WATER_SOURCE, LAVA_SOURCE, CACTUS, NORTH_CREATOR_HEAD, TORCH, TALL_GRASS, RED_TULIP, YELLOW_TULIP, ORANGE_TULIP, MAGENTA_TULIP, ROSE, HYACINTH, DRISLY, SHRUB, SUGAR_CANE, PATH_BLOCK, BLACK_ROSE, FLIELEN, VINES, GLOW_LICHEN};
+    public static final int AMOUNT_OF_NON_STANDARD_BLOCKS = 37;
 
     // Standard blocks, aka blocks with blockTypes
     public static final short GRASS = (short) (1 << BLOCK_TYPE_BITS);
     public static final short DIRT = (short) (2 << BLOCK_TYPE_BITS);
     public static final short STONE = (short) (3 << BLOCK_TYPE_BITS);
-    public static final short STONE_BRICK = (short) (4 << BLOCK_TYPE_BITS);
+    public static final short STONE_BRICKS = (short) (4 << BLOCK_TYPE_BITS);
     public static final short COBBLESTONE = (short) (5 << BLOCK_TYPE_BITS);
     public static final short CHISELED_STONE = (short) (6 << BLOCK_TYPE_BITS);
     public static final short POLISHED_STONE = (short) (7 << BLOCK_TYPE_BITS);
@@ -391,7 +393,7 @@ public class Constants {
     public static final short OBSIDIAN = (short) (65 << BLOCK_TYPE_BITS);
     public static final short MOSSY_STONE = (short) (66 << BLOCK_TYPE_BITS);
     public static final short MOSSY_ANDESITE = (short) (67 << BLOCK_TYPE_BITS);
-    public static final short MOSSY_STONE_BRICK = (short) (68 << BLOCK_TYPE_BITS);
+    public static final short MOSSY_STONE_BRICKS = (short) (68 << BLOCK_TYPE_BITS);
     public static final short MOSSY_POLISHED_STONE = (short) (69 << BLOCK_TYPE_BITS);
     public static final short MOSSY_CHISELED_POLISHED_STONE = (short) (70 << BLOCK_TYPE_BITS);
     public static final short MOSSY_CHISELED_STONE = (short) (71 << BLOCK_TYPE_BITS);
