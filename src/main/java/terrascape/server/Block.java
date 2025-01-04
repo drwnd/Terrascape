@@ -36,7 +36,7 @@ public class Block {
             return isGlassType(toTestBlock) && (toTestOcclusionData | occludingOcclusionData) == occludingOcclusionData && toTestOcclusionData != 0L;
         if (isLeaveType(occludingBlock)) {
             if (isLeaveType(toTestBlock))
-                return side > 2 && (toTestOcclusionData | occludingOcclusionData) == occludingOcclusionData && toTestOcclusionData != 0L;
+                return (x + y + z & 1) == 0 && (toTestOcclusionData | occludingOcclusionData) == occludingOcclusionData && toTestOcclusionData != 0L;
             return false;
         }
 
@@ -826,6 +826,10 @@ public class Block {
         STANDARD_BLOCK_NAMES[index] = name;
     }
 
+    public static void setFullBlockTypeName(int index, String name) {
+        FULL_BLOCK_TYPE_NAMES[index] = name;
+    }
+
     public static String getBlockName(short block) {
         block = getInInventoryBlockEquivalent(block);
         if ((block & 0xFFFF) < STANDARD_BLOCKS_THRESHOLD) return NON_STANDARD_BLOCK_NAMES[block];
@@ -834,8 +838,14 @@ public class Block {
         for (; blockTypeIndex < TO_PLACE_BLOCK_TYPES.length; blockTypeIndex++)
             if (TO_PLACE_BLOCK_TYPES[blockTypeIndex] == targetBlockType) break;
 
-        return STANDARD_BLOCK_NAMES[((block & 0xFFFF) >> BLOCK_TYPE_BITS) - 1]
-                + " " + BLOCK_TYPE_NAMES[blockTypeIndex];
+        String name = STANDARD_BLOCK_NAMES[((block & 0xFFFF) >> BLOCK_TYPE_BITS) - 1];
+        if (getBlockType(block) != FULL_BLOCK) name += " " + BLOCK_TYPE_NAMES[blockTypeIndex];
+        return name;
+    }
+
+    public static String getFullBlockName(short block) {
+        if ((block & 0xFFFF) < STANDARD_BLOCKS_THRESHOLD) return NON_STANDARD_BLOCK_NAMES[block];
+        return STANDARD_BLOCK_NAMES[((block & 0xFFFF) >> BLOCK_TYPE_BITS) - 1] + " " + FULL_BLOCK_TYPE_NAMES[block & BLOCK_TYPE_MASK];
     }
 
     private static long fillOcclusionBits(int minX, int maxX, int minY, int maxY) {
@@ -1295,8 +1305,9 @@ public class Block {
     private static final int[][] STANDARD_BLOCK_STEP_SOUNDS = new int[AMOUNT_OF_STANDARD_BLOCKS][0];
 
     private static final String[] NON_STANDARD_BLOCK_NAMES = new String[AMOUNT_OF_NON_STANDARD_BLOCKS];
-    private static final String[] STANDARD_BLOCK_NAMES = new String[AMOUNT_OF_TO_PLACE_STANDARD_BLOCKS];
+    private static final String[] STANDARD_BLOCK_NAMES = new String[256];
     private static final String[] BLOCK_TYPE_NAMES = new String[TO_PLACE_BLOCK_TYPES.length];
+    private static final String[] FULL_BLOCK_TYPE_NAMES = new String[128]; // Amount of standard block types
 
     private static final long[][] BLOCK_TYPE_OCCLUSION_DATA = new long[TOTAL_AMOUNT_OF_BLOCK_TYPES][0];
     private static final byte[] BLOCK_TYPE_DATA = new byte[TOTAL_AMOUNT_OF_BLOCK_TYPES];

@@ -1,7 +1,8 @@
 package terrascape.player;
 
 import terrascape.entity.GUIElement;
-import terrascape.entity.Model;
+import terrascape.entity.WaterModel;
+import terrascape.entity.OpaqueModel;
 import terrascape.entity.SkyBox;
 import terrascape.utils.Utils;
 import org.joml.Vector2f;
@@ -29,11 +30,19 @@ import java.util.Scanner;
 
 public class ObjectLoader {
 
-    public static Model loadModel(int[] vertices, Vector3i position) {
+    public static OpaqueModel loadOpaqueModel(int[] vertices, Vector3i position, int solidVertexCount, int foliageVertexCount) {
         int vao = createVAO();
         int vbo = storeDateInAttributeList(0, 2, vertices);
         unbind();
-        return new Model(vao, vertices.length, position, vbo);
+        int decorationVertexCount = vertices.length - foliageVertexCount - solidVertexCount;
+        return new OpaqueModel(vao, solidVertexCount, foliageVertexCount, decorationVertexCount, position, vbo);
+    }
+
+    public static WaterModel loadModel(int[] vertices, Vector3i position) {
+        int vao = createVAO();
+        int vbo = storeDateInAttributeList(0, 2, vertices);
+        unbind();
+        return new WaterModel(vao, vertices.length, position, vbo);
     }
 
     public static long loadVAO_VBO(int attributeNo, int size, int[] vertices) {

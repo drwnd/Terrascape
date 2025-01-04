@@ -4,8 +4,8 @@ public class Constants {
 
     // Literally do whatever
     public static final String TITLE = "Terrascape";
-    public static final float Z_NEAR = 0.01f;
-    public static final float Z_FAR = 1000.0f;
+    public static final float Z_NEAR = 0.088f;
+    public static final float Z_FAR = Float.POSITIVE_INFINITY;
     public static final float TIME_SPEED = 0.00008333f;
     public static final float NANOSECONDS_PER_SECOND = 1_000_000_000;
     public static final float SPAWN_RADIUS = 150.0f; // More like halfSideLengthOfSpawnSquare

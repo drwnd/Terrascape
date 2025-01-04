@@ -1,9 +1,11 @@
 package terrascape.dataStorage;
 
+import org.joml.Math;
+import terrascape.entity.WaterModel;
 import terrascape.server.Block;
 import terrascape.server.LightLogic;
 import terrascape.entity.entities.Entity;
-import terrascape.entity.Model;
+import terrascape.entity.OpaqueModel;
 import terrascape.generation.WorldGeneration;
 import terrascape.server.GameLogic;
 import org.joml.Vector3i;
@@ -31,7 +33,6 @@ public class Chunk {
 
         id = GameLogic.getChunkId(X, Y, Z);
         index = GameLogic.getChunkIndex(X, Y, Z);
-        model = new Model[6];
 
         for (int i = 0; i < entityClusters.length; i++) entityClusters[i] = new LinkedList<>();
     }
@@ -47,7 +48,6 @@ public class Chunk {
 
         id = GameLogic.getChunkId(X, Y, Z);
         index = GameLogic.getChunkIndex(X, Y, Z);
-        model = new Model[6];
 
         for (int i = 0; i < entityClusters.length; i++) entityClusters[i] = new LinkedList<>();
     }
@@ -461,16 +461,12 @@ public class Chunk {
         return heightMaps[GameLogic.getHeightMapIndex(chunkX, chunkZ)];
     }
 
-    public int[] getVertices(int side) {
-        return vertices[side];
+    public int[] getOpaqueVertices() {
+        return opaqueVertices;
     }
 
     public int[] getWaterVertices() {
         return waterVertices;
-    }
-
-    public int[] getFoliageVertices() {
-        return foliageVertices;
     }
 
     public Vector3i getWorldCoordinate() {
@@ -478,32 +474,31 @@ public class Chunk {
     }
 
     public void clearMesh() {
-        vertices = new int[6][0];
+        opaqueVertices = new int[0];
         waterVertices = new int[0];
-        foliageVertices = new int[0];
     }
 
-    public Model getModel(int side) {
-        return model[side];
+    public OpaqueModel getOpaqueModel() {
+        return opaqueModel;
     }
 
-    public void setModel(Model model, int side) {
-        this.model[side] = model;
+    public void setOpaqueModel(OpaqueModel model) {
+        this.opaqueModel = model;
     }
 
-    public Model getFoliageModel() {
+    public OpaqueModel getFoliageModel() {
         return foliageModel;
     }
 
-    public void setFoliageModel(Model foliageModel) {
+    public void setFoliageModel(OpaqueModel foliageModel) {
         this.foliageModel = foliageModel;
     }
 
-    public Model getWaterModel() {
+    public WaterModel getWaterModel() {
         return waterModel;
     }
 
-    public void setWaterModel(Model waterModel) {
+    public void setWaterModel(WaterModel waterModel) {
         this.waterModel = waterModel;
     }
 
@@ -593,6 +588,22 @@ public class Chunk {
         this.index = index;
     }
 
+    public int getSolidVertexCount() {
+        return solidVertexCount;
+    }
+
+    public void setSolidVertexCount(int solidVertexCount) {
+        this.solidVertexCount = solidVertexCount;
+    }
+
+    public int getFoliageVertexCount() {
+        return foliageVertexCount;
+    }
+
+    public void setFoliageVertexCount(int foliageVertexCount) {
+        this.foliageVertexCount = foliageVertexCount;
+    }
+
     public static void setWorld(Chunk[] world) {
         Chunk.world = world;
     }
@@ -613,12 +624,8 @@ public class Chunk {
         this.waterVertices = waterVertices;
     }
 
-    public void setFoliageVertices(int[] foliageVertices) {
-        this.foliageVertices = foliageVertices;
-    }
-
-    public void setVertices(int[] vertices, int side) {
-        this.vertices[side] = vertices;
+    public void setOpaqueVertices(int[] opaqueVertices) {
+        this.opaqueVertices = opaqueVertices;
     }
 
     public LinkedList<Entity> getEntityCluster(int entityClusterIndex) {
@@ -650,9 +657,9 @@ public class Chunk {
     @SuppressWarnings("unchecked")
     private final LinkedList<Entity>[] entityClusters = new LinkedList[64];
 
-    private int[][] vertices = new int[6][0];
     private int[] waterVertices = new int[0];
-    private int[] foliageVertices = new int[0];
+    private int[] opaqueVertices = new int[0];
+    private int solidVertexCount, foliageVertexCount;
 
     private final Vector3i worldCoordinate;
     private int index;
@@ -663,7 +670,7 @@ public class Chunk {
     private boolean hasPropagatedBlockLight = false;
     private boolean saved = false;
 
-    private final Model[] model;
-    private Model foliageModel;
-    private Model waterModel;
+    private OpaqueModel opaqueModel;
+    private OpaqueModel foliageModel;
+    private WaterModel waterModel;
 }

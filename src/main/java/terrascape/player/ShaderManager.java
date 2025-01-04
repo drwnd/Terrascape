@@ -4,6 +4,7 @@ import org.joml.*;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.system.MemoryStack;
 
+import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -73,6 +74,10 @@ public class ShaderManager {
 
     public void setUniform(String uniformName, int value) {
         GL20.glUniform1i(uniforms.get(uniformName), value);
+    }
+
+    public void setUniform(String uniformName, Color color) {
+        GL20.glUniform3f(uniforms.get(uniformName), color.getRed() * 0.003921569f, color.getGreen() * 0.003921569f, color.getBlue() * 0.003921569f);
     }
 
     public void createVertexShader(String shaderCode) throws Exception {

@@ -159,39 +159,30 @@ public class GameLogic {
     }
 
     public static void bufferChunkMesh(Chunk chunk) {
-        for (int side = 0; side < 6; side++) {
-            Model oldSideModel = chunk.getModel(side);
-            if (chunk.getVertices(side) != null && chunk.getVertices(side).length != 0) {
-                Model newModel = ObjectLoader.loadModel(chunk.getVertices(side), chunk.getWorldCoordinate());
-                chunk.setModel(newModel, side);
-            } else chunk.setModel(null, side);
+        OpaqueModel oldOpaqueModel = chunk.getOpaqueModel();
+        if (chunk.getOpaqueVertices() != null && chunk.getOpaqueVertices().length != 0) {
+            OpaqueModel newModel = ObjectLoader.loadOpaqueModel(
+                    chunk.getOpaqueVertices(),
+                    chunk.getWorldCoordinate(),
+                    chunk.getSolidVertexCount(),
+                    chunk.getFoliageVertexCount());
+            chunk.setOpaqueModel(newModel);
+        } else chunk.setOpaqueModel(null);
 
-            if (oldSideModel != null) {
-                ObjectLoader.removeVAO(oldSideModel.getVao());
-                ObjectLoader.removeVBO(oldSideModel.getVbo());
-            }
+        if (oldOpaqueModel != null) {
+            ObjectLoader.removeVAO(oldOpaqueModel.getVao());
+            ObjectLoader.removeVBO(oldOpaqueModel.getVbo());
         }
 
-        Model oldWaterModel = chunk.getWaterModel();
+        WaterModel oldWaterModel = chunk.getWaterModel();
         if (chunk.getWaterVertices() != null && chunk.getWaterVertices().length != 0) {
-            Model newWaterModel = ObjectLoader.loadModel(chunk.getWaterVertices(), chunk.getWorldCoordinate());
+            WaterModel newWaterModel = ObjectLoader.loadModel(chunk.getWaterVertices(), chunk.getWorldCoordinate());
             chunk.setWaterModel(newWaterModel);
         } else chunk.setWaterModel(null);
 
         if (oldWaterModel != null) {
             ObjectLoader.removeVAO(oldWaterModel.getVao());
             ObjectLoader.removeVBO(oldWaterModel.getVbo());
-        }
-
-        Model oldFoliageModel = chunk.getFoliageModel();
-        if (chunk.getFoliageVertices() != null && chunk.getFoliageVertices().length != 0) {
-            Model newFoliageModel = ObjectLoader.loadModel(chunk.getFoliageVertices(), chunk.getWorldCoordinate());
-            chunk.setFoliageModel(newFoliageModel);
-        } else chunk.setFoliageModel(null);
-
-        if (oldFoliageModel != null) {
-            ObjectLoader.removeVAO(oldFoliageModel.getVao());
-            ObjectLoader.removeVBO(oldFoliageModel.getVbo());
         }
 
         chunk.clearMesh();
@@ -331,22 +322,22 @@ public class GameLogic {
 
     public static void deleteChunkMeshBuffers(Chunk chunk) {
         for (int side = 0; side < 6; side++) {
-            Model sideModel = chunk.getModel(side);
+            OpaqueModel sideModel = chunk.getOpaqueModel();
             if (sideModel == null) continue;
 
             ObjectLoader.removeVAO(sideModel.getVao());
             ObjectLoader.removeVBO(sideModel.getVbo());
-            chunk.setModel(null, side);
+            chunk.setOpaqueModel(null);
         }
 
-        Model waterModel = chunk.getWaterModel();
+        WaterModel waterModel = chunk.getWaterModel();
         if (waterModel != null) {
             ObjectLoader.removeVAO(waterModel.getVao());
             ObjectLoader.removeVBO(waterModel.getVbo());
             chunk.setWaterModel(null);
         }
 
-        Model foliageModel = chunk.getFoliageModel();
+        OpaqueModel foliageModel = chunk.getFoliageModel();
         if (foliageModel != null) {
             ObjectLoader.removeVAO(foliageModel.getVao());
             ObjectLoader.removeVBO(foliageModel.getVbo());
@@ -366,9 +357,16 @@ public class GameLogic {
             window.setResize(true);
         }
         RenderManager renderer = player.getRenderer();
+
+//        long time = System.nanoTime();
         player.render();
+//        System.out.println("player " + (System.nanoTime() - time));
+
         for (Particle particle : particles) renderer.processParticle(particle);
+
+//        time = System.nanoTime();
         renderer.render(player.getCamera(), timeSinceLastTick);
+//        System.out.println("render " + (System.nanoTime() - time));
     }
 
     public static void addToBufferChunk(Chunk chunk) {
@@ -445,10 +443,6 @@ public class GameLogic {
         FileManager.saveAllModifiedChunks();
     }
 
-//    public static int getAmountOfToUnloadChunks() {
-//        return toUnloadChunks.size();
-//    }
-
     public static int getAmountOfToBufferChunks() {
         return toBufferChunks.size();
     }
@@ -456,13 +450,4 @@ public class GameLogic {
     public static int getAmountOfEntities() {
         return entities.size();
     }
-
-    // Same as amount of rendered particles
-//    public static int getAmountOfParticles() {
-//        return particles.size();
-//    }
-
-//    public static int getAmountOfToSpawnEntities() {
-//        return toSpawnEntities.size();
-//    }
 }

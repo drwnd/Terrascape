@@ -343,7 +343,6 @@ public class FileManager {
     public static void loadNames() throws Exception {
         File blockTypeNames = new File("textData/BlockTypeNames");
         if (!blockTypeNames.exists()) throw new FileNotFoundException("Need to have block type names file");
-
         BufferedReader reader = new BufferedReader(new FileReader(blockTypeNames.getPath()));
         for (int blockType = 0; blockType < TO_PLACE_BLOCK_TYPES.length; blockType++)
             Block.setBlockTypeName(blockType, reader.readLine());
@@ -351,18 +350,23 @@ public class FileManager {
 
         File nonStandardBlockNames = new File("textData/NonStandardBlockNames");
         if (!nonStandardBlockNames.exists()) throw new FileNotFoundException("Need to have non standard block names file");
-
         reader = new BufferedReader(new FileReader(nonStandardBlockNames.getPath()));
         for (int nonStandardBlock = 0; nonStandardBlock < AMOUNT_OF_NON_STANDARD_BLOCKS; nonStandardBlock++)
             Block.setNonStandardBlockName(nonStandardBlock, reader.readLine());
 
 
-        File StandardBlockNames = new File("textData/StandardBlockNames");
-        if (!StandardBlockNames.exists()) throw new FileNotFoundException("Need to have standard block names file");
-
-        reader = new BufferedReader(new FileReader(StandardBlockNames.getPath()));
-        for (int standardBlock = 0; standardBlock < AMOUNT_OF_TO_PLACE_STANDARD_BLOCKS; standardBlock++)
+        File standardBlockNames = new File("textData/standardBlockNames");
+        if (!standardBlockNames.exists()) throw new FileNotFoundException("Need to have standard block names file");
+        reader = new BufferedReader(new FileReader(standardBlockNames.getPath()));
+        for (int standardBlock = 0; standardBlock < 256; standardBlock++)
             Block.setStandardBlockName(standardBlock, reader.readLine());
+
+
+        File allBlockTypeNames = new File("textData/AllBlockTypeNames");
+        if (!allBlockTypeNames.exists()) throw new FileNotFoundException("Need to have all block type names file");
+        reader = new BufferedReader(new FileReader(allBlockTypeNames.getPath()));
+        for (int standardBlock = 0; standardBlock < 128; standardBlock++)
+            Block.setFullBlockTypeName(standardBlock, reader.readLine());
     }
 
     public static void loadSettings(boolean initialLoad) throws Exception {

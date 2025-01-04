@@ -18,36 +18,13 @@ import org.joml.Vector3f;
 import org.joml.Vector3i;
 import org.lwjgl.opengl.*;
 
+import java.awt.*;
 import java.nio.IntBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
 public class RenderManager {
-
-    private final WindowManager window;
-    private ShaderManager blockShader, waterShader, foliageShader, skyBoxShader, GUIShader, textShader, entityShader, particleShader;
-
-    private final List<Model> chunkModels = new ArrayList<>();
-    private final List<Model> foliageModels = new ArrayList<>();
-    private final List<Model> waterModels = new ArrayList<>();
-    private final List<Entity> entities = new ArrayList<>();
-    private final List<Particle> particles = new ArrayList<>();
-    private final List<GUIElement> GUIElements = new ArrayList<>();
-    private final List<DisplayString> displayStrings = new ArrayList<>();
-    private final Player player;
-    private GUIElement inventoryOverlay;
-    private SkyBox skyBox;
-    private boolean headUnderWater = false;
-
-    private float time = 1.0f;
-
-    public int modelIndexBuffer;
-    private int textRowVertexArray;
-
-    private Texture atlas;
-    private Texture textAtlas;
-    private boolean xRay;
 
     public RenderManager(Player player) {
         window = Launcher.getWindow();
@@ -136,6 +113,7 @@ public class RenderManager {
         textShader.createUniform("yOffset");
         textShader.createUniform("textureSampler");
         textShader.createUniform("xOffset");
+        textShader.createUniform("color");
     }
 
     private void createGUIShader() throws Exception {
@@ -204,11 +182,29 @@ public class RenderManager {
         blockShader.createUniform("cameraPosition");
     }
 
-    public void bindModel(Model model) {
+    public void bindModel(OpaqueModel model) {
         GL30.glBindVertexArray(model.getVao());
         GL20.glEnableVertexAttribArray(0);
 
         blockShader.setUniform("worldPos", model.getPosition());
+        GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, modelIndexBuffer);
+    }
+
+    public void bindFoliageModel(OpaqueModel model) {
+        GL30.glBindVertexArray(model.getVao());
+        GL20.glEnableVertexAttribArray(0);
+
+        Vector3i modelPosition = model.getPosition();
+        int modelChunkX = modelPosition.x >> CHUNK_SIZE_BITS;
+        int modelChunkY = modelPosition.y >> CHUNK_SIZE_BITS;
+        int modelChunkZ = modelPosition.z >> CHUNK_SIZE_BITS;
+
+        boolean shouldSimulateWind = Math.abs(playerChunkX - modelChunkX) <= 1 &&
+                Math.abs(playerChunkY - modelChunkY) <= 1 &&
+                Math.abs(playerChunkZ - modelChunkZ) <= 1;
+
+        foliageShader.setUniform("shouldSimulateWind", !shouldSimulateWind ? 1 : 0);
+        foliageShader.setUniform("worldPos", model.getPosition());
         GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, modelIndexBuffer);
     }
 
@@ -242,31 +238,21 @@ public class RenderManager {
         GUIShader.setUniform("position", element.getPosition());
     }
 
-    public void bindWaterModel(Model model, int chunkX, int chunkY, int chunkZ) {
+    public void bindWaterModel(WaterModel model) {
         GL30.glBindVertexArray(model.getVao());
         GL20.glEnableVertexAttribArray(0);
 
         Vector3i modelPosition = model.getPosition();
-        boolean shouldSimulateWaves = Math.abs(chunkX - (modelPosition.x >> CHUNK_SIZE_BITS)) < 2 &&
-                Math.abs(chunkY - (modelPosition.y >> CHUNK_SIZE_BITS)) < 2 &&
-                Math.abs(chunkZ - (modelPosition.z >> CHUNK_SIZE_BITS)) < 2;
+        int modelChunkX = modelPosition.x >> CHUNK_SIZE_BITS;
+        int modelChunkY = modelPosition.y >> CHUNK_SIZE_BITS;
+        int modelChunkZ = modelPosition.z >> CHUNK_SIZE_BITS;
+
+        boolean shouldSimulateWaves = Math.abs(playerChunkX - modelChunkX) <= 1 &&
+                Math.abs(playerChunkY - modelChunkY) <= 1 &&
+                Math.abs(playerChunkZ - modelChunkZ) <= 1;
 
         waterShader.setUniform("shouldSimulateWaves", shouldSimulateWaves ? 1 : 0);
         waterShader.setUniform("worldPos", modelPosition);
-        GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, modelIndexBuffer);
-    }
-
-    public void bindFoliageModel(Model model, int chunkX, int chunkY, int chunkZ) {
-        GL30.glBindVertexArray(model.getVao());
-        GL20.glEnableVertexAttribArray(0);
-
-        Vector3i modelPosition = model.getPosition();
-        boolean shouldSimulateWind = Math.abs(chunkX - (modelPosition.x >> CHUNK_SIZE_BITS)) < 2 &&
-                Math.abs(chunkY - (modelPosition.y >> CHUNK_SIZE_BITS)) < 2 &&
-                Math.abs(chunkZ - (modelPosition.z >> CHUNK_SIZE_BITS)) < 2;
-
-        foliageShader.setUniform("shouldSimulateWind", shouldSimulateWind ? 1 : 0);
-        foliageShader.setUniform("worldPos", modelPosition);
         GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, modelIndexBuffer);
     }
 
@@ -279,6 +265,10 @@ public class RenderManager {
     public void render(Camera camera, float passedTicks) {
         Matrix4f projectionMatrix = window.getProjectionMatrix();
         Matrix4f viewMatrix = Transformation.getViewMatrix(camera);
+        Vector3f playerPosition = player.getCamera().getPosition();
+        playerChunkX = Utils.floor(playerPosition.x) >> CHUNK_SIZE_BITS;
+        playerChunkY = Utils.floor(playerPosition.y) >> CHUNK_SIZE_BITS;
+        playerChunkZ = Utils.floor(playerPosition.z) >> CHUNK_SIZE_BITS;
 
         clear();
 
@@ -331,10 +321,19 @@ public class RenderManager {
         GL13.glActiveTexture(GL13.GL_TEXTURE0);
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, atlas.id());
 
-        for (Model model : chunkModels) {
-            bindModel(model);
+        for (OpaqueModel model : chunkModels) {
+            Vector3i modelPosition = model.getPosition();
+            int modelChunkX = modelPosition.x >> CHUNK_SIZE_BITS;
+            int modelChunkY = modelPosition.y >> CHUNK_SIZE_BITS;
+            int modelChunkZ = modelPosition.z >> CHUNK_SIZE_BITS;
 
-            GL11.glDrawElements(GL11.GL_TRIANGLES, (int) (model.getVertexCount() * 0.75), GL11.GL_UNSIGNED_INT, 0);
+            int count = (int) (model.getSolidVertexCount() * 0.75);
+            if (Math.abs(playerChunkX - modelChunkX) > 2 || Math.abs(playerChunkY - modelChunkY) > 2 || Math.abs(playerChunkZ - modelChunkZ) > 2)
+                count += (int) (model.getFoliageVertexCount() * 0.75);
+            else if (model.getFoliageVertexCount() + model.getDecorationVertexCount() != 0) processFoliageModel(model);
+
+            bindModel(model);
+            GL11.glDrawElements(GL11.GL_TRIANGLES, count, GL11.GL_UNSIGNED_INT, 0);
         }
         blockShader.unBind();
     }
@@ -348,17 +347,14 @@ public class RenderManager {
         foliageShader.setUniform("headUnderWater", headUnderWater ? 1 : 0);
         foliageShader.setUniform("cameraPosition", player.getCamera().getPosition());
 
-        Vector3f playerPosition = player.getCamera().getPosition();
-        int chunkX = Utils.floor(playerPosition.x) >> CHUNK_SIZE_BITS;
-        int chunkY = Utils.floor(playerPosition.y) >> CHUNK_SIZE_BITS;
-        int chunkZ = Utils.floor(playerPosition.z) >> CHUNK_SIZE_BITS;
-
         GL11.glDisable(GL11.GL_CULL_FACE);
 
-        for (Model foliageModel : foliageModels) {
-            bindFoliageModel(foliageModel, chunkX, chunkY, chunkZ);
+        for (OpaqueModel model : foliageModels) {
+            bindFoliageModel(model);
+            int start = (int) (model.getSolidVertexCount() * 0.75 * 4);
+            int count = (int) ((model.getFoliageVertexCount() + model.getDecorationVertexCount()) * 0.75);
 
-            GL11.glDrawElements(GL11.GL_TRIANGLES, (int) (foliageModel.getVertexCount() * 0.75), GL11.GL_UNSIGNED_INT, 0);
+            GL11.glDrawElements(GL11.GL_TRIANGLES, count, GL11.GL_UNSIGNED_INT, start);
         }
         foliageShader.unBind();
     }
@@ -407,16 +403,11 @@ public class RenderManager {
         waterShader.setUniform("headUnderWater", headUnderWater ? 1 : 0);
         waterShader.setUniform("cameraPosition", player.getCamera().getPosition());
 
-        Vector3f playerPosition = player.getCamera().getPosition();
-        int chunkX = Utils.floor(playerPosition.x) >> CHUNK_SIZE_BITS;
-        int chunkY = Utils.floor(playerPosition.y) >> CHUNK_SIZE_BITS;
-        int chunkZ = Utils.floor(playerPosition.z) >> CHUNK_SIZE_BITS;
-
         GL11.glEnable(GL11.GL_BLEND);
         GL11.glDisable(GL11.GL_CULL_FACE);
 
-        for (Model waterModel : waterModels) {
-            bindWaterModel(waterModel, chunkX, chunkY, chunkZ);
+        for (WaterModel waterModel : waterModels) {
+            bindWaterModel(waterModel);
 
             GL11.glDrawElements(GL11.GL_TRIANGLES, (int) (waterModel.getVertexCount() * 0.75), GL11.GL_UNSIGNED_INT, 0);
         }
@@ -493,57 +484,54 @@ public class RenderManager {
         double temperatureMapValue = GenerationData.temperatureMapValue(x, z);
         double humidityMapValue = GenerationData.humidityMapValue(x, z);
 
-        renderTextLine("Frame rate:" + EngineManager.currentFrameRate, ++line);
-        renderTextLine("Memory:" + (Runtime.getRuntime().totalMemory() / 1_000_000) + "MB", ++line);
-        renderTextLine("Coordinates: X:" + Utils.floor(position.x * 10) / 10f + " Y:" + Utils.floor(position.y * 10) / 10f + " Z:" + Utils.floor(position.z * 10) / 10f, ++line);
-        renderTextLine("Chunk coordinates: X:" + chunkX + " Y:" + chunkY + " Z:" + chunkZ + " Id" + GameLogic.getChunkId(chunkX, chunkY, chunkZ), ++line);
-        renderTextLine("In Chunk coordinates: X:" + inChunkX + " Y:" + inChunkY + " Z:" + inChunkZ, ++line);
-        renderTextLine("Looking at: X:" + Utils.floor(direction.x * 100) / 100f + " Y:" + Utils.floor(direction.y * 100) / 100f + " Z:" + Utils.floor(direction.z * 100) / 100f, ++line);
-        renderTextLine("Velocity: X:" + velocity.x + " Y:" + velocity.y + " Z:" + velocity.z, ++line);
+        renderTextLine("Frame rate:" + EngineManager.currentFrameRate, Color.RED, ++line);
+        renderTextLine("Memory:" + (Runtime.getRuntime().totalMemory() / 1_000_000) + "MB", Color.RED, ++line);
+        renderTextLine("Coordinates: X:" + Utils.floor(position.x * 10) / 10f + " Y:" + Utils.floor(position.y * 10) / 10f + " Z:" + Utils.floor(position.z * 10) / 10f, Color.BLUE, ++line);
+        renderTextLine("Chunk coordinates: X:" + chunkX + " Y:" + chunkY + " Z:" + chunkZ + " Id" + GameLogic.getChunkId(chunkX, chunkY, chunkZ), Color.BLUE, ++line);
+        renderTextLine("In Chunk coordinates: X:" + inChunkX + " Y:" + inChunkY + " Z:" + inChunkZ, Color.BLUE, ++line);
+        renderTextLine("Looking at: X:" + Utils.floor(direction.x * 100) / 100f + " Y:" + Utils.floor(direction.y * 100) / 100f + " Z:" + Utils.floor(direction.z * 100) / 100f, Color.CYAN, ++line);
+        renderTextLine("Velocity: X:" + velocity.x + " Y:" + velocity.y + " Z:" + velocity.z, Color.CYAN, ++line);
         if (chunk != null) {
-            renderTextLine("OcclusionCullingData:" + Integer.toBinaryString(Chunk.getOcclusionCullingData(chunk.getIndex()) & 0x7FFF) + " Damping:" + (Chunk.getOcclusionCullingDamper(Chunk.getOcclusionCullingData(chunk.getIndex())) == 0 ? "false" : "true"), ++line);
-            renderTextLine("Block optimized:" + (chunk.isBlockOptimized() ? "true" : "false") + " Light optimized:" + (chunk.isLightOptimized() ? "true" : "false"), ++line);
-            renderTextLine("HeightMap:" + Chunk.getHeightMap(chunkX, chunkZ).map[inChunkX << CHUNK_SIZE_BITS | inChunkZ], ++line);
-            renderTextLine("BlockLight:" + Chunk.getBlockLightInWorld(x, y, z) + " SkyLight:" + Chunk.getSkyLightInWorld(x, y, z), ++line);
-            renderTextLine("Block in Head:" + Chunk.getBlockInWorld(x, y, z), ++line);
+            renderTextLine("OcclusionCullingData:" + Integer.toBinaryString(Chunk.getOcclusionCullingData(chunk.getIndex()) & 0x7FFF) + " Damping:" + (Chunk.getOcclusionCullingDamper(Chunk.getOcclusionCullingData(chunk.getIndex())) == 0 ? "false" : "true"), Color.ORANGE, ++line);
+            renderTextLine("Block optimized:" + (chunk.isBlockOptimized() ? "true" : "false") + " Light optimized:" + (chunk.isLightOptimized() ? "true" : "false"), Color.ORANGE, ++line);
+            renderTextLine("HeightMap:" + Chunk.getHeightMap(chunkX, chunkZ).map[inChunkX << CHUNK_SIZE_BITS | inChunkZ], Color.GREEN, ++line);
+            renderTextLine("BlockLight:" + Chunk.getBlockLightInWorld(x, y, z) + " SkyLight:" + Chunk.getSkyLightInWorld(x, y, z), Color.GREEN, ++line);
+            renderTextLine("Block in Head:" + Block.getFullBlockName(Chunk.getBlockInWorld(x, y, z)), Color.GREEN, ++line);
         }
         if (target != null) {
-            renderTextLine("Looking at block: X:" + target.position().x + " Y:" + target.position().y + " Z:" + target.position().z, ++line);
-            renderTextLine("Intersection: X:" + target.inBlockPosition().x + " Y:" + target.inBlockPosition().y + " Z:" + target.inBlockPosition().z, ++line);
-            if (target.block() < STANDARD_BLOCKS_THRESHOLD)
-                renderTextLine("Non standard block:" + target.block(), ++line);
-            else
-                renderTextLine("Standard block:" + (target.block() >> BLOCK_TYPE_BITS), ++line);
-            renderTextLine("Block type:" + Block.getBlockType(target.block()), ++line);
-            renderTextLine("Intersected side:" + target.side(), ++line);
+            renderTextLine("Looking at block: X:" + target.position().x + " Y:" + target.position().y + " Z:" + target.position().z, Color.GRAY, ++line);
+            renderTextLine("Intersection: X:" + target.inBlockPosition().x + " Y:" + target.inBlockPosition().y + " Z:" + target.inBlockPosition().z, Color.GRAY, ++line);
+            renderTextLine("Block:" + Block.getFullBlockName(target.block()), Color.GRAY, ++line);
+            renderTextLine("Intersected side:" + target.side(), Color.GRAY, ++line);
         }
         if (player.isGrounded()) {
-            renderTextLine("Standing on block:" + player.getStandingBlock(), ++line);
+            renderTextLine("Standing on block:" + Block.getFullBlockName(player.getStandingBlock()), Color.WHITE, ++line);
         }
-        renderTextLine("Seed:" + SEED, ++line);
-        renderTextLine("Rendered chunk models:" + chunkModels.size(), ++line);
-        renderTextLine("Rendered water models:" + waterModels.size(), ++line);
-        renderTextLine("Rendered foliage models:" + foliageModels.size(), ++line);
-        renderTextLine("Rendered entities:" + entities.size(), ++line);
-        renderTextLine("Rendered particles:" + particles.size(), ++line);
-        renderTextLine("Rendered GUIElements:" + GUIElements.size(), ++line);
-        renderTextLine("Render distance XZ:" + RENDER_DISTANCE_XZ + " Render distance Y:" + RENDER_DISTANCE_Y, ++line);
-        renderTextLine("Concurrent played sounds:" + sourceCounter, ++line);
-        renderTextLine("Time:" + time, ++line);
-        renderTextLine("To buffer chunks:" + GameLogic.getAmountOfToBufferChunks(), ++line);
-        renderTextLine("Scheduled blockEvents:" + BlockEvent.getAmountOfScheduledEvents(EngineManager.getTick()), ++line);
-        renderTextLine("Entities:" + GameLogic.getAmountOfEntities(), ++line);
-        renderTextLine("Hei:" + Utils.floor(heightMapValue * 1000) / 1000d + " Ero:" + Utils.floor(erosionMapValue * 1000) / 1000d + " Con:" + Utils.floor(continentalMapValue * 1000) / 1000d, ++line);
-        renderTextLine("Riv:" + Utils.floor(riverMapValue * 1000) / 1000d + " Rid:" + Utils.floor(ridgeMapValue * 1000) / 1000d, ++line);
-        renderTextLine("Tem:" + Utils.floor(temperatureMapValue * 1000) / 1000d + " Hum:" + Utils.floor(humidityMapValue * 1000) / 1000d, ++line);
-        renderTextLine("Resulting height: " + WorldGeneration.getResultingHeight(heightMapValue, erosionMapValue, continentalMapValue, riverMapValue, ridgeMapValue), ++line);
+        renderTextLine("Seed:" + SEED, Color.GREEN, ++line);
+        renderTextLine("Rendered chunk models:" + chunkModels.size(), Color.RED, ++line);
+        renderTextLine("Rendered water models:" + waterModels.size(), Color.RED, ++line);
+        renderTextLine("Rendered foliage models:" + foliageModels.size(), Color.RED, ++line);
+        renderTextLine("Rendered entities:" + entities.size(), Color.RED, ++line);
+        renderTextLine("Rendered particles:" + particles.size(), Color.RED, ++line);
+        renderTextLine("Rendered GUIElements:" + GUIElements.size(), Color.RED, ++line);
+        renderTextLine("Render distance XZ:" + RENDER_DISTANCE_XZ + " Render distance Y:" + RENDER_DISTANCE_Y, Color.ORANGE, ++line);
+        renderTextLine("Concurrent played sounds:" + sourceCounter, Color.YELLOW, ++line);
+        renderTextLine("Time:" + time, Color.WHITE, ++line);
+        renderTextLine("To buffer chunks:" + GameLogic.getAmountOfToBufferChunks(), Color.RED, ++line);
+        renderTextLine("Scheduled blockEvents:" + BlockEvent.getAmountOfScheduledEvents(EngineManager.getTick()), Color.RED, ++line);
+        renderTextLine("Entities:" + GameLogic.getAmountOfEntities(), Color.RED, ++line);
+        renderTextLine("Hei:" + Utils.floor(heightMapValue * 1000) / 1000d + " Ero:" + Utils.floor(erosionMapValue * 1000) / 1000d + " Con:" + Utils.floor(continentalMapValue * 1000) / 1000d, Color.GRAY, ++line);
+        renderTextLine("Riv:" + Utils.floor(riverMapValue * 1000) / 1000d + " Rid:" + Utils.floor(ridgeMapValue * 1000) / 1000d, Color.GRAY, ++line);
+        renderTextLine("Tem:" + Utils.floor(temperatureMapValue * 1000) / 1000d + " Hum:" + Utils.floor(humidityMapValue * 1000) / 1000d, Color.GRAY, ++line);
+        renderTextLine("Resulting height: " + WorldGeneration.getResultingHeight(heightMapValue, erosionMapValue, continentalMapValue, riverMapValue, ridgeMapValue), Color.GRAY, ++line);
 
         textShader.unBind();
     }
 
-    private void renderTextLine(String text, int textLine) {
+    private void renderTextLine(String text, Color color, int textLine) {
         textShader.setUniform("string", toIntFormat(text));
         textShader.setUniform("yOffset", textLine * TEXT_LINE_SPACING);
+        textShader.setUniform("color", color);
 
         GL30.glBindVertexArray(textRowVertexArray);
         GL20.glEnableVertexAttribArray(0);
@@ -557,6 +545,7 @@ public class RenderManager {
         textShader.setUniform("string", toIntFormat(string.string()));
         textShader.setUniform("yOffset", string.y());
         textShader.setUniform("xOffset", string.x());
+        textShader.setUniform("color", Color.WHITE);
 
         GL30.glBindVertexArray(textRowVertexArray);
         GL20.glEnableVertexAttribArray(0);
@@ -584,15 +573,15 @@ public class RenderManager {
         entities.add(entity);
     }
 
-    public void processModel(Model model) {
+    public void processModel(OpaqueModel model) {
         chunkModels.add(model);
     }
 
-    public void processFoliageModel(Model foliageModel) {
+    public void processFoliageModel(OpaqueModel foliageModel) {
         foliageModels.add(foliageModel);
     }
 
-    public void processWaterModel(Model waterModel) {
+    public void processWaterModel(WaterModel waterModel) {
         waterModels.add(waterModel);
     }
 
@@ -648,4 +637,29 @@ public class RenderManager {
     public void setTime(float time) {
         this.time = time;
     }
+
+    private final WindowManager window;
+    private ShaderManager blockShader, waterShader, foliageShader, skyBoxShader, GUIShader, textShader, entityShader, particleShader;
+
+    private final List<OpaqueModel> chunkModels = new ArrayList<>();
+    private final List<OpaqueModel> foliageModels = new ArrayList<>();
+    private final List<WaterModel> waterModels = new ArrayList<>();
+    private final List<Entity> entities = new ArrayList<>();
+    private final List<Particle> particles = new ArrayList<>();
+    private final List<GUIElement> GUIElements = new ArrayList<>();
+    private final List<DisplayString> displayStrings = new ArrayList<>();
+    private final Player player;
+    private GUIElement inventoryOverlay;
+    private SkyBox skyBox;
+    private boolean headUnderWater = false;
+
+    private float time = 1.0f;
+    private int playerChunkX, playerChunkY, playerChunkZ;
+
+    private int modelIndexBuffer;
+    private int textRowVertexArray;
+
+    private Texture atlas;
+    private Texture textAtlas;
+    private boolean xRay;
 }

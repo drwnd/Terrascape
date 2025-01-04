@@ -26,11 +26,10 @@ public class MeshGenerator {
 
         if (chunk.getBlockLength() == 1 && chunk.getSaveBlock(0) == AIR) return;
 
-        @SuppressWarnings("unchecked")
-        ArrayList<Integer>[] verticesLists = new ArrayList[6];
+        ArrayList<Integer> opaqueVerticesList = new ArrayList<>();
         ArrayList<Integer> foliageVerticesList = new ArrayList<>();
+        ArrayList<Integer> decorationVerticesList = new ArrayList<>();
         ArrayList<Integer> waterVerticesList = new ArrayList<>();
-        for (int side = 0; side < 6; side++) verticesLists[side] = new ArrayList<>();
 
         for (blockX = 0; blockX < CHUNK_SIZE; blockX++)
             for (blockZ = 0; blockZ < CHUNK_SIZE; blockZ++)
@@ -43,42 +42,38 @@ public class MeshGenerator {
                     if (blockType == AIR_TYPE) continue;
 
                     if (blockType == FLOWER_TYPE) {
-                        list = foliageVerticesList;
+                        list = decorationVerticesList;
                         addFlowerToList();
                         continue;
                     }
                     if (blockType == VINE_TYPE) {
-                        list = foliageVerticesList;
+                        list = decorationVerticesList;
                         addVineToList();
                         continue;
                     }
 
                     int faceCount = Block.getFaceCount(blockType);
 
-                    if (!Block.isWaterBlock(block)) addOpaqueBlock(faceCount, foliageVerticesList, verticesLists);
+                    if (!Block.isWaterBlock(block)) addOpaqueBlock(faceCount, foliageVerticesList, opaqueVerticesList);
                     if (Block.isWaterLogged(block)) addWaterBlock(waterVerticesList);
                 }
-
-        for (int side = 0; side < 6; side++) {
-            ArrayList<Integer> sideVertices = verticesLists[side];
-            int[] vertices = new int[sideVertices.size()];
-            for (int i = 0, size = sideVertices.size(); i < size; i++)
-                vertices[i] = sideVertices.get(i);
-            chunk.setVertices(vertices, side);
-        }
 
         int[] waterVertices = new int[waterVerticesList.size()];
         for (int i = 0, size = waterVerticesList.size(); i < size; i++)
             waterVertices[i] = waterVerticesList.get(i);
         chunk.setWaterVertices(waterVertices);
 
-        int[] foliageVertices = new int[foliageVerticesList.size()];
-        for (int i = 0, size = foliageVerticesList.size(); i < size; i++)
-            foliageVertices[i] = foliageVerticesList.get(i);
-        chunk.setFoliageVertices(foliageVertices);
+        int[] opaqueVertices = new int[opaqueVerticesList.size() + foliageVerticesList.size() + decorationVerticesList.size()];
+        int index = 0;
+        for (int value : opaqueVerticesList) opaqueVertices[index++] = value;
+        for (int value : foliageVerticesList) opaqueVertices[index++] = value;
+        for (int value : decorationVerticesList) opaqueVertices[index++] = value;
+        chunk.setOpaqueVertices(opaqueVertices);
+        chunk.setSolidVertexCount(opaqueVerticesList.size());
+        chunk.setFoliageVertexCount(foliageVerticesList.size());
     }
 
-    private void addOpaqueBlock(int faceCount, ArrayList<Integer> foliageVerticesList, ArrayList<Integer>[] verticesLists) {
+    private void addOpaqueBlock(int faceCount, ArrayList<Integer> foliageVerticesList, ArrayList<Integer> opaqueVerticesList) {
         for (aabbIndex = 0; aabbIndex < faceCount; aabbIndex += 6)
             for (side = 0; side < 6; side++) {
                 byte[] normal = Block.NORMALS[side];
@@ -92,7 +87,7 @@ public class MeshGenerator {
                 int v = texture >> 4 & 15;
 
                 if (Block.isLeaveType(block)) addFoliageSideToList(foliageVerticesList, u, v);
-                else addSideToList(u, v, verticesLists[side]);
+                else addSideToList(u, v, opaqueVerticesList);
             }
     }
 

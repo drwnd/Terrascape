@@ -846,16 +846,16 @@ public class Player {
 
         if (usingOcclusionCulling) calculateVisibleChunks(chunkX, chunkY, chunkZ);
 
-        renderChunkColumn(chunkX, chunkZ, chunkX, chunkY, chunkZ, frustumIntersection);
+        renderChunkColumn(chunkX, chunkZ, chunkY, frustumIntersection);
         for (int ring = 1; ring <= RENDER_DISTANCE_XZ + 2; ring++) {
             for (int x = -ring; x < ring; x++)
-                renderChunkColumn(x + chunkX, ring + chunkZ, chunkX, chunkY, chunkZ, frustumIntersection);
+                renderChunkColumn(x + chunkX, ring + chunkZ, chunkY, frustumIntersection);
             for (int z = ring; z > -ring; z--)
-                renderChunkColumn(ring + chunkX, z + chunkZ, chunkX, chunkY, chunkZ, frustumIntersection);
+                renderChunkColumn(ring + chunkX, z + chunkZ, chunkY, frustumIntersection);
             for (int x = ring; x > -ring; x--)
-                renderChunkColumn(x + chunkX, -ring + chunkZ, chunkX, chunkY, chunkZ, frustumIntersection);
+                renderChunkColumn(x + chunkX, -ring + chunkZ, chunkY, frustumIntersection);
             for (int z = -ring; z < ring; z++)
-                renderChunkColumn(-ring + chunkX, z + chunkZ, chunkX, chunkY, chunkZ, frustumIntersection);
+                renderChunkColumn(-ring + chunkX, z + chunkZ, chunkY, frustumIntersection);
         }
 
         for (GUIElement GUIElement : GUIElements)
@@ -888,14 +888,14 @@ public class Player {
         renderer.processDisplayString(new DisplayString(mouseInput.getX() - name.length() * TEXT_CHAR_SIZE_X, mouseInput.getY(), name));
     }
 
-    private void renderChunkColumn(int chunkX, int chunkZ, int cameraX, int cameraY, int cameraZ, FrustumIntersection frustumIntersection) {
+    private void renderChunkColumn(int chunkX, int chunkZ, int cameraY, FrustumIntersection frustumIntersection) {
         int x = chunkX << CHUNK_SIZE_BITS;
         int minY = cameraY - RENDER_DISTANCE_Y - 2 << CHUNK_SIZE_BITS;
         int maxY = cameraY + RENDER_DISTANCE_Y + 2 << CHUNK_SIZE_BITS;
         int z = chunkZ << CHUNK_SIZE_BITS;
 
-        int intersectionType = frustumIntersection.intersectAab(x, minY, z, x + CHUNK_SIZE, maxY, z + CHUNK_SIZE);
-        if (intersectionType != FrustumIntersection.INTERSECT && intersectionType != FrustumIntersection.INSIDE)
+        int broadIntersectionType = frustumIntersection.intersectAab(x, minY, z, x + CHUNK_SIZE, maxY, z + CHUNK_SIZE);
+        if (broadIntersectionType != FrustumIntersection.INTERSECT && broadIntersectionType != FrustumIntersection.INSIDE)
             return;
 
         for (int chunkY = cameraY + RENDER_DISTANCE_Y + 2; chunkY >= cameraY - RENDER_DISTANCE_Y - 2; chunkY--) {
@@ -905,21 +905,14 @@ public class Player {
             if ((visibleChunks[chunkIndex >> 6] & 1L << (chunkIndex & 63)) == 0) continue;
 
             Vector3i position = chunk.getWorldCoordinate();
-            intersectionType = frustumIntersection.intersectAab(position.x, position.y, position.z, position.x + CHUNK_SIZE, position.y + CHUNK_SIZE, position.z + CHUNK_SIZE);
-            if (intersectionType != FrustumIntersection.INTERSECT && intersectionType != FrustumIntersection.INSIDE)
-                continue;
+            if (broadIntersectionType == FrustumIntersection.INTERSECT) {
+                int intersectionType = frustumIntersection.intersectAab(position.x, position.y, position.z, position.x + CHUNK_SIZE, position.y + CHUNK_SIZE, position.z + CHUNK_SIZE);
+                if (intersectionType != FrustumIntersection.INTERSECT && intersectionType != FrustumIntersection.INSIDE)
+                    continue;
+            }
 
             if (chunk.getWaterModel() != null) renderer.processWaterModel(chunk.getWaterModel());
-            if (chunk.getFoliageModel() != null) renderer.processFoliageModel(chunk.getFoliageModel());
-
-            if (chunk.X >= cameraX && chunk.getModel(EAST) != null) renderer.processModel(chunk.getModel(EAST));
-            if (chunk.X <= cameraX && chunk.getModel(WEST) != null) renderer.processModel(chunk.getModel(WEST));
-
-            if (chunk.Y >= cameraY && chunk.getModel(BOTTOM) != null) renderer.processModel(chunk.getModel(BOTTOM));
-            if (chunk.Y <= cameraY && chunk.getModel(TOP) != null) renderer.processModel(chunk.getModel(TOP));
-
-            if (chunk.Z >= cameraZ && chunk.getModel(SOUTH) != null) renderer.processModel(chunk.getModel(SOUTH));
-            if (chunk.Z <= cameraZ && chunk.getModel(NORTH) != null) renderer.processModel(chunk.getModel(NORTH));
+            if (chunk.getOpaqueModel() != null) renderer.processModel(chunk.getOpaqueModel());
 
             for (LinkedList<Entity> entityCluster : chunk.getEntityClusters())
                 for (Entity entity : entityCluster) renderer.processEntity(entity);
