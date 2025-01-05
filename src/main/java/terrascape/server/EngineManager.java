@@ -72,7 +72,12 @@ public class EngineManager {
 
     private static void render(float passedTicks) {
         GameLogic.render(passedTicks);
+        long gpuTime = System.nanoTime();
         window.update();
+        if (GameLogic.getPlayer().printTimes) {
+            System.out.println("gpu " + (System.nanoTime() - gpuTime));
+            System.out.println("-----------------");
+        }
     }
 
     private static void update(float passedTicks) {

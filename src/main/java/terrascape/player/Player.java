@@ -1,6 +1,7 @@
 package terrascape.player;
 
 import terrascape.entity.*;
+import terrascape.entity.particles.Particle;
 import terrascape.server.*;
 import terrascape.dataStorage.Chunk;
 import terrascape.dataStorage.FileManager;
@@ -17,7 +18,6 @@ import org.lwjgl.glfw.GLFW;
 import java.lang.Math;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
 
 import static terrascape.generation.WorldGeneration.WATER_LEVEL;
 import static terrascape.utils.Constants.*;
@@ -115,6 +115,17 @@ public class Player {
             }
             if (key == GLFW.GLFW_KEY_M && action == GLFW.GLFW_PRESS) {
                 renderer.setTime(1.0f);
+            }
+            if (key == GLFW.GLFW_KEY_J && action == GLFW.GLFW_PRESS) {
+                printTimes = !printTimes;
+            }
+            if (key == GLFW.GLFW_KEY_K && action == GLFW.GLFW_PRESS) {
+                usingFrustumCulling = !usingFrustumCulling;
+                System.out.println("frustum culling" + usingFrustumCulling);
+            }
+            if (key == GLFW.GLFW_KEY_L && action == GLFW.GLFW_PRESS) {
+                renderingEntities = !renderingEntities;
+                System.out.println("rendering entities" + renderingEntities);
             }
         });
     }
@@ -834,28 +845,36 @@ public class Player {
 
     public void render() {
         Vector3f cameraPosition = camera.getPosition();
-        final int chunkX = Utils.floor(cameraPosition.x) >> CHUNK_SIZE_BITS;
-        final int chunkY = Utils.floor(cameraPosition.y) >> CHUNK_SIZE_BITS;
-        final int chunkZ = Utils.floor(cameraPosition.z) >> CHUNK_SIZE_BITS;
+        final int playerChunkX = Utils.floor(cameraPosition.x) >> CHUNK_SIZE_BITS;
+        final int playerChunkY = Utils.floor(cameraPosition.y) >> CHUNK_SIZE_BITS;
+        final int playerChunkZ = Utils.floor(cameraPosition.z) >> CHUNK_SIZE_BITS;
 
-        Matrix4f projectionMatrix = window.getProjectionMatrix();
-        Matrix4f viewMatrix = Transformation.getViewMatrix(camera);
-        Matrix4f projectionViewMatrix = new Matrix4f();
-        projectionMatrix.mul(viewMatrix, projectionViewMatrix);
-        FrustumIntersection frustumIntersection = new FrustumIntersection(projectionViewMatrix);
+        long occlusionCullingTime = System.nanoTime();
+        if (usingOcclusionCulling) calculateOcclusionCulling(playerChunkX, playerChunkY, playerChunkZ);
+        occlusionCullingTime = System.nanoTime() - occlusionCullingTime;
 
-        if (usingOcclusionCulling) calculateVisibleChunks(chunkX, chunkY, chunkZ);
+        long frustumCullingTime = System.nanoTime();
+        if (usingFrustumCulling) calculateFrustumCulling(playerChunkX, playerChunkY, playerChunkZ);
+        frustumCullingTime = System.nanoTime() - frustumCullingTime;
 
-        renderChunkColumn(chunkX, chunkZ, chunkY, frustumIntersection);
+        long renderChunkColumnTime = System.nanoTime();
+        renderChunkColumn(playerChunkX, playerChunkY, playerChunkZ);
         for (int ring = 1; ring <= RENDER_DISTANCE_XZ + 2; ring++) {
             for (int x = -ring; x < ring; x++)
-                renderChunkColumn(x + chunkX, ring + chunkZ, chunkY, frustumIntersection);
+                renderChunkColumn(x + playerChunkX, playerChunkY, ring + playerChunkZ);
             for (int z = ring; z > -ring; z--)
-                renderChunkColumn(ring + chunkX, z + chunkZ, chunkY, frustumIntersection);
+                renderChunkColumn(ring + playerChunkX, playerChunkY, z + playerChunkZ);
             for (int x = ring; x > -ring; x--)
-                renderChunkColumn(x + chunkX, -ring + chunkZ, chunkY, frustumIntersection);
+                renderChunkColumn(x + playerChunkX, playerChunkY, -ring + playerChunkZ);
             for (int z = -ring; z < ring; z++)
-                renderChunkColumn(-ring + chunkX, z + chunkZ, chunkY, frustumIntersection);
+                renderChunkColumn(-ring + playerChunkX, playerChunkY, z + playerChunkZ);
+        }
+        renderChunkColumnTime = System.nanoTime() - renderChunkColumnTime;
+
+        if (printTimes) {
+            System.out.println("occlusionCulling " + occlusionCullingTime);
+            System.out.println("frustumCulling   " + frustumCullingTime);
+            System.out.println("chunkColumn      " + renderChunkColumnTime);
         }
 
         for (GUIElement GUIElement : GUIElements)
@@ -865,6 +884,30 @@ public class Player {
             renderer.processGUIElement(GUIElement);
 
         renderer.processGUIElement(hotBarSelectionIndicator);
+
+        if (renderingEntities) {
+            for (Entity entity : GameLogic.getEntities()) {
+                int entityChunkX = Utils.floor(entity.getPosition().x) >> CHUNK_SIZE_BITS;
+                int entityChunkY = Utils.floor(entity.getPosition().y) >> CHUNK_SIZE_BITS;
+                int entityChunkZ = Utils.floor(entity.getPosition().z) >> CHUNK_SIZE_BITS;
+
+                int entityChunkIndex = GameLogic.getChunkIndex(entityChunkX, entityChunkY, entityChunkZ);
+                if ((visibleChunks[entityChunkIndex >> 6] & 1L << (entityChunkIndex & 63)) == 0) continue;
+
+                renderer.processEntity(entity);
+            }
+
+            for (Particle particle : GameLogic.getParticles()) {
+                int particleChunkX = Utils.floor(particle.getPosition().x) >> CHUNK_SIZE_BITS;
+                int particleChunkY = Utils.floor(particle.getPosition().y) >> CHUNK_SIZE_BITS;
+                int particleChunkZ = Utils.floor(particle.getPosition().z) >> CHUNK_SIZE_BITS;
+
+                int particleChunkIndex = GameLogic.getChunkIndex(particleChunkX, particleChunkY, particleChunkZ);
+                if ((visibleChunks[particleChunkIndex >> 6] & 1L << (particleChunkIndex & 63)) == 0) continue;
+
+                renderer.processParticle(particle);
+            }
+        }
 
         boolean headUnderWater = Block.isWaterLogged(Chunk.getBlockInWorld(Utils.floor(cameraPosition.x), Utils.floor(cameraPosition.y), Utils.floor(cameraPosition.z)));
         if (headUnderWater && !this.headUnderWater)
@@ -888,51 +931,56 @@ public class Player {
         renderer.processDisplayString(new DisplayString(mouseInput.getX() - name.length() * TEXT_CHAR_SIZE_X, mouseInput.getY(), name));
     }
 
-    private void renderChunkColumn(int chunkX, int chunkZ, int cameraY, FrustumIntersection frustumIntersection) {
-        int x = chunkX << CHUNK_SIZE_BITS;
-        int minY = cameraY - RENDER_DISTANCE_Y - 2 << CHUNK_SIZE_BITS;
-        int maxY = cameraY + RENDER_DISTANCE_Y + 2 << CHUNK_SIZE_BITS;
-        int z = chunkZ << CHUNK_SIZE_BITS;
-
-        int broadIntersectionType = frustumIntersection.intersectAab(x, minY, z, x + CHUNK_SIZE, maxY, z + CHUNK_SIZE);
-        if (broadIntersectionType != FrustumIntersection.INTERSECT && broadIntersectionType != FrustumIntersection.INSIDE)
-            return;
-
-        for (int chunkY = cameraY + RENDER_DISTANCE_Y + 2; chunkY >= cameraY - RENDER_DISTANCE_Y - 2; chunkY--) {
+    private void renderChunkColumn(int chunkX, int playerChunkY, int chunkZ) {
+        for (int chunkY = playerChunkY + RENDER_DISTANCE_Y + 2; chunkY >= playerChunkY - RENDER_DISTANCE_Y - 2; chunkY--) {
             Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
             if (chunk == null) continue;
             int chunkIndex = chunk.getIndex();
             if ((visibleChunks[chunkIndex >> 6] & 1L << (chunkIndex & 63)) == 0) continue;
 
-            Vector3i position = chunk.getWorldCoordinate();
-            if (broadIntersectionType == FrustumIntersection.INTERSECT) {
-                int intersectionType = frustumIntersection.intersectAab(position.x, position.y, position.z, position.x + CHUNK_SIZE, position.y + CHUNK_SIZE, position.z + CHUNK_SIZE);
-                if (intersectionType != FrustumIntersection.INTERSECT && intersectionType != FrustumIntersection.INSIDE)
-                    continue;
-            }
-
             if (chunk.getWaterModel() != null) renderer.processWaterModel(chunk.getWaterModel());
             if (chunk.getOpaqueModel() != null) renderer.processModel(chunk.getOpaqueModel());
-
-            for (LinkedList<Entity> entityCluster : chunk.getEntityClusters())
-                for (Entity entity : entityCluster) renderer.processEntity(entity);
         }
     }
 
-    private void calculateVisibleChunks(int chunkX, int chunkY, int chunkZ) {
+    private void calculateFrustumCulling(int playerChunkX, int playerChunkY, int playerChunkZ) {
+        Matrix4f projectionMatrix = window.getProjectionMatrix();
+        Matrix4f viewMatrix = Transformation.getViewMatrix(camera);
+        Matrix4f projectionViewMatrix = new Matrix4f();
+        projectionMatrix.mul(viewMatrix, projectionViewMatrix);
+        FrustumIntersection frustumIntersection = new FrustumIntersection(projectionViewMatrix);
+
+        for (int chunkX = playerChunkX - RENDER_DISTANCE_XZ - 2; chunkX <= playerChunkX + RENDER_DISTANCE_XZ + 2; chunkX++)
+            for (int chunkY = playerChunkY - RENDER_DISTANCE_Y - 2; chunkY <= playerChunkY + RENDER_DISTANCE_Y + 2; chunkY++)
+                for (int chunkZ = playerChunkZ - RENDER_DISTANCE_XZ - 2; chunkZ <= playerChunkZ + RENDER_DISTANCE_XZ + 2; chunkZ++) {
+                    int chunkIndex = GameLogic.getChunkIndex(chunkX, chunkY, chunkZ);
+                    if ((visibleChunks[chunkIndex >> 6] & 1L << (chunkIndex & 63)) == 0) continue;
+
+                    int intersectionType = frustumIntersection.intersectAab(
+                            chunkX << CHUNK_SIZE_BITS, chunkY << CHUNK_SIZE_BITS, chunkZ << CHUNK_SIZE_BITS,
+                            chunkX + 1 << CHUNK_SIZE_BITS, chunkY + 1 << CHUNK_SIZE_BITS, chunkZ + 1 << CHUNK_SIZE_BITS);
+
+                    if (intersectionType == FrustumIntersection.INSIDE || intersectionType == FrustumIntersection.INTERSECT)
+                        continue;
+
+                    visibleChunks[chunkIndex >> 6] &= ~(1L << (chunkIndex & 63));
+                }
+    }
+
+    private void calculateOcclusionCulling(int playerChunkX, int playerChunkY, int playerChunkZ) {
         Arrays.fill(visibleChunks, 0);
-        int chunkIndex = GameLogic.getChunkIndex(chunkX, chunkY, chunkZ);
+        int chunkIndex = GameLogic.getChunkIndex(playerChunkX, playerChunkY, playerChunkZ);
 
         visibleChunks[chunkIndex >> 6] = visibleChunks[chunkIndex >> 6] | 1L << (chunkIndex & 63);
 
-        fillVisibleChunks(chunkX, chunkY, chunkZ + 1, SOUTH, 1 << NORTH, 0);
-        fillVisibleChunks(chunkX, chunkY, chunkZ - 1, NORTH, 1 << SOUTH, 0);
+        fillVisibleChunks(playerChunkX, playerChunkY, playerChunkZ + 1, SOUTH, 1 << NORTH, 0);
+        fillVisibleChunks(playerChunkX, playerChunkY, playerChunkZ - 1, NORTH, 1 << SOUTH, 0);
 
-        fillVisibleChunks(chunkX, chunkY + 1, chunkZ, BOTTOM, 1 << TOP, 0);
-        fillVisibleChunks(chunkX, chunkY - 1, chunkZ, TOP, 1 << BOTTOM, 0);
+        fillVisibleChunks(playerChunkX, playerChunkY + 1, playerChunkZ, BOTTOM, 1 << TOP, 0);
+        fillVisibleChunks(playerChunkX, playerChunkY - 1, playerChunkZ, TOP, 1 << BOTTOM, 0);
 
-        fillVisibleChunks(chunkX + 1, chunkY, chunkZ, EAST, 1 << WEST, 0);
-        fillVisibleChunks(chunkX - 1, chunkY, chunkZ, WEST, 1 << EAST, 0);
+        fillVisibleChunks(playerChunkX + 1, playerChunkY, playerChunkZ, EAST, 1 << WEST, 0);
+        fillVisibleChunks(playerChunkX - 1, playerChunkY, playerChunkZ, WEST, 1 << EAST, 0);
     }
 
     private void fillVisibleChunks(int chunkX, int chunkY, int chunkZ, int entrySide, int traveledDirections, int damper) {
@@ -1142,6 +1190,7 @@ public class Player {
     // Debug
     private boolean debugScreenOpen;
     private boolean noClip;
-    private boolean usingOcclusionCulling = true;
+    private boolean usingOcclusionCulling = true, usingFrustumCulling = true, renderingEntities = true;
+    public boolean printTimes = false;
     private final Vector3i pos1, pos2;
 }

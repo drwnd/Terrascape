@@ -24,18 +24,6 @@ import static terrascape.utils.Settings.*;
 
 public class GameLogic {
 
-    private static final LinkedList<Chunk> toBufferChunks = new LinkedList<>();
-    private static final LinkedList<Chunk> toUnloadChunks = new LinkedList<>();
-    private static final LinkedList<HeightMap> toUnloadHeightMaps = new LinkedList<>();
-    private static ChunkGenerator generator;
-
-    private static Player player;
-    private static final LinkedList<Entity> entities = new LinkedList<>();
-    private static final LinkedList<Particle> particles = new LinkedList<>();
-    private static final ArrayList<Entity> toSpawnEntities = new ArrayList<>();
-
-    private static byte generatorRestartScheduled = 0;
-
     public static void init() throws Exception {
 
         player = FileManager.loadGameState();
@@ -358,15 +346,18 @@ public class GameLogic {
         }
         RenderManager renderer = player.getRenderer();
 
-//        long time = System.nanoTime();
+        long playerTime = System.nanoTime();
         player.render();
-//        System.out.println("player " + (System.nanoTime() - time));
+        playerTime = System.nanoTime() - playerTime;
 
-        for (Particle particle : particles) renderer.processParticle(particle);
-
-//        time = System.nanoTime();
+        long renderTime = System.nanoTime();
         renderer.render(player.getCamera(), timeSinceLastTick);
-//        System.out.println("render " + (System.nanoTime() - time));
+        renderTime = System.nanoTime() - renderTime;
+
+        if (player.printTimes) {
+            System.out.println("player " + playerTime);
+            System.out.println("render " + renderTime);
+        }
     }
 
     public static void addToBufferChunk(Chunk chunk) {
@@ -404,13 +395,13 @@ public class GameLogic {
 
     public static int getChunkIndex(int chunkX, int chunkY, int chunkZ) {
 
-        chunkX = (chunkX % RENDERED_WORLD_WIDTH);
+        chunkX %= RENDERED_WORLD_WIDTH;
         if (chunkX < 0) chunkX += RENDERED_WORLD_WIDTH;
 
-        chunkY = (chunkY % RENDERED_WORLD_HEIGHT);
+        chunkY %= RENDERED_WORLD_HEIGHT;
         if (chunkY < 0) chunkY += RENDERED_WORLD_HEIGHT;
 
-        chunkZ = (chunkZ % RENDERED_WORLD_WIDTH);
+        chunkZ %= RENDERED_WORLD_WIDTH;
         if (chunkZ < 0) chunkZ += RENDERED_WORLD_WIDTH;
 
         return (chunkX * RENDERED_WORLD_HEIGHT + chunkY) * RENDERED_WORLD_WIDTH + chunkZ;
@@ -450,4 +441,24 @@ public class GameLogic {
     public static int getAmountOfEntities() {
         return entities.size();
     }
+
+    public static LinkedList<Entity> getEntities() {
+        return entities;
+    }
+
+    public static LinkedList<Particle> getParticles() {
+        return particles;
+    }
+
+    private static final LinkedList<Chunk> toBufferChunks = new LinkedList<>();
+    private static final LinkedList<Chunk> toUnloadChunks = new LinkedList<>();
+    private static final LinkedList<HeightMap> toUnloadHeightMaps = new LinkedList<>();
+    private static ChunkGenerator generator;
+
+    private static Player player;
+    private static final LinkedList<Entity> entities = new LinkedList<>();
+    private static final ArrayList<Entity> toSpawnEntities = new ArrayList<>();
+    private static final LinkedList<Particle> particles = new LinkedList<>();
+
+    private static byte generatorRestartScheduled = 0;
 }

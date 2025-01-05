@@ -203,7 +203,7 @@ public class RenderManager {
                 Math.abs(playerChunkY - modelChunkY) <= 1 &&
                 Math.abs(playerChunkZ - modelChunkZ) <= 1;
 
-        foliageShader.setUniform("shouldSimulateWind", !shouldSimulateWind ? 1 : 0);
+        foliageShader.setUniform("shouldSimulateWind", shouldSimulateWind ? 1 : 0);
         foliageShader.setUniform("worldPos", model.getPosition());
         GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, modelIndexBuffer);
     }
