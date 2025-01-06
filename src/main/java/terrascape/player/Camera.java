@@ -2,18 +2,21 @@ package terrascape.player;
 
 import org.joml.Vector2f;
 import org.joml.Vector3f;
+import terrascape.server.Launcher;
 
 import static terrascape.utils.Constants.*;
+import static terrascape.utils.Settings.FOV;
 
 public class Camera {
-
-    private final Vector3f position;
-    private final Vector2f rotation;
-
 
     public Camera() {
         position = new Vector3f(0.0f, 0.0f, 0.0f);
         rotation = new Vector2f(0.0f, 0.0f);
+    }
+
+    public void changeZoomModifier(float multiplier) {
+        zoomModifier = Math.min(1.0f, zoomModifier * multiplier);
+        Launcher.getWindow().updateProjectionMatrix(FOV * zoomModifier);
     }
 
     public void movePosition(float x, float y, float z) {
@@ -74,6 +77,11 @@ public class Camera {
         rotation.y = y;
     }
 
+    public void setZoomModifier(float modifier) {
+        this.zoomModifier = modifier;
+        Launcher.getWindow().updateProjectionMatrix(FOV * zoomModifier);
+    }
+
     public Vector3f getPosition() {
         return position;
     }
@@ -81,4 +89,8 @@ public class Camera {
     public Vector2f getRotation() {
         return rotation;
     }
+
+    private final Vector3f position;
+    private final Vector2f rotation;
+    private float zoomModifier = 1.0f;
 }

@@ -2,12 +2,9 @@ package terrascape.server;
 
 import terrascape.dataStorage.Chunk;
 import terrascape.entity.Target;
-import terrascape.entity.entities.Entity;
 import terrascape.player.SoundManager;
 import terrascape.utils.Utils;
 import org.joml.Vector3f;
-
-import java.util.LinkedList;
 
 import static terrascape.utils.Constants.*;
 
@@ -17,134 +14,12 @@ public class Block {
     public static final byte[][] CORNERS_OF_SIDE = {{1, 0, 5, 4}, {2, 0, 3, 1}, {3, 1, 7, 5}, {2, 3, 6, 7}, {6, 4, 7, 5}, {2, 0, 6, 4}};
     public static final byte[][] SIDES_WITH_CORNER = {{0, 1, 5}, {0, 1, 2}, {1, 3, 5}, {1, 2, 3}, {0, 4, 5}, {0, 2, 4}, {3, 4, 5}, {2, 3, 4}};
 
-    public static boolean occludesOpaque(short toTestBlock, short occludingBlock, int side, int aabbIndex, int x, int y, int z) {
-        if (BLOCK_TYPE_XYZ_SUB_DATA[getBlockType(toTestBlock)][sideToMinMaxXYZ(side) + aabbIndex] != 0)
-            return getBlockOcclusionData(toTestBlock, side) == -1L;
-        int occludingBlockType = getBlockType(occludingBlock);
-        if (isLiquidType(occludingBlockType)) {
-            if (isWaterLogged(occludingBlock)) return false;
-            if (!isLiquidType(getBlockType(toTestBlock))) return false;
-            return occludesLava(toTestBlock, occludingBlock, side, x, y, z);
-        }
-        if (occludingBlockType == AIR_TYPE) return false;
-
-        long toTestOcclusionData = BLOCK_TYPE_OCCLUSION_DATA[getBlockType(toTestBlock)][side];
-        int occludingSide = (side + 3) % 6;
-        long occludingOcclusionData = getBlockOcclusionData(occludingBlock, occludingSide);
-
-        if (isGlassType(occludingBlock))
-            return isGlassType(toTestBlock) && (toTestOcclusionData | occludingOcclusionData) == occludingOcclusionData && toTestOcclusionData != 0L;
-        if (isLeaveType(occludingBlock)) {
-            if (isLeaveType(toTestBlock))
-                return (x + y + z & 1) == 0 && (toTestOcclusionData | occludingOcclusionData) == occludingOcclusionData && toTestOcclusionData != 0L;
-            return false;
-        }
-
-        if (toTestOcclusionData == 0)
-            return occludingBlockType == CARPET && getBlockType(toTestBlock) == CARPET;   // Hotfix for carpets
-        return (toTestOcclusionData | occludingOcclusionData) == occludingOcclusionData;
-    }
-
-    public static boolean occludesWater(short toTestBlock, short occludingBlock, int side, int x, int y, int z) {
-        if (getBlockType(occludingBlock) == AIR_TYPE) return false;
-        if (isLeaveType(occludingBlock) || isGlassType(occludingBlock) && !isWaterLogged(occludingBlock)) return false;
-        if (occludingBlock == LAVA_SOURCE) return false;
-        if (side == TOP)
-            return isWaterLogged(occludingBlock) || getBlockOcclusionData(occludingBlock, BOTTOM) == -1L && isWaterSource(toTestBlock);
-        if (side == BOTTOM)
-            return isWaterLogged(occludingBlock) || getBlockOcclusionData(occludingBlock, TOP) == -1L;
-        if (!isWaterLogged(occludingBlock)) return getBlockOcclusionData(occludingBlock, (side + 3) % 6) == -1;
-
-        byte[] normal = NORMALS[side];
-        short blockAboveToTestBlock = Chunk.getBlockInWorld(x, y + 1, z);
-        short blockAboveOccludingBlock = Chunk.getBlockInWorld(x + normal[0], y + 1, z + normal[2]);
-
-        boolean toTestBlockUp = toTestBlock == FLOWING_WATER_LEVEL_8 || isWaterSource(toTestBlock) && (isWaterLogged(blockAboveToTestBlock) || getBlockOcclusionData(blockAboveToTestBlock, BOTTOM) == -1L);
-        boolean occludingBlockUp = occludingBlock == FLOWING_WATER_LEVEL_8 || isWaterSource(occludingBlock) && (isWaterLogged(blockAboveOccludingBlock) || getBlockOcclusionData(blockAboveOccludingBlock, BOTTOM) == -1L);
-
-        return !(toTestBlockUp && !occludingBlockUp);
-    }
-
-    public static boolean occludesLava(short toTestBlock, short occludingBlock, int side, int x, int y, int z) {
-        if (getBlockType(occludingBlock) == AIR_TYPE) return false;
-        if (occludingBlock == WATER_SOURCE) return false;
-        if (side == TOP || side == BOTTOM) return true;
-        if (!isLavaBlock(occludingBlock)) return getBlockOcclusionData(occludingBlock, (side + 3) % 6) == -1;
-
-        byte[] normal = NORMALS[side];
-        short blockAboveToTestBlock = Chunk.getBlockInWorld(x, y + 1, z);
-        short blockAboveOccludingBlock = Chunk.getBlockInWorld(x + normal[0], y + 1, z + normal[2]);
-
-        boolean toTestBlockUp = toTestBlock == LAVA_SOURCE && (blockAboveToTestBlock == LAVA_SOURCE || getBlockOcclusionData(blockAboveToTestBlock, BOTTOM) == -1L);
-        boolean occludingBlockUp = blockAboveOccludingBlock == LAVA_SOURCE || getBlockOcclusionData(blockAboveOccludingBlock, BOTTOM) == -1L;
-
-        return !(toTestBlockUp && !occludingBlockUp);
-    }
-
     public static int getTextureIndex(short block, int side) {
         byte[] blockTextureIndices;
         if ((block & 0xFFFF) < STANDARD_BLOCKS_THRESHOLD)
             blockTextureIndices = NON_STANDARD_BLOCK_TEXTURE_INDICES[block & 0xFFFF];
         else blockTextureIndices = STANDARD_BLOCK_TEXTURE_INDICES[(block & 0xFFFF) >> BLOCK_TYPE_BITS];
         return blockTextureIndices[side >= blockTextureIndices.length ? 0 : side];
-    }
-
-    public static boolean entityIntersectsBlock(float minX, float maxX, float minY, float maxY, float minZ, float maxZ, int blockX, int blockY, int blockZ, short block) {
-
-        int blockProperties = getBlockProperties(block);
-        if ((blockProperties & NO_COLLISION) != 0) return false;
-
-        int blockType = getBlockType(block);
-        byte[] blockXYZSubData = BLOCK_TYPE_XYZ_SUB_DATA[blockType];
-
-        for (int aabbIndex = 0; aabbIndex < blockXYZSubData.length; aabbIndex += 6) {
-            float minBlockX = blockX + blockXYZSubData[MIN_X + aabbIndex] * 0.0625f;
-            float maxBlockX = 1 + blockX + blockXYZSubData[MAX_X + aabbIndex] * 0.0625f;
-            float minBlockY = blockY + blockXYZSubData[MIN_Y + aabbIndex] * 0.0625f;
-            float maxBlockY = 1 + blockY + blockXYZSubData[MAX_Y + aabbIndex] * 0.0625f;
-            float minBlockZ = blockZ + blockXYZSubData[MIN_Z + aabbIndex] * 0.0625f;
-            float maxBlockZ = 1 + blockZ + blockXYZSubData[MAX_Z + aabbIndex] * 0.0625f;
-            if (minX < maxBlockX && maxX > minBlockX && minY < maxBlockY && maxY > minBlockY && minZ < maxBlockZ && maxZ > minBlockZ)
-                return true;
-        }
-        return false;
-    }
-
-    public static boolean entityIntersectsBlock(int blockX, int blockY, int blockZ, short block) {
-        int blockType = getBlockType(block);
-        byte[] blockXYZSubData = BLOCK_TYPE_XYZ_SUB_DATA[blockType];
-
-        int currentClusterX = blockX >> ENTITY_CLUSTER_SIZE_BITS;
-        int currentClusterY = blockY >> ENTITY_CLUSTER_SIZE_BITS;
-        int currentClusterZ = blockZ >> ENTITY_CLUSTER_SIZE_BITS;
-
-        for (int clusterX = currentClusterX - 1; clusterX <= currentClusterX + 1; clusterX++)
-            for (int clusterZ = currentClusterZ - 1; clusterZ <= currentClusterZ + 1; clusterZ++)
-                for (int clusterY = currentClusterY - 1; clusterY <= currentClusterY + 1; clusterY++) {
-
-                    LinkedList<Entity> entityCluster = Chunk.getEntityCluster(clusterX, clusterY, clusterZ);
-                    if (entityCluster == null) continue;
-
-                    for (Entity entity : entityCluster) {
-
-                        float[] aabb = entity.getAabb();
-                        Vector3f position = entity.getPosition();
-
-                        for (int aabbIndex = 0; aabbIndex < blockXYZSubData.length; aabbIndex += 6) {
-                            float minBlockX = blockX + blockXYZSubData[MIN_X + aabbIndex] * 0.0625f;
-                            float maxBlockX = 1 + blockX + blockXYZSubData[MAX_X + aabbIndex] * 0.0625f;
-                            float minBlockY = blockY + blockXYZSubData[MIN_Y + aabbIndex] * 0.0625f;
-                            float maxBlockY = 1 + blockY + blockXYZSubData[MAX_Y + aabbIndex] * 0.0625f;
-                            float minBlockZ = blockZ + blockXYZSubData[MIN_Z + aabbIndex] * 0.0625f;
-                            float maxBlockZ = 1 + blockZ + blockXYZSubData[MAX_Z + aabbIndex] * 0.0625f;
-                            if (aabb[MIN_X] + position.x < maxBlockX && aabb[MAX_X] + position.x > minBlockX
-                                    && aabb[MIN_Y] + position.y < maxBlockY && aabb[MAX_Y] + position.y > minBlockY
-                                    && aabb[MIN_Z] + position.z < maxBlockZ && aabb[MAX_Z] + position.z > minBlockZ)
-                                return true;
-                        }
-                    }
-                }
-        return false;
     }
 
     public static short getToPlaceBlock(short toPlaceBlock, int primaryCameraDirection, int primaryXZDirection, Target target) {

@@ -2,11 +2,8 @@ package terrascape.server;
 
 import org.joml.Vector3f;
 import terrascape.dataStorage.Chunk;
-import terrascape.entity.Target;
 import terrascape.entity.entities.FallingBlockEntity;
-import terrascape.entity.entities.TNT_Entity;
 import terrascape.player.SoundManager;
-import terrascape.player.WindowManager;
 import terrascape.utils.EventQueue;
 
 import static terrascape.utils.Constants.*;
@@ -121,58 +118,6 @@ public record BlockEvent(int x, int y, int z, byte type) {
         sound.playRandomSound(sound.fizz, event.x, event.y, event.z, 0.0f, 0.0f, 0.0f, MISCELLANEOUS_GAIN);
     }
 
-    public static boolean interactWithBlock(Target target, short heldBlock) {
-        WindowManager window = Launcher.getWindow();
-        SoundManager sound = Launcher.getSound();
-        if (window.isKeyPressed(SNEAK_BUTTON)) return false;
-        short block = target.block();
-
-        if (block == CRAFTING_TABLE) {
-            return heldBlock != CRAFTING_TABLE;
-            // TODO Crafting table UI
-        }
-        if (block == TNT) {
-            if (heldBlock == TNT) return false;
-            TNT_Entity.spawnTNTEntity(target.position(), 80);
-            sound.playSound(sound.fuse, target.position().x, target.position().y, target.position().z, 0.0f, 0.0f, 0.0f, MISCELLANEOUS_GAIN);
-            return true;
-        }
-        if (block == NORTH_FURNACE || block == WEST_FURNACE || block == SOUTH_FURNACE || block == EAST_FURNACE) {
-            return heldBlock != NORTH_FURNACE;
-            // TODO Furnace UI
-        }
-        if (Block.isDoorType(block)) {
-            if (Block.getBlockType(heldBlock) == NORTH_WEST_DOOR_NORTH) return false;
-            int x = target.position().x;
-            int y = target.position().y;
-            int z = target.position().z;
-            int doorType = Block.getBlockType(target.block());
-
-            flickDoors(x, y, z);
-
-            switch (doorType) {
-                case NORTH_WEST_DOOR_NORTH, NORTH_WEST_DOOR_WEST -> {
-                    if (Block.isDoorType(Chunk.getBlockInWorld(x - 1, y, z))) flickDoors(x - 1, y, z);
-                    if (Block.isDoorType(Chunk.getBlockInWorld(x, y, z - 1))) flickDoors(x, y, z - 1);
-                }
-                case NORTH_EAST_DOOR_NORTH, NORTH_EAST_DOOR_EAST -> {
-                    if (Block.isDoorType(Chunk.getBlockInWorld(x + 1, y, z))) flickDoors(x + 1, y, z);
-                    if (Block.isDoorType(Chunk.getBlockInWorld(x, y, z - 1))) flickDoors(x, y, z - 1);
-                }
-                case SOUTH_WEST_DOOR_SOUTH, SOUTH_WEST_DOOR_WEST -> {
-                    if (Block.isDoorType(Chunk.getBlockInWorld(x - 1, y, z))) flickDoors(x - 1, y, z);
-                    if (Block.isDoorType(Chunk.getBlockInWorld(x, y, z + 1))) flickDoors(x, y, z + 1);
-                }
-                case SOUTH_EAST_DOOR_SOUTH, SOUTH_EAST_DOOR_EAST -> {
-                    if (Block.isDoorType(Chunk.getBlockInWorld(x, y, z + 1))) flickDoors(x, y, z + 1);
-                    if (Block.isDoorType(Chunk.getBlockInWorld(x + 1, y, z))) flickDoors(x + 1, y, z);
-                }
-            }
-            return true;
-        }
-        return false;
-    }
-
     private static void executeSmartBlockEvent(BlockEvent event) {
         short block = Chunk.getBlockInWorld(event.x, event.y, event.z);
         if ((Block.getBlockTypeData(block) & SMART_BLOCK_TYPE) == 0) return;
@@ -284,7 +229,7 @@ public record BlockEvent(int x, int y, int z, byte type) {
         return blockType | waterLogged;
     }
 
-    private static void flickDoors(int x, int y, int z) {
+    public static void flickDoors(int x, int y, int z) {
         short currentBlock = Chunk.getBlockInWorld(x, y, z);
         Vector3f position = GameLogic.getPlayer().getCamera().getPosition();
         Launcher.getSound().playRandomSound(Block.getFootstepsSound(currentBlock), position.x, position.y, position.z, 0.0f, 0.0f, 0.0f, MISCELLANEOUS_GAIN);

@@ -78,7 +78,7 @@ public class MeshGenerator {
             for (side = 0; side < 6; side++) {
                 byte[] normal = Block.NORMALS[side];
                 short occludingBlock = chunk.getBlock(blockX + normal[0], blockY + normal[1], blockZ + normal[2]);
-                if (Block.occludesOpaque(block, occludingBlock, side, aabbIndex, worldCoordinate.x | blockX, worldCoordinate.y | blockY, worldCoordinate.z | blockZ))
+                if (occludesOpaque(block, occludingBlock, side, aabbIndex, worldCoordinate.x | blockX, worldCoordinate.y | blockY, worldCoordinate.z | blockZ))
                     continue;
 
                 int texture = Block.getTextureIndex(block, side);
@@ -98,7 +98,7 @@ public class MeshGenerator {
             byte[] normal = Block.NORMALS[side];
             short occludingBlock = chunk.getBlock(blockX + normal[0], blockY + normal[1], blockZ + normal[2]);
 
-            if (Block.occludesWater(block, occludingBlock, side, worldCoordinate.x | blockX, worldCoordinate.y | blockY, worldCoordinate.z | blockZ))
+            if (occludesWater(block, occludingBlock, side, worldCoordinate.x | blockX, worldCoordinate.y | blockY, worldCoordinate.z | blockZ))
                 continue;
 
             addWaterSideToList(waterVerticesList);
@@ -750,6 +750,73 @@ public class MeshGenerator {
                 if (currentLavaLevel > max) max = currentLavaLevel;
             }
         return max;
+    }
+
+    private static boolean occludesOpaque(short toTestBlock, short occludingBlock, int side, int aabbIndex, int x, int y, int z) {
+        if (Block.getXYZSubData(toTestBlock)[Block.sideToMinMaxXYZ(side) + aabbIndex] != 0)
+            return Block.getBlockOcclusionData(toTestBlock, side) == -1L;
+        int occludingBlockType = Block.getBlockType(occludingBlock);
+        if (Block.isLiquidType(occludingBlockType)) {
+            if (Block.isWaterLogged(occludingBlock)) return false;
+            if (!Block.isLiquidType(Block.getBlockType(toTestBlock))) return false;
+            return occludesLava(toTestBlock, occludingBlock, side, x, y, z);
+        }
+        if (occludingBlockType == AIR_TYPE) return false;
+
+        long toTestOcclusionData = Block.getBlockOcclusionData(toTestBlock, side);
+        int occludingSide = (side + 3) % 6;
+        long occludingOcclusionData = Block.getBlockOcclusionData(occludingBlock, occludingSide);
+
+        if (Block.isGlassType(occludingBlock))
+            return Block.isGlassType(toTestBlock) && (toTestOcclusionData | occludingOcclusionData) == occludingOcclusionData && toTestOcclusionData != 0L;
+        if (Block.isLeaveType(occludingBlock)) {
+            if (Block.isLeaveType(toTestBlock))
+                return (x + y + z & 1) == 0 && (toTestOcclusionData | occludingOcclusionData) == occludingOcclusionData && toTestOcclusionData != 0L;
+            return false;
+        }
+
+        if (toTestOcclusionData == 0)
+            return occludingBlockType == CARPET && Block.getBlockType(toTestBlock) == CARPET;   // Hotfix for carpets
+        return (toTestOcclusionData | occludingOcclusionData) == occludingOcclusionData;
+    }
+
+    private static boolean occludesWater(short toTestBlock, short occludingBlock, int side, int x, int y, int z) {
+        if (Block.getBlockType(occludingBlock) == AIR_TYPE) return false;
+        if (Block.isLeaveType(occludingBlock) || Block.isGlassType(occludingBlock) && !Block.isWaterLogged(occludingBlock))
+            return false;
+        if (occludingBlock == LAVA_SOURCE) return false;
+        if (side == TOP)
+            return Block.isWaterLogged(occludingBlock) || Block.getBlockOcclusionData(occludingBlock, BOTTOM) == -1L && Block.isWaterSource(toTestBlock);
+        if (side == BOTTOM)
+            return Block.isWaterLogged(occludingBlock) || Block.getBlockOcclusionData(occludingBlock, TOP) == -1L;
+        if (!Block.isWaterLogged(occludingBlock))
+            return Block.getBlockOcclusionData(occludingBlock, (side + 3) % 6) == -1;
+
+        byte[] normal = Block.NORMALS[side];
+        short blockAboveToTestBlock = Chunk.getBlockInWorld(x, y + 1, z);
+        short blockAboveOccludingBlock = Chunk.getBlockInWorld(x + normal[0], y + 1, z + normal[2]);
+
+        boolean toTestBlockUp = toTestBlock == FLOWING_WATER_LEVEL_8 || Block.isWaterSource(toTestBlock) && (Block.isWaterLogged(blockAboveToTestBlock) || Block.getBlockOcclusionData(blockAboveToTestBlock, BOTTOM) == -1L);
+        boolean occludingBlockUp = occludingBlock == FLOWING_WATER_LEVEL_8 || Block.isWaterSource(occludingBlock) && (Block.isWaterLogged(blockAboveOccludingBlock) || Block.getBlockOcclusionData(blockAboveOccludingBlock, BOTTOM) == -1L);
+
+        return !(toTestBlockUp && !occludingBlockUp);
+    }
+
+    private static boolean occludesLava(short toTestBlock, short occludingBlock, int side, int x, int y, int z) {
+        if (Block.getBlockType(occludingBlock) == AIR_TYPE) return false;
+        if (occludingBlock == WATER_SOURCE) return false;
+        if (side == TOP || side == BOTTOM) return true;
+        if (!Block.isLavaBlock(occludingBlock))
+            return Block.getBlockOcclusionData(occludingBlock, (side + 3) % 6) == -1;
+
+        byte[] normal = Block.NORMALS[side];
+        short blockAboveToTestBlock = Chunk.getBlockInWorld(x, y + 1, z);
+        short blockAboveOccludingBlock = Chunk.getBlockInWorld(x + normal[0], y + 1, z + normal[2]);
+
+        boolean toTestBlockUp = toTestBlock == LAVA_SOURCE && (blockAboveToTestBlock == LAVA_SOURCE || Block.getBlockOcclusionData(blockAboveToTestBlock, BOTTOM) == -1L);
+        boolean occludingBlockUp = blockAboveOccludingBlock == LAVA_SOURCE || Block.getBlockOcclusionData(blockAboveOccludingBlock, BOTTOM) == -1L;
+
+        return !(toTestBlockUp && !occludingBlockUp);
     }
 
     private Chunk chunk;

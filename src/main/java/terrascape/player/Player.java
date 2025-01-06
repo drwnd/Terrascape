@@ -25,15 +25,14 @@ import static terrascape.utils.Settings.*;
 
 public class Player {
 
-    public Player() throws Exception {
-        atlas = new Texture(ObjectLoader.loadTexture("textures/atlas256.png"));
+    public Player() {
         window = Launcher.getWindow();
         sound = Launcher.getSound();
         renderer = new RenderManager(this);
         camera = new Camera();
         mouseInput = new MouseInput(this);
-
-        velocity = new Vector3f(0, 0, 0);
+        movement = new Movement(this);
+        interactionHandler = new InteractionHandler(this);
 
         int spawnX = 0;
         int spawnZ = 0;
@@ -57,7 +56,7 @@ public class Player {
         skyBox.setTexture(skyBoxTexture1, skyBoxTexture2);
         renderer.processSkyBox(skyBox);
 
-        loadGUIElements();
+        GUIElement.loadGUIElements(this);
 
         GUIElement inventoryOverlay = ObjectLoader.loadGUIElement(OVERLAY_VERTICES, GUI_ELEMENT_TEXTURE_COORDINATES, new Vector2f(0.0f, 0.0f));
         inventoryOverlay.setTexture(new Texture(ObjectLoader.loadTexture("textures/InventoryOverlay.png")));
@@ -130,50 +129,9 @@ public class Player {
         });
     }
 
-    public void loadGUIElements() throws Exception {
-        GUIElement crossHair = ObjectLoader.loadGUIElement(GUIElement.getCrossHairVertices(), GUI_ELEMENT_TEXTURE_COORDINATES, new Vector2f(0.0f, 0.0f));
-        crossHair.setTexture(new Texture(ObjectLoader.loadTexture("textures/CrossHair.png")));
-        GUIElements.addFirst(crossHair);
-
-        GUIElement hotBarGUIElement = ObjectLoader.loadGUIElement(GUIElement.getHotBarVertices(), GUI_ELEMENT_TEXTURE_COORDINATES, new Vector2f(0.0f, 0.0f));
-        hotBarGUIElement.setTexture(new Texture(ObjectLoader.loadTexture("textures/HotBar.png")));
-        GUIElements.add(1, hotBarGUIElement);
-
-        hotBarSelectionIndicator = ObjectLoader.loadGUIElement(GUIElement.getHotBarSelectionIndicatorVertices(), GUI_ELEMENT_TEXTURE_COORDINATES, new Vector2f(0, 0));
-        hotBarSelectionIndicator.setTexture(new Texture(ObjectLoader.loadTexture("textures/HotBarSelectionIndicator.png")));
-        setSelectedHotBarSlot(0);
-
-        GUIElement.generateInventoryElements(inventoryElements, atlas);
-    }
-
-    public void reloadGUIElements() throws Exception {
-        GUIElement crossHair = GUIElements.removeFirst();
-        ObjectLoader.removeVAO(crossHair.getVao());
-        ObjectLoader.removeVBO(crossHair.getVbo1());
-        ObjectLoader.removeVBO(crossHair.getVbo2());
-
-        GUIElement hotBar = GUIElements.removeFirst();
-        ObjectLoader.removeVAO(hotBar.getVao());
-        ObjectLoader.removeVBO(hotBar.getVbo1());
-        ObjectLoader.removeVBO(hotBar.getVbo2());
-
-        ObjectLoader.removeVAO(hotBarSelectionIndicator.getVao());
-        ObjectLoader.removeVBO(hotBarSelectionIndicator.getVbo1());
-        ObjectLoader.removeVBO(hotBarSelectionIndicator.getVbo2());
-
-        for (GUIElement element : inventoryElements) {
-            ObjectLoader.removeVAO(element.getVao());
-            ObjectLoader.removeVBO(element.getVbo1());
-            ObjectLoader.removeVBO(element.getVbo2());
-        }
-        inventoryElements.clear();
-        inventoryScroll = 0.0f;
-
-        loadGUIElements();
-    }
-
     public void update(float passedTicks) {
-        moveCameraHandleCollisions(velocity.x * passedTicks, velocity.y * passedTicks, velocity.z * passedTicks);
+        Vector3f velocity = movement.getVelocity();
+        movement.moveCameraHandleCollisions(velocity.x * passedTicks, velocity.y * passedTicks, velocity.z * passedTicks);
 
         mouseInput.input();
         Vector2f rotVec = mouseInput.getDisplayVec();
@@ -188,17 +146,19 @@ public class Player {
     }
 
     private void playFootstepsSounds(long tick) {
-        if (movementState == SWIMMING) {
+        int movementState = movement.getMovementState();
+        if (movementState == Movement.SWIMMING) {
             if (tick - lastFootstepTick < 15) return;
             Vector3f position = camera.getPosition();
             sound.playRandomSound(sound.swim, position.x, position.y, position.z, 0.0f, 0.0f, 0.0f, STEP_GAIN);
             lastFootstepTick = tick;
             return;
         }
+        Vector3f velocity = movement.getVelocity();
 
-        if (!isGrounded || (!(Math.abs(velocity.x) > 0.001f) && !(Math.abs(velocity.z) > 0.001f))) return;
-        if (movementState == CROUCHING || movementState == CRAWLING) return;
-        if (movementState == WALKING) {
+        if (!movement.isGrounded() || Math.abs(velocity.x) < 0.001f && Math.abs(velocity.z) < 0.001f) return;
+        if (movementState == Movement.CROUCHING || movementState == Movement.CRAWLING) return;
+        if (movementState == Movement.WALKING) {
             if (window.isKeyPressed(SPRINT_BUTTON)) {
                 if (tick - lastFootstepTick < 5) return;
             } else if (tick - lastFootstepTick < 10) return;
@@ -206,218 +166,25 @@ public class Player {
         lastFootstepTick = tick;
 
         Vector3f position = camera.getPosition();
-        float height = PLAYER_FEET_OFFSETS[movementState];
-        short standingBlock = getStandingBlock();
+        float height = Movement.PLAYER_FEET_OFFSETS[movementState];
+        short standingBlock = movement.getStandingBlock();
         sound.playRandomSound(Block.getFootstepsSound(standingBlock), position.x, position.y - height, position.z, 0.0f, 0.0f, 0.0f, STEP_GAIN);
     }
 
     public void input() {
         Vector3f position = camera.getPosition();
-        boolean isInWater = collidesWithWater(position.x, position.y, position.z, movementState);
-        Vector3f velocity = new Vector3f(0.0f, 0.0f, 0.0f);
+        boolean isInWater = movement.collidesWithWater(position.x, position.y, position.z, movement.getMovementState());
+        movement.move();
 
-        handleInputMovementStateChange(position);
-        handleIsFlyingChange();
-
-        if (isFling) handleInputFling(velocity);
-        else if (isInWater) handleInputSwimming(velocity);
-        else handleInputWalking(velocity);
+        interactionHandler.handleDestroyUsePickBlockInput();
         if (inInventory) handleInventoryHotkeys();
 
-        normalizeVelocity(velocity);
-        addVelocityChange(velocity);
-
-        handleDestroyUsePickBlockInput();
-
-        if (isInWater != touchingWater)
+        if (isInWater != movement.isTouchingWater())
             sound.playRandomSound(sound.splash, position.x, position.y, position.z, 0.0f, 0.0f, 0.0f, MISCELLANEOUS_GAIN);
-        touchingWater = isInWater;
+        movement.setTouchingWater(isInWater);
     }
 
-    private void handleInputMovementStateChange(Vector3f position) {
-        if (inInventory) return;
-
-        if (window.isKeyPressed(SNEAK_BUTTON)) {
-            if (movementState == WALKING) {
-                camera.movePosition(0.0f, -0.25f, 0.0f);
-                movementState = CROUCHING;
-            }
-
-        } else if (movementState == CROUCHING) {
-            if (!collidesWithBlock(position.x, position.y + 0.25f, position.z, WALKING)) {
-                camera.movePosition(0.0f, 0.25f, 0.0f);
-                movementState = WALKING;
-            } else if (!collidesWithBlock(position.x, position.y, position.z, WALKING)) movementState = WALKING;
-        }
-
-        if (window.isKeyPressed(CRAWL_BUTTON)) {
-            if (movementState == WALKING) camera.movePosition(0.0f, -1.25f, 0.0f);
-            else if (movementState == CROUCHING) camera.movePosition(0.0f, -1.0f, 0.0f);
-            movementState = CRAWLING;
-
-        } else if (movementState == CRAWLING) {
-            if (!collidesWithBlock(position.x, position.y + 1.25f, position.z, WALKING)) {
-                camera.movePosition(0.0f, 1.25f, 0.0f);
-                movementState = WALKING;
-            } else if (!collidesWithBlock(position.x, position.y + 1.0f, position.z, CROUCHING)) {
-                camera.movePosition(0.0f, 1.0f, 0.0f);
-                movementState = CROUCHING;
-            } else if (!collidesWithBlock(position.x, position.y, position.z, WALKING)) movementState = WALKING;
-            else if (!collidesWithBlock(position.x, position.y, position.z, CROUCHING)) movementState = CROUCHING;
-        }
-
-        if (movementState == SWIMMING && !window.isKeyPressed(SPRINT_BUTTON)) movementState = CRAWLING;
-        else if (movementState == SWIMMING && !collidesWithWater(position.x, position.y, position.z, SWIMMING))
-            movementState = CRAWLING;
-    }
-
-    private void handleIsFlyingChange() {
-        long currentTime = System.nanoTime();
-        if (window.isKeyPressed(JUMP_BUTTON)) {
-            if (!spaceButtonPressed) {
-                spaceButtonPressed = true;
-                if (currentTime - spaceButtonPressTime < 300_000_000) isFling = !isFling;
-                spaceButtonPressTime = currentTime;
-            }
-        } else if (spaceButtonPressed) spaceButtonPressed = false;
-
-    }
-
-    private void handleInputFling(Vector3f velocity) {
-        if (inInventory) {
-            this.velocity.mul(FLY_FRICTION);
-            return;
-        }
-
-        float movementSpeedModifier = 1.0f;
-
-        if (window.isKeyPressed(SPRINT_BUTTON)) movementSpeedModifier *= 2.5f;
-        if (window.isKeyPressed(FLY_FAST_BUTTON)) movementSpeedModifier *= 5.0f;
-
-        if (window.isKeyPressed(MOVE_FORWARD_BUTTON)) {
-            velocity.z -= FLY_SPEED * movementSpeedModifier;
-        }
-        if (window.isKeyPressed(MOVE_BACK_BUTTON)) {
-            velocity.z += FLY_SPEED;
-        }
-
-        if (window.isKeyPressed(MOVE_LEFT_BUTTON)) {
-            velocity.x -= FLY_SPEED;
-        }
-        if (window.isKeyPressed(MOVE_RIGHT_BUTTON)) {
-            velocity.x += FLY_SPEED;
-        }
-
-        if (window.isKeyPressed(JUMP_BUTTON)) velocity.y += FLY_SPEED;
-
-        if (window.isKeyPressed(SNEAK_BUTTON)) velocity.y -= FLY_SPEED;
-
-        this.velocity.mul(FLY_FRICTION);
-    }
-
-    private void handleInputSwimming(Vector3f velocity) {
-        this.velocity.mul(WATER_FRICTION);
-
-        if (inInventory) {
-            applyGravity();
-            return;
-        }
-
-        float accelerationModifier = SWIM_STRENGTH;
-
-        if (window.isKeyPressed(SPRINT_BUTTON) && window.isKeyPressed(MOVE_FORWARD_BUTTON)) {
-            Vector2f cameraRotation = camera.getRotation();
-            float acceleration = SWIM_STRENGTH * accelerationModifier * 2.5f;
-            velocity.z -= (float) (acceleration * Math.cos(Math.toRadians(cameraRotation.x)));
-            velocity.y -= (float) (acceleration * Math.sin(Math.toRadians(cameraRotation.x)));
-            if (movementState != SWIMMING) {
-                if (movementState == WALKING) camera.movePosition(0.0f, -1.25f, 0.0f);
-                else if (movementState == CROUCHING) camera.movePosition(0.0f, -1.0f, 0.0f);
-                movementState = SWIMMING;
-            }
-        } else {
-            if (window.isKeyPressed(MOVE_FORWARD_BUTTON)) {
-                float acceleration = SWIM_STRENGTH * accelerationModifier;
-                velocity.z -= acceleration;
-            }
-            if (window.isKeyPressed(MOVE_BACK_BUTTON)) {
-                float acceleration = SWIM_STRENGTH * accelerationModifier;
-                velocity.z += acceleration;
-            }
-            applyGravity();
-        }
-        if (window.isKeyPressed(MOVE_LEFT_BUTTON)) {
-            float acceleration = SWIM_STRENGTH * accelerationModifier;
-            velocity.x -= acceleration;
-        }
-        if (window.isKeyPressed(MOVE_RIGHT_BUTTON)) {
-            float acceleration = SWIM_STRENGTH * accelerationModifier;
-            velocity.x += acceleration;
-        }
-
-        long currentTime = System.nanoTime();
-        if (window.isKeyPressed(JUMP_BUTTON)) if (isGrounded) {
-            this.velocity.y = JUMP_STRENGTH;
-            isGrounded = false;
-            spaceButtonPressTime = currentTime;
-        } else velocity.y += SWIM_STRENGTH * 0.65f;
-
-        if (window.isKeyPressed(SNEAK_BUTTON)) velocity.y -= SWIM_STRENGTH * 0.65f;
-    }
-
-    private void handleInputWalking(Vector3f velocity) {
-        if (inInventory) {
-            float friction = isGrounded ? GROUND_FRICTION : AIR_FRICTION;
-            applyGravity();
-            this.velocity.mul(friction, FALL_FRICTION, friction);
-            return;
-        }
-
-        float movementSpeedModifier = 1.0f;
-        float accelerationModifier = isGrounded ? 1.0f : IN_AIR_SPEED;
-        float jumpingAddend = 0.0f;
-        long currentTime = System.nanoTime();
-
-        if (movementState == WALKING && window.isKeyPressed(SPRINT_BUTTON)) {
-            movementSpeedModifier *= 1.3f;
-            if (window.isKeyPressed(JUMP_BUTTON) && isGrounded && currentTime - spaceButtonPressTime > 300_000_000) {
-                jumpingAddend = 0.04f;
-            }
-        }
-
-        if (window.isKeyPressed(MOVE_FORWARD_BUTTON)) {
-            float acceleration = (MOVEMENT_STATE_SPEED[movementState] + jumpingAddend) * movementSpeedModifier * accelerationModifier;
-            velocity.z -= acceleration;
-        }
-        if (window.isKeyPressed(MOVE_BACK_BUTTON)) {
-            float acceleration = MOVEMENT_STATE_SPEED[movementState] * accelerationModifier;
-            velocity.z += acceleration;
-        }
-
-        if (window.isKeyPressed(MOVE_LEFT_BUTTON)) {
-            float acceleration = MOVEMENT_STATE_SPEED[movementState] * accelerationModifier;
-            velocity.x -= acceleration;
-        }
-        if (window.isKeyPressed(MOVE_RIGHT_BUTTON)) {
-            float acceleration = MOVEMENT_STATE_SPEED[movementState] * accelerationModifier;
-            velocity.x += acceleration;
-        }
-
-        float friction = isGrounded ? GROUND_FRICTION : AIR_FRICTION;
-        applyGravity();
-        this.velocity.mul(friction, FALL_FRICTION, friction);
-
-        if (window.isKeyPressed(JUMP_BUTTON) && isGrounded) {
-            this.velocity.y = JUMP_STRENGTH;
-            isGrounded = false;
-            spaceButtonPressTime = currentTime;
-
-            Vector3f position = camera.getPosition();
-            sound.playRandomSound(Block.getFootstepsSound(getStandingBlock()), position.x, position.y, position.z, this.velocity.x, this.velocity.y, this.velocity.z, STEP_GAIN * 1.5f);
-        }
-    }
-
-    private void handleInventoryHotkeys() {
+    protected void handleInventoryHotkeys() {
         if (window.isKeyPressed(HOT_BAR_SLOT_1)) hotBar[0] = GUIElement.getHoveredOverBlock(inventoryScroll);
         else if (window.isKeyPressed(HOT_BAR_SLOT_2)) hotBar[1] = GUIElement.getHoveredOverBlock(inventoryScroll);
         else if (window.isKeyPressed(HOT_BAR_SLOT_3)) hotBar[2] = GUIElement.getHoveredOverBlock(inventoryScroll);
@@ -430,165 +197,8 @@ public class Player {
         updateHotBarElements();
     }
 
-    private void normalizeVelocity(Vector3f velocity) {
-        float maxSpeed = Math.max(Math.abs(velocity.x), Math.abs(velocity.z));
-        float normalizer = maxSpeed / (float) Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
-        if (isGrounded && !Float.isNaN(normalizer) && Float.isFinite(normalizer)) {
-            velocity.x *= normalizer;
-            velocity.z *= normalizer;
-        }
-    }
-
-    private void addVelocityChange(Vector3f velocity) {
-        Vector2f rotation = camera.getRotation();
-
-        if (velocity.z != 0) {
-            this.velocity.x -= (float) Math.sin(Math.toRadians(rotation.y)) * velocity.z;
-            this.velocity.z += (float) Math.cos(Math.toRadians(rotation.y)) * velocity.z;
-        }
-        if (velocity.x != 0) {
-            this.velocity.x -= (float) Math.sin(Math.toRadians(rotation.y - 90)) * velocity.x;
-            this.velocity.z += (float) Math.cos(Math.toRadians(rotation.y - 90)) * velocity.x;
-        }
-        this.velocity.y += velocity.y;
-    }
-
-    private void handleDestroyUsePickBlockInput() {
-        if (inInventory) return;
-        boolean useButtonWasJustPressed = this.useButtonWasJustPressed;
-        boolean destroyButtonWasJustPressed = this.destroyButtonWasJustPressed;
-        this.useButtonWasJustPressed = false;
-        this.destroyButtonWasJustPressed = false;
-        long currentTime = System.nanoTime();
-
-        handleDestroy(currentTime, destroyButtonWasJustPressed);
-
-        handleUse(currentTime, useButtonWasJustPressed);
-
-        handlePickBlock();
-    }
-
-    private void handleDestroy(long currentTime, boolean destroyButtonWasJustPressed) {
-        if ((destroyButtonPressTime == -1 || currentTime - destroyButtonPressTime <= 300_000_000) && !destroyButtonWasJustPressed)
-            return;
-        Target target = Target.getTarget(camera.getPosition(), camera.getDirection());
-        if (target != null)
-            GameLogic.placeBlock(AIR, target.position().x, target.position().y, target.position().z, true);
-    }
-
-    private void handleUse(long currentTime, boolean useButtonWasJustPressed) {
-        if (((useButtonPressTime == -1 || currentTime - useButtonPressTime <= 300_000_000) && !useButtonWasJustPressed))
-            return;
-
-        Vector3f cameraDirection = camera.getDirection();
-        Vector3f cameraPosition = camera.getPosition();
-        Target target = Target.getTarget(cameraPosition, cameraDirection);
-        if (target == null) return;
-
-        short selectedBlock = hotBar[selectedHotBarSlot];
-
-        if (Block.isInteractable(target.block()))
-            if (BlockEvent.interactWithBlock(target, hotBar[selectedHotBarSlot])) return;
-
-        if (hotBar[selectedHotBarSlot] == AIR) return;
-        short toPlaceBlock;
-        short inventoryBlock = Block.getInInventoryBlockEquivalent(target.block());
-        if (window.isKeyPressed(SPRINT_BUTTON) && Block.getBlockType(inventoryBlock) == Block.getBlockType(selectedBlock)
-                && (selectedBlock & 0xFFFF) >= STANDARD_BLOCKS_THRESHOLD) {
-
-            if ((inventoryBlock & BASE_BLOCK_MASK) == (selectedBlock & BASE_BLOCK_MASK))
-                toPlaceBlock = (short) (target.block() & ~WATER_LOGGED_MASK);
-            else toPlaceBlock = (short) (selectedBlock & BASE_BLOCK_MASK | target.block() & BLOCK_TYPE_MASK);
-
-        } else
-            toPlaceBlock = Block.getToPlaceBlock(selectedBlock, camera.getPrimaryDirection(cameraDirection), camera.getPrimaryXZDirection(cameraDirection), target);
-
-        final float minX = cameraPosition.x - HALF_PLAYER_WIDTH;
-        final float maxX = cameraPosition.x + HALF_PLAYER_WIDTH;
-        final float minY = cameraPosition.y - PLAYER_FEET_OFFSETS[movementState];
-        final float maxY = cameraPosition.y + PLAYER_HEAD_OFFSET;
-        final float minZ = cameraPosition.z - HALF_PLAYER_WIDTH;
-        final float maxZ = cameraPosition.z + HALF_PLAYER_WIDTH;
-        Vector3i position = target.position();
-        int x = position.x;
-        int y = position.y;
-        int z = position.z;
-        boolean isWaterLogging = false;
-
-        if ((Block.getBlockProperties(Chunk.getBlockInWorld(x, y, z)) & REPLACEABLE) == 0) {
-
-            boolean blockCanBeWaterLogged = (target.block() & 0xFFFF) > STANDARD_BLOCKS_THRESHOLD && (target.block() & BLOCK_TYPE_MASK) != FULL_BLOCK;
-
-            if (!blockCanBeWaterLogged || selectedBlock != WATER_SOURCE || window.isKeyPressed(SNEAK_BUTTON)) {
-                byte[] normal = Block.NORMALS[target.side()];
-                x = position.x + normal[0];
-                y = position.y + normal[1];
-                z = position.z + normal[2];
-
-                if (selectedBlock == WATER_SOURCE) {
-                    short block = Chunk.getBlockInWorld(x, y, z);
-                    isWaterLogging = (block & 0xFFFF) > STANDARD_BLOCKS_THRESHOLD && (block & BLOCK_TYPE_MASK) != FULL_BLOCK;
-                    if (isWaterLogging) toPlaceBlock = (short) (block | WATER_LOGGED_MASK);
-                }
-
-            } else {
-                isWaterLogging = true;
-                toPlaceBlock = (short) (target.block() | WATER_LOGGED_MASK);
-            }
-        }
-        if (hasCollision() && Block.entityIntersectsBlock(minX, maxX, minY, maxY, minZ, maxZ, x, y, z, toPlaceBlock)
-                || Block.entityIntersectsBlock(x, y, z, toPlaceBlock))
-            return;
-
-        if (!Block.isSupported(hotBar[selectedHotBarSlot], x, y, z)) return;
-
-        if (isWaterLogging || (Block.getBlockProperties(Chunk.getBlockInWorld(x, y, z)) & REPLACEABLE) != 0)
-            GameLogic.placeBlock(toPlaceBlock, x, y, z, true);
-    }
-
-    private void handlePickBlock() {
-        if (!window.isKeyPressed(PICK_BLOCK_BUTTON)) return;
-
-        Target target = Target.getTarget(camera.getPosition(), camera.getDirection());
-        if (target == null) return;
-
-        short block = Chunk.getBlockInWorld(target.position().x, target.position().y, target.position().z);
-        short inInventoryBlock = Block.getInInventoryBlockEquivalent(block);
-
-        boolean hasPlacedBlock = false;
-        for (int hotBarSlot = 0; hotBarSlot < hotBar.length; hotBarSlot++) {
-            if (hotBar[hotBarSlot] != inInventoryBlock) continue;
-            hasPlacedBlock = true;
-            if (hotBarSlot != selectedHotBarSlot) setSelectedHotBarSlot(hotBarSlot);
-            break;
-        }
-        if (!hasPlacedBlock && hotBar[selectedHotBarSlot] != AIR)
-            for (int hotBarSlot = 0; hotBarSlot < hotBar.length; hotBarSlot++) {
-                if (hotBar[hotBarSlot] != AIR) continue;
-                hotBar[hotBarSlot] = inInventoryBlock;
-                if (hotBarSlot != selectedHotBarSlot) setSelectedHotBarSlot(hotBarSlot);
-                hasPlacedBlock = true;
-                break;
-            }
-        if (!hasPlacedBlock) hotBar[selectedHotBarSlot] = inInventoryBlock;
-
-        updateHotBarElements();
-    }
-
     public void handleNonMovementInputs(int button, int action) {
-        if (button == DESTROY_BUTTON) if (action == GLFW.GLFW_PRESS) {
-            destroyButtonPressTime = System.nanoTime();
-            destroyButtonWasJustPressed = true;
-        } else {
-            destroyButtonPressTime = -1;
-        }
-        else if (button == USE_BUTTON) if (action == GLFW.GLFW_PRESS) {
-            useButtonPressTime = System.nanoTime();
-            useButtonWasJustPressed = true;
-        } else {
-            useButtonPressTime = -1;
-        }
-        else if (button == HOT_BAR_SLOT_1 && action == GLFW.GLFW_PRESS) setSelectedHotBarSlot(0);
+        if (button == HOT_BAR_SLOT_1 && action == GLFW.GLFW_PRESS) setSelectedHotBarSlot(0);
         else if (button == HOT_BAR_SLOT_2 && action == GLFW.GLFW_PRESS) setSelectedHotBarSlot(1);
         else if (button == HOT_BAR_SLOT_3 && action == GLFW.GLFW_PRESS) setSelectedHotBarSlot(2);
         else if (button == HOT_BAR_SLOT_4 && action == GLFW.GLFW_PRESS) setSelectedHotBarSlot(3);
@@ -604,8 +214,7 @@ public class Player {
         else if (button == TOGGLE_NO_CLIP_BUTTON && action == GLFW.GLFW_PRESS) noClip = !noClip;
         else if (button == TOGGLE_X_RAY_BUTTON && action == GLFW.GLFW_PRESS) renderer.setXRay(!renderer.isxRay());
         else if (button == ZOOM_BUTTON && action == GLFW.GLFW_PRESS) {
-            zoomModifier = 0.25f;
-            window.updateProjectionMatrix(FOV * zoomModifier);
+            camera.setZoomModifier(0.25f);
         } else if (button == ZOOM_BUTTON && action == GLFW.GLFW_RELEASE) window.updateProjectionMatrix(FOV);
         else if (button == SET_POSITION_1_BUTTON && action == GLFW.GLFW_PRESS) {
             Vector3f cameraPosition = camera.getPosition();
@@ -661,22 +270,8 @@ public class Player {
         selectedHotBarSlot = slot;
         hotBarSelectionIndicator.setPosition(new Vector2f((slot - 4) * 40 * GUI_SIZE / Launcher.getWindow().getWidth(), 0.0f));
         Vector3f position = camera.getPosition();
+        Vector3f velocity = movement.getVelocity();
         sound.playRandomSound(Block.getFootstepsSound(hotBar[selectedHotBarSlot]), position.x, position.y, position.z, velocity.x, velocity.y, velocity.z, INVENTORY_GAIN);
-    }
-
-    public short getStandingBlock() {
-        Vector3f position = camera.getPosition();
-        float height = PLAYER_FEET_OFFSETS[movementState];
-
-        int standingBlockX = Utils.floor(position.x);
-        int standingBlockY = Utils.floor(position.y - height - 0.0625f);
-        int standingBlockZ = Utils.floor(position.z);
-
-        return Chunk.getBlockInWorld(standingBlockX, standingBlockY, standingBlockZ);
-    }
-
-    private void applyGravity() {
-        velocity.y -= GRAVITY_ACCELERATION;
     }
 
     private void toggleInventory() {
@@ -684,166 +279,8 @@ public class Player {
         GLFW.glfwSetInputMode(window.getWindow(), GLFW.GLFW_CURSOR, inInventory ? GLFW.GLFW_CURSOR_NORMAL : GLFW.GLFW_CURSOR_DISABLED);
     }
 
-    private void moveCameraHandleCollisions(float x, float y, float z) {
-        Vector3f position = new Vector3f(camera.getPosition());
-        Vector3f oldPosition = new Vector3f(position);
-        position.add(x, y, z);
-
-        boolean xFirst = collidesWithBlock(position.x, oldPosition.y, oldPosition.z, movementState);
-        boolean zFirst = collidesWithBlock(oldPosition.x, oldPosition.y, position.z, movementState);
-        boolean xAndZ = collidesWithBlock(position.x, oldPosition.y, position.z, movementState);
-        float requiredStepHeight = getRequiredStepHeight(position.x, position.y, position.z, movementState);
-        boolean canAutoStep = (isGrounded && !isFling || movementState == SWIMMING) && requiredStepHeight <= MAX_STEP_HEIGHT;
-
-        if ((xFirst || xAndZ) && (zFirst || xAndZ) && canAutoStep && !collidesWithBlock(position.x, oldPosition.y + requiredStepHeight, position.z, movementState)) {
-            position.y += requiredStepHeight;
-            oldPosition.y += requiredStepHeight;
-        } else if ((xFirst || xAndZ) && (zFirst || xAndZ)) {
-            if (xFirst && xAndZ) {
-                position.x = oldPosition.x;
-                velocity.x = 0.0f;
-            } else {
-                position.z = oldPosition.z;
-                velocity.z = 0.0f;
-            }
-
-            if (zFirst && xAndZ) {
-                position.z = oldPosition.z;
-                velocity.z = 0.0f;
-            } else {
-                position.x = oldPosition.x;
-                velocity.x = 0.0f;
-            }
-
-            if (!(xFirst && xAndZ) && !(zFirst && xAndZ)) if (Math.abs(x) > Math.abs(z)) position.x += x;
-            else position.z += z;
-        }
-
-        if (collidesWithBlock(position.x, position.y, position.z, movementState)) {
-            position.y = oldPosition.y;
-            isGrounded = y < 0.0f;
-            velocity.y = 0.0f;
-            if (y < 0.0f) isFling = false;
-        } else if ((movementState == CROUCHING || movementState == CRAWLING) && isGrounded && y <= 0.0f && collidesWithBlock(oldPosition.x, position.y - 0.0625f, oldPosition.z, movementState)) {
-            boolean onEdgeX = !collidesWithBlock(position.x, position.y - 0.5625f, oldPosition.z, movementState);
-            boolean onEdgeZ = !collidesWithBlock(oldPosition.x, position.y - 0.5625f, position.z, movementState);
-
-            if (onEdgeX) {
-                position.x = oldPosition.x;
-                position.y = oldPosition.y;
-                velocity.x = 0.0f;
-                velocity.y = 0.0f;
-            }
-            if (onEdgeZ) {
-                position.z = oldPosition.z;
-                position.y = oldPosition.y;
-                velocity.z = 0.0f;
-                velocity.y = 0.0f;
-            }
-        }
-        if (movementState == SWIMMING && y > 0.0f && !collidesWithWater(position.x, position.y, position.z, SWIMMING)) {
-            position.y = oldPosition.y;
-            velocity.y = 0.0f;
-        }
-
-        if (collidesWithBlock(position.x, position.y, position.z, movementState)) {
-            position.x = oldPosition.x;
-            position.y = oldPosition.y;
-            position.z = oldPosition.z;
-            velocity.set(0.0f, 0.0f, 0.0f);
-        }
-
-        if (position.y != oldPosition.y) isGrounded = false;
-
-        if (Utils.floor(oldPosition.x) >> CHUNK_SIZE_BITS != Utils.floor(position.x) >> CHUNK_SIZE_BITS)
-            GameLogic.restartGeneratorNow(position.x > oldPosition.x ? NORTH : SOUTH);
-
-        else if (Utils.floor(oldPosition.y) >> CHUNK_SIZE_BITS != Utils.floor(position.y) >> CHUNK_SIZE_BITS)
-            GameLogic.restartGeneratorNow(position.y > oldPosition.y ? TOP : BOTTOM);
-
-        else if (Utils.floor(oldPosition.z) >> CHUNK_SIZE_BITS != Utils.floor(position.z) >> CHUNK_SIZE_BITS)
-            GameLogic.restartGeneratorNow(position.z > oldPosition.z ? WEST : EAST);
-
-        camera.setPosition(position.x, position.y, position.z);
-    }
-
-    public boolean collidesWithBlock(float x, float y, float z, int movementState) {
-        if (noClip) return false;
-
-        final float minX = x - HALF_PLAYER_WIDTH;
-        final float maxX = x + HALF_PLAYER_WIDTH;
-        final float minY = y - PLAYER_FEET_OFFSETS[movementState];
-        final float maxY = y + PLAYER_HEAD_OFFSET;
-        final float minZ = z - HALF_PLAYER_WIDTH;
-        final float maxZ = z + HALF_PLAYER_WIDTH;
-
-        for (int blockX = Utils.floor(minX), maxBlockX = Utils.floor(maxX); blockX <= maxBlockX; blockX++)
-            for (int blockY = Utils.floor(minY), maxBlockY = Utils.floor(maxY); blockY <= maxBlockY; blockY++)
-                for (int blockZ = Utils.floor(minZ), maxBlockZ = Utils.floor(maxZ); blockZ <= maxBlockZ; blockZ++) {
-
-                    short block = Chunk.getBlockInWorld(blockX, blockY, blockZ);
-
-                    if (hasCollision() && Block.entityIntersectsBlock(minX, maxX, minY, maxY, minZ, maxZ, blockX, blockY, blockZ, block))
-                        return true;
-                }
-        return false;
-    }
-
-    public boolean collidesWithWater(float x, float y, float z, int movementState) {
-        if (noClip) return false;
-
-        final float minX = x - HALF_PLAYER_WIDTH;
-        final float maxX = x + HALF_PLAYER_WIDTH;
-        final float minY = y - PLAYER_FEET_OFFSETS[movementState];
-        final float maxY = y + PLAYER_HEAD_OFFSET;
-        final float minZ = z - HALF_PLAYER_WIDTH;
-        final float maxZ = z + HALF_PLAYER_WIDTH;
-
-        for (int blockX = Utils.floor(minX), maxBlockX = Utils.floor(maxX); blockX <= maxBlockX; blockX++)
-            for (int blockY = Utils.floor(minY), maxBlockY = Utils.floor(maxY); blockY <= maxBlockY; blockY++)
-                for (int blockZ = Utils.floor(minZ), maxBlockZ = Utils.floor(maxZ); blockZ <= maxBlockZ; blockZ++)
-                    if (Block.isWaterLogged(Chunk.getBlockInWorld(blockX, blockY, blockZ))) return true;
-        return false;
-    }
-
-    public float getRequiredStepHeight(float x, float y, float z, int movementState) {
-        final float minX = x - HALF_PLAYER_WIDTH;
-        final float maxX = x + HALF_PLAYER_WIDTH;
-        final float minY = y - PLAYER_FEET_OFFSETS[movementState];
-        final float maxY = y + PLAYER_HEAD_OFFSET;
-        final float minZ = z - HALF_PLAYER_WIDTH;
-        final float maxZ = z + HALF_PLAYER_WIDTH;
-
-        float requiredStepHeight = 0.0f;
-
-        for (int blockX = Utils.floor(minX), maxPlayerX = Utils.floor(maxX); blockX <= maxPlayerX; blockX++)
-            for (int blockY = Utils.floor(minY), maxPlayerY = Utils.floor(maxY); blockY <= maxPlayerY; blockY++)
-                for (int blockZ = Utils.floor(minZ), maxPlayerZ = Utils.floor(maxZ); blockZ <= maxPlayerZ; blockZ++) {
-
-                    short block = Chunk.getBlockInWorld(blockX, blockY, blockZ);
-
-                    int blockType = Block.getBlockType(block);
-                    byte[] blockXYZSubData = Block.getXYZSubData(block);
-                    if (blockXYZSubData.length == 0 || blockType == LIQUID_TYPE) continue;
-
-                    for (int aabbIndex = 0; aabbIndex < blockXYZSubData.length; aabbIndex += 6) {
-                        float minBlockX = blockX + blockXYZSubData[MIN_X + aabbIndex] * 0.0625f;
-                        float maxBlockX = 1 + blockX + blockXYZSubData[MAX_X + aabbIndex] * 0.0625f;
-                        float minBlockY = blockY + blockXYZSubData[MIN_Y + aabbIndex] * 0.0625f;
-                        float maxBlockY = 1 + blockY + blockXYZSubData[MAX_Y + aabbIndex] * 0.0625f;
-                        float minBlockZ = blockZ + blockXYZSubData[MIN_Z + aabbIndex] * 0.0625f;
-                        float maxBlockZ = 1 + blockZ + blockXYZSubData[MAX_Z + aabbIndex] * 0.0625f;
-
-                        if (minX < maxBlockX && maxX > minBlockX && minY < maxBlockY && maxY > minBlockY && minZ < maxBlockZ && maxZ > minBlockZ) {
-                            float thisBlockStepHeight = maxBlockY - minY;
-                            requiredStepHeight = Math.max(requiredStepHeight, thisBlockStepHeight);
-                        }
-                    }
-                }
-        return requiredStepHeight;
-    }
-
-    public void render() {
+    public void render(float passedTicks) {
+        long playerTime = System.nanoTime();
         Vector3f cameraPosition = camera.getPosition();
         final int playerChunkX = Utils.floor(cameraPosition.x) >> CHUNK_SIZE_BITS;
         final int playerChunkY = Utils.floor(cameraPosition.y) >> CHUNK_SIZE_BITS;
@@ -870,12 +307,6 @@ public class Player {
                 renderChunkColumn(-ring + playerChunkX, playerChunkY, z + playerChunkZ);
         }
         renderChunkColumnTime = System.nanoTime() - renderChunkColumnTime;
-
-        if (printTimes) {
-            System.out.println("occlusionCulling " + occlusionCullingTime);
-            System.out.println("frustumCulling   " + frustumCullingTime);
-            System.out.println("chunkColumn      " + renderChunkColumnTime);
-        }
 
         for (GUIElement GUIElement : GUIElements)
             renderer.processGUIElement(GUIElement);
@@ -918,6 +349,19 @@ public class Player {
         renderer.setHeadUnderWater(headUnderWater);
 
         if (inInventory) renderInventoryElements();
+        playerTime = System.nanoTime() - playerTime;
+
+        long renderTime = System.nanoTime();
+        renderer.render(camera, passedTicks);
+        renderTime = System.nanoTime() - renderTime;
+
+        if (printTimes) {
+            System.out.println("player " + playerTime);
+            System.out.println("occlusionCulling " + occlusionCullingTime);
+            System.out.println("frustumCulling   " + frustumCullingTime);
+            System.out.println("chunkColumn      " + renderChunkColumnTime);
+            System.out.println("render " + renderTime);
+        }
     }
 
     private void renderInventoryElements() {
@@ -1040,7 +484,7 @@ public class Player {
                 element = ObjectLoader.loadGUIElement(GUIElement.getBlockDisplayVertices(block), textureCoordinates, new Vector2f(xOffset, yOffset));
             }
 
-            element.setTexture(atlas);
+            element.setTexture(Texture.atlas);
             hotBarElements.add(element);
         }
     }
@@ -1078,28 +522,8 @@ public class Player {
         return debugScreenOpen;
     }
 
-    public boolean isFling() {
-        return isFling;
-    }
-
-    public boolean isGrounded() {
-        return isGrounded;
-    }
-
     public int getSelectedHotBarSlot() {
         return selectedHotBarSlot;
-    }
-
-    public int getMovementState() {
-        return movementState;
-    }
-
-    public void setMovementState(int movementState) {
-        this.movementState = movementState;
-    }
-
-    public void setFling(boolean fling) {
-        isFling = fling;
     }
 
     public short[] getHotBar() {
@@ -1115,10 +539,6 @@ public class Player {
         this.visibleChunks = visibleChunks;
     }
 
-    public Vector3f getVelocity() {
-        return velocity;
-    }
-
     public float getInventoryScroll() {
         return inventoryScroll;
     }
@@ -1127,70 +547,60 @@ public class Player {
         renderer.cleanUp();
     }
 
-    public void changeZoomModifier(float multiplier) {
-        zoomModifier = Math.min(1.0f, zoomModifier * multiplier);
-        window.updateProjectionMatrix(FOV * zoomModifier);
+    public Movement getMovement() {
+        return movement;
     }
 
-    // Movement
-    private static final float FLY_FRICTION = 0.8f;
+    public InteractionHandler getInteractionHandler() {
+        return interactionHandler;
+    }
 
-    private static final float MOVEMENT_SPEED = 0.098f;
-    private static final float IN_AIR_SPEED = 0.2f;
-    private static final float[] MOVEMENT_STATE_SPEED = new float[]{MOVEMENT_SPEED, 0.0294f, MOVEMENT_SPEED * 0.25f};
-    private static final float FLY_SPEED = 0.06f;
+    public ArrayList<GUIElement> getInventoryElements() {
+        return inventoryElements;
+    }
 
-    private static final float JUMP_STRENGTH = 0.42f;
-    private static final float SWIM_STRENGTH = 0.26f;
-    private static final float MAX_STEP_HEIGHT = 0.6f;
+    public ArrayList<GUIElement> getGUIElements() {
+        return GUIElements;
+    }
 
-    // Movement state indices
-    private static final int WALKING = 0;
-    private static final int CROUCHING = 1;
-    private static final int CRAWLING = 2;
-    private static final int SWIMMING = 3;
+    public GUIElement getHotBarSelectionIndicator() {
+        return hotBarSelectionIndicator;
+    }
 
-    // Collision box size
-    private static final float HALF_PLAYER_WIDTH = 0.23f;
-    private static final float PLAYER_HEAD_OFFSET = 0.08f;
-    private static final float[] PLAYER_FEET_OFFSETS = new float[]{1.65f, 1.4f, 0.4f, 0.4f};
+    public void setHotBarSelectionIndicator(GUIElement hotBarSelectionIndicator) {
+        this.hotBarSelectionIndicator = hotBarSelectionIndicator;
+    }
 
+    public void setInventoryScroll(float inventoryScroll) {
+        this.inventoryScroll = inventoryScroll;
+    }
 
     private final RenderManager renderer;
     private final WindowManager window;
     private final SoundManager sound;
     private final Camera camera;
     private final MouseInput mouseInput;
+    private final Movement movement;
+    private final InteractionHandler interactionHandler;
 
-    private final Vector3f velocity;
     private long[] visibleChunks;
 
     private final ArrayList<GUIElement> GUIElements = new ArrayList<>();
     private final ArrayList<GUIElement> hotBarElements = new ArrayList<>();
     private final ArrayList<GUIElement> inventoryElements = new ArrayList<>();
     private GUIElement hotBarSelectionIndicator;
-    private final Texture atlas;
-
-    private long spaceButtonPressTime;
-    private boolean spaceButtonPressed = false;
-    private long useButtonPressTime = -1, destroyButtonPressTime = -1;
-    private boolean useButtonWasJustPressed = false, destroyButtonWasJustPressed = false;
 
     private float inventoryScroll = 0;
-    private float zoomModifier = 1.0f;
-    private int movementState = WALKING;
-    private boolean isGrounded = false;
-    private boolean isFling;
-    private boolean inInventory;
-    private boolean headUnderWater, touchingWater;
+    private boolean headUnderWater;
     private short[] hotBar = new short[9];
     private int selectedHotBarSlot = -1; // No idea but when it's 0 there is a bug but anything else works
     private long lastFootstepTick = 0;
+    private boolean inInventory;
 
     // Debug
     private boolean debugScreenOpen;
-    private boolean noClip;
     private boolean usingOcclusionCulling = true, usingFrustumCulling = true, renderingEntities = true;
     public boolean printTimes = false;
+    private boolean noClip;
     private final Vector3i pos1, pos2;
 }

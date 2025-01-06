@@ -466,7 +466,7 @@ public class RenderManager {
         int line = -1;
         final Vector3f position = player.getCamera().getPosition();
         final Vector3f direction = player.getCamera().getDirection();
-        final Vector3f velocity = player.getVelocity();
+        final Vector3f velocity = player.getMovement().getVelocity();
 
         Target target = Target.getTarget(position, direction);
 
@@ -504,8 +504,8 @@ public class RenderManager {
             renderTextLine("Block:" + Block.getFullBlockName(target.block()), Color.GRAY, ++line);
             renderTextLine("Intersected side:" + target.side(), Color.GRAY, ++line);
         }
-        if (player.isGrounded()) {
-            renderTextLine("Standing on block:" + Block.getFullBlockName(player.getStandingBlock()), Color.WHITE, ++line);
+        if (player.getMovement().isGrounded()) {
+            renderTextLine("Standing on block:" + Block.getFullBlockName(player.getMovement().getStandingBlock()), Color.WHITE, ++line);
         }
         renderTextLine("Seed:" + SEED, Color.GREEN, ++line);
         renderTextLine("Rendered chunk models:" + chunkModels.size(), Color.RED, ++line);

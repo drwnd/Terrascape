@@ -1,5 +1,6 @@
 package terrascape.entity;
 
+import terrascape.player.Player;
 import terrascape.server.Block;
 import terrascape.player.ObjectLoader;
 import terrascape.player.WindowManager;
@@ -374,5 +375,52 @@ public class GUIElement {
                 elements.add(element);
             }
         }
+    }
+
+    public static void loadGUIElements(Player player) throws Exception {
+        ArrayList<GUIElement> GUIElements = player.getGUIElements();
+        GUIElement crossHair = ObjectLoader.loadGUIElement(GUIElement.getCrossHairVertices(), GUI_ELEMENT_TEXTURE_COORDINATES, new Vector2f(0.0f, 0.0f));
+        crossHair.setTexture(new Texture(ObjectLoader.loadTexture("textures/CrossHair.png")));
+        GUIElements.addFirst(crossHair);
+
+        GUIElement hotBarGUIElement = ObjectLoader.loadGUIElement(GUIElement.getHotBarVertices(), GUI_ELEMENT_TEXTURE_COORDINATES, new Vector2f(0.0f, 0.0f));
+        hotBarGUIElement.setTexture(new Texture(ObjectLoader.loadTexture("textures/HotBar.png")));
+        GUIElements.add(1, hotBarGUIElement);
+
+        GUIElement hotBarSelectionIndicator = ObjectLoader.loadGUIElement(GUIElement.getHotBarSelectionIndicatorVertices(), GUI_ELEMENT_TEXTURE_COORDINATES, new Vector2f(0, 0));
+        hotBarSelectionIndicator.setTexture(new Texture(ObjectLoader.loadTexture("textures/HotBarSelectionIndicator.png")));
+        player.setHotBarSelectionIndicator(hotBarSelectionIndicator);
+        player.setSelectedHotBarSlot(0);
+
+        generateInventoryElements(player.getInventoryElements(), Texture.atlas);
+    }
+
+    public static void reloadGUIElements(Player player) throws Exception {
+        ArrayList<GUIElement> GUIElements = player.getGUIElements();
+        GUIElement crossHair = GUIElements.removeFirst();
+        ObjectLoader.removeVAO(crossHair.getVao());
+        ObjectLoader.removeVBO(crossHair.getVbo1());
+        ObjectLoader.removeVBO(crossHair.getVbo2());
+
+        GUIElement hotBar = GUIElements.removeFirst();
+        ObjectLoader.removeVAO(hotBar.getVao());
+        ObjectLoader.removeVBO(hotBar.getVbo1());
+        ObjectLoader.removeVBO(hotBar.getVbo2());
+
+        GUIElement hotBarSelectionIndicator = player.getHotBarSelectionIndicator();
+        ObjectLoader.removeVAO(hotBarSelectionIndicator.getVao());
+        ObjectLoader.removeVBO(hotBarSelectionIndicator.getVbo1());
+        ObjectLoader.removeVBO(hotBarSelectionIndicator.getVbo2());
+
+        ArrayList<GUIElement> inventoryElements = player.getInventoryElements();
+        for (GUIElement element : inventoryElements) {
+            ObjectLoader.removeVAO(element.getVao());
+            ObjectLoader.removeVBO(element.getVbo1());
+            ObjectLoader.removeVBO(element.getVbo2());
+        }
+        inventoryElements.clear();
+        player.setInventoryScroll(0.0f);
+
+        loadGUIElements(player);
     }
 }

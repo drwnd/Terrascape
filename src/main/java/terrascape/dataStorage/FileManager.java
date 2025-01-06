@@ -1,5 +1,6 @@
 package terrascape.dataStorage;
 
+import terrascape.entity.GUIElement;
 import terrascape.player.Player;
 import terrascape.server.Block;
 import terrascape.server.GameLogic;
@@ -266,9 +267,9 @@ public class FileManager {
             writer.write(toByteArray(Float.floatToIntBits(playerRotation.x)));
             writer.write(toByteArray(Float.floatToIntBits(playerRotation.y)));
 
-            writer.write(player.getMovementState());
+            writer.write(player.getMovement().getMovementState());
             writer.write(player.getSelectedHotBarSlot());
-            writer.write(player.isFling() ? 1 : 0);
+            writer.write(player.getMovement().isFling() ? 1 : 0);
             writer.write(toByteArray(player.getHotBar()));
 
             writer.close();
@@ -301,9 +302,9 @@ public class FileManager {
         player.getCamera().setPosition(floats[PLAYER_X], floats[PLAYER_Y], floats[PLAYER_Z]);
         player.getCamera().setRotation(floats[PLAYER_PITCH], floats[PLAYER_YAW]);
         player.setHotBar(hotBar);
-        player.setMovementState(playerFlags[MOVEMENT_STATE]);
+        player.getMovement().setMovementState(playerFlags[MOVEMENT_STATE]);
         player.setSelectedHotBarSlot(playerFlags[SELECTED_HOT_BAR_SLOT]);
-        player.setFling(playerFlags[IS_FLYING] == 1);
+        player.getMovement().setFling(playerFlags[IS_FLYING] == 1);
 
         return player;
     }
@@ -481,7 +482,7 @@ public class FileManager {
         if (GUI_SIZE != newGUISize) {
             GUI_SIZE = newGUISize;
             if (player != null) {
-                player.reloadGUIElements();
+                GUIElement.reloadGUIElements(player);
                 player.updateHotBarElements();
             }
         }

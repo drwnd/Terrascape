@@ -27,15 +27,17 @@ public class MouseInput {
             playHoverSelectionSound();
         });
 
-        GLFW.glfwSetMouseButtonCallback(Launcher.getWindow().getWindow(), (long window, int button, int action, int mods) ->
-                player.handleNonMovementInputs(button | IS_MOUSE_BUTTON, action));
+        GLFW.glfwSetMouseButtonCallback(Launcher.getWindow().getWindow(), (long window, int button, int action, int mods) -> {
+            player.handleNonMovementInputs(button | IS_MOUSE_BUTTON, action);
+            player.getInteractionHandler().input(button | IS_MOUSE_BUTTON, action);
+        });
 
         GLFW.glfwSetScrollCallback(Launcher.getWindow().getWindow(), (long window, double xPos, double yPos) -> {
             if (player.isInInventory()) {
                 float scrollValue = (float) yPos * -0.05f;
                 player.updateInventoryScroll(scrollValue);
             } else if (Launcher.getWindow().isKeyPressed(ZOOM_BUTTON)) {
-                player.changeZoomModifier(yPos > 0 ? 0.9f : 1 / 0.9f);
+                player.getCamera().changeZoomModifier(yPos > 0 ? 0.9f : 1 / 0.9f);
             } else if (SCROLL_HOT_BAR) {
                 player.setSelectedHotBarSlot((player.getSelectedHotBarSlot() - (int) yPos + 9) % 9);
             }

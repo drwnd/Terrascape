@@ -6,6 +6,8 @@ import terrascape.player.ShaderManager;
 import terrascape.utils.Utils;
 import org.joml.Vector3f;
 
+import java.util.LinkedList;
+
 import static terrascape.utils.Constants.*;
 
 public abstract class Entity {
@@ -174,6 +176,61 @@ public abstract class Entity {
                     }
                 }
         return intersection;
+    }
+
+    public static boolean entityIntersectsBlock(float minX, float maxX, float minY, float maxY, float minZ, float maxZ, int blockX, int blockY, int blockZ, short block) {
+
+        int blockProperties = Block.getBlockProperties(block);
+        if ((blockProperties & NO_COLLISION) != 0) return false;
+        byte[] blockXYZSubData = Block.getXYZSubData(block);
+
+        for (int aabbIndex = 0; aabbIndex < blockXYZSubData.length; aabbIndex += 6) {
+            float minBlockX = blockX + blockXYZSubData[MIN_X + aabbIndex] * 0.0625f;
+            float maxBlockX = 1 + blockX + blockXYZSubData[MAX_X + aabbIndex] * 0.0625f;
+            float minBlockY = blockY + blockXYZSubData[MIN_Y + aabbIndex] * 0.0625f;
+            float maxBlockY = 1 + blockY + blockXYZSubData[MAX_Y + aabbIndex] * 0.0625f;
+            float minBlockZ = blockZ + blockXYZSubData[MIN_Z + aabbIndex] * 0.0625f;
+            float maxBlockZ = 1 + blockZ + blockXYZSubData[MAX_Z + aabbIndex] * 0.0625f;
+            if (minX < maxBlockX && maxX > minBlockX && minY < maxBlockY && maxY > minBlockY && minZ < maxBlockZ && maxZ > minBlockZ)
+                return true;
+        }
+        return false;
+    }
+
+    public static boolean entityIntersectsBlock(int blockX, int blockY, int blockZ, short block) {
+        byte[] blockXYZSubData = Block.getXYZSubData(block);
+
+        int currentClusterX = blockX >> ENTITY_CLUSTER_SIZE_BITS;
+        int currentClusterY = blockY >> ENTITY_CLUSTER_SIZE_BITS;
+        int currentClusterZ = blockZ >> ENTITY_CLUSTER_SIZE_BITS;
+
+        for (int clusterX = currentClusterX - 1; clusterX <= currentClusterX + 1; clusterX++)
+            for (int clusterZ = currentClusterZ - 1; clusterZ <= currentClusterZ + 1; clusterZ++)
+                for (int clusterY = currentClusterY - 1; clusterY <= currentClusterY + 1; clusterY++) {
+
+                    LinkedList<Entity> entityCluster = Chunk.getEntityCluster(clusterX, clusterY, clusterZ);
+                    if (entityCluster == null) continue;
+
+                    for (Entity entity : entityCluster) {
+
+                        float[] aabb = entity.getAabb();
+                        Vector3f position = entity.getPosition();
+
+                        for (int aabbIndex = 0; aabbIndex < blockXYZSubData.length; aabbIndex += 6) {
+                            float minBlockX = blockX + blockXYZSubData[MIN_X + aabbIndex] * 0.0625f;
+                            float maxBlockX = 1 + blockX + blockXYZSubData[MAX_X + aabbIndex] * 0.0625f;
+                            float minBlockY = blockY + blockXYZSubData[MIN_Y + aabbIndex] * 0.0625f;
+                            float maxBlockY = 1 + blockY + blockXYZSubData[MAX_Y + aabbIndex] * 0.0625f;
+                            float minBlockZ = blockZ + blockXYZSubData[MIN_Z + aabbIndex] * 0.0625f;
+                            float maxBlockZ = 1 + blockZ + blockXYZSubData[MAX_Z + aabbIndex] * 0.0625f;
+                            if (aabb[MIN_X] + position.x < maxBlockX && aabb[MAX_X] + position.x > minBlockX
+                                    && aabb[MIN_Y] + position.y < maxBlockY && aabb[MAX_Y] + position.y > minBlockY
+                                    && aabb[MIN_Z] + position.z < maxBlockZ && aabb[MAX_Z] + position.z > minBlockZ)
+                                return true;
+                        }
+                    }
+                }
+        return false;
     }
 
     public boolean isDead() {

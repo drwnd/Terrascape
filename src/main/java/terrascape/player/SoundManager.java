@@ -214,7 +214,7 @@ public class SoundManager {
 
     public void setListenerData(Player player) {
         Vector3f position = player.getCamera().getPosition();
-        Vector3f velocity = player.getVelocity();
+        Vector3f velocity = player.getMovement().getVelocity();
         Vector3f direction = player.getCamera().getDirection();
         AL10.alListener3f(AL10.AL_POSITION, position.x, position.y, position.z);
         AL10.alListener3f(AL10.AL_VELOCITY, velocity.x, velocity.y, velocity.z);

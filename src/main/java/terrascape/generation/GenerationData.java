@@ -1,5 +1,6 @@
 package terrascape.generation;
 
+import terrascape.generation.biomes.Biome;
 import terrascape.server.GameLogic;
 import terrascape.dataStorage.Chunk;
 
@@ -16,7 +17,7 @@ public class GenerationData {
     public double erosion;
     public double continental;
 
-    public int height;
+    public int height, specialHeight;
     public byte steepness;
     public long caveBits;
     public boolean treeAllowed;
@@ -57,6 +58,10 @@ public class GenerationData {
         erosion = erosionMap[inChunkX + 1][inChunkZ + 1];
         continental = continentalMap[inChunkX + 1][inChunkZ + 1];
         height = resultingHeightMap[inChunkX + 1][inChunkZ + 1];
+    }
+
+    public void setBiome(int inChunkX, int inChunkZ, Biome biome) {
+        specialHeight = biome.getSpecialHeight(chunk.X << CHUNK_SIZE_BITS | inChunkX, chunk.Z << CHUNK_SIZE_BITS | inChunkZ, this);
     }
 
     public int getHeight(int inChunkX, int inChunkZ) {

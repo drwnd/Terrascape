@@ -57,11 +57,6 @@ public class GameLogic {
         generatorRestartScheduled = (byte) (0x80 | direction);
     }
 
-    public static void restartGeneratorNow(int direction) {
-        generatorRestartScheduled = 0;
-        generator.restart(direction);
-    }
-
     public static void startGenerator() {
         generator = new ChunkGenerator();
         generator.start();
@@ -71,7 +66,7 @@ public class GameLogic {
         generator.waitUntilHalt();
     }
 
-    public static void placeBlock(short block, int x, int y, int z, boolean highImportance) {
+    public static void placeBlock(short block, int x, int y, int z, boolean playerAction) {
         int chunkX = x >> CHUNK_SIZE_BITS;
         int chunkY = y >> CHUNK_SIZE_BITS;
         int chunkZ = z >> CHUNK_SIZE_BITS;
@@ -84,7 +79,7 @@ public class GameLogic {
         if (chunk == null) return;
 
         short previousBlock = chunk.getSaveBlock(inChunkX, inChunkY, inChunkZ);
-        if (highImportance) block = getToPlaceBlock(block, previousBlock);
+        if (playerAction) block = InteractionHandler.getToPlaceBlock(block, previousBlock);
         if (previousBlock == block) return;
 
         chunk.placeBlock(inChunkX, inChunkY, inChunkZ, block);
@@ -111,7 +106,7 @@ public class GameLogic {
                 }
         restartGenerator(NONE);
 
-        if (highImportance) {
+        if (playerAction) {
             boolean previousBlockWaterLogged = Block.isWaterLogged(previousBlock);
             boolean newBlockWaterLogged = Block.isWaterLogged(block);
 
@@ -132,14 +127,6 @@ public class GameLogic {
             } else
                 sound.playRandomSound(Block.getFootstepsSound(WATER_SOURCE), x + 0.5f, y + 0.5f, z + 0.5f, 0.0f, 0.0f, 0.0f, STEP_GAIN);
         }
-    }
-
-    private static short getToPlaceBlock(short block, short previousBlock) {
-        if (block == AIR && Block.isWaterLogged(previousBlock)) return WATER_SOURCE;
-        if (previousBlock != WATER_SOURCE) return block;
-        if ((block & 0xFFFF) < STANDARD_BLOCKS_THRESHOLD) return block;
-        if ((block & BLOCK_TYPE_MASK) == FULL_BLOCK) return block;
-        return (short) (block | WATER_LOGGED_MASK);
     }
 
     public static void addBlockChange(int x, int y, int z, short previousBlock, short currentBlock) {
@@ -344,20 +331,7 @@ public class GameLogic {
             GL11.glViewport(0, 0, window.getWidth(), window.getHeight());
             window.setResize(true);
         }
-        RenderManager renderer = player.getRenderer();
-
-        long playerTime = System.nanoTime();
-        player.render();
-        playerTime = System.nanoTime() - playerTime;
-
-        long renderTime = System.nanoTime();
-        renderer.render(player.getCamera(), timeSinceLastTick);
-        renderTime = System.nanoTime() - renderTime;
-
-        if (player.printTimes) {
-            System.out.println("player " + playerTime);
-            System.out.println("render " + renderTime);
-        }
+        player.render(timeSinceLastTick);
     }
 
     public static void addToBufferChunk(Chunk chunk) {

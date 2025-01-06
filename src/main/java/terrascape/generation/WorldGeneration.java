@@ -1,5 +1,6 @@
 package terrascape.generation;
 
+import terrascape.generation.biomes.*;
 import terrascape.server.Block;
 import terrascape.dataStorage.Chunk;
 import terrascape.dataStorage.Structure;
@@ -13,29 +14,49 @@ import static terrascape.utils.Settings.*;
 
 public class WorldGeneration {
 
+    public static final int NO_CAVE = 0;
     public static final int WATER_LEVEL = 0;
+    public static final int SNOW_LEVEL = WATER_LEVEL + 91;
+    public static final int ICE_LEVEL = WATER_LEVEL + 141;
+
+    public static final double ICE_BERG_FREQUENCY = 0.025;
+    public static final double ICE_BERG_THRESHOLD = 0.45;
+    public static final double ICE_BERG_HEIGHT = 8;
+    public static final double ICE_PLANE_THRESHOLD = 0.3;
+
+    public static final double MESA_PILLAR_THRESHOLD = 0.55;
+    public static final double MESA_PILLAR_FREQUENCY = 0.03;
+    public static final int MESA_PILLAR_HEIGHT = 25;
+
+    public static final double PLAINS_TREE_THRESHOLD = 0.01;
+    public static final double FOREST_TREE_THRESHOLD = 0;
+    public static final double REDWOOD_FOREST_TREE_THRESHOLD = 0.5;
+    public static final double TALL_GRASS_THRESHOLD = 0.25;
+    public static final double SHRUB_THRESHOLD = 0.03;
+    public static final double FLOWER_THRESHOLD = 0.26;
+    public static final double SPARSE_FLOWER_THRESHOLD = 0.01;
 
     public static void init() {
-        biomes[DESERT] = WorldGeneration::genDesert;
-        biomes[WASTELAND] = WorldGeneration::genWasteLand;
-        biomes[DARK_OAK_FOREST] = WorldGeneration::genDarkOakForest;
-        biomes[SNOWY_SPRUCE_FOREST] = WorldGeneration::genSnowySpruceForest;
-        biomes[SNOWY_PLAINS] = WorldGeneration::genSnowyPlains;
-        biomes[SPRUCE_FOREST] = WorldGeneration::genSpruceForest;
-        biomes[PLAINS] = WorldGeneration::genPlains;
-        biomes[OAK_FOREST] = WorldGeneration::genOakForest;
-        biomes[WARM_OCEAN] = WorldGeneration::genWarmOcean;
-        biomes[COLD_OCEAN] = WorldGeneration::genColdOcean;
-        biomes[OCEAN] = WorldGeneration::genOcean;
-        biomes[DRY_MOUNTAIN] = WorldGeneration::genDryMountain;
-        biomes[SNOWY_MOUNTAIN] = WorldGeneration::genSnowyMountain;
-        biomes[MOUNTAIN] = WorldGeneration::genMountain;
-        biomes[MESA] = WorldGeneration::genMesa;
-        biomes[CORRODED_MESA] = WorldGeneration::genCorrodedMesa;
-        biomes[BEACH] = WorldGeneration::genBeach;
-        biomes[PINE_FOREST] = WorldGeneration::genPineForest;
-        biomes[REDWOOD_FOREST] = WorldGeneration::genRedwoodForest;
-        biomes[BLACK_WOOD_FOREST] = WorldGeneration::genBlackWoodForest;
+        biomes[DESERT] = new Desert();
+        biomes[WASTELAND] = new Wasteland();
+        biomes[DARK_OAK_FOREST] = new DarkOakForest();
+        biomes[SNOWY_SPRUCE_FOREST] = new SnowySpruceForest();
+        biomes[SNOWY_PLAINS] = new SnowyPlains();
+        biomes[SPRUCE_FOREST] = new SpruceForest();
+        biomes[PLAINS] = new Plains();
+        biomes[OAK_FOREST] = new OakForest();
+        biomes[WARM_OCEAN] = new WarmOcean();
+        biomes[COLD_OCEAN] = new ColdOcean();
+        biomes[OCEAN] = new Ocean();
+        biomes[DRY_MOUNTAIN] = new DryMountain();
+        biomes[SNOWY_MOUNTAIN] = new SnowyMountain();
+        biomes[MOUNTAIN] = new Mountain();
+        biomes[MESA] = new Mesa();
+        biomes[CORRODED_MESA] = new CorrodedMesa();
+        biomes[BEACH] = new Beach();
+        biomes[PINE_FOREST] = new PineForest();
+        biomes[REDWOOD_FOREST] = new RedwoodForest();
+        biomes[BLACK_WOOD_FOREST] = new BlackWoodForest();
     }
 
     public static void generateSurroundingChunkStructureBlocks(Chunk chunk) {
@@ -49,29 +70,14 @@ public class WorldGeneration {
         for (int inChunkX = 0; inChunkX < CHUNK_SIZE; inChunkX++)
             for (int inChunkZ = 0; inChunkZ < CHUNK_SIZE; inChunkZ++) {
                 generationData.set(inChunkX, inChunkZ);
-                int biome = getBiome(generationData);
+                int biomeIndex = getBiome(generationData);
+                generationData.setBiome(inChunkX, inChunkZ, biomes[biomeIndex]);
 
                 for (int inChunkY = 0; inChunkY < CHUNK_SIZE; inChunkY++) {
                     int totalY = chunk.getWorldCoordinate().y | inChunkY;
                     if (totalY < generationData.height) continue;
-                    switch (biome) {
-                        case PLAINS ->
-                                genSurroundingTree(inChunkX, inChunkY, inChunkZ, PLAINS_TREE_THRESHOLD, Structure.OAK_TREE, generationData);
-                        case OAK_FOREST ->
-                                genSurroundingTree(inChunkX, inChunkY, inChunkZ, FOREST_TREE_THRESHOLD, Structure.OAK_TREE, generationData);
-                        case DARK_OAK_FOREST ->
-                                genSurroundingTree(inChunkX, inChunkY, inChunkZ, FOREST_TREE_THRESHOLD, Structure.DARK_OAK_TREE, generationData);
-                        case SNOWY_PLAINS ->
-                                genSurroundingTree(inChunkX, inChunkY, inChunkZ, PLAINS_TREE_THRESHOLD, Structure.SPRUCE_TREE, generationData);
-                        case SNOWY_SPRUCE_FOREST, SPRUCE_FOREST ->
-                                genSurroundingTree(inChunkX, inChunkY, inChunkZ, FOREST_TREE_THRESHOLD, Structure.SPRUCE_TREE, generationData);
-                        case PINE_FOREST ->
-                                genSurroundingTree(inChunkX, inChunkY, inChunkZ, FOREST_TREE_THRESHOLD, Structure.PINE_TREE, generationData);
-                        case BLACK_WOOD_FOREST ->
-                                genSurroundingTree(inChunkX, inChunkY, inChunkZ, FOREST_TREE_THRESHOLD, Structure.BLACK_WOOD_TREE, generationData);
-                        case REDWOOD_FOREST ->
-                                genSurroundingTree(inChunkX, inChunkY, inChunkZ, REDWOOD_FOREST_TREE_THRESHOLD, Structure.REDWOOD_TREE, generationData);
-                    }
+                    Biome biome = biomes[biomeIndex];
+                    biome.genSurroundingStructures(inChunkX, inChunkY, inChunkZ, generationData);
                 }
             }
     }
@@ -98,6 +104,7 @@ public class WorldGeneration {
 
                 generationData.set(inChunkX, inChunkZ);
                 Biome biome = biomes[getBiome(generationData)];
+                generationData.setBiome(inChunkX, inChunkZ, biome);
 
                 generateBiome(biome, inChunkX, inChunkZ, generationData);
             }
@@ -152,392 +159,6 @@ public class WorldGeneration {
     }
 
 
-    private static boolean genPlains(int inChunkX, int inChunkY, int inChunkZ, GenerationData data) {
-        int totalY = data.chunk.Y << CHUNK_SIZE_BITS | inChunkY;
-
-        if (totalY >= data.height) {
-            boolean placedBlock;
-            placedBlock = genTree(inChunkX, inChunkY, inChunkZ, PLAINS_TREE_THRESHOLD, Structure.OAK_TREE, data);
-            placedBlock |= genFeature(inChunkX, inChunkY, inChunkZ, TALL_GRASS_THRESHOLD, TALL_GRASS, data);
-            placedBlock |= genFeature(inChunkX, inChunkY, inChunkZ, FLOWER_THRESHOLD, FLIELEN, data);
-            if (placedBlock) return true;
-        }
-        if (totalY > data.height) return false;
-
-        int floorBlockDepth = 3 - (data.steepness >> 1) + (int) (data.feature * 4.0);
-
-        if (totalY < data.height - floorBlockDepth) return false;   // Stone placed by caller
-        if (totalY == data.height) data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, GRASS);
-        else data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, DIRT);
-        return true;
-    }
-
-    private static boolean genOakForest(int inChunkX, int inChunkY, int inChunkZ, GenerationData data) {
-        int totalY = data.chunk.Y << CHUNK_SIZE_BITS | inChunkY;
-
-        if (totalY >= data.height) {
-            boolean placedBlock;
-            placedBlock = genTree(inChunkX, inChunkY, inChunkZ, FOREST_TREE_THRESHOLD, Structure.OAK_TREE, data);
-            placedBlock |= genFeature(inChunkX, inChunkY, inChunkZ, TALL_GRASS_THRESHOLD, TALL_GRASS, data);
-            placedBlock |= genFeature(inChunkX, inChunkY, inChunkZ, FLOWER_THRESHOLD, RED_TULIP, data);
-            if (placedBlock) return true;
-        }
-        if (totalY > data.height) return false;
-
-        int floorBlockDepth = 3 - (data.steepness >> 1) + (int) (data.feature * 4.0);
-
-        if (totalY < data.height - floorBlockDepth) return false;   // Stone placed by caller
-        if (totalY == data.height) data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, GRASS);
-        else data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, DIRT);
-        return true;
-    }
-
-    private static boolean genSpruceForest(int inChunkX, int inChunkY, int inChunkZ, GenerationData data) {
-        int totalY = data.chunk.Y << CHUNK_SIZE_BITS | inChunkY;
-
-        if (totalY >= data.height) {
-            boolean placedBlock;
-            placedBlock = genTree(inChunkX, inChunkY, inChunkZ, FOREST_TREE_THRESHOLD, Structure.SPRUCE_TREE, data);
-            placedBlock |= genFeature(inChunkX, inChunkY, inChunkZ, TALL_GRASS_THRESHOLD, TALL_GRASS, data);
-            placedBlock |= genFeature(inChunkX, inChunkY, inChunkZ, FLOWER_THRESHOLD, HYACINTH, data);
-            if (placedBlock) return true;
-        }
-        if (totalY > data.height) return false;
-
-        int floorBlockDepth = 3 - (data.steepness >> 1) + (int) (data.feature * 4.0);
-
-        if (totalY < data.height - floorBlockDepth) return false;   // Stone placed by caller
-        if (totalY == data.height) data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, GRASS);
-        else data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, DIRT);
-        return true;
-    }
-
-    private static boolean genDarkOakForest(int inChunkX, int inChunkY, int inChunkZ, GenerationData data) {
-        int totalY = data.chunk.Y << CHUNK_SIZE_BITS | inChunkY;
-
-        if (totalY >= data.height) {
-            boolean placedBlock;
-            placedBlock = genTree(inChunkX, inChunkY, inChunkZ, FOREST_TREE_THRESHOLD, Structure.DARK_OAK_TREE, data);
-            placedBlock |= genFeature(inChunkX, inChunkY, inChunkZ, SPARSE_FLOWER_THRESHOLD, DRISLY, data);
-            if (placedBlock) return true;
-        }
-        if (totalY > data.height) return false;
-
-        int floorBlockDepth = 3 - (data.steepness >> 1) + (int) (data.feature * 4.0);
-
-        if (totalY < data.height - floorBlockDepth) return false;   // Stone placed by caller
-        if (totalY == data.height) data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, PODZOL);
-        else data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, DIRT);
-        return true;
-    }
-
-    private static boolean genDesert(int inChunkX, int inChunkY, int inChunkZ, GenerationData data) {
-        int totalY = data.chunk.Y << CHUNK_SIZE_BITS | inChunkY;
-
-        if (totalY >= data.height) {
-            boolean placedBlock;
-            placedBlock = genCactus(inChunkX, inChunkY, inChunkZ, totalY, data);
-            placedBlock |= genFeature(inChunkX, inChunkY, inChunkZ, SHRUB_THRESHOLD, SHRUB, data);
-            if (placedBlock) return true;
-        }
-        if (totalY > data.height) return false;
-
-        int floorBlockDepth = 3 - (data.steepness >> 1) + (int) (data.feature * 4.0);
-
-        if (totalY < data.height - floorBlockDepth - 5) return false;   // Stone placed by caller
-        if (totalY < data.height - floorBlockDepth) data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, SANDSTONE);
-        else data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, SAND);
-        return true;
-    }
-
-    private static boolean genWasteLand(int inChunkX, int inChunkY, int inChunkZ, GenerationData data) {
-        int totalX = data.chunk.X << CHUNK_SIZE_BITS | inChunkX;
-        int totalY = data.chunk.Y << CHUNK_SIZE_BITS | inChunkY;
-        int totalZ = data.chunk.Z << CHUNK_SIZE_BITS | inChunkZ;
-
-        if (totalY >= data.height) {
-            boolean placedBlock;
-            placedBlock = genCactus(inChunkX, inChunkY, inChunkZ, totalY, data);
-            placedBlock |= genFeature(inChunkX, inChunkY, inChunkZ, SHRUB_THRESHOLD, SHRUB, data);
-            if (placedBlock) return true;
-        }
-        if (totalY > data.height) return false;
-
-        int floorBlockDepth = 3 - (data.steepness >> 1) + (int) (data.feature * 4.0);
-
-        if (totalY < data.height - floorBlockDepth) return false;   // Stone placed by caller
-        data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, getGeneratingDirtType(totalX, totalY, totalZ));
-        return true;
-    }
-
-    private static boolean genSnowyPlains(int inChunkX, int inChunkY, int inChunkZ, GenerationData data) {
-        int totalY = data.chunk.Y << CHUNK_SIZE_BITS | inChunkY;
-
-        if (totalY >= data.height) {
-            boolean placedBlock;
-            placedBlock = genTree(inChunkX, inChunkY, inChunkZ, PLAINS_TREE_THRESHOLD, Structure.SPRUCE_TREE, data);
-            placedBlock |= genFeature(inChunkX, inChunkY, inChunkZ, FLOWER_THRESHOLD, YELLOW_TULIP, data);
-            if (placedBlock) return true;
-        }
-        if (totalY > data.height) return false;
-
-        int floorBlockDepth = 3 - (data.steepness >> 1) + (int) (data.feature * 4.0);
-
-        if (totalY < data.height - floorBlockDepth) return false;   // Stone placed by caller
-        data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, SNOW);
-        return true;
-    }
-
-    private static boolean genSnowySpruceForest(int inChunkX, int inChunkY, int inChunkZ, GenerationData data) {
-        int totalY = data.chunk.Y << CHUNK_SIZE_BITS | inChunkY;
-
-        if (totalY >= data.height) {
-            boolean placedBlock;
-            placedBlock = genTree(inChunkX, inChunkY, inChunkZ, FOREST_TREE_THRESHOLD, Structure.SPRUCE_TREE, data);
-            placedBlock |= genFeature(inChunkX, inChunkY, inChunkZ, FLOWER_THRESHOLD, MAGENTA_TULIP, data);
-            if (placedBlock) return true;
-        }
-        if (totalY > data.height) return false;
-
-        int floorBlockDepth = 3 - (data.steepness >> 1) + (int) (data.feature * 4.0);
-
-        if (totalY < data.height - floorBlockDepth) return false;   // Stone placed by caller
-        data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, SNOW);
-        return true;
-    }
-
-    private static boolean genOcean(int inChunkX, int inChunkY, int inChunkZ, GenerationData data) {
-        int totalX = data.chunk.X << CHUNK_SIZE_BITS | inChunkX;
-        int totalY = data.chunk.Y << CHUNK_SIZE_BITS | inChunkY;
-        int totalZ = data.chunk.Z << CHUNK_SIZE_BITS | inChunkZ;
-
-        if (totalY > data.height) return false;
-
-        int sandHeight = (int) (data.feature * 4.0) + WATER_LEVEL - 5;
-        int floorBlockDepth = 3 - (data.steepness >> 1) + (int) (data.feature * 4.0);
-
-        if (totalY < data.height - floorBlockDepth) return false;   // Stone placed by caller
-        if (totalY > sandHeight) data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, SAND);
-        else data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, getOceanFloorBlock(totalX, totalY, totalZ));
-        return true;
-    }
-
-    private static boolean genWarmOcean(int inChunkX, int inChunkY, int inChunkZ, GenerationData data) {
-        int totalX = data.chunk.X << CHUNK_SIZE_BITS | inChunkX;
-        int totalY = data.chunk.Y << CHUNK_SIZE_BITS | inChunkY;
-        int totalZ = data.chunk.Z << CHUNK_SIZE_BITS | inChunkZ;
-
-        if (totalY > data.height) return false;
-
-        int sandHeight = (int) (data.feature * 4.0) + WATER_LEVEL - 5;
-        int floorBlockDepth = 3 - (data.steepness >> 1) + (int) (data.feature * 4.0);
-
-        if (totalY < data.height - floorBlockDepth) return false;   // Stone placed by caller
-        if (totalY > sandHeight) data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, SAND);
-        else data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, getWarmOceanFloorBlocK(totalX, totalY, totalZ));
-        return true;
-    }
-
-    private static boolean genColdOcean(int inChunkX, int inChunkY, int inChunkZ, GenerationData data) {
-        int totalX = data.chunk.X << CHUNK_SIZE_BITS | inChunkX;
-        int totalY = data.chunk.Y << CHUNK_SIZE_BITS | inChunkY;
-        int totalZ = data.chunk.Z << CHUNK_SIZE_BITS | inChunkZ;
-
-        int iceHeight = Math.min(getIceHeight(totalX, totalZ, data.feature), WATER_LEVEL - data.height);
-        if (totalY > WATER_LEVEL - iceHeight && totalY <= WATER_LEVEL + (iceHeight >> 1)) {
-            data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, getGeneratingIceType(totalX, totalY, totalZ));
-            return true;
-        }
-        if (totalY > data.height) return false;
-
-        int sandHeight = (int) (data.feature * 4.0) + WATER_LEVEL - 5;
-        int floorBlockDepth = 3 - (data.steepness >> 1) + (int) (data.feature * 4.0);
-
-        if (totalY < data.height - floorBlockDepth) return false;   // Stone placed by caller
-        if (totalY > sandHeight) data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, SAND);
-        else data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, getColdOceanFloorBlock(totalX, totalY, totalZ));
-        return true;
-    }
-
-    private static boolean genMountain(int inChunkX, int inChunkY, int inChunkZ, GenerationData data) {
-        int totalY = data.chunk.Y << CHUNK_SIZE_BITS | inChunkY;
-
-        if (totalY > data.height) return false;
-
-        int snowHeight = Utils.floor(data.feature * 32 + SNOW_LEVEL);
-        int grassHeight = Utils.floor(data.feature * 32) + WATER_LEVEL;
-        int floorBlockDepth = 3 - (data.steepness >> 1) + (int) (data.feature * 4.0);
-
-        if (totalY > snowHeight && totalY > data.height - floorBlockDepth)
-            data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, SNOW);
-        else if (totalY == data.height && data.height <= grassHeight)
-            data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, GRASS);
-        else if (totalY < data.height && totalY > data.height - floorBlockDepth && data.height <= grassHeight)
-            data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, DIRT);
-        else return false;
-        return true;
-    }
-
-    private static boolean genSnowyMountain(int inChunkX, int inChunkY, int inChunkZ, GenerationData data) {
-        int totalX = data.chunk.X << CHUNK_SIZE_BITS | inChunkX;
-        int totalY = data.chunk.Y << CHUNK_SIZE_BITS | inChunkY;
-        int totalZ = data.chunk.Z << CHUNK_SIZE_BITS | inChunkZ;
-
-        if (totalY > data.height) return false;
-
-        int iceHeight = Utils.floor(data.feature * 32 + ICE_LEVEL);
-        int floorBlockDepth = 3 - (data.steepness >> 1) + (int) (data.feature * 4.0);
-
-        if (totalY < data.height - floorBlockDepth) return false;   // Stone placed by caller
-        if (totalY > iceHeight)
-            data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, getGeneratingIceType(totalX, totalY, totalZ));
-        else data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, SNOW);
-        return true;
-    }
-
-    private static boolean genDryMountain(int inChunkX, int inChunkY, int inChunkZ, GenerationData data) {
-        int totalX = data.chunk.X << CHUNK_SIZE_BITS | inChunkX;
-        int totalY = data.chunk.Y << CHUNK_SIZE_BITS | inChunkY;
-        int totalZ = data.chunk.Z << CHUNK_SIZE_BITS | inChunkZ;
-
-        if (totalY > data.height) return false;
-
-        int dirtHeight = Utils.floor(data.feature * 32 + WATER_LEVEL);
-        int floorBlockDepth = 3 - (data.steepness >> 1) + (int) (data.feature * 4.0);
-
-        if (totalY > data.height - floorBlockDepth && data.height <= dirtHeight)
-            data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, getGeneratingDirtType(totalX, totalY, totalZ));
-        else return false;
-        return true;
-    }
-
-    private static boolean genMesa(int inChunkX, int inChunkY, int inChunkZ, GenerationData data) {
-        int totalY = data.chunk.Y << CHUNK_SIZE_BITS | inChunkY;
-
-        if (totalY >= data.height) {
-            boolean placedBlock;
-            placedBlock = genCactus(inChunkX, inChunkY, inChunkZ, totalY, data);
-            placedBlock |= genFeature(inChunkX, inChunkY, inChunkZ, SHRUB_THRESHOLD, SHRUB, data);
-            if (placedBlock) return true;
-        }
-        if (totalY > data.height) return false;
-
-        int floorBlockDepth = 3 - (data.steepness >> 1) + (int) (data.feature * 4.0);
-
-        if (totalY < data.height - floorBlockDepth - 5) return false;   // Stone placed by caller
-        if (totalY < data.height - floorBlockDepth) data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, RED_SANDSTONE);
-        else data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, RED_SAND);
-        return true;
-    }
-
-    private static boolean genCorrodedMesa(int inChunkX, int inChunkY, int inChunkZ, GenerationData data) {
-        int totalX = data.chunk.X << CHUNK_SIZE_BITS | inChunkX;
-        int totalY = data.chunk.Y << CHUNK_SIZE_BITS | inChunkY;
-        int totalZ = data.chunk.Z << CHUNK_SIZE_BITS | inChunkZ;
-
-        int pillarHeight = getMesaPillarHeight(totalX, totalZ, data);
-        int floorBlockDepth = 3 - (data.steepness >> 1) + (int) (data.feature * 4.0);
-        if (pillarHeight != 0 && totalY >= data.height - floorBlockDepth) {
-            if (totalY > data.height + pillarHeight) return false;
-            data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, getGeneratingTerracottaType(totalY & 15));
-            return true;
-        }
-
-        if (totalY >= data.height) {
-            boolean placedBlock;
-            placedBlock = genCactus(inChunkX, inChunkY, inChunkZ, totalY, data);
-            placedBlock |= genFeature(inChunkX, inChunkY, inChunkZ, SHRUB_THRESHOLD, SHRUB, data);
-            if (placedBlock) return true;
-        }
-        if (totalY > data.height) return false;
-
-        if (totalY < data.height - floorBlockDepth - 5) return false;   // Stone placed by caller
-        if (totalY < data.height - floorBlockDepth) data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, RED_SANDSTONE);
-        else data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, RED_SAND);
-        return true;
-    }
-
-    private static boolean genBeach(int inChunkX, int inChunkY, int inChunkZ, GenerationData data) {
-        int totalY = data.chunk.Y << CHUNK_SIZE_BITS | inChunkY;
-
-        if (totalY >= data.height) {
-            boolean placedBlock;
-            placedBlock = genSugarcane(inChunkX, inChunkY, inChunkZ, totalY, data);
-            placedBlock |= genFeature(inChunkX, inChunkY, inChunkZ, SHRUB_THRESHOLD, SHRUB, data);
-            if (placedBlock) return true;
-        }
-        if (totalY > data.height) return false;
-
-        int floorBlockDepth = 3 - (data.steepness >> 1) + (int) (data.feature * 4.0);
-
-        if (totalY < data.height - floorBlockDepth - 5) return false;   // Stone placed by caller
-        data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, SAND);
-        return true;
-    }
-
-    private static boolean genPineForest(int inChunkX, int inChunkY, int inChunkZ, GenerationData data) {
-        int totalY = data.chunk.Y << CHUNK_SIZE_BITS | inChunkY;
-
-        if (totalY >= data.height) {
-            boolean placedBlock;
-            placedBlock = genTree(inChunkX, inChunkY, inChunkZ, FOREST_TREE_THRESHOLD, Structure.PINE_TREE, data);
-            placedBlock |= genFeature(inChunkX, inChunkY, inChunkZ, TALL_GRASS_THRESHOLD, TALL_GRASS, data);
-            placedBlock |= genFeature(inChunkX, inChunkY, inChunkZ, FLOWER_THRESHOLD, ORANGE_TULIP, data);
-            if (placedBlock) return true;
-        }
-        if (totalY > data.height) return false;
-
-        int floorBlockDepth = 3 - (data.steepness >> 1) + (int) (data.feature * 4.0);
-
-        if (totalY < data.height - floorBlockDepth) return false;   // Stone placed by caller
-        if (totalY == data.height) data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, GRASS);
-        else data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, DIRT);
-        return true;
-    }
-
-    private static boolean genRedwoodForest(int inChunkX, int inChunkY, int inChunkZ, GenerationData data) {
-        int totalX = data.chunk.X << CHUNK_SIZE_BITS | inChunkX;
-        int totalY = data.chunk.Y << CHUNK_SIZE_BITS | inChunkY;
-        int totalZ = data.chunk.Z << CHUNK_SIZE_BITS | inChunkZ;
-
-        if (totalY >= data.height) {
-            boolean placedBlock;
-            placedBlock = genTree(inChunkX, inChunkY, inChunkZ, REDWOOD_FOREST_TREE_THRESHOLD, Structure.REDWOOD_TREE, data);
-            placedBlock |= genFeature(inChunkX, inChunkY, inChunkZ, TALL_GRASS_THRESHOLD, TALL_GRASS, data);
-            placedBlock |= genFeature(inChunkX, inChunkY, inChunkZ, FLOWER_THRESHOLD, ROSE, data);
-            if (placedBlock) return true;
-        }
-        if (totalY > data.height) return false;
-
-        int floorBlockDepth = 3 - (data.steepness >> 1) + (int) (data.feature * 4.0);
-
-        if (totalY < data.height - floorBlockDepth) return false;   // Stone placed by caller
-        if (totalY == data.height)
-            data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, getGeneratingGrassType(totalX, totalZ, data));
-        else data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, DIRT);
-        return true;
-    }
-
-    private static boolean genBlackWoodForest(int inChunkX, int inChunkY, int inChunkZ, GenerationData data) {
-        int totalY = data.chunk.Y << CHUNK_SIZE_BITS | inChunkY;
-
-        if (totalY >= data.height) {
-            boolean placedBlock;
-            placedBlock = genTree(inChunkX, inChunkY, inChunkZ, FOREST_TREE_THRESHOLD, Structure.BLACK_WOOD_TREE, data);
-            placedBlock |= genFeature(inChunkX, inChunkY, inChunkZ, SPARSE_FLOWER_THRESHOLD, BLACK_ROSE, data);
-            if (placedBlock) return true;
-        }
-        if (totalY > data.height) return false;
-
-        int floorBlockDepth = 3 - (data.steepness >> 1) + (int) (data.feature * 4.0);
-
-        if (totalY < data.height - floorBlockDepth) return false;   // Stone placed by caller
-        if (totalY == data.height) data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, PODZOL);
-        else data.chunk.storeSave(inChunkX, inChunkY, inChunkZ, DIRT);
-        return true;
-    }
-
-
     public static boolean genTree(int inChunkX, int inChunkY, int inChunkZ, double threshold, byte name, GenerationData data) {
         Structure tree = Structure.getStructureVariation(name, inChunkX, data.height, inChunkZ);
         int totalY = data.chunk.Y << CHUNK_SIZE_BITS | inChunkY;
@@ -587,7 +208,7 @@ public class WorldGeneration {
         return true;
     }
 
-    private static void genSurroundingTree(int inChunkX, int inChunkY, int inChunkZ, double threshold, byte name, GenerationData data) {
+    public static void genSurroundingTree(int inChunkX, int inChunkY, int inChunkZ, double threshold, byte name, GenerationData data) {
         Structure tree = Structure.getStructureVariation(name, inChunkX, data.height, inChunkZ);
         int totalY = data.chunk.Y << CHUNK_SIZE_BITS | inChunkY;
 
@@ -626,7 +247,7 @@ public class WorldGeneration {
     }
 
 
-    private static int getCaveType(int x, int y, int z) {
+    public static int getCaveType(int x, int y, int z) {
         double noodleCaveHeightBias = Math.max(y + 96, 0) * NOODLE_CAVE_HEIGHT_BIAS;
         double blobCaveHeightBias = Math.max(y + 96, 0) * BLOB_CAVE_CAVE_HEIGHT_BIAS;
 
@@ -838,7 +459,7 @@ public class WorldGeneration {
         return STONE;
     }
 
-    private static short getOceanFloorBlock(int x, int y, int z) {
+    public static short getOceanFloorBlock(int x, int y, int z) {
         double noise = OpenSimplex2S.noise3_ImproveXY(SEED ^ 0x30CD70827706B4C0L, x * MUD_TYPE_FREQUENCY, y * MUD_TYPE_FREQUENCY, z * MUD_TYPE_FREQUENCY);
         if (Math.abs(noise) < GRAVEL_THRESHOLD) return GRAVEL;
         if (noise > CLAY_THRESHOLD) return CLAY;
@@ -846,7 +467,7 @@ public class WorldGeneration {
         return MUD;
     }
 
-    private static short getWarmOceanFloorBlocK(int x, int y, int z) {
+    public static short getWarmOceanFloorBlocK(int x, int y, int z) {
         double noise = OpenSimplex2S.noise3_ImproveXY(SEED ^ 0xEB26D0A3459AAA03L, x * MUD_TYPE_FREQUENCY, y * MUD_TYPE_FREQUENCY, z * MUD_TYPE_FREQUENCY);
         if (Math.abs(noise) < GRAVEL_THRESHOLD) return GRAVEL;
         if (noise > CLAY_THRESHOLD) return CLAY;
@@ -862,19 +483,19 @@ public class WorldGeneration {
         return GRAVEL;
     }
 
-    private static short getGeneratingDirtType(int x, int y, int z) {
+    public static short getGeneratingDirtType(int x, int y, int z) {
         double noise = OpenSimplex2S.noise3_ImproveXY(SEED ^ 0xF88966EA665D953EL, x * DIRT_TYPE_FREQUENCY, y * DIRT_TYPE_FREQUENCY, z * DIRT_TYPE_FREQUENCY);
         if (Math.abs(noise) < COURSE_DIRT_THRESHOLD) return COURSE_DIRT;
         return DIRT;
     }
 
-    private static short getGeneratingIceType(int x, int y, int z) {
+    public static short getGeneratingIceType(int x, int y, int z) {
         double noise = OpenSimplex2S.noise3_ImproveXY(SEED ^ 0xD6744EFC8D01AEFCL, x * ICE_TYPE_FREQUENCY, y * ICE_TYPE_FREQUENCY, z * ICE_TYPE_FREQUENCY);
         if (noise > HEAVY_ICE_THRESHOLD) return HEAVY_ICE;
         return ICE;
     }
 
-    private static short getGeneratingTerracottaType(int terracottaIndex) {
+    public static short getGeneratingTerracottaType(int terracottaIndex) {
         return switch (terracottaIndex) {
             case 3, 6, 10, 11, 15 -> RED_TERRACOTTA;
             case 2, 8, 12 -> YELLOW_TERRACOTTA;
@@ -882,34 +503,13 @@ public class WorldGeneration {
         };
     }
 
-    private static short getGeneratingGrassType(int x, int z, GenerationData data) {
+    public static short getGeneratingGrassType(int x, int z, GenerationData data) {
         double noise = OpenSimplex2S.noise2(SEED ^ 0xEFB13EFD3B5AC7A7L, x * GRASS_TYPE_FREQUENCY, z * GRASS_TYPE_FREQUENCY);
         noise += data.feature * 0.4 - 0.2;
         if (Math.abs(noise) < MOSS_THRESHOLD) return MOSS;
         return GRASS;
     }
 
-
-    private static int getIceHeight(int x, int z, double feature) {
-        double iceBergNoise = OpenSimplex2S.noise3_ImproveXY(SEED ^ 0xF90C1662F77EE4DFL, x * ICE_BERG_FREQUENCY, z * ICE_BERG_FREQUENCY, 0.0);
-        double icePlainNoise = OpenSimplex2S.noise3_ImproveXY(SEED ^ 0x649C844EA835C9A7L, x * ICE_BERG_FREQUENCY, z * ICE_BERG_FREQUENCY, 0.0);
-        if (iceBergNoise > ICE_BERG_THRESHOLD + 0.1) return (int) (ICE_BERG_HEIGHT + (icePlainNoise * 4.0));
-        if (iceBergNoise > ICE_BERG_THRESHOLD)
-            return (int) (Utils.smoothInOutQuad(iceBergNoise, ICE_BERG_THRESHOLD, ICE_BERG_THRESHOLD + 0.1) * ICE_BERG_HEIGHT + (icePlainNoise * 4.0));
-        if (icePlainNoise > ICE_PLANE_THRESHOLD) return 1;
-        return feature > 0.98 ? 1 : 0;
-    }
-
-    private static int getMesaPillarHeight(int x, int z, GenerationData data) {
-        // Cave at surface level prevents pillar generation
-        if (data.chunk.Y << CHUNK_SIZE_BITS <= data.height && data.chunk.Y + 1 << CHUNK_SIZE_BITS > data.height) {
-            if (data.caveBits >> ((data.height & CHUNK_SIZE_MASK) << 1) != NO_CAVE) return 0;
-        } else if (getCaveType(x, data.height, z) != NO_CAVE) return 0;
-
-        double noise = OpenSimplex2S.noise2(SEED ^ 0xDF860F2E2A604A17L, x * MESA_PILLAR_FREQUENCY, z * MESA_PILLAR_FREQUENCY);
-        if (Math.abs(noise) > MESA_PILLAR_THRESHOLD) return MESA_PILLAR_HEIGHT;
-        return 0;
-    }
 
     public static int getResultingHeight(double height, double erosion, double continental, double river, double ridge) {
         height = (height * 0.5 + 0.5) * MAX_TERRAIN_HEIGHT_DIFFERENCE;
@@ -990,7 +590,6 @@ public class WorldGeneration {
 
 
     private static int getBiome(GenerationData data) {
-
         int beachHeight = WATER_LEVEL + (int) (data.feature * 4.0) + 4;
         double dither = data.feature * 0.08f - 0.04f;
         double temperature = data.temperature + dither;
@@ -1032,13 +631,6 @@ public class WorldGeneration {
 
     }
 
-    private interface Biome {
-        // Returns true if a block has been placed at these coordinates, false otherwise
-        boolean placeBlock(int inChunkX, int inChunkY, int inChunkZ, GenerationData generationData);
-    }
-
-    private static final int SNOW_LEVEL = WATER_LEVEL + 91;
-    private static final int ICE_LEVEL = WATER_LEVEL + 141;
     private static final int OCEAN_FLOOR_LEVEL = WATER_LEVEL - 30;
     private static final int DEEP_OCEAN_FLOOR_OFFSET = -70;
     private static final int FLATLAND_LEVEL = 30 + 15;
@@ -1067,20 +659,12 @@ public class WorldGeneration {
     private static final double LAVA_NOODLE_CAVE_FREQUENCY = 0.002;
     private static final double LAVA_NOODLE_CAVE_THRESHOLD = 0.0012;
 
-    private static final int NO_CAVE = 0;
     private static final int AIR_CAVE = 1;
     private static final int WATER_CAVE = 2;
     private static final int LAVA_CAVE = 3;
 
-    private static final double PLAINS_TREE_THRESHOLD = 0.01;
-    private static final double FOREST_TREE_THRESHOLD = 0;
-    private static final double REDWOOD_FOREST_TREE_THRESHOLD = 0.5;
     private static final double CACTUS_THRESHOLD = 0.992;
-    private static final double TALL_GRASS_THRESHOLD = 0.25;
-    private static final double SHRUB_THRESHOLD = 0.03;
     private static final double SUGARCANE_THRESHOLD = 0.96;
-    private static final double FLOWER_THRESHOLD = 0.26;
-    private static final double SPARSE_FLOWER_THRESHOLD = 0.01;
 
     private static final double STONE_TYPE_FREQUENCY = 0.02;
     private static final double ANDESITE_THRESHOLD = 0.1;
@@ -1097,15 +681,6 @@ public class WorldGeneration {
 
     private static final double GRASS_TYPE_FREQUENCY = 0.025;
     private static final double MOSS_THRESHOLD = 0.3;
-
-    private static final double ICE_BERG_FREQUENCY = 0.025;
-    private static final double ICE_BERG_THRESHOLD = 0.45;
-    private static final double ICE_BERG_HEIGHT = 8;
-    private static final double ICE_PLANE_THRESHOLD = 0.3;
-
-    private static final double MESA_PILLAR_THRESHOLD = 0.55;
-    private static final double MESA_PILLAR_FREQUENCY = 0.03;
-    private static final int MESA_PILLAR_HEIGHT = 25;
 
     private static final double ICE_TYPE_FREQUENCY = 0.08;
     private static final double HEAVY_ICE_THRESHOLD = 0.6;
