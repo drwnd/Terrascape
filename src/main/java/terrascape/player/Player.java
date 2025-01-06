@@ -120,11 +120,11 @@ public class Player {
             }
             if (key == GLFW.GLFW_KEY_K && action == GLFW.GLFW_PRESS) {
                 usingFrustumCulling = !usingFrustumCulling;
-                System.out.println("frustum culling" + usingFrustumCulling);
+                System.out.println("frustum culling " + usingFrustumCulling);
             }
             if (key == GLFW.GLFW_KEY_L && action == GLFW.GLFW_PRESS) {
                 renderingEntities = !renderingEntities;
-                System.out.println("rendering entities" + renderingEntities);
+                System.out.println("rendering entities " + renderingEntities);
             }
         });
     }

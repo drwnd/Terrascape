@@ -139,8 +139,7 @@ public class GameLogic {
             OpaqueModel newModel = ObjectLoader.loadOpaqueModel(
                     chunk.getOpaqueVertices(),
                     chunk.getWorldCoordinate(),
-                    chunk.getSolidVertexCount(),
-                    chunk.getFoliageVertexCount());
+                    chunk.getVertexCounts());
             chunk.setOpaqueModel(newModel);
         } else chunk.setOpaqueModel(null);
 
@@ -296,12 +295,10 @@ public class GameLogic {
     }
 
     public static void deleteChunkMeshBuffers(Chunk chunk) {
-        for (int side = 0; side < 6; side++) {
-            OpaqueModel sideModel = chunk.getOpaqueModel();
-            if (sideModel == null) continue;
-
-            ObjectLoader.removeVAO(sideModel.getVao());
-            ObjectLoader.removeVBO(sideModel.getVbo());
+        OpaqueModel opaqueModel = chunk.getOpaqueModel();
+        if (opaqueModel != null) {
+            ObjectLoader.removeVAO(opaqueModel.getVao());
+            ObjectLoader.removeVBO(opaqueModel.getVbo());
             chunk.setOpaqueModel(null);
         }
 
@@ -310,13 +307,6 @@ public class GameLogic {
             ObjectLoader.removeVAO(waterModel.getVao());
             ObjectLoader.removeVBO(waterModel.getVbo());
             chunk.setWaterModel(null);
-        }
-
-        OpaqueModel foliageModel = chunk.getFoliageModel();
-        if (foliageModel != null) {
-            ObjectLoader.removeVAO(foliageModel.getVao());
-            ObjectLoader.removeVBO(foliageModel.getVbo());
-            chunk.setFoliageModel(null);
         }
     }
 

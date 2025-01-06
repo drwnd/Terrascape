@@ -1,5 +1,6 @@
 package terrascape.generation;
 
+import terrascape.entity.OpaqueModel;
 import terrascape.server.Block;
 import terrascape.dataStorage.Chunk;
 import org.joml.Vector3i;
@@ -26,9 +27,10 @@ public class MeshGenerator {
 
         if (chunk.getBlockLength() == 1 && chunk.getSaveBlock(0) == AIR) return;
 
-        ArrayList<Integer> opaqueVerticesList = new ArrayList<>();
-        ArrayList<Integer> foliageVerticesList = new ArrayList<>();
-        ArrayList<Integer> decorationVerticesList = new ArrayList<>();
+        @SuppressWarnings("unchecked") ArrayList<Integer>[] vertexLists = new ArrayList[13];
+        for (int index = 0; index < vertexLists.length; index++) vertexLists[index] = new ArrayList<>();
+
+
         ArrayList<Integer> waterVerticesList = new ArrayList<>();
 
         for (blockX = 0; blockX < CHUNK_SIZE; blockX++)
@@ -42,19 +44,19 @@ public class MeshGenerator {
                     if (blockType == AIR_TYPE) continue;
 
                     if (blockType == FLOWER_TYPE) {
-                        list = decorationVerticesList;
+                        list = vertexLists[OpaqueModel.DECORATION_VERTEX_COUNT_INDEX];
                         addFlowerToList();
                         continue;
                     }
                     if (blockType == VINE_TYPE) {
-                        list = decorationVerticesList;
+                        list = vertexLists[OpaqueModel.DECORATION_VERTEX_COUNT_INDEX];
                         addVineToList();
                         continue;
                     }
 
                     int faceCount = Block.getFaceCount(blockType);
 
-                    if (!Block.isWaterBlock(block)) addOpaqueBlock(faceCount, foliageVerticesList, opaqueVerticesList);
+                    if (!Block.isWaterBlock(block)) addOpaqueBlock(faceCount, vertexLists);
                     if (Block.isWaterLogged(block)) addWaterBlock(waterVerticesList);
                 }
 
@@ -63,17 +65,22 @@ public class MeshGenerator {
             waterVertices[i] = waterVerticesList.get(i);
         chunk.setWaterVertices(waterVertices);
 
-        int[] opaqueVertices = new int[opaqueVerticesList.size() + foliageVerticesList.size() + decorationVerticesList.size()];
-        int index = 0;
-        for (int value : opaqueVerticesList) opaqueVertices[index++] = value;
-        for (int value : foliageVerticesList) opaqueVertices[index++] = value;
-        for (int value : decorationVerticesList) opaqueVertices[index++] = value;
+        int totalVertexCount = 0, verticesIndex = 0;
+        for (ArrayList<Integer> vertexList : vertexLists) totalVertexCount += vertexList.size();
+        int[] vertexCounts = new int[vertexLists.length];
+        int[] opaqueVertices = new int[totalVertexCount];
+
+        for (int index = 0; index < vertexLists.length; index++) {
+            ArrayList<Integer> vertexList = vertexLists[index];
+            vertexCounts[index] = (int) (vertexList.size() * 0.75);
+            for (int vertex : vertexList) opaqueVertices[verticesIndex++] = vertex;
+        }
+
         chunk.setOpaqueVertices(opaqueVertices);
-        chunk.setSolidVertexCount(opaqueVerticesList.size());
-        chunk.setFoliageVertexCount(foliageVerticesList.size());
+        chunk.setVertexCounts(vertexCounts);
     }
 
-    private void addOpaqueBlock(int faceCount, ArrayList<Integer> foliageVerticesList, ArrayList<Integer> opaqueVerticesList) {
+    private void addOpaqueBlock(int faceCount, ArrayList<Integer>[] vertexLists) {
         for (aabbIndex = 0; aabbIndex < faceCount; aabbIndex += 6)
             for (side = 0; side < 6; side++) {
                 byte[] normal = Block.NORMALS[side];
@@ -86,8 +93,9 @@ public class MeshGenerator {
                 int u = texture & 15;
                 int v = texture >> 4 & 15;
 
-                if (Block.isLeaveType(block)) addFoliageSideToList(foliageVerticesList, u, v);
-                else addSideToList(u, v, opaqueVerticesList);
+                if (Block.isLeaveType(block))
+                    addFoliageSideToList(vertexLists[OpaqueModel.FOLIAGE_VERTEX_COUNT_OFFSET + side], u, v);
+                else addSideToList(u, v, vertexLists[side]);
             }
     }
 

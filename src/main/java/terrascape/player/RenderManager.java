@@ -194,14 +194,7 @@ public class RenderManager {
         GL30.glBindVertexArray(model.getVao());
         GL20.glEnableVertexAttribArray(0);
 
-        Vector3i modelPosition = model.getPosition();
-        int modelChunkX = modelPosition.x >> CHUNK_SIZE_BITS;
-        int modelChunkY = modelPosition.y >> CHUNK_SIZE_BITS;
-        int modelChunkZ = modelPosition.z >> CHUNK_SIZE_BITS;
-
-        boolean shouldSimulateWind = Math.abs(playerChunkX - modelChunkX) <= 1 &&
-                Math.abs(playerChunkY - modelChunkY) <= 1 &&
-                Math.abs(playerChunkZ - modelChunkZ) <= 1;
+        boolean shouldSimulateWind = model.getDistanceFromPlayer(playerChunkX, playerChunkY, playerChunkZ) <= 1;
 
         foliageShader.setUniform("shouldSimulateWind", shouldSimulateWind ? 1 : 0);
         foliageShader.setUniform("worldPos", model.getPosition());
@@ -322,18 +315,18 @@ public class RenderManager {
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, atlas.id());
 
         for (OpaqueModel model : chunkModels) {
-            Vector3i modelPosition = model.getPosition();
-            int modelChunkX = modelPosition.x >> CHUNK_SIZE_BITS;
-            int modelChunkY = modelPosition.y >> CHUNK_SIZE_BITS;
-            int modelChunkZ = modelPosition.z >> CHUNK_SIZE_BITS;
+            int[] toRenderVertexCounts;
 
-            int count = (int) (model.getSolidVertexCount() * 0.75);
-            if (Math.abs(playerChunkX - modelChunkX) > 2 || Math.abs(playerChunkY - modelChunkY) > 2 || Math.abs(playerChunkZ - modelChunkZ) > 2)
-                count += (int) (model.getFoliageVertexCount() * 0.75);
-            else if (model.getFoliageVertexCount() + model.getDecorationVertexCount() != 0) processFoliageModel(model);
+            if (model.getDistanceFromPlayer(playerChunkX, playerChunkY, playerChunkZ) > 2) {
+                toRenderVertexCounts = model.getLowDetailVertexCounts(playerChunkX, playerChunkY, playerChunkZ);
+            } else {
+                toRenderVertexCounts = model.getSolidOnlyVertexCounts(playerChunkX, playerChunkY, playerChunkZ);
+                if (model.getFoliageVertexCount() != 0) processFoliageModel(model);
+                if (model.getSolidVertexCount(toRenderVertexCounts) == 0) continue;
+            }
 
             bindModel(model);
-            GL11.glDrawElements(GL11.GL_TRIANGLES, count, GL11.GL_UNSIGNED_INT, 0);
+            GL14.glMultiDrawElements(GL11.GL_TRIANGLES, toRenderVertexCounts, GL11.GL_UNSIGNED_INT, model.getIndices());
         }
         blockShader.unBind();
     }
@@ -351,10 +344,9 @@ public class RenderManager {
 
         for (OpaqueModel model : foliageModels) {
             bindFoliageModel(model);
-            int start = (int) (model.getSolidVertexCount() * 0.75 * 4);
-            int count = (int) ((model.getFoliageVertexCount() + model.getDecorationVertexCount()) * 0.75);
+            int[] vertexCounts = model.getFoliageOnlyVertexCounts();
 
-            GL11.glDrawElements(GL11.GL_TRIANGLES, count, GL11.GL_UNSIGNED_INT, start);
+            GL14.glMultiDrawElements(GL11.GL_TRIANGLES, vertexCounts, GL11.GL_UNSIGNED_INT, model.getIndices());
         }
         foliageShader.unBind();
     }

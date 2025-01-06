@@ -475,6 +475,7 @@ public class Chunk {
 
     public void clearMesh() {
         opaqueVertices = new int[0];
+        vertexCounts = new int[0];
         waterVertices = new int[0];
     }
 
@@ -484,14 +485,6 @@ public class Chunk {
 
     public void setOpaqueModel(OpaqueModel model) {
         this.opaqueModel = model;
-    }
-
-    public OpaqueModel getFoliageModel() {
-        return foliageModel;
-    }
-
-    public void setFoliageModel(OpaqueModel foliageModel) {
-        this.foliageModel = foliageModel;
     }
 
     public WaterModel getWaterModel() {
@@ -588,20 +581,12 @@ public class Chunk {
         this.index = index;
     }
 
-    public int getSolidVertexCount() {
-        return solidVertexCount;
+    public int[] getVertexCounts() {
+        return vertexCounts;
     }
 
-    public void setSolidVertexCount(int solidVertexCount) {
-        this.solidVertexCount = solidVertexCount;
-    }
-
-    public int getFoliageVertexCount() {
-        return foliageVertexCount;
-    }
-
-    public void setFoliageVertexCount(int foliageVertexCount) {
-        this.foliageVertexCount = foliageVertexCount;
+    public void setVertexCounts(int[] vertexCounts) {
+        this.vertexCounts = vertexCounts;
     }
 
     public static void setWorld(Chunk[] world) {
@@ -632,10 +617,6 @@ public class Chunk {
         return entityClusters[entityClusterIndex];
     }
 
-    public LinkedList<Entity>[] getEntityClusters() {
-        return entityClusters;
-    }
-
     public static LinkedList<Entity> getEntityCluster(int clusterX, int clusterY, int clusterZ) {
         Chunk chunk = getChunk(clusterX >> ENTITY_CLUSTER_TO_CHUNK_BITS, clusterY >> ENTITY_CLUSTER_TO_CHUNK_BITS, clusterZ >> ENTITY_CLUSTER_TO_CHUNK_BITS);
         if (chunk == null) return null;
@@ -658,8 +639,8 @@ public class Chunk {
     private final LinkedList<Entity>[] entityClusters = new LinkedList[64];
 
     private int[] waterVertices = new int[0];
+    private int[] vertexCounts = new int[0];
     private int[] opaqueVertices = new int[0];
-    private int solidVertexCount, foliageVertexCount;
 
     private final Vector3i worldCoordinate;
     private int index;
@@ -671,6 +652,5 @@ public class Chunk {
     private boolean saved = false;
 
     private OpaqueModel opaqueModel;
-    private OpaqueModel foliageModel;
     private WaterModel waterModel;
 }

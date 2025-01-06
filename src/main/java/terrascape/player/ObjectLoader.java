@@ -30,12 +30,11 @@ import java.util.Scanner;
 
 public class ObjectLoader {
 
-    public static OpaqueModel loadOpaqueModel(int[] vertices, Vector3i position, int solidVertexCount, int foliageVertexCount) {
+    public static OpaqueModel loadOpaqueModel(int[] vertices, Vector3i position, int[] vertexCounts) {
         int vao = createVAO();
         int vbo = storeDateInAttributeList(0, 2, vertices);
         unbind();
-        int decorationVertexCount = vertices.length - foliageVertexCount - solidVertexCount;
-        return new OpaqueModel(vao, solidVertexCount, foliageVertexCount, decorationVertexCount, position, vbo);
+        return new OpaqueModel(vao, vertexCounts, position, vbo);
     }
 
     public static WaterModel loadModel(int[] vertices, Vector3i position) {
@@ -175,7 +174,8 @@ public class ObjectLoader {
     private static ShortBuffer readVorbis(String filename, STBVorbisInfo info) throws RuntimeException {
         MemoryStack stack = MemoryStack.stackPush();
         IntBuffer error = stack.mallocInt(1);
-        long decoder = STBVorbis.stb_vorbis_open_filename(filename, error, null);
+        // IDE has no idea what it's talking about
+        @SuppressWarnings("DataFlowIssue") long decoder = STBVorbis.stb_vorbis_open_filename(filename, error, null);
         if (decoder == MemoryUtil.NULL) {
             throw new RuntimeException("Failed to open Ogg Vorbis file. Error: " + error.get(0));
         }
