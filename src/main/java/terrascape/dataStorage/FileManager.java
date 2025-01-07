@@ -1,6 +1,8 @@
 package terrascape.dataStorage;
 
 import terrascape.entity.GUIElement;
+import terrascape.entity.OpaqueModel;
+import terrascape.entity.WaterModel;
 import terrascape.player.Player;
 import terrascape.server.Block;
 import terrascape.server.GameLogic;
@@ -350,7 +352,8 @@ public class FileManager {
 
 
         File nonStandardBlockNames = new File("textData/NonStandardBlockNames");
-        if (!nonStandardBlockNames.exists()) throw new FileNotFoundException("Need to have non standard block names file");
+        if (!nonStandardBlockNames.exists())
+            throw new FileNotFoundException("Need to have non standard block names file");
         reader = new BufferedReader(new FileReader(nonStandardBlockNames.getPath()));
         for (int nonStandardBlock = 0; nonStandardBlock < AMOUNT_OF_NON_STANDARD_BLOCKS; nonStandardBlock++)
             Block.setNonStandardBlockName(nonStandardBlock, reader.readLine());
@@ -443,27 +446,14 @@ public class FileManager {
             RENDERED_WORLD_WIDTH = newRenderDistanceXZ * 2 + 5;
             RENDERED_WORLD_HEIGHT = newRenderDistanceY * 2 + 5;
 
-            Chunk[] newWorld = new Chunk[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
-            short[] occlusionCullingData = new short[newWorld.length];
-            for (Chunk chunk : Chunk.getWorld()) {
-                if (chunk == null) continue;
-                int newIndex = GameLogic.getChunkIndex(chunk.X, chunk.Y, chunk.Z);
+            Chunk[] newWorld = getNewWorld();
+            short[] newOcclusionCullingDat = getNewOcclusionCullingData();
+            HeightMap[] newHeightMaps = getNewHeightMaps();
+            OpaqueModel[] newOpaqueModels = getNewOpaqueModels();
+            WaterModel[] newWaterModels = getNewWaterModels();
+            updateChunkIndices();
+            Chunk.setStaticData(newWorld, newOcclusionCullingDat, newHeightMaps, newOpaqueModels, newWaterModels);
 
-                occlusionCullingData[newIndex] = Chunk.getOcclusionCullingData(chunk.getIndex());
-                newWorld[newIndex] = chunk;
-
-                chunk.setIndex(newIndex);
-            }
-            Chunk.setWorld(newWorld);
-            Chunk.setOcclusionCullingData(occlusionCullingData);
-
-            HeightMap[] newHeightMaps = new HeightMap[RENDERED_WORLD_WIDTH * RENDERED_WORLD_WIDTH];
-            for (HeightMap heightMap : Chunk.getHeightMaps()) {
-                if (heightMap == null) continue;
-                int newIndex = GameLogic.getHeightMapIndex(heightMap.chunkX, heightMap.chunkZ);
-                newHeightMaps[newIndex] = heightMap;
-            }
-            Chunk.setHeightMaps(newHeightMaps);
             GameLogic.getPlayer().setVisibleChunks(new long[(RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH >> 6) + 1]);
 
             GameLogic.startGenerator();
@@ -474,9 +464,11 @@ public class FileManager {
             RENDER_DISTANCE_Y = newRenderDistanceY;
             RENDERED_WORLD_WIDTH = newRenderDistanceXZ * 2 + 5;
             RENDERED_WORLD_HEIGHT = newRenderDistanceY * 2 + 5;
-            Chunk.setWorld(new Chunk[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH]);
-            Chunk.setOcclusionCullingData(new short[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH]);
-            Chunk.setHeightMaps(new HeightMap[RENDERED_WORLD_WIDTH * RENDERED_WORLD_WIDTH]);
+            Chunk.setStaticData(new Chunk[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH],
+                    new short[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH],
+                    new HeightMap[RENDERED_WORLD_WIDTH * RENDERED_WORLD_WIDTH],
+                    new OpaqueModel[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH],
+                    new WaterModel[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH]);
         }
         Player player = GameLogic.getPlayer();
         if (GUI_SIZE != newGUISize) {
@@ -485,6 +477,68 @@ public class FileManager {
                 GUIElement.reloadGUIElements(player);
                 player.updateHotBarElements();
             }
+        }
+    }
+
+    private static Chunk[] getNewWorld() {
+        Chunk[] newWorld = new Chunk[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
+        for (Chunk chunk : Chunk.getWorld()) {
+            if (chunk == null) continue;
+            int newIndex = GameLogic.getChunkIndex(chunk.X, chunk.Y, chunk.Z);
+
+            newWorld[newIndex] = chunk;
+        }
+        return newWorld;
+    }
+
+    private static short[] getNewOcclusionCullingData() {
+        short[] occlusionCullingData = new short[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
+        for (Chunk chunk : Chunk.getWorld()) {
+            if (chunk == null) continue;
+            int newIndex = GameLogic.getChunkIndex(chunk.X, chunk.Y, chunk.Z);
+
+            occlusionCullingData[newIndex] = Chunk.getOcclusionCullingData(chunk.getIndex());
+        }
+        return occlusionCullingData;
+    }
+
+    private static HeightMap[] getNewHeightMaps() {
+        HeightMap[] newHeightMaps = new HeightMap[RENDERED_WORLD_WIDTH * RENDERED_WORLD_WIDTH];
+        for (HeightMap heightMap : Chunk.getHeightMaps()) {
+            if (heightMap == null) continue;
+            int newIndex = GameLogic.getHeightMapIndex(heightMap.chunkX, heightMap.chunkZ);
+            newHeightMaps[newIndex] = heightMap;
+        }
+        return newHeightMaps;
+    }
+
+    private static OpaqueModel[] getNewOpaqueModels() {
+        OpaqueModel[] newOpaqueModels = new OpaqueModel[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
+        for (Chunk chunk : Chunk.getWorld()) {
+            if (chunk == null) continue;
+            int newIndex = GameLogic.getChunkIndex(chunk.X, chunk.Y, chunk.Z);
+
+            newOpaqueModels[newIndex] = Chunk.getOpaqueModel(chunk.getIndex());
+        }
+        return newOpaqueModels;
+    }
+
+    private static WaterModel[] getNewWaterModels() {
+        WaterModel[] newWaterModels = new WaterModel[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
+        for (Chunk chunk : Chunk.getWorld()) {
+            if (chunk == null) continue;
+            int newIndex = GameLogic.getChunkIndex(chunk.X, chunk.Y, chunk.Z);
+
+            newWaterModels[newIndex] = Chunk.getWaterModel(chunk.getIndex());
+        }
+        return newWaterModels;
+    }
+
+    private static void updateChunkIndices() {
+        for (Chunk chunk : Chunk.getWorld()) {
+            if (chunk == null) continue;
+            int newIndex = GameLogic.getChunkIndex(chunk.X, chunk.Y, chunk.Z);
+            chunk.setIndex(newIndex);
         }
     }
 
@@ -578,22 +632,4 @@ public class FileManager {
 
         return ints;
     }
-
-//        public static long getSeedFileSize() {
-//        return folderSize(seedFile);
-//    }
-//
-//    public static long folderSize(File directory) {
-//        File[] files = directory.listFiles();
-//        if (files == null) return -1;
-//
-//        long length = 0;
-//        for (File file : files) {
-//            if (file.isFile())
-//                length += file.length();
-//            else
-//                length += folderSize(file);
-//        }
-//        return length;
-//    }
 }

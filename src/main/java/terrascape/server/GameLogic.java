@@ -134,25 +134,26 @@ public class GameLogic {
     }
 
     public static void bufferChunkMesh(Chunk chunk) {
-        OpaqueModel oldOpaqueModel = chunk.getOpaqueModel();
+        int chunkIndex = chunk.getIndex();
+        OpaqueModel oldOpaqueModel = Chunk.getOpaqueModel(chunkIndex);
         if (chunk.getOpaqueVertices() != null && chunk.getOpaqueVertices().length != 0) {
             OpaqueModel newModel = ObjectLoader.loadOpaqueModel(
                     chunk.getOpaqueVertices(),
                     chunk.getWorldCoordinate(),
                     chunk.getVertexCounts());
-            chunk.setOpaqueModel(newModel);
-        } else chunk.setOpaqueModel(null);
+            Chunk.setOpaqueModel(newModel, chunkIndex);
+        } else Chunk.setOpaqueModel(null, chunkIndex);
 
         if (oldOpaqueModel != null) {
             ObjectLoader.removeVAO(oldOpaqueModel.getVao());
             ObjectLoader.removeVBO(oldOpaqueModel.getVbo());
         }
 
-        WaterModel oldWaterModel = chunk.getWaterModel();
+        WaterModel oldWaterModel = Chunk.getWaterModel(chunkIndex);
         if (chunk.getWaterVertices() != null && chunk.getWaterVertices().length != 0) {
             WaterModel newWaterModel = ObjectLoader.loadModel(chunk.getWaterVertices(), chunk.getWorldCoordinate());
-            chunk.setWaterModel(newWaterModel);
-        } else chunk.setWaterModel(null);
+            Chunk.setWaterModel(newWaterModel, chunkIndex);
+        } else Chunk.setWaterModel(null, chunkIndex);
 
         if (oldWaterModel != null) {
             ObjectLoader.removeVAO(oldWaterModel.getVao());
@@ -295,18 +296,19 @@ public class GameLogic {
     }
 
     public static void deleteChunkMeshBuffers(Chunk chunk) {
-        OpaqueModel opaqueModel = chunk.getOpaqueModel();
+        int chunkIndex = chunk.getIndex();
+        OpaqueModel opaqueModel = Chunk.getOpaqueModel(chunkIndex);
         if (opaqueModel != null) {
             ObjectLoader.removeVAO(opaqueModel.getVao());
             ObjectLoader.removeVBO(opaqueModel.getVbo());
-            chunk.setOpaqueModel(null);
+            Chunk.setOpaqueModel(null, chunkIndex);
         }
 
-        WaterModel waterModel = chunk.getWaterModel();
+        WaterModel waterModel = Chunk.getWaterModel(chunkIndex);
         if (waterModel != null) {
             ObjectLoader.removeVAO(waterModel.getVao());
             ObjectLoader.removeVBO(waterModel.getVbo());
-            chunk.setWaterModel(null);
+            Chunk.setWaterModel(null, chunkIndex);
         }
     }
 
@@ -354,7 +356,7 @@ public class GameLogic {
     }
 
     public static long getChunkId(int chunkX, int chunkY, int chunkZ) {
-        return (long) (chunkX & MAX_CHUNKS_XZ) << 37 | (long) (chunkY & MAX_CHUNKS_Y) << 27 | (chunkZ & MAX_CHUNKS_XZ);
+        return (long) (chunkX & MAX_CHUNKS_XZ) << 37 | (long) (chunkY & MAX_CHUNKS_Y) << 27 | chunkZ & MAX_CHUNKS_XZ;
     }
 
     public static int getChunkIndex(int chunkX, int chunkY, int chunkZ) {
@@ -368,7 +370,7 @@ public class GameLogic {
         chunkZ %= RENDERED_WORLD_WIDTH;
         if (chunkZ < 0) chunkZ += RENDERED_WORLD_WIDTH;
 
-        return (chunkX * RENDERED_WORLD_HEIGHT + chunkY) * RENDERED_WORLD_WIDTH + chunkZ;
+        return (chunkX * RENDERED_WORLD_WIDTH + chunkZ) * RENDERED_WORLD_HEIGHT + chunkY;
     }
 
     public static int getHeightMapIndex(int chunkX, int chunkZ) {

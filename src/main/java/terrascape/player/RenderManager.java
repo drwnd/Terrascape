@@ -565,11 +565,11 @@ public class RenderManager {
         entities.add(entity);
     }
 
-    public void processModel(OpaqueModel model) {
+    public void processOpaqueModel(OpaqueModel model) {
         chunkModels.add(model);
     }
 
-    public void processFoliageModel(OpaqueModel foliageModel) {
+    private void processFoliageModel(OpaqueModel foliageModel) {
         foliageModels.add(foliageModel);
     }
 

@@ -192,8 +192,8 @@ public class Chunk {
 
     public void generateSurroundingChunks() {
         for (int chunkX = X - 1; chunkX <= X + 1; chunkX++)
-            for (int chunkY = Y - 1; chunkY <= Y + 1; chunkY++)
-                for (int chunkZ = Z - 1; chunkZ <= Z + 1; chunkZ++) {
+            for (int chunkZ = Z - 1; chunkZ <= Z + 1; chunkZ++)
+                for (int chunkY = Y - 1; chunkY <= Y + 1; chunkY++) {
 
                     long expectedId = GameLogic.getChunkId(chunkX, chunkY, chunkZ);
                     int index = GameLogic.getChunkIndex(chunkX, chunkY, chunkZ);
@@ -448,6 +448,22 @@ public class Chunk {
         return world[index];
     }
 
+    public static OpaqueModel getOpaqueModel(int index) {
+        return opaqueModels[index];
+    }
+
+    public static void setOpaqueModel(OpaqueModel model, int index) {
+        opaqueModels[index] = model;
+    }
+
+    public static void setWaterModel(WaterModel waterModel, int index) {
+        waterModels[index] = waterModel;
+    }
+
+    public static WaterModel getWaterModel(int index) {
+        return waterModels[index];
+    }
+
     public static void storeChunk(Chunk chunk) {
         world[chunk.getIndex()] = chunk;
     }
@@ -477,22 +493,6 @@ public class Chunk {
         opaqueVertices = new int[0];
         vertexCounts = new int[0];
         waterVertices = new int[0];
-    }
-
-    public OpaqueModel getOpaqueModel() {
-        return opaqueModel;
-    }
-
-    public void setOpaqueModel(OpaqueModel model) {
-        this.opaqueModel = model;
-    }
-
-    public WaterModel getWaterModel() {
-        return waterModel;
-    }
-
-    public void setWaterModel(WaterModel waterModel) {
-        this.waterModel = waterModel;
     }
 
     public int getIndex() {
@@ -589,16 +589,12 @@ public class Chunk {
         this.vertexCounts = vertexCounts;
     }
 
-    public static void setWorld(Chunk[] world) {
+    public static void setStaticData(Chunk[] world, short[] occlusionCullingData, HeightMap[] heightMaps, OpaqueModel[] opaqueModels, WaterModel[] waterModels) {
         Chunk.world = world;
-    }
-
-    public static void setOcclusionCullingData(short[] occlusionCullingData) {
         Chunk.occlusionCullingData = occlusionCullingData;
-    }
-
-    public static void setHeightMaps(HeightMap[] heightMaps) {
         Chunk.heightMaps = heightMaps;
+        Chunk.opaqueModels = opaqueModels;
+        Chunk.waterModels = waterModels;
     }
 
     public static void setHeightMap(HeightMap heightMap, int index) {
@@ -629,6 +625,8 @@ public class Chunk {
     }
 
     private static Chunk[] world;
+    private static OpaqueModel[] opaqueModels;
+    private static WaterModel[] waterModels;
     private static short[] occlusionCullingData;
     private static HeightMap[] heightMaps;
     private static final HashMap<Long, ArrayList<Integer>> toGenerateBlocks = new HashMap<>();
@@ -650,7 +648,4 @@ public class Chunk {
     private boolean isModified = false;
     private boolean hasPropagatedBlockLight = false;
     private boolean saved = false;
-
-    private OpaqueModel opaqueModel;
-    private WaterModel waterModel;
 }

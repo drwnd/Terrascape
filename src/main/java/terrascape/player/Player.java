@@ -377,13 +377,11 @@ public class Player {
 
     private void renderChunkColumn(int chunkX, int playerChunkY, int chunkZ) {
         for (int chunkY = playerChunkY + RENDER_DISTANCE_Y + 2; chunkY >= playerChunkY - RENDER_DISTANCE_Y - 2; chunkY--) {
-            Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
-            if (chunk == null) continue;
-            int chunkIndex = chunk.getIndex();
+            int chunkIndex = GameLogic.getChunkIndex(chunkX, chunkY, chunkZ);
             if ((visibleChunks[chunkIndex >> 6] & 1L << (chunkIndex & 63)) == 0) continue;
 
-            if (chunk.getWaterModel() != null) renderer.processWaterModel(chunk.getWaterModel());
-            if (chunk.getOpaqueModel() != null) renderer.processModel(chunk.getOpaqueModel());
+            if (Chunk.getWaterModel(chunkIndex) != null) renderer.processWaterModel(Chunk.getWaterModel(chunkIndex));
+            if (Chunk.getOpaqueModel(chunkIndex) != null) renderer.processOpaqueModel(Chunk.getOpaqueModel(chunkIndex));
         }
     }
 
@@ -395,8 +393,8 @@ public class Player {
         FrustumIntersection frustumIntersection = new FrustumIntersection(projectionViewMatrix);
 
         for (int chunkX = playerChunkX - RENDER_DISTANCE_XZ - 2; chunkX <= playerChunkX + RENDER_DISTANCE_XZ + 2; chunkX++)
-            for (int chunkY = playerChunkY - RENDER_DISTANCE_Y - 2; chunkY <= playerChunkY + RENDER_DISTANCE_Y + 2; chunkY++)
-                for (int chunkZ = playerChunkZ - RENDER_DISTANCE_XZ - 2; chunkZ <= playerChunkZ + RENDER_DISTANCE_XZ + 2; chunkZ++) {
+            for (int chunkZ = playerChunkZ - RENDER_DISTANCE_XZ - 2; chunkZ <= playerChunkZ + RENDER_DISTANCE_XZ + 2; chunkZ++)
+                for (int chunkY = playerChunkY - RENDER_DISTANCE_Y - 2; chunkY <= playerChunkY + RENDER_DISTANCE_Y + 2; chunkY++) {
                     int chunkIndex = GameLogic.getChunkIndex(chunkX, chunkY, chunkZ);
                     if ((visibleChunks[chunkIndex >> 6] & 1L << (chunkIndex & 63)) == 0) continue;
 
@@ -431,10 +429,10 @@ public class Player {
         if (damper >= MAX_OCCLUSION_CULLING_DAMPER) return;
         int chunkIndex = GameLogic.getChunkIndex(chunkX, chunkY, chunkZ);
 
-        short occlusionCullingData = Chunk.getOcclusionCullingData(chunkIndex);
-
         if ((visibleChunks[chunkIndex >> 6] & 1L << (chunkIndex & 63)) != 0) return;
         visibleChunks[chunkIndex >> 6] |= 1L << (chunkIndex & 63);
+
+        short occlusionCullingData = Chunk.getOcclusionCullingData(chunkIndex);
         damper += Chunk.getOcclusionCullingDamper(occlusionCullingData);
 
         if ((traveledDirections & 1 << SOUTH) == 0 && Chunk.readOcclusionCullingSidePair(entrySide, NORTH, occlusionCullingData))
