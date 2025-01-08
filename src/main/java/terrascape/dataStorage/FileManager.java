@@ -442,6 +442,7 @@ public class FileManager {
 
             GameLogic.haltChunkGenerator();
             GameLogic.unloadChunks();
+            GameLogic.loadUnloadObjects();
 
             RENDERED_WORLD_WIDTH = newRenderDistanceXZ * 2 + 5;
             RENDERED_WORLD_HEIGHT = newRenderDistanceY * 2 + 5;

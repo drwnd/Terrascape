@@ -164,28 +164,7 @@ public class GameLogic {
     }
 
     public static void update(float passedTicks) {
-        synchronized (toUnloadChunks) {
-            while (!toUnloadChunks.isEmpty()) {
-                Chunk chunk = toUnloadChunks.removeFirst();
-                deleteChunkMeshBuffers(chunk);
-                Chunk.removeToGenerateBlocks(chunk.id);
-                if (chunk.isModified()) FileManager.saveChunk(chunk);
-            }
-        }
-
-        synchronized (toUnloadHeightMaps) {
-            while (!toUnloadHeightMaps.isEmpty()) {
-                HeightMap heightMap = toUnloadHeightMaps.removeFirst();
-                FileManager.saveHeightMap(heightMap);
-            }
-        }
-
-        synchronized (toBufferChunks) {
-            for (int i = 0; i < MAX_CHUNKS_TO_BUFFER_PER_FRAME && !toBufferChunks.isEmpty(); i++) {
-                Chunk chunk = toBufferChunks.removeFirst();
-                bufferChunkMesh(chunk);
-            }
-        }
+        loadUnloadObjects();
         player.update(passedTicks);
     }
 
@@ -265,6 +244,31 @@ public class GameLogic {
         }
     }
 
+    public static void loadUnloadObjects() {
+        synchronized (toUnloadChunks) {
+            while (!toUnloadChunks.isEmpty()) {
+                Chunk chunk = toUnloadChunks.removeFirst();
+                deleteChunkMeshBuffers(chunk);
+                Chunk.removeToGenerateBlocks(chunk.id);
+                if (chunk.isModified()) FileManager.saveChunk(chunk);
+            }
+        }
+
+        synchronized (toUnloadHeightMaps) {
+            while (!toUnloadHeightMaps.isEmpty()) {
+                HeightMap heightMap = toUnloadHeightMaps.removeFirst();
+                FileManager.saveHeightMap(heightMap);
+            }
+        }
+
+        synchronized (toBufferChunks) {
+            for (int i = 0; i < MAX_CHUNKS_TO_BUFFER_PER_FRAME && !toBufferChunks.isEmpty(); i++) {
+                Chunk chunk = toBufferChunks.removeFirst();
+                bufferChunkMesh(chunk);
+            }
+        }
+    }
+
     public static void unloadChunks(int playerX, int playerY, int playerZ) {
         for (Chunk chunk : Chunk.getWorld()) {
             if (chunk == null) continue;
@@ -272,18 +276,32 @@ public class GameLogic {
             if (Math.abs(chunk.X - playerX) <= RENDER_DISTANCE_XZ + 2 && Math.abs(chunk.Z - playerZ) <= RENDER_DISTANCE_XZ + 2 && Math.abs(chunk.Y - playerY) <= RENDER_DISTANCE_Y + 2)
                 continue;
 
-            if (Math.abs(chunk.Y - playerY) < RENDER_DISTANCE_Y + 2) {
-                HeightMap heightMap = Chunk.getHeightMap(chunk.X, chunk.Z);
-                if (heightMap != null && heightMap.isModified()) {
-                    addToUnloadHeightMap(Chunk.getHeightMap(chunk.X, chunk.Z));
-                    HeightMap.setNull(GameLogic.getHeightMapIndex(chunk.X, chunk.Z));
-                }
-            }
-
             chunk.clearMesh();
             addToUnloadChunk(chunk);
 
             Chunk.setNull(chunk.getIndex());
+        }
+
+        for (HeightMap heightMap : Chunk.getHeightMaps()) {
+            if (heightMap == null) continue;
+
+            if (Math.abs(heightMap.chunkX - playerX) <= RENDER_DISTANCE_XZ + 2 && Math.abs(heightMap.chunkZ - playerZ) <= RENDER_DISTANCE_XZ + 2)
+                continue;
+
+            if (heightMap.isModified()) {
+                addToUnloadHeightMap(Chunk.getHeightMap(heightMap.chunkX, heightMap.chunkZ));
+            }
+            HeightMap.setNull(GameLogic.getHeightMapIndex(heightMap.chunkX, heightMap.chunkZ));
+        }
+
+        synchronized (toBufferChunks) {
+            for (Iterator<Chunk> iterator = toBufferChunks.iterator(); iterator.hasNext(); ) {
+                Chunk chunk = iterator.next();
+                if (Math.abs(chunk.X - playerX) <= RENDER_DISTANCE_XZ + 2 && Math.abs(chunk.Z - playerZ) <= RENDER_DISTANCE_XZ + 2 && Math.abs(chunk.Y - playerY) <= RENDER_DISTANCE_Y + 2)
+                    continue;
+
+                iterator.remove();
+            }
         }
     }
 
