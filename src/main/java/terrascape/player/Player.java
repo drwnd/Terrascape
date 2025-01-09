@@ -78,7 +78,7 @@ public class Player {
 //                Vector3f pos = camera.getPosition();
 //                Chunk chunk = Chunk.getChunk(Utils.floor(pos.x) >> CHUNK_SIZE_BITS, Utils.floor(pos.y) >> CHUNK_SIZE_BITS, Utils.floor(pos.z) >> CHUNK_SIZE_BITS);
 //                if (chunk == null) return;
-//                Arrays.fill(chunk.getBlocks(), AIR);
+//                Arrays.fill(chunk.getBlocks(), TNT);
 //
 //                for (int chunkX = chunk.X - 1; chunkX <= chunk.X + 1; chunkX++)
 //                    for (int chunkY = chunk.Y - 1; chunkY <= chunk.Y + 1; chunkY++)
@@ -86,7 +86,7 @@ public class Player {
 //                            Chunk toMeshChunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
 //                            if (toMeshChunk != null) toMeshChunk.setMeshed(false);
 //                        }
-//                GameLogic.restartGeneratorNow(NONE);
+//                GameLogic.restartGenerator(NONE);
 //            }
 
 //            if (key == GLFW.GLFW_KEY_J && action == GLFW.GLFW_RELEASE) {

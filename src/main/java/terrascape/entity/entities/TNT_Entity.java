@@ -3,18 +3,12 @@ package terrascape.entity.entities;
 import terrascape.server.*;
 import terrascape.dataStorage.Chunk;
 import terrascape.entity.particles.ExplosionParticle;
-import terrascape.player.ObjectLoader;
-import terrascape.player.ShaderManager;
 import terrascape.player.SoundManager;
 import terrascape.utils.Utils;
 import terrascape.server.GameLogic;
 import terrascape.server.Launcher;
 import org.joml.Vector3f;
 import org.joml.Vector3i;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL20;
-import org.lwjgl.opengl.GL30;
 
 import java.util.LinkedList;
 
@@ -22,9 +16,8 @@ import static terrascape.utils.Constants.*;
 import static terrascape.utils.Settings.*;
 
 public class TNT_Entity extends Entity {
-    private static final float[] TNT_AABB = new float[]{-0.5f, 0.5f, -0.25f, 0.75f, -0.5f, 0.5f};
+    private static final float[] TNT_AABB = new float[]{-0.5f, 0.5f, -0.5f, 0.5f, -0.5f, 0.5f};
     private static final int EXPLOSION_STRENGTH = 2;
-    public static int vao, vbo;
 
     private int fuse;
 
@@ -47,23 +40,23 @@ public class TNT_Entity extends Entity {
     }
 
     @Override
-    protected void renderUnique(ShaderManager shader, int modelIndexBuffer, float timeSinceLastTick) {
-        GL30.glBindVertexArray(vao);
-        GL20.glEnableVertexAttribArray(0);
-        GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, modelIndexBuffer);
-
-        GL11.glDrawElements(GL11.GL_TRIANGLES, 36, GL11.GL_UNSIGNED_INT, 0);
-    }
-
-    @Override
     public void delete() {
         isDead = true;
     }
 
-    public static void init() {
-        long vao_vbo = ObjectLoader.loadVAO_VBO(0, 2, getTNTEntityVertices());
-        vao = (int) (vao_vbo >> 32 & 0xFFFFFFFFL);
-        vbo = (int) (vao_vbo & 0xFFFFFFFFL);
+    @Override
+    public byte getTopTexture() {
+        return -122;
+    }
+
+    @Override
+    public byte getSideTexture() {
+        return -106;
+    }
+
+    @Override
+    public byte getBottomTexture() {
+        return -90;
     }
 
     public void explode() {
@@ -216,57 +209,8 @@ public class TNT_Entity extends Entity {
 
     }
 
-    private static int[] getTNTEntityVertices() {
-        int sideTL = Byte.toUnsignedInt((byte) -106);
-        int sideTR = Byte.toUnsignedInt((byte) -106) + 1;
-        int sideBL = Byte.toUnsignedInt((byte) -106) + 16;
-        int sideBR = Byte.toUnsignedInt((byte) -106) + 17;
-
-        int topTL = Byte.toUnsignedInt((byte) -122);
-        int topTR = Byte.toUnsignedInt((byte) -122) + 1;
-        int topBL = Byte.toUnsignedInt((byte) -122) + 16;
-        int topBR = Byte.toUnsignedInt((byte) -122) + 17;
-
-        int bottomTL = Byte.toUnsignedInt((byte) -90);
-        int bottomTR = Byte.toUnsignedInt((byte) -90) + 1;
-        int bottomBL = Byte.toUnsignedInt((byte) -90) + 16;
-        int bottomBR = Byte.toUnsignedInt((byte) -90) + 17;
-
-        return new int[]{
-                packData((sideTL & 15) << 4, (topTL >> 4) << 4), packData(8, 12, 8),
-                packData((sideBL & 15) << 4, (topBL >> 4) << 4), packData(8, 12, -8),
-                packData((sideTR & 15) << 4, (topTR >> 4) << 4), packData(-8, 12, 8),
-                packData((sideBR & 15) << 4, (topBR >> 4) << 4), packData(-8, 12, -8),
-
-                packData((sideTL & 15) << 4, (bottomTL >> 4) << 4), packData(8, -4, 8),
-                packData((sideTR & 15) << 4, (bottomTR >> 4) << 4), packData(-8, -4, 8),
-                packData((sideBL & 15) << 4, (bottomBL >> 4) << 4), packData(8, -4, -8),
-                packData((sideBR & 15) << 4, (bottomBR >> 4) << 4), packData(-8, -4, -8),
-
-                packData((sideTL & 15) << 4, (sideTL >> 4) << 4), packData(8, 12, 8),
-                packData((sideBL & 15) << 4, (sideBL >> 4) << 4), packData(8, -4, 8),
-                packData((sideTR & 15) << 4, (sideTR >> 4) << 4), packData(8, 12, -8),
-                packData((sideBR & 15) << 4, (sideBR >> 4) << 4), packData(8, -4, -8),
-
-                packData((sideTL & 15) << 4, (sideTL >> 4) << 4), packData(-8, 12, 8),
-                packData((sideBL & 15) << 4, (sideBL >> 4) << 4), packData(-8, -4, 8),
-                packData((sideTR & 15) << 4, (sideTR >> 4) << 4), packData(8, 12, 8),
-                packData((sideBR & 15) << 4, (sideBR >> 4) << 4), packData(8, -4, 8),
-
-                packData((sideTL & 15) << 4, (sideTL >> 4) << 4), packData(-8, 12, -8),
-                packData((sideBL & 15) << 4, (sideBL >> 4) << 4), packData(-8, -4, -8),
-                packData((sideTR & 15) << 4, (sideTR >> 4) << 4), packData(-8, 12, 8),
-                packData((sideBR & 15) << 4, (sideBR >> 4) << 4), packData(-8, -4, 8),
-
-                packData((sideTL & 15) << 4, (sideTL >> 4) << 4), packData(8, 12, -8),
-                packData((sideBL & 15) << 4, (sideBL >> 4) << 4), packData(8, -4, -8),
-                packData((sideTR & 15) << 4, (sideTR >> 4) << 4), packData(-8, 12, -8),
-                packData((sideBR & 15) << 4, (sideBR >> 4) << 4), packData(-8, -4, -8),
-        };
-    }
-
     public static void spawnTNTEntity(Vector3i targetPosition, int fuse) {
-        Vector3f position = new Vector3f(targetPosition.x + 0.5f, targetPosition.y + 0.25f, targetPosition.z + 0.5f);
+        Vector3f position = new Vector3f(targetPosition.x + 0.5f, targetPosition.y + 0.5f, targetPosition.z + 0.5f);
         Vector3f velocity = new Vector3f((float) (Math.random() * 0.3 - 0.15), (float) (Math.random() * 0.3 - 0.15), (float) (Math.random() * 0.3 - 0.15));
         TNT_Entity entity = new TNT_Entity(fuse, position, velocity);
         GameLogic.spawnEntity(entity);
@@ -274,7 +218,7 @@ public class TNT_Entity extends Entity {
     }
 
     public static void spawnTNTEntity(Vector3i targetPosition, Vector3f velocity, int fuse) {
-        Vector3f position = new Vector3f(targetPosition.x + 0.5f, targetPosition.y + 0.25f, targetPosition.z + 0.5f);
+        Vector3f position = new Vector3f(targetPosition.x + 0.5f, targetPosition.y + 0.5f, targetPosition.z + 0.5f);
         TNT_Entity entity = new TNT_Entity(fuse, position, velocity);
         GameLogic.spawnEntity(entity);
     }

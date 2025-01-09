@@ -1,5 +1,6 @@
 package terrascape.player;
 
+import terrascape.entity.entities.TNT_Entity;
 import terrascape.server.*;
 import terrascape.dataStorage.Chunk;
 import terrascape.entity.*;
@@ -22,7 +23,6 @@ import java.awt.*;
 import java.nio.IntBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.List;
 
 public class RenderManager {
 
@@ -66,6 +66,9 @@ public class RenderManager {
         GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, buffer, GL15.GL_STATIC_DRAW);
 
         textRowVertexArray = ObjectLoader.loadTextRow();
+
+        entityDataBuffer = GL46.glCreateBuffers();
+        GL46.glNamedBufferStorage(entityDataBuffer, MAX_AMOUNT_OF_TO_RENDER_ENTITIES * 16, GL46.GL_DYNAMIC_STORAGE_BIT);
     }
 
     private void loadTextures() throws Exception {
@@ -98,8 +101,6 @@ public class RenderManager {
         entityShader.createUniform("viewMatrix");
         entityShader.createUniform("time");
         entityShader.createUniform("textureSampler");
-        entityShader.createUniform("position");
-        entityShader.createUniform("lightLevel");
     }
 
     private void createTextShader() throws Exception {
@@ -352,19 +353,50 @@ public class RenderManager {
     }
 
     public void renderEntities(Matrix4f projectionMatrix, Matrix4f viewMatrix, float passedTicks) {
+        if (entities.isEmpty()) return;
+
+        long renderTime = System.nanoTime();
+
         entityShader.bind();
         entityShader.setUniform("projectionMatrix", projectionMatrix);
         entityShader.setUniform("viewMatrix", viewMatrix);
-        entityShader.setUniform("time", time);
+        entityShader.setUniform("time", time + TIME_SPEED * passedTicks);
         entityShader.setUniform("textureSampler", 0);
 
         GL13.glActiveTexture(GL13.GL_TEXTURE0);
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, atlas.id());
         GL11.glEnable(GL11.GL_CULL_FACE);
 
-        for (Entity entity : entities) entity.render(entityShader, modelIndexBuffer, passedTicks);
+        int index = 0;
+
+        for (Entity entity : entities) {
+            Vector3f position = entity.getPosition();
+            Vector3f velocity = entity.getVelocity();
+
+            int otherData = 0;
+            otherData |= entity.getTopTexture() << 24 & 0xFF000000;
+            otherData |= entity.getSideTexture() << 16 & 0xFF0000;
+            otherData |= entity.getBottomTexture() << 8 & 0xFF00;
+            otherData |= Chunk.getLightInWorld(Utils.floor(position.x), Utils.floor(position.y), Utils.floor(position.z)) & 0xFF;
+
+            entityData[index++] = position.x - (1.0f / TARGET_TPS - passedTicks) * velocity.x;
+            entityData[index++] = position.y - (1.0f / TARGET_TPS - passedTicks) * velocity.y;
+            entityData[index++] = position.z - (1.0f / TARGET_TPS - passedTicks) * velocity.z;
+            entityData[index++] = Float.intBitsToFloat(otherData);
+        }
+
+        GL46.glNamedBufferSubData(entityDataBuffer, 0, entityData);
+        GL46.glBindBufferBase(GL46.GL_SHADER_STORAGE_BUFFER, 0, entityDataBuffer);
+
+        GL30.glBindVertexArray(TNT_Entity.vao);
+        GL20.glEnableVertexAttribArray(0);
+        GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, modelIndexBuffer);
+
+        GL40.glDrawElementsInstanced(GL11.GL_TRIANGLES, 36, GL11.GL_UNSIGNED_INT, 0, entities.size());
 
         entityShader.unBind();
+
+        if (player.printTimes) System.out.println("Entities " + (System.nanoTime() - renderTime));
     }
 
     public void renderParticles(Matrix4f projectionMatrix, Matrix4f viewMatrix, float passedTicks) {
@@ -562,6 +594,7 @@ public class RenderManager {
     }
 
     public void processEntity(Entity entity) {
+        if (entities.size() >= MAX_AMOUNT_OF_TO_RENDER_ENTITIES) return;
         entities.add(entity);
     }
 
@@ -633,13 +666,13 @@ public class RenderManager {
     private final WindowManager window;
     private ShaderManager blockShader, waterShader, foliageShader, skyBoxShader, GUIShader, textShader, entityShader, particleShader;
 
-    private final List<OpaqueModel> chunkModels = new ArrayList<>();
-    private final List<OpaqueModel> foliageModels = new ArrayList<>();
-    private final List<WaterModel> waterModels = new ArrayList<>();
-    private final List<Entity> entities = new ArrayList<>();
-    private final List<Particle> particles = new ArrayList<>();
-    private final List<GUIElement> GUIElements = new ArrayList<>();
-    private final List<DisplayString> displayStrings = new ArrayList<>();
+    private final ArrayList<OpaqueModel> chunkModels = new ArrayList<>();
+    private final ArrayList<OpaqueModel> foliageModels = new ArrayList<>();
+    private final ArrayList<WaterModel> waterModels = new ArrayList<>();
+    private final ArrayList<Entity> entities = new ArrayList<>();
+    private final ArrayList<Particle> particles = new ArrayList<>();
+    private final ArrayList<GUIElement> GUIElements = new ArrayList<>();
+    private final ArrayList<DisplayString> displayStrings = new ArrayList<>();
     private final Player player;
     private GUIElement inventoryOverlay;
     private SkyBox skyBox;
@@ -650,6 +683,8 @@ public class RenderManager {
 
     private int modelIndexBuffer;
     private int textRowVertexArray;
+    private int entityDataBuffer;
+    private final float[] entityData = new float[MAX_AMOUNT_OF_TO_RENDER_ENTITIES * 4];
 
     private Texture atlas;
     private Texture textAtlas;

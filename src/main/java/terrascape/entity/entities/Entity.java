@@ -1,8 +1,8 @@
 package terrascape.entity.entities;
 
+import terrascape.player.ObjectLoader;
 import terrascape.server.*;
 import terrascape.dataStorage.Chunk;
-import terrascape.player.ShaderManager;
 import terrascape.utils.Utils;
 import org.joml.Vector3f;
 
@@ -16,31 +16,25 @@ public abstract class Entity {
     protected Vector3f velocity;
     protected float[] aabb;
     protected boolean isDead = false;
+    public static int vao, vbo;
 
     public static void initAll() {
-        TNT_Entity.init();
-        FallingBlockEntity.init();
+        long vao_vbo = ObjectLoader.loadVAO_VBO(0, 2, getEntityVertices());
+        vao = (int) (vao_vbo >> 32 & 0xFFFFFFFFL);
+        vbo = (int) (vao_vbo & 0xFFFFFFFFL);
+
     }
 
     public abstract void update();
 
-    protected abstract void renderUnique(ShaderManager shader, int modelIndexBuffer, float timeSinceLastTick);
-
     public abstract void delete();
 
-    public void render(ShaderManager shader, int modelIndexBuffer, float timeSinceLastTick) {
-        int x = Utils.floor(position.x);
-        int y = Utils.floor(position.y);
-        int z = Utils.floor(position.z);
+    public abstract byte getTopTexture();
 
-        shader.setUniform("position",
-                position.x - (1.0f / TARGET_TPS - timeSinceLastTick) * velocity.x,
-                position.y - (1.0f / TARGET_TPS - timeSinceLastTick) * velocity.y,
-                position.z - (1.0f / TARGET_TPS - timeSinceLastTick) * velocity.z);
-        shader.setUniform("lightLevel", Chunk.getLightInWorld(x, y, z));
+    public abstract byte getSideTexture();
 
-        renderUnique(shader, modelIndexBuffer, timeSinceLastTick);
-    }
+    public abstract byte getBottomTexture();
+
 
     public void move() {
         velocity.mul(AIR_FRICTION);
@@ -245,19 +239,58 @@ public abstract class Entity {
         return position;
     }
 
+    public Vector3f getVelocity() {
+        return velocity;
+    }
+
     public void addVelocity(float x, float y, float z) {
         velocity.add(x, y, z);
     }
 
-    public static int packData(int x, int y, int z) {
+    private static int packPositionData(int x, int y, int z) {
         return x + 511 << 20 | y + 511 << 10 | z + 511;
     }
 
-    public static int packData(int u, int v) {
-        return u + 15 << 9 | v + 15;
+    private static int packMiscellaneousData(int u, int v, int side) {
+        return side | u << 3 | v << 4;
     }
 
     public float[] getAabb() {
         return aabb;
+    }
+
+    private static int[] getEntityVertices() {
+
+        return new int[]{
+                packMiscellaneousData(0, 0, TOP), packPositionData(8, 8, 8),
+                packMiscellaneousData(1, 0, TOP), packPositionData(8, 8, -8),
+                packMiscellaneousData(0, 1, TOP), packPositionData(-8, 8, 8),
+                packMiscellaneousData(1, 1, TOP), packPositionData(-8, 8, -8),
+
+                packMiscellaneousData(0, 0, BOTTOM), packPositionData(8, -8, 8),
+                packMiscellaneousData(1, 0, BOTTOM), packPositionData(-8, -8, 8),
+                packMiscellaneousData(0, 1, BOTTOM), packPositionData(8, -8, -8),
+                packMiscellaneousData(1, 1, BOTTOM), packPositionData(-8, -8, -8),
+
+                packMiscellaneousData(0, 0, WEST), packPositionData(8, 8, 8),
+                packMiscellaneousData(0, 1, WEST), packPositionData(8, -8, 8),
+                packMiscellaneousData(1, 0, WEST), packPositionData(8, 8, -8),
+                packMiscellaneousData(1, 1, WEST), packPositionData(8, -8, -8),
+
+                packMiscellaneousData(0, 0, NORTH), packPositionData(-8, 8, 8),
+                packMiscellaneousData(0, 1, NORTH), packPositionData(-8, -8, 8),
+                packMiscellaneousData(1, 0, NORTH), packPositionData(8, 8, 8),
+                packMiscellaneousData(1, 1, NORTH), packPositionData(8, -8, 8),
+
+                packMiscellaneousData(0, 0, EAST), packPositionData(-8, 8, -8),
+                packMiscellaneousData(0, 1, EAST), packPositionData(-8, -8, -8),
+                packMiscellaneousData(1, 0, EAST), packPositionData(-8, 8, 8),
+                packMiscellaneousData(1, 1, EAST), packPositionData(-8, -8, 8),
+
+                packMiscellaneousData(0, 0, SOUTH), packPositionData(8, 8, -8),
+                packMiscellaneousData(0, 1, SOUTH), packPositionData(8, -8, -8),
+                packMiscellaneousData(1, 0, SOUTH), packPositionData(-8, 8, -8),
+                packMiscellaneousData(1, 1, SOUTH), packPositionData(-8, -8, -8)
+        };
     }
 }

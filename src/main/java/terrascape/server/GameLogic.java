@@ -169,6 +169,7 @@ public class GameLogic {
     }
 
     public static void updateGT(long tick) {
+        long time = System.nanoTime();
         player.updateGT(tick);
 
         for (Entity entity : toSpawnEntities) addEntityToLists(entity);
@@ -241,6 +242,10 @@ public class GameLogic {
         if (generatorRestartScheduled != 0) {
             generator.restart(generatorRestartScheduled & 0xF);
             generatorRestartScheduled = 0;
+        }
+
+        if (player.printTimes) {
+            System.out.println("-----------Game tick time " + (System.nanoTime() - time));
         }
     }
 

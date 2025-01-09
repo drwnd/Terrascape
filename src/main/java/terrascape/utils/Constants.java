@@ -10,6 +10,7 @@ public class Constants {
     public static final float NANOSECONDS_PER_SECOND = 1_000_000_000;
     public static final float SPAWN_RADIUS = 150.0f; // More like halfSideLengthOfSpawnSquare
     public static final byte TARGET_TPS = 20;
+    public static final int MAX_AMOUNT_OF_TO_RENDER_ENTITIES = 20000; // A thing with GPU memory not so much performance
 
     // DO NOT CHANGE THESE VALUES (like really, it will crash)
     public static final byte CHUNK_SIZE_BITS = 5;
