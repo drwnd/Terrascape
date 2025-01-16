@@ -5,58 +5,46 @@ import terrascape.dataStorage.Chunk;
 import terrascape.entity.entities.FallingBlockEntity;
 import terrascape.player.SoundManager;
 import terrascape.utils.EventQueue;
+import terrascape.utils.Utils;
 
 import static terrascape.utils.Constants.*;
 import static terrascape.utils.Settings.*;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 
 public record BlockEvent(int x, int y, int z, byte type) {
 
-    public static void add(BlockEvent event, long tick) {
-        if (tick < EngineManager.getTick()) System.err.println("Event scheduled in the past");
-
-        for (EventQueue queue : events)
-            if (queue.tick == tick) {
-                if (!queue.hasEventScheduledAt(event.x, event.y, event.z)) queue.enqueue(event);
-                return;
-            }
-
-        EventQueue queue = new EventQueue(10, tick);
-        queue.enqueue(event);
-        events.add(queue);
-    }
-
     public static void execute(long tick) {
-        EventQueue queue = null;
+        int counter = 0;
+        while (counter < MAX_AMOUNTS_OF_MISSED_TICKS_TO_EXECUTE_PER_TICK) {
+            counter++;
+            EventQueue queue = null;
+            synchronized (events) {
+                for (EventQueue currentQueue : events)
+                    if (currentQueue.tick <= tick) {
+                        queue = currentQueue;
+                        break;
+                    }
+                events.remove(queue);
+            }
+            if (queue == null) break; // Executed every tick up to current time
 
-        for (Iterator<EventQueue> iterator = events.iterator(); iterator.hasNext(); ) {
-            EventQueue currentQueue = iterator.next();
-            if (currentQueue.tick == tick) {
-                queue = currentQueue;
-                break;
-            } else if (currentQueue.tick < tick) {
-                System.err.println(currentQueue.size() + " Events were missed");
-                iterator.remove();
+            synchronized (queue) {
+                while (!queue.isEmpty()) {
+                    BlockEvent event = queue.dequeue();
+                    if (event == null) continue;
+                    switch (event.type) {
+                        case SMART_BLOCK_EVENT -> executeSmartBlockEvent(event);
+                        case GRAVITY_BLOCK_FALL_EVENT -> executeGravityBlockFallEvent(event);
+                        case WATER_FLOW_EVENT -> executeWaterFlowEvent(event);
+                        case LAVA_FLOW_EVENT -> executeLavaFlowEvent(event);
+                        case UNSUPPORTED_BLOCK_BREAK_EVENT -> executeUnsupportedBlockBreakEvent(event);
+                        case LAVA_FREEZE_EVENT -> executeLavaFreezeEvent(event);
+                        case WATER_SOLIDIFY_EVENT -> executeWaterSolidifyEvent(event);
+                    }
+                }
             }
         }
-
-        if (queue == null) return;
-
-        while (!queue.isEmpty()) {
-            BlockEvent event = queue.dequeue();
-            switch (event.type) {
-                case SMART_BLOCK_EVENT -> executeSmartBlockEvent(event);
-                case GRAVITY_BLOCK_FALL_EVENT -> executeGravityBlockFallEvent(event);
-                case WATER_FLOW_EVENT -> executeWaterFlowEvent(event);
-                case LAVA_FLOW_EVENT -> executeLavaFlowEvent(event);
-                case UNSUPPORTED_BLOCK_BREAK_EVENT -> executeUnsupportedBlockBreakEvent(event);
-                case LAVA_FREEZE_EVENT -> executeLavaFreezeEvent(event);
-                case WATER_SOLIDIFY_EVENT -> executeWaterSolidifyEvent(event);
-            }
-        }
-        events.remove(queue);
     }
 
     public static int getAmountOfScheduledEvents(long currentTick) {
@@ -76,21 +64,61 @@ public record BlockEvent(int x, int y, int z, byte type) {
         addCorrectEvents(x, y, z - 1);
     }
 
+    public static ArrayList<BlockEvent> removeEventsInChunk(Chunk chunk) {
+        ArrayList<BlockEvent> removedEvents = new ArrayList<>();
+        synchronized (events) {
+            for (EventQueue queue : events)
+                queue.removeEventsInChunk(chunk, removedEvents);
+        }
+        return removedEvents;
+    }
+
+    public static void addEventsFromBytes(byte[] bytes) {
+        if (bytes == null) return;
+        int index = 0;
+        while (index < bytes.length) {
+            byte type = bytes[index];
+            int x = Utils.getInt(bytes, index + 1);
+            int y = Utils.getInt(bytes, index + 5);
+            int z = Utils.getInt(bytes, index + 9);
+            add(x, y, z, type, EngineManager.getTick() + 1);
+            index += EVENT_BYTE_SIZE;
+        }
+    }
+
+
     private static void addCorrectEvents(int x, int y, int z) {
         short block = Chunk.getBlockInWorld(x, y, z);
         int properties = Block.getBlockProperties(block);
         byte blockTypeData = Block.getBlockTypeData(block);
+        long tick = EngineManager.getTick();
 
-        if ((blockTypeData & SMART_BLOCK_TYPE) != 0)
-            add(new BlockEvent(x, y, z, SMART_BLOCK_EVENT), EngineManager.getTick());
-        if ((properties & HAS_GRAVITY) != 0)
-            add(new BlockEvent(x, y, z, GRAVITY_BLOCK_FALL_EVENT), EngineManager.getTick() + 1);
-        if (Block.isWaterLogged(block)) add(new BlockEvent(x, y, z, WATER_FLOW_EVENT), EngineManager.getTick() + 4);
-        if (Block.isWaterBlock(block)) add(new BlockEvent(x, y, z, WATER_SOLIDIFY_EVENT), EngineManager.getTick());
-        if (Block.isLavaBlock(block)) add(new BlockEvent(x, y, z, LAVA_FREEZE_EVENT), EngineManager.getTick());
-        if (Block.isLavaBlock(block)) add(new BlockEvent(x, y, z, LAVA_FLOW_EVENT), EngineManager.getTick() + 8);
+        if ((blockTypeData & SMART_BLOCK_TYPE) != 0) add(x, y, z, SMART_BLOCK_EVENT, tick);
+        if ((properties & HAS_GRAVITY) != 0) add(x, y, z, GRAVITY_BLOCK_FALL_EVENT, tick + 1);
+        if (Block.isWaterLogged(block)) add(x, y, z, WATER_FLOW_EVENT, tick + 4 - (tick & 3));
+        if (Block.isWaterBlock(block)) add(x, y, z, WATER_SOLIDIFY_EVENT, tick);
+        if (Block.isLavaBlock(block)) add(x, y, z, LAVA_FREEZE_EVENT, tick);
+        if (Block.isLavaBlock(block)) add(x, y, z, LAVA_FLOW_EVENT, tick + 8 - (tick & 7));
         if ((properties & REQUIRES_BOTTOM_SUPPORT) != 0 || (properties & REQUIRES_AND_SIDE_SUPPORT) != 0)
-            add(new BlockEvent(x, y, z, UNSUPPORTED_BLOCK_BREAK_EVENT), EngineManager.getTick() + 1);
+            add(x, y, z, UNSUPPORTED_BLOCK_BREAK_EVENT, tick + 1);
+    }
+
+    private static void add(int x, int y, int z, byte type, long tick) {
+        synchronized (events) {
+            for (EventQueue queue : events)
+                if (queue.tick == tick) {
+                    synchronized (queue) {
+                        if (!queue.hasEventScheduledAt(x, y, z)) queue.enqueue(new BlockEvent(x, y, z, type));
+                    }
+                    return;
+                }
+
+            EventQueue queue = new EventQueue(10, tick);
+            queue.enqueue(new BlockEvent(x, y, z, type));
+            synchronized (events) {
+                events.add(queue);
+            }
+        }
     }
 
 
@@ -99,7 +127,7 @@ public record BlockEvent(int x, int y, int z, byte type) {
         if (!Block.isWaterBlock(block)) return;
         if (!Block.isLavaBlock(Chunk.getBlockInWorld(event.x, event.y + 1, event.z))) return;
 
-        GameLogic.placeBlock(block == WATER_SOURCE ? SLATE : STONE, event.x, event.y, event.z, false);
+        ServerLogic.placeBlock(block == WATER_SOURCE ? SLATE : STONE, event.x, event.y, event.z, false);
         SoundManager sound = Launcher.getSound();
         sound.playRandomSound(sound.fizz, event.x, event.y, event.z, 0.0f, 0.0f, 0.0f, MISCELLANEOUS_GAIN);
     }
@@ -107,13 +135,10 @@ public record BlockEvent(int x, int y, int z, byte type) {
     private static void executeLavaFreezeEvent(BlockEvent event) {
         short block = Chunk.getBlockInWorld(event.x, event.y, event.z);
         if (!Block.isLavaBlock(block)) return;
-        if (!(Block.isWaterLogged(Chunk.getBlockInWorld(event.x, event.y, event.z + 1))
-                || Block.isWaterLogged(Chunk.getBlockInWorld(event.x, event.y, event.z - 1))
-                || Block.isWaterLogged(Chunk.getBlockInWorld(event.x, event.y + 1, event.z))
-                || Block.isWaterLogged(Chunk.getBlockInWorld(event.x + 1, event.y, event.z))
-                || Block.isWaterLogged(Chunk.getBlockInWorld(event.x - 1, event.y, event.z)))) return;
+        if (!(Block.isWaterLogged(Chunk.getBlockInWorld(event.x, event.y, event.z + 1)) || Block.isWaterLogged(Chunk.getBlockInWorld(event.x, event.y, event.z - 1)) || Block.isWaterLogged(Chunk.getBlockInWorld(event.x, event.y + 1, event.z)) || Block.isWaterLogged(Chunk.getBlockInWorld(event.x + 1, event.y, event.z)) || Block.isWaterLogged(Chunk.getBlockInWorld(event.x - 1, event.y, event.z))))
+            return;
 
-        GameLogic.placeBlock(block == LAVA_SOURCE ? OBSIDIAN : COBBLESTONE, event.x, event.y, event.z, false);
+        ServerLogic.placeBlock(block == LAVA_SOURCE ? OBSIDIAN : COBBLESTONE, event.x, event.y, event.z, false);
         SoundManager sound = Launcher.getSound();
         sound.playRandomSound(sound.fizz, event.x, event.y, event.z, 0.0f, 0.0f, 0.0f, MISCELLANEOUS_GAIN);
     }
@@ -231,7 +256,7 @@ public record BlockEvent(int x, int y, int z, byte type) {
 
     public static void flickDoors(int x, int y, int z) {
         short currentBlock = Chunk.getBlockInWorld(x, y, z);
-        Vector3f position = GameLogic.getPlayer().getCamera().getPosition();
+        Vector3f position = ServerLogic.getPlayer().getCamera().getPosition();
         Launcher.getSound().playRandomSound(Block.getFootstepsSound(currentBlock), position.x, position.y, position.z, 0.0f, 0.0f, 0.0f, MISCELLANEOUS_GAIN);
         int currentY = y;
         int doorType = currentBlock & BLOCK_TYPE_MASK;
@@ -239,7 +264,7 @@ public record BlockEvent(int x, int y, int z, byte type) {
 
         while (Block.isDoorType(currentBlock) && (currentBlock & BLOCK_TYPE_MASK) == doorType) {
             int baseBlock = currentBlock & (BASE_BLOCK_MASK | WATER_LOGGED_MASK);
-            GameLogic.placeBlock((short) (baseBlock | nextDoorType), x, currentY, z, false);
+            ServerLogic.placeBlock((short) (baseBlock | nextDoorType), x, currentY, z, false);
             currentY--;
             currentBlock = Chunk.getBlockInWorld(x, currentY, z);
         }
@@ -247,7 +272,7 @@ public record BlockEvent(int x, int y, int z, byte type) {
         currentBlock = Chunk.getBlockInWorld(x, currentY, z);
         while (Block.isDoorType(currentBlock) && (currentBlock & BLOCK_TYPE_MASK) == doorType) {
             int baseBlock = currentBlock & (BASE_BLOCK_MASK | WATER_LOGGED_MASK);
-            GameLogic.placeBlock((short) (baseBlock | nextDoorType), x, currentY, z, false);
+            ServerLogic.placeBlock((short) (baseBlock | nextDoorType), x, currentY, z, false);
             currentY++;
             currentBlock = Chunk.getBlockInWorld(x, currentY, z);
         }
@@ -257,7 +282,7 @@ public record BlockEvent(int x, int y, int z, byte type) {
         short block = Chunk.getBlockInWorld(event.x, event.y, event.z);
         if (Block.isSupported(block, event.x, event.y, event.z)) return;
 
-        GameLogic.placeBlock(AIR, event.x, event.y, event.z, true);
+        ServerLogic.placeBlock(AIR, event.x, event.y, event.z, true);
     }
 
     private static void executeWaterFlowEvent(BlockEvent event) {
@@ -267,7 +292,7 @@ public record BlockEvent(int x, int y, int z, byte type) {
 
         if (!Block.isWaterSupported(block, event.x, event.y, event.z)) {
             short nextWaterLevel = block == FLOWING_WATER_LEVEL_1 ? AIR : (short) (block + 1);
-            GameLogic.placeBlock(nextWaterLevel, event.x, event.y, event.z, false);
+            ServerLogic.placeBlock(nextWaterLevel, event.x, event.y, event.z, false);
         }
 
         if (!Block.isWaterBlock(block)) {
@@ -275,22 +300,22 @@ public record BlockEvent(int x, int y, int z, byte type) {
 
             short adjacentBlock = Chunk.getBlockInWorld(event.x + 1, event.y, event.z);
             if (Block.canWaterFlow(block, adjacentBlock, blockBelow, EAST) && Block.getBlockOcclusionData(block, WEST) != -1L)
-                GameLogic.placeBlock(nextWaterLevel, event.x + 1, event.y, event.z, false);
+                ServerLogic.placeBlock(nextWaterLevel, event.x + 1, event.y, event.z, false);
 
             adjacentBlock = Chunk.getBlockInWorld(event.x - 1, event.y, event.z);
             if (Block.canWaterFlow(block, adjacentBlock, blockBelow, WEST) && Block.getBlockOcclusionData(block, EAST) != -1L)
-                GameLogic.placeBlock(nextWaterLevel, event.x - 1, event.y, event.z, false);
+                ServerLogic.placeBlock(nextWaterLevel, event.x - 1, event.y, event.z, false);
 
             adjacentBlock = Chunk.getBlockInWorld(event.x, event.y, event.z + 1);
             if (Block.canWaterFlow(block, adjacentBlock, blockBelow, SOUTH) && Block.getBlockOcclusionData(block, NORTH) != -1L)
-                GameLogic.placeBlock(nextWaterLevel, event.x, event.y, event.z + 1, false);
+                ServerLogic.placeBlock(nextWaterLevel, event.x, event.y, event.z + 1, false);
 
             adjacentBlock = Chunk.getBlockInWorld(event.x, event.y, event.z - 1);
             if (Block.canWaterFlow(block, adjacentBlock, blockBelow, NORTH) && Block.getBlockOcclusionData(block, SOUTH) != -1L)
-                GameLogic.placeBlock(nextWaterLevel, event.x, event.y, event.z - 1, false);
+                ServerLogic.placeBlock(nextWaterLevel, event.x, event.y, event.z - 1, false);
 
             if (Block.canWaterFlow(block, blockBelow, blockBelow, TOP) && Block.getBlockOcclusionData(block, BOTTOM) != -1L)
-                GameLogic.placeBlock(FLOWING_WATER_LEVEL_8, event.x, event.y - 1, event.z, false);
+                ServerLogic.placeBlock(FLOWING_WATER_LEVEL_8, event.x, event.y - 1, event.z, false);
         } else {
 
             if (block != FLOWING_WATER_LEVEL_1) {
@@ -298,23 +323,23 @@ public record BlockEvent(int x, int y, int z, byte type) {
 
                 short adjacentBlock = Chunk.getBlockInWorld(event.x + 1, event.y, event.z);
                 if (Block.canWaterFlow(block, adjacentBlock, blockBelow, EAST))
-                    GameLogic.placeBlock(nextWaterLevel, event.x + 1, event.y, event.z, false);
+                    ServerLogic.placeBlock(nextWaterLevel, event.x + 1, event.y, event.z, false);
 
                 adjacentBlock = Chunk.getBlockInWorld(event.x - 1, event.y, event.z);
                 if (Block.canWaterFlow(block, adjacentBlock, blockBelow, WEST))
-                    GameLogic.placeBlock(nextWaterLevel, event.x - 1, event.y, event.z, false);
+                    ServerLogic.placeBlock(nextWaterLevel, event.x - 1, event.y, event.z, false);
 
                 adjacentBlock = Chunk.getBlockInWorld(event.x, event.y, event.z + 1);
                 if (Block.canWaterFlow(block, adjacentBlock, blockBelow, SOUTH))
-                    GameLogic.placeBlock(nextWaterLevel, event.x, event.y, event.z + 1, false);
+                    ServerLogic.placeBlock(nextWaterLevel, event.x, event.y, event.z + 1, false);
 
                 adjacentBlock = Chunk.getBlockInWorld(event.x, event.y, event.z - 1);
                 if (Block.canWaterFlow(block, adjacentBlock, blockBelow, NORTH))
-                    GameLogic.placeBlock(nextWaterLevel, event.x, event.y, event.z - 1, false);
+                    ServerLogic.placeBlock(nextWaterLevel, event.x, event.y, event.z - 1, false);
             }
 
             if (Block.canWaterFlow(block, blockBelow, blockBelow, TOP))
-                GameLogic.placeBlock(FLOWING_WATER_LEVEL_8, event.x, event.y - 1, event.z, false);
+                ServerLogic.placeBlock(FLOWING_WATER_LEVEL_8, event.x, event.y - 1, event.z, false);
         }
     }
 
@@ -325,7 +350,7 @@ public record BlockEvent(int x, int y, int z, byte type) {
 
         if (!Block.isLavaSupported(block, event.x, event.y, event.z)) {
             short nextLavaLevel = block == FLOWING_LAVA_LEVEL_1 ? AIR : (short) (block + 1);
-            GameLogic.placeBlock(nextLavaLevel, event.x, event.y, event.z, false);
+            ServerLogic.placeBlock(nextLavaLevel, event.x, event.y, event.z, false);
         }
 
 
@@ -334,23 +359,23 @@ public record BlockEvent(int x, int y, int z, byte type) {
 
             short adjacentBlock = Chunk.getBlockInWorld(event.x + 1, event.y, event.z);
             if (Block.canLavaFlow(block, adjacentBlock, blockBelow, EAST))
-                GameLogic.placeBlock(nextLavaLevel, event.x + 1, event.y, event.z, false);
+                ServerLogic.placeBlock(nextLavaLevel, event.x + 1, event.y, event.z, false);
 
             adjacentBlock = Chunk.getBlockInWorld(event.x - 1, event.y, event.z);
             if (Block.canLavaFlow(block, adjacentBlock, blockBelow, WEST))
-                GameLogic.placeBlock(nextLavaLevel, event.x - 1, event.y, event.z, false);
+                ServerLogic.placeBlock(nextLavaLevel, event.x - 1, event.y, event.z, false);
 
             adjacentBlock = Chunk.getBlockInWorld(event.x, event.y, event.z + 1);
             if (Block.canLavaFlow(block, adjacentBlock, blockBelow, SOUTH))
-                GameLogic.placeBlock(nextLavaLevel, event.x, event.y, event.z + 1, false);
+                ServerLogic.placeBlock(nextLavaLevel, event.x, event.y, event.z + 1, false);
 
             adjacentBlock = Chunk.getBlockInWorld(event.x, event.y, event.z - 1);
             if (Block.canLavaFlow(block, adjacentBlock, blockBelow, NORTH))
-                GameLogic.placeBlock(nextLavaLevel, event.x, event.y, event.z - 1, false);
+                ServerLogic.placeBlock(nextLavaLevel, event.x, event.y, event.z - 1, false);
         }
 
         if (Block.canLavaFlow(block, blockBelow, blockBelow, TOP))
-            GameLogic.placeBlock(FLOWING_LAVA_LEVEL_4, event.x, event.y - 1, event.z, false);
+            ServerLogic.placeBlock(FLOWING_LAVA_LEVEL_4, event.x, event.y - 1, event.z, false);
 
     }
 
@@ -361,11 +386,12 @@ public record BlockEvent(int x, int y, int z, byte type) {
         if ((Block.getBlockProperties(Chunk.getBlockInWorld(event.x, event.y - 1, event.z)) & REPLACEABLE) == 0) return;
 
         FallingBlockEntity entity = new FallingBlockEntity(new Vector3f(event.x + 0.5f, event.y + 0.5f, event.z + 0.5f), new Vector3f(0.0f, 0.0f, 0.0f));
-        GameLogic.spawnEntity(entity);
-        GameLogic.placeBlock(AIR, event.x, event.y, event.z, false);
+        ServerLogic.spawnEntity(entity);
+        ServerLogic.placeBlock(AIR, event.x, event.y, event.z, false);
     }
 
     private static final ArrayList<EventQueue> events = new ArrayList<>();
+    private static final int EVENT_BYTE_SIZE = 13;
     private static final byte GRAVITY_BLOCK_FALL_EVENT = 1;
     private static final byte WATER_FLOW_EVENT = 2;
     private static final byte LAVA_FLOW_EVENT = 3;

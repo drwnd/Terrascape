@@ -3,15 +3,21 @@ package terrascape.dataStorage;
 import terrascape.entity.GUIElement;
 import terrascape.entity.OpaqueModel;
 import terrascape.entity.WaterModel;
+import terrascape.entity.entities.Entity;
 import terrascape.player.Player;
 import terrascape.server.Block;
-import terrascape.server.GameLogic;
+import terrascape.server.BlockEvent;
+import terrascape.server.EngineManager;
+import terrascape.server.ServerLogic;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
+import terrascape.utils.Utils;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
 
 import static terrascape.utils.Constants.*;
@@ -19,33 +25,18 @@ import static terrascape.utils.Settings.*;
 
 public class FileManager {
 
-    private static final int CHUNK_X = 0;
-    private static final int CHUNK_Y = 1;
-    private static final int CHUNK_Z = 2;
-    private static final int BLOCKS_LENGTH = 3;
-
-    private static final int TIME = 0;
-    private static final int PLAYER_X = 1;
-    private static final int PLAYER_Y = 2;
-    private static final int PLAYER_Z = 3;
-    private static final int PLAYER_PITCH = 4;
-    private static final int PLAYER_YAW = 5;
-    private static final int MOVEMENT_STATE = 0;
-    private static final int SELECTED_HOT_BAR_SLOT = 1;
-    private static final int IS_FLYING = 2;
-
-    private static File seedFile;
-    private static File heightMapFile;
-    private static final Map<String, Integer> keyCodes = new HashMap<>(70);
-
     public static void init() {
         seedFile = new File("Saves/" + SEED);
         if (!seedFile.exists()) //noinspection ResultOfMethodCallIgnored
             seedFile.mkdirs();
 
-        heightMapFile = new File(seedFile.getPath() + "/height_maps");
-        if (!heightMapFile.exists()) //noinspection ResultOfMethodCallIgnored
-            heightMapFile.mkdirs();
+        heightMapsFile = new File(seedFile.getPath() + "/height_maps");
+        if (!heightMapsFile.exists()) //noinspection ResultOfMethodCallIgnored
+            heightMapsFile.mkdirs();
+
+        chunksFile = new File(seedFile.getPath() + "/chunks");
+        if (!chunksFile.exists()) //noinspection ResultOfMethodCallIgnored
+            chunksFile.mkdirs();
 
         keyCodes.put("LEFT_CLICK", GLFW.GLFW_MOUSE_BUTTON_LEFT | IS_MOUSE_BUTTON);
         keyCodes.put("RIGHT_CLICK", GLFW.GLFW_MOUSE_BUTTON_RIGHT | IS_MOUSE_BUTTON);
@@ -129,57 +120,56 @@ public class FileManager {
         keyCodes.put("Z", GLFW.GLFW_KEY_Z | IS_KEYBOARD_BUTTON);
     }
 
+
     public static void saveChunk(Chunk chunk) {
         chunk.setSaved();
         try {
-            File chunkFile = new File(seedFile.getPath() + "/" + chunk.id);
+            File chunkFile = new File(chunksFile.getPath() + "/" + chunk.id);
 
             if (!chunkFile.exists()) //noinspection ResultOfMethodCallIgnored
-                chunkFile.createNewFile();
+                chunkFile.mkdir();
 
-            FileOutputStream writer = new FileOutputStream(chunkFile.getPath());
-            writer.write(toByteArray(chunk.X));
-            writer.write(toByteArray(chunk.Y));
-            writer.write(toByteArray(chunk.Z));
+            saveBlocks(chunk, chunkFile);
+            saveEntities(chunk, chunkFile);
+            saveBlockEvents(chunk, chunkFile);
 
-            writer.write(toByteArray(chunk.getBlockLength()));
-
-            writer.write(toByteArray(chunk.getBlocks()));
-
-            writer.close();
         } catch (IOException e) {
-            System.out.println("saveChunk");
+            System.err.println("Error when saving chunk to file");
         }
     }
 
     public static Chunk getChunk(long id) {
-        File chunkFile = new File(seedFile.getPath() + "/" + id);
+        File chunkFile = new File(chunksFile.getPath() + "/" + id);
         if (!chunkFile.exists()) return null;
 
-        FileInputStream reader;
-
+        byte[] blocksData, entityData, eventsData;
         try {
-            reader = new FileInputStream(chunkFile.getPath());
-        } catch (FileNotFoundException e) {
-            System.out.println("getChunk 1");
-            return null;
-        }
-
-        byte[] data;
-
-        try {
-            data = reader.readAllBytes();
-            reader.close();
+            blocksData = getBlocksData(chunkFile);
+            entityData = getEntityData(chunkFile);
+            eventsData = getEventsData(chunkFile);
         } catch (IOException e) {
-            System.out.println("getChunk 2");
+            System.err.println("Error when reading chunk from file");
+            e.printStackTrace();
             return null;
         }
 
-        int[] ints = getInts(data, 4);
+        int[] ints = Utils.getInts(blocksData, 4);
+        short[] blocks = Utils.getBlocks(ints[BLOCKS_LENGTH], 16, blocksData);
+        LinkedList<Entity>[] entityClusters = new LinkedList[64];
+        for (int entityClusterIndex = 0; entityClusterIndex < entityClusters.length; entityClusterIndex++)
+            entityClusters[entityClusterIndex] = new LinkedList<>();
 
-        short[] blocks = getBlocks(ints[BLOCKS_LENGTH], 16, data);
+        int entityBytesIndex = 0;
+        if (entityData != null)
+            while (entityBytesIndex < entityData.length) {
+                Entity entity = Entity.getFromBytes(entityData, entityBytesIndex);
+                entityBytesIndex += entity.getByteSize();
+                ServerLogic.spawnEntity(entity);
+            }
 
-        Chunk chunk = new Chunk(ints[CHUNK_X], ints[CHUNK_Y], ints[CHUNK_Z], blocks);
+        BlockEvent.addEventsFromBytes(eventsData);
+
+        Chunk chunk = new Chunk(ints[CHUNK_X], ints[CHUNK_Y], ints[CHUNK_Z], blocks, entityClusters);
         chunk.setGenerated();
         chunk.setSaved();
         Chunk.removeToGenerateBlocks(chunk.id);
@@ -202,16 +192,16 @@ public class FileManager {
 
     public static void saveHeightMap(HeightMap heightMap) {
         try {
-            File mapFile = new File(heightMapFile.getPath() + "/" + GameLogic.getHeightMapIndex(heightMap.chunkX, heightMap.chunkZ));
+            File mapFile = new File(heightMapsFile.getPath() + "/" + Utils.getHeightMapIndex(heightMap.chunkX, heightMap.chunkZ));
 
             if (!mapFile.exists()) //noinspection ResultOfMethodCallIgnored
                 mapFile.createNewFile();
 
             FileOutputStream writer = new FileOutputStream(mapFile.getPath());
-            writer.write(toByteArray(heightMap.chunkX));
-            writer.write(toByteArray(heightMap.chunkZ));
+            writer.write(Utils.toByteArray(heightMap.chunkX));
+            writer.write(Utils.toByteArray(heightMap.chunkZ));
 
-            writer.write(toByteArray(heightMap.map));
+            writer.write(Utils.toByteArray(heightMap.map));
 
             writer.close();
         } catch (IOException e) {
@@ -220,7 +210,7 @@ public class FileManager {
     }
 
     public static HeightMap getHeightMap(int chunkX, int chunkZ) {
-        File mapFile = new File(heightMapFile.getPath() + "/" + GameLogic.getHeightMapIndex(chunkX, chunkZ));
+        File mapFile = new File(heightMapsFile.getPath() + "/" + Utils.getHeightMapIndex(chunkX, chunkZ));
         if (!mapFile.exists()) return null;
 
         FileInputStream reader;
@@ -242,13 +232,103 @@ public class FileManager {
             return null;
         }
 
-        return new HeightMap(getInts(data, CHUNK_SIZE * CHUNK_SIZE), chunkX, chunkZ);
+        return new HeightMap(Utils.getInts(data, CHUNK_SIZE * CHUNK_SIZE), chunkX, chunkZ);
     }
 
 
+    public static void savePlayer() {
+        File playerFile = new File(seedFile.getPath() + "/player");
+
+        try {
+            if (!playerFile.exists())
+                //noinspection ResultOfMethodCallIgnored
+                playerFile.createNewFile();
+
+            FileOutputStream writer = new FileOutputStream(playerFile.getPath());
+
+            Player player = ServerLogic.getPlayer();
+            if (player != null) {
+                Vector3f playerPosition = player.getCamera().getPosition();
+                Vector2f playerRotation = player.getCamera().getRotation();
+                Vector3f playerVelocity = player.getMovement().getVelocity();
+
+                writer.write(Utils.toByteArray(Float.floatToIntBits(playerPosition.x)));
+                writer.write(Utils.toByteArray(Float.floatToIntBits(playerPosition.y)));
+                writer.write(Utils.toByteArray(Float.floatToIntBits(playerPosition.z)));
+
+                writer.write(Utils.toByteArray(Float.floatToIntBits(playerRotation.x)));
+                writer.write(Utils.toByteArray(Float.floatToIntBits(playerRotation.y)));
+
+                writer.write(Utils.toByteArray(Float.floatToIntBits(playerVelocity.x)));
+                writer.write(Utils.toByteArray(Float.floatToIntBits(playerVelocity.y)));
+                writer.write(Utils.toByteArray(Float.floatToIntBits(playerVelocity.z)));
+
+                writer.write(player.getMovement().getMovementState());
+                writer.write(player.getSelectedHotBarSlot());
+                writer.write(player.getMovement().isFlying() ? 1 : 0);
+                writer.write(Utils.toByteArray(player.getHotBar()));
+
+                writer.close();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static Player loadPlayer() throws Exception {
+        Player player;
+
+        player = new Player();
+        player.init();
+        player.getRenderer().init();
+
+        File playerFile = new File(seedFile.getPath() + "/player");
+        if (!playerFile.exists()) return player;
+
+        FileInputStream reader = new FileInputStream(playerFile.getPath());
+        byte[] data = reader.readAllBytes();
+        reader.close();
+
+        if (data.length == 0) return player;
+
+        float[] floats = readPlayerState(data);
+        byte[] playerFlags = readPlayerFlags(data);
+        short[] hotBar = readHotBar(data);
+
+        player.getCamera().setPosition(floats[PLAYER_X], floats[PLAYER_Y], floats[PLAYER_Z]);
+        player.getCamera().setRotation(floats[PLAYER_PITCH], floats[PLAYER_YAW]);
+        player.getMovement().setVelocity(floats[PLAYER_VELOCITY_X], floats[PLAYER_VELOCITY_Y], floats[PLAYER_VELOCITY_Z]);
+        player.setHotBar(hotBar);
+        player.getMovement().setMovementState(playerFlags[MOVEMENT_STATE]);
+        player.setSelectedHotBarSlot(playerFlags[SELECTED_HOT_BAR_SLOT]);
+        player.getMovement().setFlying(playerFlags[IS_FLYING] == 1);
+
+        return player;
+    }
+
+
+    public static void loadGameState() throws IOException {
+        File stateFile = new File(seedFile.getPath() + "/gameState");
+        if (!stateFile.exists()) {
+            //noinspection ResultOfMethodCallIgnored
+            stateFile.createNewFile();
+            return;
+        }
+
+        FileInputStream reader = new FileInputStream(stateFile.getPath());
+        byte[] data = reader.readAllBytes();
+        reader.close();
+
+        long currentTick = Utils.getLong(data, 0);
+        float currentTime = Float.intBitsToFloat(Utils.getInt(data, 8));
+
+        EngineManager.setTick(currentTick);
+        ServerLogic.getPlayer().getRenderer().setTime(currentTime);
+    }
+
     public static void saveGameState() {
         File stateFile = new File(seedFile.getPath() + "/gameState");
-
         try {
             if (!stateFile.exists())
                 //noinspection ResultOfMethodCallIgnored
@@ -256,92 +336,17 @@ public class FileManager {
 
             FileOutputStream writer = new FileOutputStream(stateFile.getPath());
 
-            Player player = GameLogic.getPlayer();
-            writer.write(toByteArray(Float.floatToIntBits(player.getRenderer().getTime())));
-
-            Vector3f playerPosition = player.getCamera().getPosition();
-            Vector2f playerRotation = player.getCamera().getRotation();
-
-            writer.write(toByteArray(Float.floatToIntBits(playerPosition.x)));
-            writer.write(toByteArray(Float.floatToIntBits(playerPosition.y)));
-            writer.write(toByteArray(Float.floatToIntBits(playerPosition.z)));
-
-            writer.write(toByteArray(Float.floatToIntBits(playerRotation.x)));
-            writer.write(toByteArray(Float.floatToIntBits(playerRotation.y)));
-
-            writer.write(player.getMovement().getMovementState());
-            writer.write(player.getSelectedHotBarSlot());
-            writer.write(player.getMovement().isFling() ? 1 : 0);
-            writer.write(toByteArray(player.getHotBar()));
+            writer.write(Utils.toByteArray(EngineManager.getTick()));
+            writer.write(Utils.toByteArray(Float.floatToIntBits(ServerLogic.getPlayer().getRenderer().getTime())));
 
             writer.close();
+
         } catch (IOException e) {
+            e.printStackTrace();
             throw new RuntimeException(e);
         }
     }
 
-    public static Player loadGameState() throws Exception {
-        Player player;
-
-        player = new Player();
-        player.init();
-        player.getRenderer().init();
-
-        File stateFile = new File(seedFile.getPath() + "/gameState");
-        if (!stateFile.exists()) return player;
-
-        FileInputStream reader = new FileInputStream(stateFile.getPath());
-        byte[] data = reader.readAllBytes();
-        reader.close();
-
-        if (data.length == 0) return player;
-
-        float[] floats = readGameState(data);
-        byte[] playerFlags = readPlayerFlags(data);
-        short[] hotBar = readHotBar(data);
-
-        player.getRenderer().setTime(floats[TIME]);
-        player.getCamera().setPosition(floats[PLAYER_X], floats[PLAYER_Y], floats[PLAYER_Z]);
-        player.getCamera().setRotation(floats[PLAYER_PITCH], floats[PLAYER_YAW]);
-        player.setHotBar(hotBar);
-        player.getMovement().setMovementState(playerFlags[MOVEMENT_STATE]);
-        player.setSelectedHotBarSlot(playerFlags[SELECTED_HOT_BAR_SLOT]);
-        player.getMovement().setFling(playerFlags[IS_FLYING] == 1);
-
-        return player;
-    }
-
-    private static float[] readGameState(byte[] bytes) {
-        float[] floats = new float[6];
-
-        for (int i = 0; i < floats.length; i++) {
-            int index = i << 2;
-            int intFloat = ((int) bytes[index] & 0xFF) << 24 | ((int) bytes[index + 1] & 0xFF) << 16 | ((int) bytes[index + 2] & 0xFF) << 8 | ((int) bytes[index + 3] & 0xFF);
-            floats[i] = Float.intBitsToFloat(intFloat);
-        }
-
-        return floats;
-    }
-
-    private static byte[] readPlayerFlags(byte[] bytes) {
-        byte[] flags = new byte[3];
-
-        System.arraycopy(bytes, 24, flags, 0, flags.length);
-
-        return flags;
-    }
-
-    private static short[] readHotBar(byte[] bytes) {
-        short[] hotBar = new short[9];
-
-        for (int i = 0; i < hotBar.length; i++) {
-            int index = i << 1;
-            short block = (short) (((int) bytes[27 + index] & 0xFF) << 8 | ((int) bytes[28 + index] & 0xFF));
-            hotBar[i] = block;
-        }
-
-        return hotBar;
-    }
 
     public static void loadNames() throws Exception {
         File blockTypeNames = new File("textData/BlockTypeNames");
@@ -440,9 +445,9 @@ public class FileManager {
             RENDER_DISTANCE_XZ = newRenderDistanceXZ;
             RENDER_DISTANCE_Y = newRenderDistanceY;
 
-            GameLogic.haltChunkGenerator();
-            GameLogic.unloadChunks();
-            GameLogic.loadUnloadObjects();
+            ServerLogic.haltChunkGenerator();
+            ServerLogic.unloadChunks();
+            ServerLogic.loadUnloadObjects();
 
             RENDERED_WORLD_WIDTH = newRenderDistanceXZ * 2 + 5;
             RENDERED_WORLD_HEIGHT = newRenderDistanceY * 2 + 5;
@@ -455,9 +460,9 @@ public class FileManager {
             updateChunkIndices();
             Chunk.setStaticData(newWorld, newOcclusionCullingDat, newHeightMaps, newOpaqueModels, newWaterModels);
 
-            GameLogic.getPlayer().setVisibleChunks(new long[(RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH >> 6) + 1]);
+            ServerLogic.getPlayer().setVisibleChunks(new long[(RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH >> 6) + 1]);
 
-            GameLogic.startGenerator();
+            ServerLogic.startGenerator();
         }
 
         if (initialLoad) {
@@ -471,7 +476,7 @@ public class FileManager {
                     new OpaqueModel[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH],
                     new WaterModel[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH]);
         }
-        Player player = GameLogic.getPlayer();
+        Player player = ServerLogic.getPlayer();
         if (GUI_SIZE != newGUISize) {
             GUI_SIZE = newGUISize;
             if (player != null) {
@@ -479,72 +484,6 @@ public class FileManager {
                 player.updateHotBarElements();
             }
         }
-    }
-
-    private static Chunk[] getNewWorld() {
-        Chunk[] newWorld = new Chunk[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
-        for (Chunk chunk : Chunk.getWorld()) {
-            if (chunk == null) continue;
-            int newIndex = GameLogic.getChunkIndex(chunk.X, chunk.Y, chunk.Z);
-
-            newWorld[newIndex] = chunk;
-        }
-        return newWorld;
-    }
-
-    private static short[] getNewOcclusionCullingData() {
-        short[] occlusionCullingData = new short[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
-        for (Chunk chunk : Chunk.getWorld()) {
-            if (chunk == null) continue;
-            int newIndex = GameLogic.getChunkIndex(chunk.X, chunk.Y, chunk.Z);
-
-            occlusionCullingData[newIndex] = Chunk.getOcclusionCullingData(chunk.getIndex());
-        }
-        return occlusionCullingData;
-    }
-
-    private static HeightMap[] getNewHeightMaps() {
-        HeightMap[] newHeightMaps = new HeightMap[RENDERED_WORLD_WIDTH * RENDERED_WORLD_WIDTH];
-        for (HeightMap heightMap : Chunk.getHeightMaps()) {
-            if (heightMap == null) continue;
-            int newIndex = GameLogic.getHeightMapIndex(heightMap.chunkX, heightMap.chunkZ);
-            newHeightMaps[newIndex] = heightMap;
-        }
-        return newHeightMaps;
-    }
-
-    private static OpaqueModel[] getNewOpaqueModels() {
-        OpaqueModel[] newOpaqueModels = new OpaqueModel[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
-        for (Chunk chunk : Chunk.getWorld()) {
-            if (chunk == null) continue;
-            int newIndex = GameLogic.getChunkIndex(chunk.X, chunk.Y, chunk.Z);
-
-            newOpaqueModels[newIndex] = Chunk.getOpaqueModel(chunk.getIndex());
-        }
-        return newOpaqueModels;
-    }
-
-    private static WaterModel[] getNewWaterModels() {
-        WaterModel[] newWaterModels = new WaterModel[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
-        for (Chunk chunk : Chunk.getWorld()) {
-            if (chunk == null) continue;
-            int newIndex = GameLogic.getChunkIndex(chunk.X, chunk.Y, chunk.Z);
-
-            newWaterModels[newIndex] = Chunk.getWaterModel(chunk.getIndex());
-        }
-        return newWaterModels;
-    }
-
-    private static void updateChunkIndices() {
-        for (Chunk chunk : Chunk.getWorld()) {
-            if (chunk == null) continue;
-            int newIndex = GameLogic.getChunkIndex(chunk.X, chunk.Y, chunk.Z);
-            chunk.setIndex(newIndex);
-        }
-    }
-
-    private static String getStingAfterColon(String string) {
-        return string.substring(string.indexOf(':') + 1);
     }
 
 
@@ -560,7 +499,7 @@ public class FileManager {
         int lengthY = data[1];
         int lengthZ = data[2];
 
-        short[] blocks = getBlocks(lengthX * lengthY * lengthZ, 3, data);
+        short[] blocks = Utils.getBlocks(lengthX * lengthY * lengthZ, 3, data);
 
         return new Structure(blocks, lengthX, lengthY, lengthZ);
     }
@@ -570,7 +509,7 @@ public class FileManager {
         if (!structureFile.exists()) //noinspection ResultOfMethodCallIgnored
             structureFile.createNewFile();
 
-        byte[] data = toByteArray(structure.blocks());
+        byte[] data = Utils.toByteArray(structure.blocks());
 
         FileOutputStream writer = new FileOutputStream(structureFile.getPath());
 
@@ -583,54 +522,209 @@ public class FileManager {
     }
 
 
-    private static short[] getBlocks(int blocksLength, int startIndex, byte[] data) {
-        short[] blocks = new short[blocksLength];
+    private static void saveEntities(Chunk chunk, File chunkFile) throws IOException {
+        File entitiesFile = new File(chunkFile.getPath() + "/entities");
 
-        for (int i = 0; i < blocksLength; i++) {
-            int index = i << 1;
-            short block = (short) (((int) data[startIndex + index] & 0xFF) << 8 | ((int) data[startIndex + 1 + index] & 0xFF));
-            blocks[i] = block;
+        if (!entitiesFile.exists()) //noinspection ResultOfMethodCallIgnored
+            entitiesFile.createNewFile();
+
+        FileOutputStream writer = new FileOutputStream(entitiesFile.getPath());
+
+        for (int entityClusterIndex = 0; entityClusterIndex < 64; entityClusterIndex++) {
+            LinkedList<Entity> entityCluster = chunk.getEntityCluster(entityClusterIndex);
+            synchronized (entityCluster) {
+                for (Entity entity : entityCluster) {
+                    byte[] bytes = entity.toBytes();
+                    writer.write(bytes);
+                }
+            }
         }
 
-        return blocks;
+        writer.close();
     }
 
-    private static byte[] toByteArray(int i) {
-        return new byte[]{(byte) (i >> 24 & 0xFF), (byte) (i >> 16 & 0xFF), (byte) (i >> 8 & 0xFF), (byte) (i & 0xFF)};
+    private static void saveBlocks(Chunk chunk, File chunkFile) throws IOException {
+        File blocksFile = new File(chunkFile.getPath() + "/blocks");
+
+        if (!blocksFile.exists()) //noinspection ResultOfMethodCallIgnored
+            blocksFile.createNewFile();
+
+        FileOutputStream writer = new FileOutputStream(blocksFile.getPath());
+        writer.write(Utils.toByteArray(chunk.X));
+        writer.write(Utils.toByteArray(chunk.Y));
+        writer.write(Utils.toByteArray(chunk.Z));
+        writer.write(Utils.toByteArray(chunk.getBlockLength()));
+
+        writer.write(Utils.toByteArray(chunk.getBlocks()));
+
+        writer.close();
     }
 
-    private static byte[] toByteArray(short[] blocks) {
-        byte[] byteArray = new byte[blocks.length * 2];
+    private static void saveBlockEvents(Chunk chunk, File chunkFile) throws IOException {
+        File eventsFile = new File(chunkFile.getPath() + "/events");
 
-        for (int i = 0; i < blocks.length; i++) {
-            byteArray[i << 1] = (byte) (blocks[i] >> 8 & 0xFF);
-            byteArray[(i << 1) + 1] = (byte) (blocks[i] & 0xFF);
+        if (!eventsFile.exists()) //noinspection ResultOfMethodCallIgnored
+            eventsFile.createNewFile();
+
+        ArrayList<BlockEvent> events = BlockEvent.removeEventsInChunk(chunk);
+        FileOutputStream writer = new FileOutputStream(eventsFile.getPath());
+
+        for (BlockEvent event : events) {
+            writer.write(event.type());
+            writer.write(Utils.toByteArray(event.x()));
+            writer.write(Utils.toByteArray(event.y()));
+            writer.write(Utils.toByteArray(event.z()));
         }
 
-        return byteArray;
+        writer.close();
     }
 
-    public static byte[] toByteArray(int[] ints) {
-        byte[] byteArray = new byte[(ints.length << 2)];
+    private static Chunk[] getNewWorld() {
+        Chunk[] newWorld = new Chunk[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
+        for (Chunk chunk : Chunk.getWorld()) {
+            if (chunk == null) continue;
+            int newIndex = Utils.getChunkIndex(chunk.X, chunk.Y, chunk.Z);
 
-        for (int i = 0; i < ints.length; i++) {
-            byteArray[i << 2] = (byte) (ints[i] >> 24 & 0xFF);
-            byteArray[(i << 2) + 1] = (byte) (ints[i] >> 16 & 0xFF);
-            byteArray[(i << 2) + 2] = (byte) (ints[i] >> 8 & 0xFF);
-            byteArray[(i << 2) + 3] = (byte) (ints[i] & 0xFF);
+            newWorld[newIndex] = chunk;
         }
-
-        return byteArray;
+        return newWorld;
     }
 
-    private static int[] getInts(byte[] bytes, int count) {
-        int[] ints = new int[count];
+    private static short[] getNewOcclusionCullingData() {
+        short[] occlusionCullingData = new short[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
+        for (Chunk chunk : Chunk.getWorld()) {
+            if (chunk == null) continue;
+            int newIndex = Utils.getChunkIndex(chunk.X, chunk.Y, chunk.Z);
 
-        for (int i = 0; i < count; i++) {
+            occlusionCullingData[newIndex] = Chunk.getOcclusionCullingData(chunk.getIndex());
+        }
+        return occlusionCullingData;
+    }
+
+    private static HeightMap[] getNewHeightMaps() {
+        HeightMap[] newHeightMaps = new HeightMap[RENDERED_WORLD_WIDTH * RENDERED_WORLD_WIDTH];
+        for (HeightMap heightMap : Chunk.getHeightMaps()) {
+            if (heightMap == null) continue;
+            int newIndex = Utils.getHeightMapIndex(heightMap.chunkX, heightMap.chunkZ);
+            newHeightMaps[newIndex] = heightMap;
+        }
+        return newHeightMaps;
+    }
+
+    private static OpaqueModel[] getNewOpaqueModels() {
+        OpaqueModel[] newOpaqueModels = new OpaqueModel[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
+        for (Chunk chunk : Chunk.getWorld()) {
+            if (chunk == null) continue;
+            int newIndex = Utils.getChunkIndex(chunk.X, chunk.Y, chunk.Z);
+
+            newOpaqueModels[newIndex] = Chunk.getOpaqueModel(chunk.getIndex());
+        }
+        return newOpaqueModels;
+    }
+
+    private static WaterModel[] getNewWaterModels() {
+        WaterModel[] newWaterModels = new WaterModel[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH];
+        for (Chunk chunk : Chunk.getWorld()) {
+            if (chunk == null) continue;
+            int newIndex = Utils.getChunkIndex(chunk.X, chunk.Y, chunk.Z);
+
+            newWaterModels[newIndex] = Chunk.getWaterModel(chunk.getIndex());
+        }
+        return newWaterModels;
+    }
+
+    private static void updateChunkIndices() {
+        for (Chunk chunk : Chunk.getWorld()) {
+            if (chunk == null) continue;
+            int newIndex = Utils.getChunkIndex(chunk.X, chunk.Y, chunk.Z);
+            chunk.setIndex(newIndex);
+        }
+    }
+
+    private static String getStingAfterColon(String string) {
+        return string.substring(string.indexOf(':') + 1);
+    }
+
+    private static float[] readPlayerState(byte[] bytes) {
+        float[] floats = new float[8];
+
+        for (int i = 0; i < floats.length; i++) {
             int index = i << 2;
-            ints[i] = ((int) bytes[index] & 0xFF) << 24 | ((int) bytes[index + 1] & 0xFF) << 16 | ((int) bytes[index + 2] & 0xFF) << 8 | ((int) bytes[index + 3] & 0xFF);
+            int intFloat = ((int) bytes[index] & 0xFF) << 24 | ((int) bytes[index + 1] & 0xFF) << 16 | ((int) bytes[index + 2] & 0xFF) << 8 | ((int) bytes[index + 3] & 0xFF);
+            floats[i] = Float.intBitsToFloat(intFloat);
         }
 
-        return ints;
+        return floats;
     }
+
+    private static byte[] readPlayerFlags(byte[] bytes) {
+        byte[] flags = new byte[3];
+
+        System.arraycopy(bytes, 32, flags, 0, flags.length);
+
+        return flags;
+    }
+
+    private static short[] readHotBar(byte[] bytes) {
+        short[] hotBar = new short[9];
+
+        for (int i = 0; i < hotBar.length; i++) {
+            int index = i << 1;
+            short block = (short) (((int) bytes[35 + index] & 0xFF) << 8 | ((int) bytes[36 + index] & 0xFF));
+            hotBar[i] = block;
+        }
+
+        return hotBar;
+    }
+
+    private static byte[] getEntityData(File chunkFile) throws IOException {
+        File entitiesFile = new File(chunkFile.getPath() + "/entities");
+        if (!entitiesFile.exists()) return null;
+        FileInputStream reader = new FileInputStream(entitiesFile.getPath());
+        byte[] entityData = reader.readAllBytes();
+        reader.close();
+        //noinspection ResultOfMethodCallIgnored
+        entitiesFile.delete();
+        return entityData;
+    }
+
+    private static byte[] getEventsData(File chunkFile) throws IOException {
+        File eventsFile = new File(chunkFile.getPath() + "/events");
+        if (!eventsFile.exists()) return null;
+        FileInputStream reader = new FileInputStream(eventsFile.getPath());
+        byte[] eventsData = reader.readAllBytes();
+        reader.close();
+        //noinspection ResultOfMethodCallIgnored
+        eventsFile.delete();
+        return eventsData;
+    }
+
+    private static byte[] getBlocksData(File chunkFile) throws IOException {
+        FileInputStream reader = new FileInputStream(chunkFile.getPath() + "/blocks");
+        byte[] blocksData = reader.readAllBytes();
+        reader.close();
+        return blocksData;
+    }
+
+    private static final int CHUNK_X = 0;
+    private static final int CHUNK_Y = 1;
+    private static final int CHUNK_Z = 2;
+    private static final int BLOCKS_LENGTH = 3;
+
+    private static final int PLAYER_X = 0;
+    private static final int PLAYER_Y = 1;
+    private static final int PLAYER_Z = 2;
+    private static final int PLAYER_PITCH = 3;
+    private static final int PLAYER_YAW = 4;
+    private static final int PLAYER_VELOCITY_X = 5;
+    private static final int PLAYER_VELOCITY_Y = 6;
+    private static final int PLAYER_VELOCITY_Z = 7;
+    private static final int MOVEMENT_STATE = 0;
+    private static final int SELECTED_HOT_BAR_SLOT = 1;
+    private static final int IS_FLYING = 2;
+
+    private static File seedFile;
+    private static File heightMapsFile;
+    private static File chunksFile;
+    private static final Map<String, Integer> keyCodes = new HashMap<>(70);
 }

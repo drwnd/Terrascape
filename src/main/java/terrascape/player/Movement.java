@@ -6,7 +6,7 @@ import terrascape.dataStorage.Chunk;
 
 import terrascape.entity.entities.Entity;
 import terrascape.server.Block;
-import terrascape.server.GameLogic;
+import terrascape.server.ServerLogic;
 import terrascape.server.Launcher;
 import terrascape.utils.Utils;
 
@@ -42,7 +42,7 @@ public class Movement {
         handleInputMovementStateChange(position);
         handleIsFlyingChange();
 
-        if (isFling) handleInputFling(velocity);
+        if (isFlying) handleInputFling(velocity);
         else if (isInWater) handleInputSwimming(velocity);
         else handleInputWalking(velocity);
 
@@ -92,7 +92,7 @@ public class Movement {
         if (window.isKeyPressed(JUMP_BUTTON)) {
             if (!spaceButtonPressed) {
                 spaceButtonPressed = true;
-                if (currentTime - spaceButtonPressTime < 300_000_000) isFling = !isFling;
+                if (currentTime - spaceButtonPressTime < 300_000_000) isFlying = !isFlying;
                 spaceButtonPressTime = currentTime;
             }
         } else if (spaceButtonPressed) spaceButtonPressed = false;
@@ -269,7 +269,7 @@ public class Movement {
         boolean zFirst = collidesWithBlock(oldPosition.x, oldPosition.y, position.z, movementState);
         boolean xAndZ = collidesWithBlock(position.x, oldPosition.y, position.z, movementState);
         float requiredStepHeight = getRequiredStepHeight(position.x, position.y, position.z, movementState);
-        boolean canAutoStep = (isGrounded && !isFling || movementState == SWIMMING) && requiredStepHeight <= MAX_STEP_HEIGHT;
+        boolean canAutoStep = (isGrounded && !isFlying || movementState == SWIMMING) && requiredStepHeight <= MAX_STEP_HEIGHT;
 
         if ((xFirst || xAndZ) && (zFirst || xAndZ) && canAutoStep && !collidesWithBlock(position.x, oldPosition.y + requiredStepHeight, position.z, movementState)) {
             position.y += requiredStepHeight;
@@ -299,7 +299,7 @@ public class Movement {
             position.y = oldPosition.y;
             isGrounded = y < 0.0f;
             velocity.y = 0.0f;
-            if (y < 0.0f) isFling = false;
+            if (y < 0.0f) isFlying = false;
         } else if ((movementState == CROUCHING || movementState == CRAWLING) && isGrounded && y <= 0.0f && collidesWithBlock(oldPosition.x, position.y - 0.0625f, oldPosition.z, movementState)) {
             boolean onEdgeX = !collidesWithBlock(position.x, position.y - 0.5625f, oldPosition.z, movementState);
             boolean onEdgeZ = !collidesWithBlock(oldPosition.x, position.y - 0.5625f, position.z, movementState);
@@ -332,13 +332,13 @@ public class Movement {
         if (position.y != oldPosition.y) isGrounded = false;
 
         if (Utils.floor(oldPosition.x) >> CHUNK_SIZE_BITS != Utils.floor(position.x) >> CHUNK_SIZE_BITS)
-            GameLogic.restartGenerator(position.x > oldPosition.x ? NORTH : SOUTH);
+            ServerLogic.restartGenerator(position.x > oldPosition.x ? NORTH : SOUTH);
 
         else if (Utils.floor(oldPosition.y) >> CHUNK_SIZE_BITS != Utils.floor(position.y) >> CHUNK_SIZE_BITS)
-            GameLogic.restartGenerator(position.y > oldPosition.y ? TOP : BOTTOM);
+            ServerLogic.restartGenerator(position.y > oldPosition.y ? TOP : BOTTOM);
 
         else if (Utils.floor(oldPosition.z) >> CHUNK_SIZE_BITS != Utils.floor(position.z) >> CHUNK_SIZE_BITS)
-            GameLogic.restartGenerator(position.z > oldPosition.z ? WEST : EAST);
+            ServerLogic.restartGenerator(position.z > oldPosition.z ? WEST : EAST);
 
         camera.setPosition(position.x, position.y, position.z);
     }
@@ -438,8 +438,8 @@ public class Movement {
         return isGrounded;
     }
 
-    public boolean isFling() {
-        return isFling;
+    public boolean isFlying() {
+        return isFlying;
     }
 
     public boolean isTouchingWater() {
@@ -454,12 +454,16 @@ public class Movement {
         this.movementState = movementState;
     }
 
-    public void setFling(boolean fling) {
-        isFling = fling;
+    public void setFlying(boolean flying) {
+        isFlying = flying;
     }
 
     public Vector3f getVelocity() {
         return velocity;
+    }
+
+    public void setVelocity(float x, float y, float z) {
+        velocity.set(x, y , z);
     }
 
     private long spaceButtonPressTime;
@@ -467,7 +471,7 @@ public class Movement {
 
     private int movementState = WALKING;
     private boolean isGrounded = false;
-    private boolean isFling;
+    private boolean isFlying;
     private boolean touchingWater;
     
     private final WindowManager window;

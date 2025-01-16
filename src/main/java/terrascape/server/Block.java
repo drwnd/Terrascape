@@ -108,6 +108,12 @@ public class Block {
                 if (primaryXZDirection == WEST) return (short) (EAST_FURNACE | toPlaceBlockType);
                 return (short) (WEST_FURNACE | toPlaceBlockType);
             }
+            case UP_DOWN_BASALT -> {
+                if (side == NORTH)
+                    return (short) (NORTH_SOUTH_BASALT | toPlaceBlockType);
+                if (side == TOP) return (short) (UP_DOWN_BASALT | toPlaceBlockType);
+                return (short) (EAST_WEST_BASALT | toPlaceBlockType);
+            }
         }
 
         return (short) (baseBlock | toPlaceBlockType);
@@ -976,22 +982,22 @@ public class Block {
         if (stepSounds != null) STANDARD_BLOCK_STEP_SOUNDS[(block & 0xFFFF) >> BLOCK_TYPE_BITS] = stepSounds;
     }
 
-    private static void setLogData(short upDownLog, short northSouthLog, short eastWestLog, byte topTexture, byte sideTexture, SoundManager sound) {
-        STANDARD_BLOCK_TEXTURE_INDICES[(upDownLog & 0xFFFF) >> BLOCK_TYPE_BITS] = new byte[]{sideTexture, topTexture, sideTexture, sideTexture, topTexture, sideTexture};
-        STANDARD_BLOCK_TEXTURE_INDICES[(northSouthLog & 0xFFFF) >> BLOCK_TYPE_BITS] = new byte[]{topTexture, sideTexture, sideTexture, topTexture, sideTexture, sideTexture};
-        STANDARD_BLOCK_TEXTURE_INDICES[(eastWestLog & 0xFFFF) >> BLOCK_TYPE_BITS] = new byte[]{sideTexture, sideTexture, topTexture, sideTexture, sideTexture, topTexture};
+    private static void setDirectionalBlock(short upDownBlock, short northSouthBlock, short eastWestBlock, byte topTexture, byte sideTexture, int[] stepSounds, int[] digSounds) {
+        STANDARD_BLOCK_TEXTURE_INDICES[(upDownBlock & 0xFFFF) >> BLOCK_TYPE_BITS] = new byte[]{sideTexture, topTexture, sideTexture, sideTexture, topTexture, sideTexture};
+        STANDARD_BLOCK_TEXTURE_INDICES[(northSouthBlock & 0xFFFF) >> BLOCK_TYPE_BITS] = new byte[]{topTexture, sideTexture, sideTexture, topTexture, sideTexture, sideTexture};
+        STANDARD_BLOCK_TEXTURE_INDICES[(eastWestBlock & 0xFFFF) >> BLOCK_TYPE_BITS] = new byte[]{sideTexture, sideTexture, topTexture, sideTexture, sideTexture, topTexture};
 
-        STANDARD_BLOCK_DIG_SOUNDS[(upDownLog & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.digWood;
-        STANDARD_BLOCK_DIG_SOUNDS[(northSouthLog & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.digWood;
-        STANDARD_BLOCK_DIG_SOUNDS[(eastWestLog & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.digWood;
+        STANDARD_BLOCK_DIG_SOUNDS[(upDownBlock & 0xFFFF) >> BLOCK_TYPE_BITS] = digSounds;
+        STANDARD_BLOCK_DIG_SOUNDS[(northSouthBlock & 0xFFFF) >> BLOCK_TYPE_BITS] = digSounds;
+        STANDARD_BLOCK_DIG_SOUNDS[(eastWestBlock & 0xFFFF) >> BLOCK_TYPE_BITS] = digSounds;
 
-        STANDARD_BLOCK_STEP_SOUNDS[(upDownLog & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.stepWood;
-        STANDARD_BLOCK_STEP_SOUNDS[(northSouthLog & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.stepWood;
-        STANDARD_BLOCK_STEP_SOUNDS[(eastWestLog & 0xFFFF) >> BLOCK_TYPE_BITS] = sound.stepWood;
+        STANDARD_BLOCK_STEP_SOUNDS[(upDownBlock & 0xFFFF) >> BLOCK_TYPE_BITS] = stepSounds;
+        STANDARD_BLOCK_STEP_SOUNDS[(northSouthBlock & 0xFFFF) >> BLOCK_TYPE_BITS] = stepSounds;
+        STANDARD_BLOCK_STEP_SOUNDS[(eastWestBlock & 0xFFFF) >> BLOCK_TYPE_BITS] = stepSounds;
 
-        STANDARD_BLOCK_PROPERTIES[(upDownLog & 0xFFFF) >> BLOCK_TYPE_BITS] = 0;
-        STANDARD_BLOCK_PROPERTIES[(northSouthLog & 0xFFFF) >> BLOCK_TYPE_BITS] = ROTATE_TOP_TEXTURE | ROTATE_WEST_TEXTURE | ROTATE_EAST_TEXTURE;
-        STANDARD_BLOCK_PROPERTIES[(eastWestLog & 0xFFFF) >> BLOCK_TYPE_BITS] = ROTATE_NORTH_TEXTURE | ROTATE_SOUTH_TEXTURE | ROTATE_BOTTOM_TEXTURE;
+        STANDARD_BLOCK_PROPERTIES[(upDownBlock & 0xFFFF) >> BLOCK_TYPE_BITS] = 0;
+        STANDARD_BLOCK_PROPERTIES[(northSouthBlock & 0xFFFF) >> BLOCK_TYPE_BITS] = ROTATE_TOP_TEXTURE | ROTATE_WEST_TEXTURE | ROTATE_EAST_TEXTURE;
+        STANDARD_BLOCK_PROPERTIES[(eastWestBlock & 0xFFFF) >> BLOCK_TYPE_BITS] = ROTATE_NORTH_TEXTURE | ROTATE_SOUTH_TEXTURE | ROTATE_BOTTOM_TEXTURE;
     }
 
     private static void initNonStandardBlocks() {
@@ -1070,18 +1076,19 @@ public class Block {
         setStandardBlockData(IRON_ORE, 0, sound.digStone, sound.stepStone, (byte) -111);
         setStandardBlockData(DIAMOND_ORE, 0, sound.digStone, sound.stepStone, (byte) -110);
 
-        setLogData(UP_DOWN_OAK_LOG, NORTH_SOUTH_OAK_LOG, EAST_WEST_OAK_LOG, (byte) 19, (byte) 3, sound);
-        setLogData(UP_DOWN_STRIPPED_OAK_LOG, NORTH_SOUTH_STRIPPED_OAK_LOG, EAST_WEST_STRIPPED_OAK_LOG, (byte) 51, (byte) 35, sound);
-        setLogData(UP_DOWN_SPRUCE_LOG, NORTH_SOUTH_SPRUCE_LOG, EAST_WEST_SPRUCE_LOG, (byte) 20, (byte) 4, sound);
-        setLogData(UP_DOWN_STRIPPED_SPRUCE_LOG, NORTH_SOUTH_STRIPPED_SPRUCE_LOG, EAST_WEST_STRIPPED_SPRUCE_LOG, (byte) 52, (byte) 36, sound);
-        setLogData(UP_DOWN_DARK_OAK_LOG, NORTH_SOUTH_DARK_OAK_LOG, EAST_WEST_DARK_OAK_LOG, (byte) 21, (byte) 5, sound);
-        setLogData(UP_DOWN_STRIPPED_DARK_OAK_LOG, NORTH_SOUTH_STRIPPED_DARK_OAK_LOG, EAST_WEST_STRIPPED_DARK_OAK_LOG, (byte) 53, (byte) 37, sound);
-        setLogData(UP_DOWN_PINE_LOG, NORTH_SOUTH_PINE_LOG, EAST_WEST_PINE_LOG, (byte) 22, (byte) 6, sound);
-        setLogData(UP_DOWN_STRIPPED_PINE_LOG, NORTH_SOUTH_STRIPPED_PINE_LOG, EAST_WEST_STRIPPED_PINE_LOG, (byte) 54, (byte) 38, sound);
-        setLogData(UP_DOWN_REDWOOD_LOG, NORTH_SOUTH_REDWOOD_LOG, EAST_WEST_REDWOOD_LOG, (byte) 23, (byte) 7, sound);
-        setLogData(UP_DOWN_STRIPPED_REDWOOD_LOG, NORTH_SOUTH_STRIPPED_REDWOOD_LOG, EAST_WEST_STRIPPED_REDWOOD_LOG, (byte) 55, (byte) 39, sound);
-        setLogData(UP_DOWN_BLACK_WOOD_LOG, NORTH_SOUTH_BLACK_WOOD_LOG, EAST_WEST_BLACK_WOOD_LOG, (byte) 24, (byte) 8, sound);
-        setLogData(UP_DOWN_STRIPPED_BLACK_WOOD_LOG, NORTH_SOUTH_STRIPPED_BLACK_WOOD_LOG, EAST_WEST_STRIPPED_BLACK_WOOD_LOG, (byte) 56, (byte) 40, sound);
+        setDirectionalBlock(UP_DOWN_OAK_LOG, NORTH_SOUTH_OAK_LOG, EAST_WEST_OAK_LOG, (byte) 19, (byte) 3, sound.digWood, sound.stepWood);
+        setDirectionalBlock(UP_DOWN_STRIPPED_OAK_LOG, NORTH_SOUTH_STRIPPED_OAK_LOG, EAST_WEST_STRIPPED_OAK_LOG, (byte) 51, (byte) 35, sound.digWood, sound.stepWood);
+        setDirectionalBlock(UP_DOWN_SPRUCE_LOG, NORTH_SOUTH_SPRUCE_LOG, EAST_WEST_SPRUCE_LOG, (byte) 20, (byte) 4, sound.digWood, sound.stepWood);
+        setDirectionalBlock(UP_DOWN_STRIPPED_SPRUCE_LOG, NORTH_SOUTH_STRIPPED_SPRUCE_LOG, EAST_WEST_STRIPPED_SPRUCE_LOG, (byte) 52, (byte) 36, sound.digWood, sound.stepWood);
+        setDirectionalBlock(UP_DOWN_DARK_OAK_LOG, NORTH_SOUTH_DARK_OAK_LOG, EAST_WEST_DARK_OAK_LOG, (byte) 21, (byte) 5, sound.digWood, sound.stepWood);
+        setDirectionalBlock(UP_DOWN_STRIPPED_DARK_OAK_LOG, NORTH_SOUTH_STRIPPED_DARK_OAK_LOG, EAST_WEST_STRIPPED_DARK_OAK_LOG, (byte) 53, (byte) 37, sound.digWood, sound.stepWood);
+        setDirectionalBlock(UP_DOWN_PINE_LOG, NORTH_SOUTH_PINE_LOG, EAST_WEST_PINE_LOG, (byte) 22, (byte) 6, sound.digWood, sound.stepWood);
+        setDirectionalBlock(UP_DOWN_STRIPPED_PINE_LOG, NORTH_SOUTH_STRIPPED_PINE_LOG, EAST_WEST_STRIPPED_PINE_LOG, (byte) 54, (byte) 38, sound.digWood, sound.stepWood);
+        setDirectionalBlock(UP_DOWN_REDWOOD_LOG, NORTH_SOUTH_REDWOOD_LOG, EAST_WEST_REDWOOD_LOG, (byte) 23, (byte) 7, sound.digWood, sound.stepWood);
+        setDirectionalBlock(UP_DOWN_STRIPPED_REDWOOD_LOG, NORTH_SOUTH_STRIPPED_REDWOOD_LOG, EAST_WEST_STRIPPED_REDWOOD_LOG, (byte) 55, (byte) 39, sound.digWood, sound.stepWood);
+        setDirectionalBlock(UP_DOWN_BLACK_WOOD_LOG, NORTH_SOUTH_BLACK_WOOD_LOG, EAST_WEST_BLACK_WOOD_LOG, (byte) 24, (byte) 8, sound.digWood, sound.stepWood);
+        setDirectionalBlock(UP_DOWN_STRIPPED_BLACK_WOOD_LOG, NORTH_SOUTH_STRIPPED_BLACK_WOOD_LOG, EAST_WEST_STRIPPED_BLACK_WOOD_LOG, (byte) 56, (byte) 40, sound.digWood, sound.stepWood);
+        setDirectionalBlock(UP_DOWN_BASALT, NORTH_SOUTH_BASALT, EAST_WEST_BASALT, (byte) 0x8A, (byte) 0x89, sound.stepStone, sound.digStone);
 
         setStandardBlockData(OAK_LEAVES, 0, sound.digFoliage, sound.stepFoliage, (byte) 83);
         setStandardBlockData(SPRUCE_LEAVES, 0, sound.digFoliage, sound.stepFoliage, (byte) 84);
@@ -1151,6 +1158,12 @@ public class Block {
         setStandardBlockData(MOSSY_RED_SANDSTONE_BRICKS, 0, sound.digStone, sound.stepStone, (byte) 0xF3);
         setStandardBlockData(SANDSTONE_BRICKS, 0, sound.digStone, sound.stepStone, (byte) 0xB6);
         setStandardBlockData(RED_SANDSTONE_BRICKS, 0, sound.digStone, sound.stepStone, (byte) 0xBF);
+        setStandardBlockData(BLACKSTONE, 0, sound.digStone, sound.stepStone, (byte) 0x73);
+        setStandardBlockData(BLACKSTONE_BRICKS, 0, sound.digStone, sound.stepStone, (byte) 0x74);
+        setStandardBlockData(POLISHED_BLACKSTONE, 0, sound.digStone, sound.stepStone, (byte) 0x75);
+        setStandardBlockData(COAL_BLOCK, 0, sound.digStone, sound.stepStone, (byte) 0x99);
+        setStandardBlockData(IRON_BLOCK, 0, sound.digStone, sound.stepStone, (byte) 0x9A);
+        setStandardBlockData(DIAMOND_BLOCK, 0, sound.digStone, sound.stepStone, (byte) 0x9B);
 
         setStandardBlockData(NORTH_FURNACE, INTERACTABLE, sound.digStone, sound.stepStone, new byte[]{(byte) -104, (byte) -121, (byte) -105, (byte) -105, (byte) -89, (byte) -105});
         setStandardBlockData(SOUTH_FURNACE, INTERACTABLE, sound.digStone, sound.stepStone, new byte[]{(byte) -105, (byte) -121, (byte) -105, (byte) -104, (byte) -89, (byte) -105});

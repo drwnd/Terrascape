@@ -508,10 +508,10 @@ public class RenderManager {
         double temperatureMapValue = GenerationData.temperatureMapValue(x, z);
         double humidityMapValue = GenerationData.humidityMapValue(x, z);
 
-        renderTextLine("Frame rate:" + EngineManager.currentFrameRate, Color.RED, ++line);
+        renderTextLine("Frame rate:" + EngineManager.currentFrameRate + " GT-time:" + Launcher.getServer().getDeltaTime() / 1_000_000 + "ms", Color.RED, ++line);
         renderTextLine("Memory:" + (Runtime.getRuntime().totalMemory() / 1_000_000) + "MB", Color.RED, ++line);
         renderTextLine("Coordinates: X:" + Utils.floor(position.x * 10) / 10f + " Y:" + Utils.floor(position.y * 10) / 10f + " Z:" + Utils.floor(position.z * 10) / 10f, Color.BLUE, ++line);
-        renderTextLine("Chunk coordinates: X:" + chunkX + " Y:" + chunkY + " Z:" + chunkZ + " Id" + GameLogic.getChunkId(chunkX, chunkY, chunkZ), Color.BLUE, ++line);
+        renderTextLine("Chunk coordinates: X:" + chunkX + " Y:" + chunkY + " Z:" + chunkZ + " Id" + Utils.getChunkId(chunkX, chunkY, chunkZ), Color.BLUE, ++line);
         renderTextLine("In Chunk coordinates: X:" + inChunkX + " Y:" + inChunkY + " Z:" + inChunkZ, Color.BLUE, ++line);
         renderTextLine("Looking at: X:" + Utils.floor(direction.x * 100) / 100f + " Y:" + Utils.floor(direction.y * 100) / 100f + " Z:" + Utils.floor(direction.z * 100) / 100f, Color.CYAN, ++line);
         renderTextLine("Velocity: X:" + velocity.x + " Y:" + velocity.y + " Z:" + velocity.z, Color.CYAN, ++line);
@@ -532,18 +532,18 @@ public class RenderManager {
             renderTextLine("Standing on block:" + Block.getFullBlockName(player.getMovement().getStandingBlock()), Color.WHITE, ++line);
         }
         renderTextLine("Seed:" + SEED, Color.GREEN, ++line);
-        renderTextLine("Rendered chunk models:" + chunkModels.size(), Color.RED, ++line);
-        renderTextLine("Rendered water models:" + waterModels.size(), Color.RED, ++line);
+        renderTextLine("Rendered chunk models:" + chunkModels.size() + "/" + Chunk.countOpaqueModels(), Color.RED, ++line);
+        renderTextLine("Rendered water models:" + waterModels.size() + "/" + Chunk.countWaterModels(), Color.RED, ++line);
         renderTextLine("Rendered foliage models:" + foliageModels.size(), Color.RED, ++line);
-        renderTextLine("Rendered entities:" + entities.size(), Color.RED, ++line);
-        renderTextLine("Rendered particles:" + particles.size(), Color.RED, ++line);
+        renderTextLine("Rendered entities:" + entities.size() + "/" + ServerLogic.getAmountOfEntities(), Color.RED, ++line);
+        renderTextLine("Rendered particles:" + particles.size() + "/" + ServerLogic.getAmountOfParticles(), Color.RED, ++line);
         renderTextLine("Rendered GUIElements:" + GUIElements.size(), Color.RED, ++line);
         renderTextLine("Render distance XZ:" + RENDER_DISTANCE_XZ + " Render distance Y:" + RENDER_DISTANCE_Y, Color.ORANGE, ++line);
         renderTextLine("Concurrent played sounds:" + sourceCounter, Color.YELLOW, ++line);
-        renderTextLine("Time:" + time, Color.WHITE, ++line);
-        renderTextLine("To buffer chunks:" + GameLogic.getAmountOfToBufferChunks(), Color.RED, ++line);
+        renderTextLine("Time:" + time + " Tick:" + EngineManager.getTick(), Color.WHITE, ++line);
+        renderTextLine("To buffer chunks:" + ServerLogic.getAmountOfToBufferChunks(), Color.RED, ++line);
         renderTextLine("Scheduled blockEvents:" + BlockEvent.getAmountOfScheduledEvents(EngineManager.getTick()), Color.RED, ++line);
-        renderTextLine("Entities:" + GameLogic.getAmountOfEntities(), Color.RED, ++line);
+        renderTextLine("Entities:" + ServerLogic.getAmountOfEntities(), Color.RED, ++line);
         renderTextLine("Hei:" + Utils.floor(heightMapValue * 1000) / 1000d + " Ero:" + Utils.floor(erosionMapValue * 1000) / 1000d + " Con:" + Utils.floor(continentalMapValue * 1000) / 1000d, Color.GRAY, ++line);
         renderTextLine("Riv:" + Utils.floor(riverMapValue * 1000) / 1000d + " Rid:" + Utils.floor(ridgeMapValue * 1000) / 1000d, Color.GRAY, ++line);
         renderTextLine("Tem:" + Utils.floor(temperatureMapValue * 1000) / 1000d + " Hum:" + Utils.floor(humidityMapValue * 1000) / 1000d, Color.GRAY, ++line);

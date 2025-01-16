@@ -5,7 +5,7 @@ import terrascape.dataStorage.Chunk;
 import terrascape.entity.particles.ExplosionParticle;
 import terrascape.player.SoundManager;
 import terrascape.utils.Utils;
-import terrascape.server.GameLogic;
+import terrascape.server.ServerLogic;
 import terrascape.server.Launcher;
 import org.joml.Vector3f;
 import org.joml.Vector3i;
@@ -57,6 +57,20 @@ public class TNT_Entity extends Entity {
     @Override
     public byte getBottomTexture() {
         return -90;
+    }
+
+    @Override
+    public byte[] toBytes() {
+        byte[] bytes = new byte[getByteSize()];
+        bytes[0] = TNT_ENTITY_TYPE;
+        putBaseByteData(bytes);
+        System.arraycopy(Utils.toByteArray(fuse), 0, bytes, BASE_BYTE_SIZE, 4);
+        return bytes;
+    }
+
+    @Override
+    public int getByteSize() {
+        return BASE_BYTE_SIZE + 4;
     }
 
     public void explode() {
@@ -116,7 +130,7 @@ public class TNT_Entity extends Entity {
         castExplosionRay(position, 0.8164965809277261, 0.4082482904638631, 0.4082482904638631, EXPLOSION_STRENGTH);
 
         pushEntities();
-        GameLogic.addParticle(new ExplosionParticle(new Vector3f(position.x, position.y + 0.375f, position.z)));
+        ServerLogic.addParticle(new ExplosionParticle(new Vector3f(position.x, position.y + 0.375f, position.z)));
 
         SoundManager sound = Launcher.getSound();
         sound.playRandomSound(sound.explode, position.x, position.y, position.z, velocity.x, velocity.y, velocity.z, MISCELLANEOUS_GAIN);
@@ -151,7 +165,7 @@ public class TNT_Entity extends Entity {
             if ((Block.getBlockProperties(block) & BLAST_RESISTANT) != 0 || Block.isWaterLogged(block)) return;
             if (blockType != AIR_TYPE) {
                 blastResistance++;
-                GameLogic.placeBlock(AIR, x, y, z, false);
+                ServerLogic.placeBlock(AIR, x, y, z, false);
                 if (block == TNT) {
                     Vector3i targetPosition = new Vector3i(x, y, z);
                     float deltaX = x + 0.5f - origin.x;
@@ -213,13 +227,19 @@ public class TNT_Entity extends Entity {
         Vector3f position = new Vector3f(targetPosition.x + 0.5f, targetPosition.y + 0.5f, targetPosition.z + 0.5f);
         Vector3f velocity = new Vector3f((float) (Math.random() * 0.3 - 0.15), (float) (Math.random() * 0.3 - 0.15), (float) (Math.random() * 0.3 - 0.15));
         TNT_Entity entity = new TNT_Entity(fuse, position, velocity);
-        GameLogic.spawnEntity(entity);
-        GameLogic.placeBlock(AIR, targetPosition.x, targetPosition.y, targetPosition.z, true);
+        ServerLogic.spawnEntity(entity);
+        ServerLogic.placeBlock(AIR, targetPosition.x, targetPosition.y, targetPosition.z, true);
     }
 
     public static void spawnTNTEntity(Vector3i targetPosition, Vector3f velocity, int fuse) {
         Vector3f position = new Vector3f(targetPosition.x + 0.5f, targetPosition.y + 0.5f, targetPosition.z + 0.5f);
         TNT_Entity entity = new TNT_Entity(fuse, position, velocity);
-        GameLogic.spawnEntity(entity);
+        ServerLogic.spawnEntity(entity);
+    }
+
+    protected static TNT_Entity getFromBytesCustom(byte[] bytes, int startIndex) {
+        int fuse = Utils.getInt(bytes, startIndex);
+
+        return new TNT_Entity(fuse, null, null);
     }
 }

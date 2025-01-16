@@ -18,8 +18,9 @@ public class EngineManager {
 
     private static WindowManager window;
     private static SoundManager sound;
+    private static Server server;
     private static GLFWErrorCallback errorCallback;
-    private static long tick = 0;
+    private static long tick = 0, lastGTTime;
 
     public static void init() throws Exception {
         GLFW.glfwSetErrorCallback(errorCallback = GLFWErrorCallback.createPrint(System.err));
@@ -32,16 +33,20 @@ public class EngineManager {
         window.init();
         sound = Launcher.getSound();
         sound.init();
+        server = Launcher.getServer();
         Block.init();
         Entity.initAll();
         Particle.initAll();
-        GameLogic.init();
+        ServerLogic.init();
+        FileManager.loadGameState();
     }
 
     public static void run() {
-        long lastTime = 0;
+        server.start();
+
+        long lastTime = System.nanoTime();
         long lastFrameRateUpdateTime = 0;
-        long lastGTTime = 0;
+        long lastInputTime = 0;
         int frames = 0;
 
         while (!window.windowShouldClose()) {
@@ -58,46 +63,53 @@ public class EngineManager {
                 currentFrameRate = frames * 4;
                 frames = 0;
             }
-            if (currentTime - lastGTTime > NANOSECONDS_PER_SECOND * (1.0f / TARGET_TPS)) {
-                lastGTTime = currentTime;
+            if (currentTime - lastInputTime > NANOSECONDS_PER_SECOND * (1.0f / TARGET_TPS)) {
+                lastInputTime = currentTime;
                 input();
-                updateGT();
             }
         }
     }
 
     public static void input() {
-        GameLogic.input();
+        ServerLogic.input();
     }
 
     private static void render(float passedTicks) {
-        GameLogic.render(passedTicks);
+        ServerLogic.render(passedTicks);
         long gpuTime = System.nanoTime();
         window.update();
-        if (GameLogic.getPlayer().printTimes) {
+        if (ServerLogic.getPlayer().printTimes) {
             System.out.println("gpu " + (System.nanoTime() - gpuTime));
             System.out.println("-----------------");
         }
     }
 
     private static void update(float passedTicks) {
-        GameLogic.update(passedTicks);
-    }
-
-    private static void updateGT() {
-        GameLogic.updateGT(tick);
-        tick++;
+        ServerLogic.update(passedTicks);
     }
 
     public static long getTick() {
         return tick;
     }
 
+    public static void incTick() {
+        tick++;
+    }
+
+    public static void setLastGTTime(long lastGTTime) {
+        EngineManager.lastGTTime = lastGTTime;
+    }
+
     public static void cleanUp() {
-        GameLogic.cleanUp();
+        server.stop();
+        ServerLogic.cleanUp();
         window.cleanUp();
         sound.cleanUp();
         errorCallback.free();
         GLFW.glfwTerminate();
+    }
+
+    public static void setTick(long tick) {
+        EngineManager.tick = tick;
     }
 }

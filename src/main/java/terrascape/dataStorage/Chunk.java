@@ -7,8 +7,9 @@ import terrascape.server.LightLogic;
 import terrascape.entity.entities.Entity;
 import terrascape.entity.OpaqueModel;
 import terrascape.generation.WorldGeneration;
-import terrascape.server.GameLogic;
+import terrascape.server.ServerLogic;
 import org.joml.Vector3i;
+import terrascape.utils.Utils;
 
 import java.util.LinkedList;
 import java.util.ArrayList;
@@ -31,25 +32,25 @@ public class Chunk {
         blocks = new short[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
         light = new byte[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
 
-        id = GameLogic.getChunkId(X, Y, Z);
-        index = GameLogic.getChunkIndex(X, Y, Z);
+        id = Utils.getChunkId(X, Y, Z);
+        index = Utils.getChunkIndex(X, Y, Z);
 
+        entityClusters = new LinkedList[64];
         for (int i = 0; i < entityClusters.length; i++) entityClusters[i] = new LinkedList<>();
     }
 
-    public Chunk(int x, int y, int z, short[] blocks) {
+    public Chunk(int x, int y, int z, short[] blocks, LinkedList<Entity>[] entityClusters) {
         this.X = x;
         this.Y = y;
         this.Z = z;
         worldCoordinate = new Vector3i(X << CHUNK_SIZE_BITS, Y << CHUNK_SIZE_BITS, Z << CHUNK_SIZE_BITS);
 
         this.blocks = blocks;
+        this.entityClusters = entityClusters;
         light = new byte[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
 
-        id = GameLogic.getChunkId(X, Y, Z);
-        index = GameLogic.getChunkIndex(X, Y, Z);
-
-        for (int i = 0; i < entityClusters.length; i++) entityClusters[i] = new LinkedList<>();
+        id = Utils.getChunkId(X, Y, Z);
+        index = Utils.getChunkIndex(X, Y, Z);
     }
 
     public void optimizeBlockStorage() {
@@ -106,6 +107,7 @@ public class Chunk {
 
         for (int blockIndex = 0; blockIndex < blocks.length; blockIndex++) {
             if ((visitedBlocks[blockIndex >> CHUNK_SIZE_BITS] & (1 << (blockIndex & CHUNK_SIZE_MASK))) != 0) continue;
+            visitedBlocks[blockIndex >> CHUNK_SIZE_BITS] |= 1 << (blockIndex & CHUNK_SIZE_MASK);
 
             toVisitBlockIndexes.add(blockIndex);
             byte visitedSides = 0;
@@ -113,53 +115,61 @@ public class Chunk {
             while (!toVisitBlockIndexes.isEmpty()) {
                 int floodFillBlockIndex = toVisitBlockIndexes.removeLast();
 
-                if ((visitedBlocks[floodFillBlockIndex >> CHUNK_SIZE_BITS] & (1 << (floodFillBlockIndex & CHUNK_SIZE_MASK))) != 0)
-                    continue;
-                visitedBlocks[floodFillBlockIndex >> CHUNK_SIZE_BITS] |= 1 << (floodFillBlockIndex & CHUNK_SIZE_MASK);
-
                 if (Block.getBlockType(blocks[floodFillBlockIndex]) == FULL_BLOCK) continue;
 
                 // Negative Z
                 int nextBlockIndex = floodFillBlockIndex - (1 << CHUNK_SIZE_BITS * 2);
                 if (floodFillBlockIndex >> CHUNK_SIZE_BITS * 2 == 0)
                     visitedSides = (byte) (visitedSides | 1 << EAST);
-                else if ((visitedBlocks[nextBlockIndex >> CHUNK_SIZE_BITS] & (1 << (nextBlockIndex & CHUNK_SIZE_MASK))) == 0)
+                else if ((visitedBlocks[nextBlockIndex >> CHUNK_SIZE_BITS] & (1 << (nextBlockIndex & CHUNK_SIZE_MASK))) == 0) {
                     toVisitBlockIndexes.add(nextBlockIndex);
+                    visitedBlocks[nextBlockIndex >> CHUNK_SIZE_BITS] |= 1 << (nextBlockIndex & CHUNK_SIZE_MASK);
+                }
 
                 // Positive Z
                 nextBlockIndex = floodFillBlockIndex + (1 << CHUNK_SIZE_BITS * 2);
                 if (floodFillBlockIndex >> CHUNK_SIZE_BITS * 2 == CHUNK_SIZE - 1)
                     visitedSides = (byte) (visitedSides | 1 << WEST);
-                else if ((visitedBlocks[nextBlockIndex >> CHUNK_SIZE_BITS] & (1 << (nextBlockIndex & CHUNK_SIZE_MASK))) == 0)
+                else if ((visitedBlocks[nextBlockIndex >> CHUNK_SIZE_BITS] & (1 << (nextBlockIndex & CHUNK_SIZE_MASK))) == 0) {
                     toVisitBlockIndexes.add(nextBlockIndex);
+                    visitedBlocks[nextBlockIndex >> CHUNK_SIZE_BITS] |= 1 << (nextBlockIndex & CHUNK_SIZE_MASK);
+                }
 
                 // Negative X
                 nextBlockIndex = floodFillBlockIndex - (1 << CHUNK_SIZE_BITS);
                 if ((floodFillBlockIndex >> CHUNK_SIZE_BITS & CHUNK_SIZE_MASK) == 0)
                     visitedSides = (byte) (visitedSides | 1 << SOUTH);
-                else if ((visitedBlocks[nextBlockIndex >> CHUNK_SIZE_BITS] & (1 << (nextBlockIndex & CHUNK_SIZE_MASK))) == 0)
+                else if ((visitedBlocks[nextBlockIndex >> CHUNK_SIZE_BITS] & (1 << (nextBlockIndex & CHUNK_SIZE_MASK))) == 0) {
                     toVisitBlockIndexes.add(nextBlockIndex);
+                    visitedBlocks[nextBlockIndex >> CHUNK_SIZE_BITS] |= 1 << (nextBlockIndex & CHUNK_SIZE_MASK);
+                }
 
                 // Positive X
                 nextBlockIndex = (floodFillBlockIndex) + (1 << CHUNK_SIZE_BITS);
                 if ((floodFillBlockIndex >> CHUNK_SIZE_BITS & CHUNK_SIZE_MASK) == CHUNK_SIZE - 1)
                     visitedSides = (byte) (visitedSides | 1 << NORTH);
-                else if ((visitedBlocks[nextBlockIndex >> CHUNK_SIZE_BITS] & (1 << (nextBlockIndex & CHUNK_SIZE_MASK))) == 0)
+                else if ((visitedBlocks[nextBlockIndex >> CHUNK_SIZE_BITS] & (1 << (nextBlockIndex & CHUNK_SIZE_MASK))) == 0) {
                     toVisitBlockIndexes.add(nextBlockIndex);
+                    visitedBlocks[nextBlockIndex >> CHUNK_SIZE_BITS] |= 1 << (nextBlockIndex & CHUNK_SIZE_MASK);
+                }
 
                 // Negative Y
                 nextBlockIndex = floodFillBlockIndex - 1;
                 if ((floodFillBlockIndex & CHUNK_SIZE_MASK) == 0)
                     visitedSides = (byte) (visitedSides | 1 << BOTTOM);
-                else if ((visitedBlocks[nextBlockIndex >> CHUNK_SIZE_BITS] & (1 << (nextBlockIndex & CHUNK_SIZE_MASK))) == 0)
+                else if ((visitedBlocks[nextBlockIndex >> CHUNK_SIZE_BITS] & (1 << (nextBlockIndex & CHUNK_SIZE_MASK))) == 0) {
                     toVisitBlockIndexes.add(nextBlockIndex);
+                    visitedBlocks[nextBlockIndex >> CHUNK_SIZE_BITS] |= 1 << (nextBlockIndex & CHUNK_SIZE_MASK);
+                }
 
                 // Positive Y
                 nextBlockIndex = floodFillBlockIndex + 1;
                 if ((floodFillBlockIndex & CHUNK_SIZE_MASK) == CHUNK_SIZE - 1)
                     visitedSides = (byte) (visitedSides | 1 << TOP);
-                else if ((visitedBlocks[nextBlockIndex >> CHUNK_SIZE_BITS] & (1 << (nextBlockIndex & CHUNK_SIZE_MASK))) == 0)
+                else if ((visitedBlocks[nextBlockIndex >> CHUNK_SIZE_BITS] & (1 << (nextBlockIndex & CHUNK_SIZE_MASK))) == 0) {
                     toVisitBlockIndexes.add(nextBlockIndex);
+                    visitedBlocks[nextBlockIndex >> CHUNK_SIZE_BITS] |= 1 << (nextBlockIndex & CHUNK_SIZE_MASK);
+                }
             }
 
             for (int side1 = 0; side1 < 6; side1++) {
@@ -195,8 +205,8 @@ public class Chunk {
             for (int chunkZ = Z - 1; chunkZ <= Z + 1; chunkZ++)
                 for (int chunkY = Y - 1; chunkY <= Y + 1; chunkY++) {
 
-                    long expectedId = GameLogic.getChunkId(chunkX, chunkY, chunkZ);
-                    int index = GameLogic.getChunkIndex(chunkX, chunkY, chunkZ);
+                    long expectedId = Utils.getChunkId(chunkX, chunkY, chunkZ);
+                    int index = Utils.getChunkIndex(chunkX, chunkY, chunkZ);
                     Chunk chunk = getChunk(index);
 
                     if (chunk == null) {
@@ -210,7 +220,7 @@ public class Chunk {
 
                     } else if (chunk.id != expectedId) {
                         System.err.println("surrounding Chunk is not correct");
-                        GameLogic.addToUnloadChunk(chunk);
+                        ServerLogic.addToUnloadChunk(chunk);
 
                         chunk = FileManager.getChunk(expectedId);
                         if (chunk == null) chunk = new Chunk(chunkX, chunkY, chunkZ);
@@ -270,7 +280,7 @@ public class Chunk {
     }
 
     public static short getBlockInWorld(int x, int y, int z) {
-        Chunk chunk = world[GameLogic.getChunkIndex(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS)];
+        Chunk chunk = world[Utils.getChunkIndex(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS)];
         if (chunk == null || !chunk.isGenerated) return OUT_OF_WORLD;
         return chunk.getSaveBlock(x & CHUNK_SIZE_MASK, y & CHUNK_SIZE_MASK, z & CHUNK_SIZE_MASK);
     }
@@ -344,7 +354,7 @@ public class Chunk {
         if (chunk == this) return;
 
         if (chunk == null) {
-            long id = GameLogic.getChunkId(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS);
+            long id = Utils.getChunkId(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS);
             synchronized (toGenerateBlocks) {
                 ArrayList<Integer> toPlaceBlocks = toGenerateBlocks.computeIfAbsent(id, ignored -> new ArrayList<>());
                 toPlaceBlocks.add((int) block << 16 | inChunkX << CHUNK_SIZE_BITS * 2 | inChunkY << CHUNK_SIZE_BITS | inChunkZ);
@@ -362,7 +372,7 @@ public class Chunk {
     }
 
     public static byte getLightInWorld(int x, int y, int z) {
-        Chunk chunk = world[GameLogic.getChunkIndex(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS)];
+        Chunk chunk = world[Utils.getChunkIndex(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS)];
         if (chunk == null || !chunk.isGenerated) return 0;
         return chunk.getSaveLight(x & CHUNK_SIZE_MASK, y & CHUNK_SIZE_MASK, z & CHUNK_SIZE_MASK);
     }
@@ -373,7 +383,7 @@ public class Chunk {
     }
 
     public static byte getBlockLightInWorld(int x, int y, int z) {
-        Chunk chunk = world[GameLogic.getChunkIndex(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS)];
+        Chunk chunk = world[Utils.getChunkIndex(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS)];
         if (chunk == null || !chunk.isGenerated) return 0;
         return chunk.getSaveBlockLight(x & CHUNK_SIZE_MASK, y & CHUNK_SIZE_MASK, z & CHUNK_SIZE_MASK);
     }
@@ -407,7 +417,7 @@ public class Chunk {
     }
 
     public static byte getSkyLightInWorld(int x, int y, int z) {
-        Chunk chunk = world[GameLogic.getChunkIndex(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS)];
+        Chunk chunk = world[Utils.getChunkIndex(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS)];
         if (chunk == null || !chunk.isGenerated) return 0;
         return chunk.getSaveSkyLight(x & CHUNK_SIZE_MASK, y & CHUNK_SIZE_MASK, z & CHUNK_SIZE_MASK);
     }
@@ -441,7 +451,7 @@ public class Chunk {
     }
 
     public static Chunk getChunk(int chunkX, int chunkY, int chunkZ) {
-        return world[GameLogic.getChunkIndex(chunkX, chunkY, chunkZ)];
+        return world[Utils.getChunkIndex(chunkX, chunkY, chunkZ)];
     }
 
     public static Chunk getChunk(int index) {
@@ -474,7 +484,7 @@ public class Chunk {
     }
 
     public static HeightMap getHeightMap(int chunkX, int chunkZ) {
-        return heightMaps[GameLogic.getHeightMapIndex(chunkX, chunkZ)];
+        return heightMaps[Utils.getHeightMapIndex(chunkX, chunkZ)];
     }
 
     public int[] getOpaqueVertices() {
@@ -616,12 +626,24 @@ public class Chunk {
     public static LinkedList<Entity> getEntityCluster(int clusterX, int clusterY, int clusterZ) {
         Chunk chunk = getChunk(clusterX >> ENTITY_CLUSTER_TO_CHUNK_BITS, clusterY >> ENTITY_CLUSTER_TO_CHUNK_BITS, clusterZ >> ENTITY_CLUSTER_TO_CHUNK_BITS);
         if (chunk == null) return null;
-        int index = GameLogic.getEntityClusterIndex(clusterX & ENTITY_CLUSTER_SIZE_BITS, clusterY & ENTITY_CLUSTER_SIZE_BITS, clusterZ & ENTITY_CLUSTER_SIZE_BITS);
+        int index = Utils.getEntityClusterIndex(clusterX & ENTITY_CLUSTER_SIZE_BITS, clusterY & ENTITY_CLUSTER_SIZE_BITS, clusterZ & ENTITY_CLUSTER_SIZE_BITS);
         return chunk.getEntityCluster(index);
     }
 
     public static boolean isValidPosition(int inChunkX, int inChunkY, int inChunkZ) {
         return (inChunkX & CHUNK_SIZE_MASK) == inChunkX && (inChunkY & CHUNK_SIZE_MASK) == inChunkY && (inChunkZ & CHUNK_SIZE_MASK) == inChunkZ;
+    }
+
+    public static int countOpaqueModels() {
+        int counter = 0;
+        for (OpaqueModel model : opaqueModels) if (model != null) counter++;
+        return counter;
+    }
+
+    public static int countWaterModels() {
+        int counter = 0;
+        for (WaterModel model : waterModels) if (model != null) counter++;
+        return counter;
     }
 
     private static Chunk[] world;
@@ -633,8 +655,7 @@ public class Chunk {
 
     private short[] blocks;
     private byte[] light;
-    @SuppressWarnings("unchecked")
-    private final LinkedList<Entity>[] entityClusters = new LinkedList[64];
+    private final LinkedList<Entity>[] entityClusters;
 
     private int[] waterVertices = new int[0];
     private int[] vertexCounts = new int[0];

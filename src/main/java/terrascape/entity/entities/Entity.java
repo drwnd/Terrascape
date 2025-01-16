@@ -6,17 +6,23 @@ import terrascape.dataStorage.Chunk;
 import terrascape.utils.Utils;
 import org.joml.Vector3f;
 
+import java.security.InvalidParameterException;
 import java.util.LinkedList;
 
 import static terrascape.utils.Constants.*;
+import static terrascape.utils.Settings.*;
 
 public abstract class Entity {
+
+    public final int BASE_BYTE_SIZE = 25;
+    public static final byte FALLING_BLOCK_ENTITY_TYPE = 1;
+    public static final byte TNT_ENTITY_TYPE = 2;
+    public static int vao, vbo;
 
     protected Vector3f position;
     protected Vector3f velocity;
     protected float[] aabb;
     protected boolean isDead = false;
-    public static int vao, vbo;
 
     public static void initAll() {
         long vao_vbo = ObjectLoader.loadVAO_VBO(0, 2, getEntityVertices());
@@ -35,6 +41,32 @@ public abstract class Entity {
 
     public abstract byte getBottomTexture();
 
+    public abstract byte[] toBytes();
+
+    public abstract int getByteSize();
+
+
+    public static Entity getFromBytes(byte[] bytes, int startIndex) {
+        byte type = bytes[startIndex];
+        startIndex++;
+        float x = Float.intBitsToFloat(Utils.getInt(bytes, startIndex));
+        float y = Float.intBitsToFloat(Utils.getInt(bytes, startIndex + 4));
+        float z = Float.intBitsToFloat(Utils.getInt(bytes, startIndex + 8));
+        float vx = Float.intBitsToFloat(Utils.getInt(bytes, startIndex + 12));
+        float vy = Float.intBitsToFloat(Utils.getInt(bytes, startIndex + 16));
+        float vz = Float.intBitsToFloat(Utils.getInt(bytes, startIndex + 20));
+        startIndex += 24;
+
+        Entity entity = switch (type) {
+            case FALLING_BLOCK_ENTITY_TYPE -> FallingBlockEntity.getFromBytesCustom(bytes, startIndex);
+            case TNT_ENTITY_TYPE -> TNT_Entity.getFromBytesCustom(bytes, startIndex);
+            default -> throw new InvalidParameterException("Unrecognized entity type: " + type);
+        };
+
+        entity.position = new Vector3f(x, y, z);
+        entity.velocity = new Vector3f(vx, vy, vz);
+        return entity;
+    }
 
     public void move() {
         velocity.mul(AIR_FRICTION);
@@ -85,9 +117,7 @@ public abstract class Entity {
                         float blockMinZ = z + blockXYZSubData[MIN_Z + aabbIndex] * 0.0625f;
                         float blockMaxZ = 1 + z + blockXYZSubData[MAX_Z + aabbIndex] * 0.0625f;
 
-                        if (minX < blockMaxX && maxX > blockMinX
-                                && minY < blockMaxY && maxY > blockMinY
-                                && minZ < blockMaxZ && maxZ > blockMinZ) {
+                        if (minX < blockMaxX && maxX > blockMinX && minY < blockMaxY && maxY > blockMinY && minZ < blockMaxZ && maxZ > blockMinZ) {
 
                             intersection = Utils.absMax(intersection, Utils.absMin(minX - blockMaxX, maxX - blockMinX));
                         }
@@ -123,9 +153,7 @@ public abstract class Entity {
                         float blockMinZ = z + blockXYZSubData[MIN_Z + aabbIndex] * 0.0625f;
                         float blockMaxZ = 1 + z + blockXYZSubData[MAX_Z + aabbIndex] * 0.0625f;
 
-                        if (minX < blockMaxX && maxX > blockMinX
-                                && minY < blockMaxY && maxY > blockMinY
-                                && minZ < blockMaxZ && maxZ > blockMinZ) {
+                        if (minX < blockMaxX && maxX > blockMinX && minY < blockMaxY && maxY > blockMinY && minZ < blockMaxZ && maxZ > blockMinZ) {
 
                             intersection = Utils.absMax(intersection, Utils.absMin(minY - blockMaxY, maxY - blockMinY));
                         }
@@ -161,9 +189,7 @@ public abstract class Entity {
                         float blockMinZ = z + blockXYZSubData[MIN_Z + aabbIndex] * 0.0625f;
                         float blockMaxZ = 1 + z + blockXYZSubData[MAX_Z + aabbIndex] * 0.0625f;
 
-                        if (minX < blockMaxX && maxX > blockMinX
-                                && minY < blockMaxY && maxY > blockMinY
-                                && minZ < blockMaxZ && maxZ > blockMinZ) {
+                        if (minX < blockMaxX && maxX > blockMinX && minY < blockMaxY && maxY > blockMinY && minZ < blockMaxZ && maxZ > blockMinZ) {
 
                             intersection = Utils.absMax(intersection, Utils.absMin(minZ - blockMaxZ, maxZ - blockMinZ));
                         }
@@ -217,9 +243,7 @@ public abstract class Entity {
                             float maxBlockY = 1 + blockY + blockXYZSubData[MAX_Y + aabbIndex] * 0.0625f;
                             float minBlockZ = blockZ + blockXYZSubData[MIN_Z + aabbIndex] * 0.0625f;
                             float maxBlockZ = 1 + blockZ + blockXYZSubData[MAX_Z + aabbIndex] * 0.0625f;
-                            if (aabb[MIN_X] + position.x < maxBlockX && aabb[MAX_X] + position.x > minBlockX
-                                    && aabb[MIN_Y] + position.y < maxBlockY && aabb[MAX_Y] + position.y > minBlockY
-                                    && aabb[MIN_Z] + position.z < maxBlockZ && aabb[MAX_Z] + position.z > minBlockZ)
+                            if (aabb[MIN_X] + position.x < maxBlockX && aabb[MAX_X] + position.x > minBlockX && aabb[MIN_Y] + position.y < maxBlockY && aabb[MAX_Y] + position.y > minBlockY && aabb[MIN_Z] + position.z < maxBlockZ && aabb[MAX_Z] + position.z > minBlockZ)
                                 return true;
                         }
                     }
@@ -247,50 +271,59 @@ public abstract class Entity {
         velocity.add(x, y, z);
     }
 
+    public float[] getAabb() {
+        return aabb;
+    }
+
+    public boolean isTooFarFromPlayer(int playerChunkX, int playerChunkY, int playerChunkZ) {
+        int entityChunkX = Utils.floor(position.x) >> CHUNK_SIZE_BITS;
+        int entityChunkY = Utils.floor(position.y) >> CHUNK_SIZE_BITS;
+        int entityChunkZ = Utils.floor(position.z) >> CHUNK_SIZE_BITS;
+
+        return Math.abs(playerChunkX - entityChunkX) > RENDER_DISTANCE_XZ
+                || Math.abs(playerChunkY - entityChunkY) > RENDER_DISTANCE_Y
+                || Math.abs(playerChunkZ - entityChunkZ) > RENDER_DISTANCE_XZ;
+    }
+
+
+    protected void putBaseByteData(byte[] bytes) {
+        byte[] data;
+        data = Utils.toByteArray(Float.floatToIntBits(position.x));
+        System.arraycopy(data, 0, bytes, 1, 4);
+        data = Utils.toByteArray(Float.floatToIntBits(position.y));
+        System.arraycopy(data, 0, bytes, 5, 4);
+        data = Utils.toByteArray(Float.floatToIntBits(position.z));
+        System.arraycopy(data, 0, bytes, 9, 4);
+
+        data = Utils.toByteArray(Float.floatToIntBits(velocity.x));
+        System.arraycopy(data, 0, bytes, 13, 4);
+        data = Utils.toByteArray(Float.floatToIntBits(velocity.y));
+        System.arraycopy(data, 0, bytes, 17, 4);
+        data = Utils.toByteArray(Float.floatToIntBits(velocity.z));
+        System.arraycopy(data, 0, bytes, 21, 4);
+    }
+
+
+    private static int[] getEntityVertices() {
+
+        return new int[]{packMiscellaneousData(0, 0, TOP), packPositionData(8, 8, 8), packMiscellaneousData(1, 0, TOP), packPositionData(8, 8, -8), packMiscellaneousData(0, 1, TOP), packPositionData(-8, 8, 8), packMiscellaneousData(1, 1, TOP), packPositionData(-8, 8, -8),
+
+                packMiscellaneousData(0, 0, BOTTOM), packPositionData(8, -8, 8), packMiscellaneousData(1, 0, BOTTOM), packPositionData(-8, -8, 8), packMiscellaneousData(0, 1, BOTTOM), packPositionData(8, -8, -8), packMiscellaneousData(1, 1, BOTTOM), packPositionData(-8, -8, -8),
+
+                packMiscellaneousData(0, 0, WEST), packPositionData(8, 8, 8), packMiscellaneousData(0, 1, WEST), packPositionData(8, -8, 8), packMiscellaneousData(1, 0, WEST), packPositionData(8, 8, -8), packMiscellaneousData(1, 1, WEST), packPositionData(8, -8, -8),
+
+                packMiscellaneousData(0, 0, NORTH), packPositionData(-8, 8, 8), packMiscellaneousData(0, 1, NORTH), packPositionData(-8, -8, 8), packMiscellaneousData(1, 0, NORTH), packPositionData(8, 8, 8), packMiscellaneousData(1, 1, NORTH), packPositionData(8, -8, 8),
+
+                packMiscellaneousData(0, 0, EAST), packPositionData(-8, 8, -8), packMiscellaneousData(0, 1, EAST), packPositionData(-8, -8, -8), packMiscellaneousData(1, 0, EAST), packPositionData(-8, 8, 8), packMiscellaneousData(1, 1, EAST), packPositionData(-8, -8, 8),
+
+                packMiscellaneousData(0, 0, SOUTH), packPositionData(8, 8, -8), packMiscellaneousData(0, 1, SOUTH), packPositionData(8, -8, -8), packMiscellaneousData(1, 0, SOUTH), packPositionData(-8, 8, -8), packMiscellaneousData(1, 1, SOUTH), packPositionData(-8, -8, -8)};
+    }
+
     private static int packPositionData(int x, int y, int z) {
         return x + 511 << 20 | y + 511 << 10 | z + 511;
     }
 
     private static int packMiscellaneousData(int u, int v, int side) {
         return side | u << 3 | v << 4;
-    }
-
-    public float[] getAabb() {
-        return aabb;
-    }
-
-    private static int[] getEntityVertices() {
-
-        return new int[]{
-                packMiscellaneousData(0, 0, TOP), packPositionData(8, 8, 8),
-                packMiscellaneousData(1, 0, TOP), packPositionData(8, 8, -8),
-                packMiscellaneousData(0, 1, TOP), packPositionData(-8, 8, 8),
-                packMiscellaneousData(1, 1, TOP), packPositionData(-8, 8, -8),
-
-                packMiscellaneousData(0, 0, BOTTOM), packPositionData(8, -8, 8),
-                packMiscellaneousData(1, 0, BOTTOM), packPositionData(-8, -8, 8),
-                packMiscellaneousData(0, 1, BOTTOM), packPositionData(8, -8, -8),
-                packMiscellaneousData(1, 1, BOTTOM), packPositionData(-8, -8, -8),
-
-                packMiscellaneousData(0, 0, WEST), packPositionData(8, 8, 8),
-                packMiscellaneousData(0, 1, WEST), packPositionData(8, -8, 8),
-                packMiscellaneousData(1, 0, WEST), packPositionData(8, 8, -8),
-                packMiscellaneousData(1, 1, WEST), packPositionData(8, -8, -8),
-
-                packMiscellaneousData(0, 0, NORTH), packPositionData(-8, 8, 8),
-                packMiscellaneousData(0, 1, NORTH), packPositionData(-8, -8, 8),
-                packMiscellaneousData(1, 0, NORTH), packPositionData(8, 8, 8),
-                packMiscellaneousData(1, 1, NORTH), packPositionData(8, -8, 8),
-
-                packMiscellaneousData(0, 0, EAST), packPositionData(-8, 8, -8),
-                packMiscellaneousData(0, 1, EAST), packPositionData(-8, -8, -8),
-                packMiscellaneousData(1, 0, EAST), packPositionData(-8, 8, 8),
-                packMiscellaneousData(1, 1, EAST), packPositionData(-8, -8, 8),
-
-                packMiscellaneousData(0, 0, SOUTH), packPositionData(8, 8, -8),
-                packMiscellaneousData(0, 1, SOUTH), packPositionData(8, -8, -8),
-                packMiscellaneousData(1, 0, SOUTH), packPositionData(-8, 8, -8),
-                packMiscellaneousData(1, 1, SOUTH), packPositionData(-8, -8, -8)
-        };
     }
 }

@@ -1,8 +1,8 @@
 package terrascape.generation;
 
 import terrascape.generation.biomes.Biome;
-import terrascape.server.GameLogic;
 import terrascape.dataStorage.Chunk;
+import terrascape.utils.Utils;
 
 import java.util.Random;
 
@@ -152,7 +152,7 @@ public class GenerationData {
 
     private static double[] featureMap(int chunkX, int chunkZ) {
         double[] featureMap = new double[CHUNK_SIZE * CHUNK_SIZE];
-        Random random = new Random(GameLogic.getChunkId(chunkX, 0, chunkZ));
+        Random random = new Random(Utils.getChunkId(chunkX, 0, chunkZ));
 
         for (int mapX = 0; mapX < CHUNK_SIZE; mapX++)
             for (int mapZ = 0; mapZ < CHUNK_SIZE; mapZ++)
@@ -236,7 +236,7 @@ public class GenerationData {
 
     private int[] treeBitMap(int chunkX, int chunkZ) {
         int[] treeBitMap = new int[CHUNK_SIZE];
-        Random random = new Random(GameLogic.getChunkId(chunkX, 0, chunkZ));
+        Random random = new Random(Utils.getChunkId(chunkX, 0, chunkZ));
 
         // Places 16 trees each in the central 6 x 6 of the 16 8 x 8s of a chunk
         for (int regionX = 0; regionX < CHUNK_SIZE; regionX += 8)

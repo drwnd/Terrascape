@@ -9,7 +9,7 @@ import terrascape.entity.entities.Entity;
 import terrascape.entity.entities.TNT_Entity;
 import terrascape.server.Block;
 import terrascape.server.BlockEvent;
-import terrascape.server.GameLogic;
+import terrascape.server.ServerLogic;
 import terrascape.server.Launcher;
 
 import static terrascape.utils.Constants.*;
@@ -59,7 +59,7 @@ public class InteractionHandler {
             return;
         Target target = Target.getTarget(camera.getPosition(), camera.getDirection());
         if (target != null)
-            GameLogic.placeBlock(AIR, target.position().x, target.position().y, target.position().z, true);
+            ServerLogic.placeBlock(AIR, target.position().x, target.position().y, target.position().z, true);
     }
 
     private void handleUse(long currentTime, boolean useButtonWasJustPressed) {
@@ -129,7 +129,7 @@ public class InteractionHandler {
         if (!Block.isSupported(selectedBlock, x, y, z)) return;
 
         if (isWaterLogging || (Block.getBlockProperties(Chunk.getBlockInWorld(x, y, z)) & REPLACEABLE) != 0)
-            GameLogic.placeBlock(toPlaceBlock, x, y, z, true);
+            ServerLogic.placeBlock(toPlaceBlock, x, y, z, true);
     }
 
     public static short getToPlaceBlock(short block, short previousBlock) {

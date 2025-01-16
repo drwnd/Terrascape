@@ -10,7 +10,7 @@ import terrascape.entity.entities.Entity;
 import terrascape.generation.WorldGeneration;
 import terrascape.utils.Transformation;
 import terrascape.utils.Utils;
-import terrascape.server.GameLogic;
+import terrascape.server.ServerLogic;
 import terrascape.server.Launcher;
 import org.joml.*;
 import org.lwjgl.glfw.GLFW;
@@ -74,20 +74,20 @@ public class Player {
             }
             handleNonMovementInputs(key | IS_KEYBOARD_BUTTON, action);
 
-//            if (key == GLFW.GLFW_KEY_H && action == GLFW.GLFW_PRESS) {
-//                Vector3f pos = camera.getPosition();
-//                Chunk chunk = Chunk.getChunk(Utils.floor(pos.x) >> CHUNK_SIZE_BITS, Utils.floor(pos.y) >> CHUNK_SIZE_BITS, Utils.floor(pos.z) >> CHUNK_SIZE_BITS);
-//                if (chunk == null) return;
-//                Arrays.fill(chunk.getBlocks(), TNT);
-//
-//                for (int chunkX = chunk.X - 1; chunkX <= chunk.X + 1; chunkX++)
-//                    for (int chunkY = chunk.Y - 1; chunkY <= chunk.Y + 1; chunkY++)
-//                        for (int chunkZ = chunk.Z - 1; chunkZ <= chunk.Z + 1; chunkZ++) {
-//                            Chunk toMeshChunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
-//                            if (toMeshChunk != null) toMeshChunk.setMeshed(false);
-//                        }
-//                GameLogic.restartGenerator(NONE);
-//            }
+            if (key == GLFW.GLFW_KEY_H && action == GLFW.GLFW_PRESS) {
+                Vector3f pos = camera.getPosition();
+                Chunk chunk = Chunk.getChunk(Utils.floor(pos.x) >> CHUNK_SIZE_BITS, Utils.floor(pos.y) >> CHUNK_SIZE_BITS, Utils.floor(pos.z) >> CHUNK_SIZE_BITS);
+                if (chunk == null) return;
+                Arrays.fill(chunk.getBlocks(), TNT);
+
+                for (int chunkX = chunk.X - 1; chunkX <= chunk.X + 1; chunkX++)
+                    for (int chunkY = chunk.Y - 1; chunkY <= chunk.Y + 1; chunkY++)
+                        for (int chunkZ = chunk.Z - 1; chunkZ <= chunk.Z + 1; chunkZ++) {
+                            Chunk toMeshChunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
+                            if (toMeshChunk != null) toMeshChunk.setMeshed(false);
+                        }
+                ServerLogic.restartGenerator(NONE);
+            }
 
 //            if (key == GLFW.GLFW_KEY_J && action == GLFW.GLFW_RELEASE) {
 //                Structure structure = Structure.testStructure;
@@ -317,26 +317,29 @@ public class Player {
         renderer.processGUIElement(hotBarSelectionIndicator);
 
         if (renderingEntities) {
-            for (Entity entity : GameLogic.getEntities()) {
-                int entityChunkX = Utils.floor(entity.getPosition().x) >> CHUNK_SIZE_BITS;
-                int entityChunkY = Utils.floor(entity.getPosition().y) >> CHUNK_SIZE_BITS;
-                int entityChunkZ = Utils.floor(entity.getPosition().z) >> CHUNK_SIZE_BITS;
+            synchronized (ServerLogic.getEntities()) {
+                for (Entity entity : ServerLogic.getEntities()) {
+                    int entityChunkX = Utils.floor(entity.getPosition().x) >> CHUNK_SIZE_BITS;
+                    int entityChunkY = Utils.floor(entity.getPosition().y) >> CHUNK_SIZE_BITS;
+                    int entityChunkZ = Utils.floor(entity.getPosition().z) >> CHUNK_SIZE_BITS;
 
-                int entityChunkIndex = GameLogic.getChunkIndex(entityChunkX, entityChunkY, entityChunkZ);
-                if ((visibleChunks[entityChunkIndex >> 6] & 1L << (entityChunkIndex & 63)) == 0) continue;
+                    int entityChunkIndex = Utils.getChunkIndex(entityChunkX, entityChunkY, entityChunkZ);
+                    if ((visibleChunks[entityChunkIndex >> 6] & 1L << (entityChunkIndex & 63)) == 0) continue;
 
-                renderer.processEntity(entity);
+                    renderer.processEntity(entity);
+                }
             }
+            synchronized (ServerLogic.getParticles()) {
+                for (Particle particle : ServerLogic.getParticles()) {
+                    int particleChunkX = Utils.floor(particle.getPosition().x) >> CHUNK_SIZE_BITS;
+                    int particleChunkY = Utils.floor(particle.getPosition().y) >> CHUNK_SIZE_BITS;
+                    int particleChunkZ = Utils.floor(particle.getPosition().z) >> CHUNK_SIZE_BITS;
 
-            for (Particle particle : GameLogic.getParticles()) {
-                int particleChunkX = Utils.floor(particle.getPosition().x) >> CHUNK_SIZE_BITS;
-                int particleChunkY = Utils.floor(particle.getPosition().y) >> CHUNK_SIZE_BITS;
-                int particleChunkZ = Utils.floor(particle.getPosition().z) >> CHUNK_SIZE_BITS;
+                    int particleChunkIndex = Utils.getChunkIndex(particleChunkX, particleChunkY, particleChunkZ);
+                    if ((visibleChunks[particleChunkIndex >> 6] & 1L << (particleChunkIndex & 63)) == 0) continue;
 
-                int particleChunkIndex = GameLogic.getChunkIndex(particleChunkX, particleChunkY, particleChunkZ);
-                if ((visibleChunks[particleChunkIndex >> 6] & 1L << (particleChunkIndex & 63)) == 0) continue;
-
-                renderer.processParticle(particle);
+                    renderer.processParticle(particle);
+                }
             }
         }
 
@@ -377,7 +380,7 @@ public class Player {
 
     private void renderChunkColumn(int chunkX, int playerChunkY, int chunkZ) {
         for (int chunkY = playerChunkY + RENDER_DISTANCE_Y + 2; chunkY >= playerChunkY - RENDER_DISTANCE_Y - 2; chunkY--) {
-            int chunkIndex = GameLogic.getChunkIndex(chunkX, chunkY, chunkZ);
+            int chunkIndex = Utils.getChunkIndex(chunkX, chunkY, chunkZ);
             if ((visibleChunks[chunkIndex >> 6] & 1L << (chunkIndex & 63)) == 0) continue;
 
             if (Chunk.getWaterModel(chunkIndex) != null) renderer.processWaterModel(Chunk.getWaterModel(chunkIndex));
@@ -395,7 +398,7 @@ public class Player {
         for (int chunkX = playerChunkX - RENDER_DISTANCE_XZ - 2; chunkX <= playerChunkX + RENDER_DISTANCE_XZ + 2; chunkX++)
             for (int chunkZ = playerChunkZ - RENDER_DISTANCE_XZ - 2; chunkZ <= playerChunkZ + RENDER_DISTANCE_XZ + 2; chunkZ++)
                 for (int chunkY = playerChunkY - RENDER_DISTANCE_Y - 2; chunkY <= playerChunkY + RENDER_DISTANCE_Y + 2; chunkY++) {
-                    int chunkIndex = GameLogic.getChunkIndex(chunkX, chunkY, chunkZ);
+                    int chunkIndex = Utils.getChunkIndex(chunkX, chunkY, chunkZ);
                     if ((visibleChunks[chunkIndex >> 6] & 1L << (chunkIndex & 63)) == 0) continue;
 
                     int intersectionType = frustumIntersection.intersectAab(
@@ -411,7 +414,7 @@ public class Player {
 
     private void calculateOcclusionCulling(int playerChunkX, int playerChunkY, int playerChunkZ) {
         Arrays.fill(visibleChunks, 0);
-        int chunkIndex = GameLogic.getChunkIndex(playerChunkX, playerChunkY, playerChunkZ);
+        int chunkIndex = Utils.getChunkIndex(playerChunkX, playerChunkY, playerChunkZ);
 
         visibleChunks[chunkIndex >> 6] = visibleChunks[chunkIndex >> 6] | 1L << (chunkIndex & 63);
 
@@ -427,7 +430,7 @@ public class Player {
 
     private void fillVisibleChunks(int chunkX, int chunkY, int chunkZ, int entrySide, int traveledDirections, int damper) {
         if (damper >= MAX_OCCLUSION_CULLING_DAMPER) return;
-        int chunkIndex = GameLogic.getChunkIndex(chunkX, chunkY, chunkZ);
+        int chunkIndex = Utils.getChunkIndex(chunkX, chunkY, chunkZ);
 
         if ((visibleChunks[chunkIndex >> 6] & 1L << (chunkIndex & 63)) != 0) return;
         visibleChunks[chunkIndex >> 6] |= 1L << (chunkIndex & 63);

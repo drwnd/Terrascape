@@ -8,6 +8,7 @@ public class Constants {
     public static final float Z_FAR = Float.POSITIVE_INFINITY;
     public static final float TIME_SPEED = 0.00008333f;
     public static final float NANOSECONDS_PER_SECOND = 1_000_000_000;
+    public static final long MILLISECONDS_PER_SECOND = 1_000;
     public static final float SPAWN_RADIUS = 150.0f; // More like halfSideLengthOfSpawnSquare
     public static final byte TARGET_TPS = 20;
     public static final int MAX_AMOUNT_OF_TO_RENDER_ENTITIES = 20000; // A thing with GPU memory not so much performance
@@ -32,6 +33,8 @@ public class Constants {
 
     // Change based on computing power
     public static final byte MAX_CHUNKS_TO_BUFFER_PER_FRAME = 15;
+    public static final byte MAX_AMOUNTS_OF_MISSED_TICKS_TO_EXECUTE_PER_TICK = 10;
+    public static final byte PRE_GAME_WORLD_GENERATION_DISTANCE = 1;
 
     public static final byte NUMBER_OF_GENERATION_THREADS = 3;
     public static final byte MAX_OCCLUSION_CULLING_DAMPER = 6;
@@ -437,8 +440,15 @@ public class Constants {
     public static final short MOSSY_POLISHED_SANDSTONE = (short) (108 << BLOCK_TYPE_BITS);
     public static final short MOSSY_RED_SANDSTONE = (short) (109 << BLOCK_TYPE_BITS);
     public static final short MOSSY_RED_POLISHED_SANDSTONE = (short) (110 << BLOCK_TYPE_BITS);
+    public static final short BLACKSTONE = (short) (111 << BLOCK_TYPE_BITS);
+    public static final short BLACKSTONE_BRICKS = (short) (112 << BLOCK_TYPE_BITS);
+    public static final short POLISHED_BLACKSTONE = (short) (113 << BLOCK_TYPE_BITS);
+    public static final short COAL_BLOCK = (short) (114 << BLOCK_TYPE_BITS);
+    public static final short IRON_BLOCK = (short) (115 << BLOCK_TYPE_BITS);
+    public static final short DIAMOND_BLOCK = (short) (116 << BLOCK_TYPE_BITS);
+    public static final short UP_DOWN_BASALT = (short) (117 << BLOCK_TYPE_BITS);
 
-    public static final int AMOUNT_OF_TO_PLACE_STANDARD_BLOCKS = 111;
+    public static final int AMOUNT_OF_TO_PLACE_STANDARD_BLOCKS = 118;
 
     public static final short NORTH_SOUTH_OAK_LOG = (short) (255 << BLOCK_TYPE_BITS);
     public static final short EAST_WEST_OAK_LOG = (short) (254 << BLOCK_TYPE_BITS);
@@ -467,6 +477,8 @@ public class Constants {
     public static final short SOUTH_FURNACE = (short) (231 << BLOCK_TYPE_BITS);
     public static final short WEST_FURNACE = (short) (230 << BLOCK_TYPE_BITS);
     public static final short EAST_FURNACE = (short) (229 << BLOCK_TYPE_BITS);
+    public static final short NORTH_SOUTH_BASALT = (short) (228 << BLOCK_TYPE_BITS);
+    public static final short EAST_WEST_BASALT = (short) (227 << BLOCK_TYPE_BITS);
 
     public static final int AMOUNT_OF_STANDARD_BLOCKS = 256;
 

@@ -10,10 +10,12 @@ public class Launcher {
 
     private static WindowManager window;
     private static SoundManager sound;
+    private static Server server;
 
     public static void main(String[] args) {
         window = new WindowManager(TITLE, 0, 0, true, true);
         sound = new SoundManager();
+        server = new Server();
 
         try {
             EngineManager.init();
@@ -24,10 +26,11 @@ public class Launcher {
 
         } catch (Exception e) {
             e.printStackTrace();
-            System.out.println(e.getClass());
-            System.out.println(e.getMessage());
+            System.err.println(e.getClass());
+            System.err.println(e.getMessage());
 
             FileManager.saveAllModifiedChunks();
+            FileManager.savePlayer();
             FileManager.saveGameState();
         }
     }
@@ -38,5 +41,9 @@ public class Launcher {
 
     public static SoundManager getSound() {
         return sound;
+    }
+
+    public static Server getServer() {
+        return server;
     }
 }

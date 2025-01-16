@@ -1,11 +1,12 @@
 package terrascape.generation;
 
+import terrascape.player.Player;
 import terrascape.server.*;
 import terrascape.dataStorage.Chunk;
 import terrascape.dataStorage.FileManager;
 import terrascape.dataStorage.HeightMap;
 import terrascape.utils.Utils;
-import terrascape.server.GameLogic;
+import terrascape.server.ServerLogic;
 import org.joml.Vector3f;
 import org.joml.Vector4i;
 
@@ -38,7 +39,7 @@ public class ChunkGenerator {
     }
 
     public void start() {
-        Vector3f playerPosition = GameLogic.getPlayer().getCamera().getPosition();
+        Vector3f playerPosition = ServerLogic.getPlayer().getCamera().getPosition();
         int playerX = Utils.floor(playerPosition.x) >> CHUNK_SIZE_BITS;
         int playerY = Utils.floor(playerPosition.y) >> CHUNK_SIZE_BITS;
         int playerZ = Utils.floor(playerPosition.z) >> CHUNK_SIZE_BITS;
@@ -49,8 +50,16 @@ public class ChunkGenerator {
         }
     }
 
+    public void generateSurrounding(Player player) {
+        Vector3f playerPosition = player.getCamera().getPosition();
+        int playerX = Utils.floor(playerPosition.x) >> CHUNK_SIZE_BITS;
+        int playerY = Utils.floor(playerPosition.y) >> CHUNK_SIZE_BITS;
+        int playerZ = Utils.floor(playerPosition.z) >> CHUNK_SIZE_BITS;
+        generationStarter.submitTasks(playerX, playerY, playerZ, NONE, PRE_GAME_WORLD_GENERATION_DISTANCE - 1);
+    }
+
     public void restart(int direction) {
-        Vector3f playerPosition = GameLogic.getPlayer().getCamera().getPosition();
+        Vector3f playerPosition = ServerLogic.getPlayer().getCamera().getPosition();
         int playerX = Utils.floor(playerPosition.x) >> CHUNK_SIZE_BITS;
         int playerY = Utils.floor(playerPosition.y) >> CHUNK_SIZE_BITS;
         int playerZ = Utils.floor(playerPosition.z) >> CHUNK_SIZE_BITS;
@@ -63,10 +72,10 @@ public class ChunkGenerator {
         }
     }
 
-    public void waitUntilHalt() {
-        executor.getQueue().clear();
+    public void waitUntilHalt(boolean haltImmediately) {
+        if (haltImmediately) executor.getQueue().clear();
         executor.shutdown();
-        generationStarter.halt();
+        if (haltImmediately) generationStarter.halt();
 
         try {
             //noinspection ResultOfMethodCallIgnored
@@ -118,7 +127,7 @@ public class ChunkGenerator {
                 heightMapObject = FileManager.getHeightMap(chunkX, chunkZ);
                 if (heightMapObject == null)
                     heightMapObject = new HeightMap(new int[CHUNK_SIZE * CHUNK_SIZE], chunkX, chunkZ);
-                Chunk.setHeightMap(heightMapObject, GameLogic.getHeightMapIndex(chunkX, chunkZ));
+                Chunk.setHeightMap(heightMapObject, Utils.getHeightMapIndex(chunkX, chunkZ));
             }
             int[] intHeightMap = heightMapObject.map;
 
@@ -127,7 +136,7 @@ public class ChunkGenerator {
 
             for (int chunkY = playerY + RENDER_DISTANCE_Y + 1; chunkY >= playerY - RENDER_DISTANCE_Y - 1 && shouldFinish; chunkY--) {
                 try {
-                    final long expectedId = GameLogic.getChunkId(chunkX, chunkY, chunkZ);
+                    final long expectedId = Utils.getChunkId(chunkX, chunkY, chunkZ);
                     Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
 
                     if (chunk == null) {
@@ -138,7 +147,7 @@ public class ChunkGenerator {
                         Chunk.storeChunk(chunk);
                     } else if (chunk.id != expectedId) {
                         System.err.println("found chunk has wrong id");
-                        GameLogic.addToUnloadChunk(chunk);
+                        ServerLogic.addToUnloadChunk(chunk);
 
                         chunk = FileManager.getChunk(expectedId);
                         if (chunk == null) chunk = new Chunk(chunkX, chunkY, chunkZ);
@@ -235,7 +244,7 @@ public class ChunkGenerator {
         private void meshChunk(MeshGenerator meshGenerator, Chunk chunk) {
             meshGenerator.setChunk(chunk);
             meshGenerator.generateMesh();
-            GameLogic.addToBufferChunk(chunk);
+            ServerLogic.addToBufferChunk(chunk);
         }
 
         private void handleSkyLightBottom() {
@@ -298,9 +307,9 @@ public class ChunkGenerator {
                 shouldFinish = true;
 
                 executor.getQueue().clear();
-                GameLogic.unloadChunks(playerX, playerY, playerZ);
+                ServerLogic.unloadChunks(playerX, playerY, playerZ);
                 handleBlockChanges();
-                submitTasks(playerX, playerY, playerZ, travelDirection);
+                submitTasks(playerX, playerY, playerZ, travelDirection, RENDER_DISTANCE_XZ);
             }
         }
 
@@ -329,7 +338,8 @@ public class ChunkGenerator {
                             LightLogic.setBlockLight(x, y, z, blockLightLevel);
                         }
                     } else if (blockEmitsLight) {
-                        if (Chunk.getBlockLightInWorld(x, y, z) > blockLightLevel) LightLogic.dePropagateBlockLight(x, y, z);
+                        if (Chunk.getBlockLightInWorld(x, y, z) > blockLightLevel)
+                            LightLogic.dePropagateBlockLight(x, y, z);
                         LightLogic.setBlockLight(x, y, z, blockLightLevel);
                     } else if (block == AIR) {
                         if (previousBlockEmitsLight) LightLogic.dePropagateBlockLight(x, y, z);
@@ -344,10 +354,10 @@ public class ChunkGenerator {
             }
         }
 
-        private void submitTasks(int playerX, int playerY, int playerZ, int travelDirection) {
+        private void submitTasks(int playerX, int playerY, int playerZ, int travelDirection, int maxDistance) {
             if (shouldFinish && !executor.isShutdown() && columnRequiresGeneration(playerX, playerY, playerZ))
                 executor.submit(new Generator(playerX, playerY, playerZ));
-            for (int ring = 1; ring <= RENDER_DISTANCE_XZ + 1 && shouldFinish; ring++) {
+            for (int ring = 1; ring <= maxDistance + 1 && shouldFinish; ring++) {
 
                 for (int chunkX = -ring; chunkX < ring && shouldFinish && !executor.isShutdown(); chunkX++)
                     if (columnRequiresGeneration(chunkX + playerX, playerY, ring + playerZ))
