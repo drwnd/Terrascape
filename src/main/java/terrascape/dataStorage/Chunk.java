@@ -18,10 +18,10 @@ import java.util.HashMap;
 
 import static terrascape.utils.Constants.*;
 
-public class Chunk {
+public final class Chunk {
 
     public final int X, Y, Z;
-    public final long id;
+    public final long ID;
 
     public Chunk(int x, int y, int z) {
         this.X = x;
@@ -32,7 +32,7 @@ public class Chunk {
         blocks = new short[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
         light = new byte[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
 
-        id = Utils.getChunkId(X, Y, Z);
+        ID = Utils.getChunkId(X, Y, Z);
         index = Utils.getChunkIndex(X, Y, Z);
 
         entityClusters = new LinkedList[64];
@@ -49,7 +49,7 @@ public class Chunk {
         this.entityClusters = entityClusters;
         light = new byte[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
 
-        id = Utils.getChunkId(X, Y, Z);
+        ID = Utils.getChunkId(X, Y, Z);
         index = Utils.getChunkIndex(X, Y, Z);
     }
 
@@ -80,10 +80,10 @@ public class Chunk {
         return occlusionCullingData;
     }
 
-    public static boolean readOcclusionCullingSidePair(int side1, int side2, short occlusionCullingData) {
-        if (side1 == side2) return false;
-        int largerSide = Math.max(side1, side2);
-        int smallerSide = Math.min(side1, side2);
+    public static boolean readOcclusionCullingSidePair(int entrySide, int exitSide, short occlusionCullingData) {
+        if (entrySide == exitSide) return false;
+        int largerSide = Math.max(entrySide, exitSide);
+        int smallerSide = Math.min(entrySide, exitSide);
 
         return (occlusionCullingData & 1 << (largerSide * (largerSide - 1) >> 1) + smallerSide) != 0;
     }
@@ -218,7 +218,7 @@ public class Chunk {
                         storeChunk(chunk);
                         if (!chunk.isGenerated) WorldGeneration.generate(chunk);
 
-                    } else if (chunk.id != expectedId) {
+                    } else if (chunk.ID != expectedId) {
                         System.err.println("surrounding Chunk is not correct");
                         ServerLogic.addToUnloadChunk(chunk);
 
@@ -355,8 +355,8 @@ public class Chunk {
 
         if (chunk == null) {
             long id = Utils.getChunkId(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS);
-            synchronized (toGenerateBlocks) {
-                ArrayList<Integer> toPlaceBlocks = toGenerateBlocks.computeIfAbsent(id, ignored -> new ArrayList<>());
+            synchronized (TO_GENERATE_BLOCKS) {
+                ArrayList<Integer> toPlaceBlocks = TO_GENERATE_BLOCKS.computeIfAbsent(id, ignored -> new ArrayList<>());
                 toPlaceBlocks.add((int) block << 16 | inChunkX << CHUNK_SIZE_BITS * 2 | inChunkY << CHUNK_SIZE_BITS | inChunkZ);
             }
         } else {
@@ -542,8 +542,8 @@ public class Chunk {
     }
 
     public static ArrayList<Integer> removeToGenerateBlocks(long id) {
-        synchronized (toGenerateBlocks) {
-            return toGenerateBlocks.remove(id);
+        synchronized (TO_GENERATE_BLOCKS) {
+            return TO_GENERATE_BLOCKS.remove(id);
         }
     }
 
@@ -651,7 +651,7 @@ public class Chunk {
     private static WaterModel[] waterModels;
     private static short[] occlusionCullingData;
     private static HeightMap[] heightMaps;
-    private static final HashMap<Long, ArrayList<Integer>> toGenerateBlocks = new HashMap<>();
+    private static final HashMap<Long, ArrayList<Integer>> TO_GENERATE_BLOCKS = new HashMap<>();
 
     private short[] blocks;
     private byte[] light;

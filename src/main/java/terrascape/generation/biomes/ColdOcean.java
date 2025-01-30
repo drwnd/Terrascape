@@ -9,7 +9,7 @@ import terrascape.generation.GenerationData;
 import terrascape.generation.OpenSimplex2S;
 import terrascape.utils.Utils;
 
-public class ColdOcean extends Biome {
+public final class ColdOcean extends Biome {
     @Override
     public boolean placeBlock(int inChunkX, int inChunkY, int inChunkZ, GenerationData data) {
         int totalX = data.chunk.X << CHUNK_SIZE_BITS | inChunkX;

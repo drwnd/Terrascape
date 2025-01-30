@@ -6,7 +6,7 @@ import terrascape.player.WindowManager;
 
 import static terrascape.utils.Constants.*;
 
-public class Launcher {
+public final class Launcher {
 
     private static WindowManager window;
     private static SoundManager sound;
@@ -46,4 +46,6 @@ public class Launcher {
     public static Server getServer() {
         return server;
     }
+
+    private Launcher() { }
 }

@@ -5,6 +5,7 @@ in ivec2 data;
 out vec2 fragTextureCoordinates;
 out float blockLight;
 out float skyLight;
+out vec3 normal;
 
 layout (binding = 0, std430) readonly buffer instanceDataBuffer {
     vec4[] instanceData;
@@ -12,6 +13,8 @@ layout (binding = 0, std430) readonly buffer instanceDataBuffer {
 
 uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
+
+const vec3[6] normals = vec3[6](vec3(0, 0, 1), vec3(0, 1, 0), vec3(1, 0, 0), vec3(0, 0, -1), vec3(0, -1, 0), vec3(-1, 0, 0));
 
 int getTextureIndex(int side, int textureCoordinatesAndLightLevel) {
     int topWeight = int(side == 1);
@@ -34,11 +37,13 @@ void main() {
 
     int textureCoordinatesAndLightLevel = floatBitsToInt(instanceData[gl_InstanceID].w);
 
-    int textureIndex = getTextureIndex(data.x & 7, textureCoordinatesAndLightLevel);
+    int side = data.x & 7;
+    int textureIndex = getTextureIndex(side, textureCoordinatesAndLightLevel);
     float u = ((textureIndex & 15) + (data.x >> 3 & 1)) * 0.0625;
     float v = ((textureIndex >> 4 & 15) + (data.x >> 4 & 1)) * 0.0625;
     fragTextureCoordinates = vec2(u, v);
 
     blockLight = (textureCoordinatesAndLightLevel & 15) * 0.0625;
     skyLight = (textureCoordinatesAndLightLevel >> 4 & 15) * 0.0625;
+    normal = normals[side];
 }

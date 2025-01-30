@@ -3,12 +3,19 @@
 in vec2 fragTextureCoordinates;
 in float blockLight;
 in float skyLight;
+in vec3 normal;
 
 out vec4 fragColor;
 
 uniform sampler2D textureSampler;
 uniform float time;
 
+vec3 getSunDirection() {
+    float alpha = time * 3.1415926536;
+    float sinAlpha = sin(alpha);
+    float cosAlpha = cos(alpha);
+    return vec3(cosAlpha - sinAlpha, -0.3, cosAlpha + sinAlpha);
+}
 
 float easeInOutQuart(float x) {
     //x < 0.5 ? 8 * x * x * x * x : 1 - pow(-2 * x + 2, 4) / 2;
@@ -23,8 +30,14 @@ void main() {
     if (color.a == 0.0) {
         discard;
     }
-    float timeLight = max(0.2, easeInOutQuart(abs(time)));
-    float fragLight = max(blockLight + 0.2, max(0.2, skyLight) * timeLight);
+    float absTime = abs(time);
+    vec3 sunDirection = getSunDirection();
+    float sunIllumination = dot(normal, sunDirection) * 0.2 * skyLight * absTime;
+
+    float timeLight = max(0.2, easeInOutQuart(absTime));
+    float nightLight = 0.6 * (1 - absTime) * (1 - absTime);
+    float light = max(blockLight + 0.2, max(0.2, skyLight) * timeLight + sunIllumination);
+    vec3 fragLight = vec3(light, light, max(blockLight + 0.2, max(0.2, skyLight + nightLight) * timeLight + sunIllumination));
 
     fragColor = vec4(color.rgb * fragLight, color.a);
 }

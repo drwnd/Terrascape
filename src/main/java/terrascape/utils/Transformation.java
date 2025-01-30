@@ -5,7 +5,7 @@ import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
-public class Transformation {
+public final class Transformation {
 
     public static Matrix4f createTransformationMatrix(Vector3f position) {
         Matrix4f matrix = new Matrix4f();
@@ -23,4 +23,6 @@ public class Transformation {
         matrix.translate(-pos.x, -pos.y, -pos.z);
         return matrix;
     }
+
+    private Transformation() { }
 }

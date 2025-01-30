@@ -1,11 +1,10 @@
 package terrascape.dataStorage;
 
-public class HeightMap {
+public final class HeightMap {
 
     public final int chunkX;
     public final int chunkZ;
     public final int[] map;
-    private boolean modified;
 
     public HeightMap(int[] map, int chunkX, int chunkZ) {
         this.map = map;
@@ -24,4 +23,6 @@ public class HeightMap {
     public void setModified(boolean modified) {
         this.modified = modified;
     }
+
+    private boolean modified;
 }

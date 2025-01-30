@@ -22,7 +22,7 @@ import java.util.LinkedList;
 import static terrascape.utils.Constants.*;
 import static terrascape.utils.Settings.*;
 
-public class ServerLogic {
+public final class ServerLogic {
 
     public static void init() throws Exception {
 
@@ -30,14 +30,13 @@ public class ServerLogic {
 
         ChunkGenerator generator = new ChunkGenerator();
         generator.generateSurrounding(player);
-        generator.waitUntilHalt(false);
 
         startGenerator();
     }
 
     public static void spawnEntity(Entity entity) {
-        synchronized (toSpawnEntities) {
-            toSpawnEntities.add(entity);
+        synchronized (TO_SPAWN_ENTITIES) {
+            TO_SPAWN_ENTITIES.add(entity);
         }
     }
 
@@ -60,7 +59,7 @@ public class ServerLogic {
             entityCluster.add(entity);
         }
         chunk.setModified();
-        nextGTEntities.add(entity);
+        NEXT_GT_ENTITIES.add(entity);
     }
 
     public static void restartGenerator(int direction) {
@@ -69,7 +68,7 @@ public class ServerLogic {
 
     public static void startGenerator() {
         generator = new ChunkGenerator();
-        generator.start();
+        generator.restart(NONE);
     }
 
     public static void haltChunkGenerator() {
@@ -152,8 +151,8 @@ public class ServerLogic {
         } else Chunk.setOpaqueModel(null, chunkIndex);
 
         if (oldOpaqueModel != null) {
-            ObjectLoader.removeVAO(oldOpaqueModel.getVao());
-            ObjectLoader.removeVBO(oldOpaqueModel.getVbo());
+            ObjectLoader.removeVAO(oldOpaqueModel.vao);
+            ObjectLoader.removeVBO(oldOpaqueModel.vbo);
         }
 
         WaterModel oldWaterModel = Chunk.getWaterModel(chunkIndex);
@@ -163,8 +162,8 @@ public class ServerLogic {
         } else Chunk.setWaterModel(null, chunkIndex);
 
         if (oldWaterModel != null) {
-            ObjectLoader.removeVAO(oldWaterModel.getVao());
-            ObjectLoader.removeVBO(oldWaterModel.getVbo());
+            ObjectLoader.removeVAO(oldWaterModel.vao);
+            ObjectLoader.removeVBO(oldWaterModel.vbo);
         }
 
         chunk.clearMesh();
@@ -193,15 +192,15 @@ public class ServerLogic {
         int playerChunkY = Utils.floor(playerPosition.y) >> CHUNK_SIZE_BITS;
         int playerChunkZ = Utils.floor(playerPosition.z) >> CHUNK_SIZE_BITS;
 
-        synchronized (toSpawnEntities) {
-            for (Entity entity : toSpawnEntities) addEntityToLists(entity);
+        synchronized (TO_SPAWN_ENTITIES) {
+            for (Entity entity : TO_SPAWN_ENTITIES) addEntityToLists(entity);
         }
-        toSpawnEntities.clear();
-        synchronized (entities) {
-            nextGTEntities.addAll(entities);
+        TO_SPAWN_ENTITIES.clear();
+        synchronized (ENTITIES) {
+            NEXT_GT_ENTITIES.addAll(ENTITIES);
         }
 
-        for (Iterator<Entity> iterator = nextGTEntities.iterator(); iterator.hasNext(); ) {
+        for (Iterator<Entity> iterator = NEXT_GT_ENTITIES.iterator(); iterator.hasNext(); ) {
             Entity entity = iterator.next();
             if (entity.isTooFarFromPlayer(playerChunkX, playerChunkY, playerChunkZ)) continue;
 
@@ -268,52 +267,52 @@ public class ServerLogic {
             }
         }
 
-        synchronized (entities) {
-            entities.clear();
-            entities.addAll(nextGTEntities);
-            nextGTEntities.clear();
+        synchronized (ENTITIES) {
+            ENTITIES.clear();
+            ENTITIES.addAll(NEXT_GT_ENTITIES);
+            NEXT_GT_ENTITIES.clear();
         }
     }
 
     private static void updateParticles() {
         long currentTime = System.nanoTime();
-        synchronized (toSpawnParticles) {
-            nextGTParticles.addAll(toSpawnParticles);
+        synchronized (TO_SPAWN_PARTICLES) {
+            NEXT_GT_PARTICLES.addAll(TO_SPAWN_PARTICLES);
         }
-        toSpawnParticles.clear();
-        synchronized (particles) {
-            nextGTParticles.addAll(particles);
+        TO_SPAWN_PARTICLES.clear();
+        synchronized (PARTICLES) {
+            NEXT_GT_PARTICLES.addAll(PARTICLES);
         }
 
-        nextGTParticles.removeIf(particle -> currentTime > particle.getMaxAliveTime() + particle.getEmitTime());
+        NEXT_GT_PARTICLES.removeIf(particle -> currentTime > particle.getMaxAliveTime() + particle.getEmitTime());
 
-        synchronized (particles) {
-            particles.clear();
-            particles.addAll(nextGTParticles);
-            nextGTParticles.clear();
+        synchronized (PARTICLES) {
+            PARTICLES.clear();
+            PARTICLES.addAll(NEXT_GT_PARTICLES);
+            NEXT_GT_PARTICLES.clear();
         }
     }
 
     public static void loadUnloadObjects() {
-        synchronized (toUnloadChunks) {
-            while (!toUnloadChunks.isEmpty()) {
-                Chunk chunk = toUnloadChunks.removeFirst();
+        synchronized (TO_UNLOAD_CHUNKS) {
+            while (!TO_UNLOAD_CHUNKS.isEmpty()) {
+                Chunk chunk = TO_UNLOAD_CHUNKS.removeFirst();
                 deleteChunkMeshBuffers(chunk);
-                Chunk.removeToGenerateBlocks(chunk.id);
+                Chunk.removeToGenerateBlocks(chunk.ID);
                 if (chunk.isModified()) FileManager.saveChunk(chunk);
             }
         }
 
-        synchronized (toUnloadHeightMaps) {
-            while (!toUnloadHeightMaps.isEmpty()) {
-                HeightMap heightMap = toUnloadHeightMaps.removeFirst();
+        synchronized (TO_UNLOAD_HEIGHT_MAPS) {
+            while (!TO_UNLOAD_HEIGHT_MAPS.isEmpty()) {
+                HeightMap heightMap = TO_UNLOAD_HEIGHT_MAPS.removeFirst();
                 FileManager.saveHeightMap(heightMap);
             }
         }
 
-        synchronized (toBufferChunks) {
-            for (int i = 0; i < MAX_CHUNKS_TO_BUFFER_PER_FRAME && !toBufferChunks.isEmpty(); i++) {
-                Chunk chunk = toBufferChunks.removeFirst();
+        synchronized (TO_BUFFER_CHUNKS) {
+            for (int i = 0; i < MAX_CHUNKS_TO_BUFFER_PER_FRAME && !TO_BUFFER_CHUNKS.isEmpty(); i++) {
+                Chunk chunk = TO_BUFFER_CHUNKS.removeFirst();
                 bufferChunkMesh(chunk);
             }
         }
@@ -344,8 +343,8 @@ public class ServerLogic {
             HeightMap.setNull(Utils.getHeightMapIndex(heightMap.chunkX, heightMap.chunkZ));
         }
 
-        synchronized (toBufferChunks) {
-            for (Iterator<Chunk> iterator = toBufferChunks.iterator(); iterator.hasNext(); ) {
+        synchronized (TO_BUFFER_CHUNKS) {
+            for (Iterator<Chunk> iterator = TO_BUFFER_CHUNKS.iterator(); iterator.hasNext(); ) {
                 Chunk chunk = iterator.next();
                 if (Math.abs(chunk.X - playerX) <= RENDER_DISTANCE_XZ + 2 && Math.abs(chunk.Z - playerZ) <= RENDER_DISTANCE_XZ + 2 && Math.abs(chunk.Y - playerY) <= RENDER_DISTANCE_Y + 2)
                     continue;
@@ -367,15 +366,15 @@ public class ServerLogic {
         int chunkIndex = chunk.getIndex();
         OpaqueModel opaqueModel = Chunk.getOpaqueModel(chunkIndex);
         if (opaqueModel != null) {
-            ObjectLoader.removeVAO(opaqueModel.getVao());
-            ObjectLoader.removeVBO(opaqueModel.getVbo());
+            ObjectLoader.removeVAO(opaqueModel.vao);
+            ObjectLoader.removeVBO(opaqueModel.vbo);
             Chunk.setOpaqueModel(null, chunkIndex);
         }
 
         WaterModel waterModel = Chunk.getWaterModel(chunkIndex);
         if (waterModel != null) {
-            ObjectLoader.removeVAO(waterModel.getVao());
-            ObjectLoader.removeVBO(waterModel.getVbo());
+            ObjectLoader.removeVAO(waterModel.vao);
+            ObjectLoader.removeVBO(waterModel.vbo);
             Chunk.setWaterModel(null, chunkIndex);
         }
     }
@@ -396,30 +395,30 @@ public class ServerLogic {
 
     public static void addToBufferChunk(Chunk chunk) {
         if (chunk == null) return;
-        synchronized (toBufferChunks) {
-            if (!toBufferChunks.contains(chunk)) toBufferChunks.add(chunk);
+        synchronized (TO_BUFFER_CHUNKS) {
+            if (!TO_BUFFER_CHUNKS.contains(chunk)) TO_BUFFER_CHUNKS.add(chunk);
         }
     }
 
     public static void addToUnloadChunk(Chunk chunk) {
         if (chunk == null) return;
-        synchronized (toUnloadChunks) {
-            toUnloadChunks.add(chunk);
+        synchronized (TO_UNLOAD_CHUNKS) {
+            TO_UNLOAD_CHUNKS.add(chunk);
         }
     }
 
     public static void addToUnloadHeightMap(HeightMap heightMap) {
         if (heightMap == null) return;
-        synchronized (toUnloadHeightMaps) {
-            if (toUnloadHeightMaps.contains(heightMap)) return;
-            toUnloadHeightMaps.add(heightMap);
+        synchronized (TO_UNLOAD_HEIGHT_MAPS) {
+            if (TO_UNLOAD_HEIGHT_MAPS.contains(heightMap)) return;
+            TO_UNLOAD_HEIGHT_MAPS.add(heightMap);
         }
     }
 
     public static void addParticle(Particle particle) {
         if (particle == null) return;
-        synchronized (toSpawnParticles) {
-            toSpawnParticles.add(particle);
+        synchronized (TO_SPAWN_PARTICLES) {
+            TO_SPAWN_PARTICLES.add(particle);
         }
     }
 
@@ -437,42 +436,45 @@ public class ServerLogic {
     }
 
     public static int getAmountOfToBufferChunks() {
-        return toBufferChunks.size();
+        return TO_BUFFER_CHUNKS.size();
     }
 
     public static int getAmountOfEntities() {
-        synchronized (entities) {
-            return entities.size();
+        synchronized (ENTITIES) {
+            return ENTITIES.size();
         }
     }
 
     public static LinkedList<Entity> getEntities() {
-        return entities;
+        return ENTITIES;
     }
 
     public static LinkedList<Particle> getParticles() {
-        return particles;
+        return PARTICLES;
     }
 
     public static int getAmountOfParticles() {
-        synchronized (particles) {
-            return particles.size();
+        synchronized (PARTICLES) {
+            return PARTICLES.size();
         }
     }
 
-    private static final LinkedList<Chunk> toBufferChunks = new LinkedList<>();
-    private static final LinkedList<Chunk> toUnloadChunks = new LinkedList<>();
-    private static final LinkedList<HeightMap> toUnloadHeightMaps = new LinkedList<>();
+    private static final LinkedList<Chunk> TO_BUFFER_CHUNKS = new LinkedList<>();
+    private static final LinkedList<Chunk> TO_UNLOAD_CHUNKS = new LinkedList<>();
+    private static final LinkedList<HeightMap> TO_UNLOAD_HEIGHT_MAPS = new LinkedList<>();
     private static ChunkGenerator generator;
 
     private static Player player;
-    private static final LinkedList<Entity> entities = new LinkedList<>();
-    private static final LinkedList<Entity> nextGTEntities = new LinkedList<>();
-    private static final ArrayList<Entity> toSpawnEntities = new ArrayList<>();
+    private static final LinkedList<Entity> ENTITIES = new LinkedList<>();
+    private static final LinkedList<Entity> NEXT_GT_ENTITIES = new LinkedList<>();
+    private static final ArrayList<Entity> TO_SPAWN_ENTITIES = new ArrayList<>();
 
-    private static final LinkedList<Particle> particles = new LinkedList<>();
-    private static final LinkedList<Particle> nextGTParticles = new LinkedList<>();
-    private static final LinkedList<Particle> toSpawnParticles = new LinkedList<>();
+    private static final LinkedList<Particle> PARTICLES = new LinkedList<>();
+    private static final LinkedList<Particle> NEXT_GT_PARTICLES = new LinkedList<>();
+    private static final LinkedList<Particle> TO_SPAWN_PARTICLES = new LinkedList<>();
 
     private static byte generatorRestartScheduled = 0;
+
+    private ServerLogic() {
+    }
 }

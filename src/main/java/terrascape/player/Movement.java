@@ -13,7 +13,7 @@ import terrascape.utils.Utils;
 import static terrascape.utils.Constants.*;
 import static terrascape.utils.Settings.*;
 
-public class Movement {
+public final class Movement {
 
     // Movement state indices
     public static final int WALKING = 0;
@@ -25,7 +25,7 @@ public class Movement {
     public static final float HALF_PLAYER_WIDTH = 0.23f;
     public static final float PLAYER_HEAD_OFFSET = 0.08f;
     public static final float[] PLAYER_FEET_OFFSETS = new float[]{1.65f, 1.4f, 0.4f, 0.4f};
-    
+
     public Movement(Player player) {
         this.player = player;
         window = Launcher.getWindow();
@@ -33,7 +33,7 @@ public class Movement {
         camera = player.getCamera();
         velocity = new Vector3f();
     }
-    
+
     public void move() {
         Vector3f position = camera.getPosition();
         boolean isInWater = collidesWithWater(position.x, position.y, position.z, movementState);
@@ -50,7 +50,7 @@ public class Movement {
         addVelocityChange(velocity);
     }
 
-    protected void handleInputMovementStateChange(Vector3f position) {
+    private void handleInputMovementStateChange(Vector3f position) {
         if (player.isInInventory()) return;
 
         if (window.isKeyPressed(SNEAK_BUTTON)) {
@@ -87,7 +87,7 @@ public class Movement {
             movementState = CRAWLING;
     }
 
-    protected void handleIsFlyingChange() {
+    private void handleIsFlyingChange() {
         long currentTime = System.nanoTime();
         if (window.isKeyPressed(JUMP_BUTTON)) {
             if (!spaceButtonPressed) {
@@ -99,7 +99,7 @@ public class Movement {
 
     }
 
-    protected void handleInputFling(Vector3f velocity) {
+    private void handleInputFling(Vector3f velocity) {
         if (player.isInInventory()) {
             this.velocity.mul(FLY_FRICTION);
             return;
@@ -131,7 +131,7 @@ public class Movement {
         this.velocity.mul(FLY_FRICTION);
     }
 
-    protected void handleInputSwimming(Vector3f velocity) {
+    private void handleInputSwimming(Vector3f velocity) {
         this.velocity.mul(WATER_FRICTION);
 
         if (player.isInInventory()) {
@@ -172,16 +172,18 @@ public class Movement {
         }
 
         long currentTime = System.nanoTime();
-        if (window.isKeyPressed(JUMP_BUTTON)) if (isGrounded) {
-            this.velocity.y = JUMP_STRENGTH;
-            isGrounded = false;
-            spaceButtonPressTime = currentTime;
-        } else velocity.y += SWIM_STRENGTH * 0.65f;
+        if (window.isKeyPressed(JUMP_BUTTON)) {
+            if (isGrounded) {
+                this.velocity.y = JUMP_STRENGTH;
+                isGrounded = false;
+                spaceButtonPressTime = currentTime;
+            } else velocity.y += SWIM_STRENGTH * 0.65f;
+        }
 
         if (window.isKeyPressed(SNEAK_BUTTON)) velocity.y -= SWIM_STRENGTH * 0.65f;
     }
 
-    protected void handleInputWalking(Vector3f velocity) {
+    private void handleInputWalking(Vector3f velocity) {
         if (player.isInInventory()) {
             float friction = isGrounded ? GROUND_FRICTION : AIR_FRICTION;
             applyGravity();
@@ -233,7 +235,7 @@ public class Movement {
         }
     }
 
-    protected void normalizeVelocity(Vector3f velocity) {
+    private void normalizeVelocity(Vector3f velocity) {
         float maxSpeed = Math.max(Math.abs(velocity.x), Math.abs(velocity.z));
         float normalizer = maxSpeed / (float) Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
         if (isGrounded && !Float.isNaN(normalizer) && Float.isFinite(normalizer)) {
@@ -242,7 +244,7 @@ public class Movement {
         }
     }
 
-    protected void addVelocityChange(Vector3f velocity) {
+    void addVelocityChange(Vector3f velocity) {
         Vector2f rotation = camera.getRotation();
 
         if (velocity.z != 0) {
@@ -256,11 +258,11 @@ public class Movement {
         this.velocity.y += velocity.y;
     }
 
-    protected void applyGravity() {
+    void applyGravity() {
         velocity.y -= GRAVITY_ACCELERATION;
     }
 
-    protected void moveCameraHandleCollisions(float x, float y, float z) {
+    void moveCameraHandleCollisions(float x, float y, float z) {
         Vector3f position = new Vector3f(camera.getPosition());
         Vector3f oldPosition = new Vector3f(position);
         position.add(x, y, z);
@@ -343,7 +345,7 @@ public class Movement {
         camera.setPosition(position.x, position.y, position.z);
     }
 
-    protected boolean collidesWithBlock(float x, float y, float z, int movementState) {
+    boolean collidesWithBlock(float x, float y, float z, int movementState) {
         if (!player.hasCollision()) return false;
 
         final float minX = x - HALF_PLAYER_WIDTH;
@@ -365,7 +367,7 @@ public class Movement {
         return false;
     }
 
-    protected boolean collidesWithWater(float x, float y, float z, int movementState) {
+    boolean collidesWithWater(float x, float y, float z, int movementState) {
         if (!player.hasCollision()) return false;
 
         final float minX = x - HALF_PLAYER_WIDTH;
@@ -382,7 +384,7 @@ public class Movement {
         return false;
     }
 
-    protected float getRequiredStepHeight(float x, float y, float z, int movementState) {
+    float getRequiredStepHeight(float x, float y, float z, int movementState) {
         final float minX = x - HALF_PLAYER_WIDTH;
         final float maxX = x + HALF_PLAYER_WIDTH;
         final float minY = y - PLAYER_FEET_OFFSETS[movementState];
@@ -463,7 +465,7 @@ public class Movement {
     }
 
     public void setVelocity(float x, float y, float z) {
-        velocity.set(x, y , z);
+        velocity.set(x, y, z);
     }
 
     private long spaceButtonPressTime;
@@ -473,7 +475,7 @@ public class Movement {
     private boolean isGrounded = false;
     private boolean isFlying;
     private boolean touchingWater;
-    
+
     private final WindowManager window;
     private final SoundManager sound;
     private final Player player;

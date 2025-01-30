@@ -28,7 +28,9 @@ import java.nio.ShortBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
-public class ObjectLoader {
+import static terrascape.utils.Constants.*;
+
+public final class ObjectLoader {
 
     public static OpaqueModel loadOpaqueModel(int[] vertices, Vector3i position, int[] vertexCounts) {
         int vao = createVAO();
@@ -44,7 +46,7 @@ public class ObjectLoader {
         return new WaterModel(vao, vertices.length, position, vbo);
     }
 
-    public static long loadVAO_VBO(int attributeNo, int size, int[] vertices) {
+    public static long loadVoaAndVbo(int attributeNo, int size, int[] vertices) {
         int vao = createVAO();
         int vbo = storeDateInAttributeList(attributeNo, size, vertices);
         unbind();
@@ -80,7 +82,7 @@ public class ObjectLoader {
     public static int loadTextRow() {
         int vao = createVAO();
 
-        int[] textData = new int[256];
+        int[] textData = new int[MAX_TEXT_LENGTH * 4];
         for (int i = 0; i < textData.length; i += 4) {
             textData[i] = i >> 2;
             textData[i + 1] = i >> 2 | 128;
@@ -214,12 +216,9 @@ public class ObjectLoader {
         GL30.glDeleteBuffers(vbo);
     }
 
-//    public static void removeTexture(int texture) {
-//        GL15.glBindTexture(GL15.GL_TEXTURE_2D, texture);
-//        GL11.glDeleteTextures(texture);
-//    }
-
     public static void cleanUp() {
 
     }
+
+    private ObjectLoader() { }
 }

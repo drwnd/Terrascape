@@ -6,7 +6,7 @@ import terrascape.generation.GenerationData;
 import static terrascape.generation.WorldGeneration.*;
 import static terrascape.utils.Constants.*;
 
-public class SnowySpruceForest extends Biome {
+public final class SnowySpruceForest extends Biome {
     @Override
     public boolean placeBlock(int inChunkX, int inChunkY, int inChunkZ, GenerationData data) {
         int totalY = data.chunk.Y << CHUNK_SIZE_BITS | inChunkY;

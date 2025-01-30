@@ -7,7 +7,7 @@ import static terrascape.generation.WorldGeneration.*;
 import static terrascape.utils.Constants.*;
 import static terrascape.utils.Constants.DIRT;
 
-public class DarkOakForest extends Biome {
+public final class DarkOakForest extends Biome {
     @Override
     public boolean placeBlock(int inChunkX, int inChunkY, int inChunkZ, GenerationData data) {
         int totalY = data.chunk.Y << CHUNK_SIZE_BITS | inChunkY;

@@ -8,7 +8,7 @@ import static terrascape.utils.Constants.*;
 import static terrascape.utils.Constants.RED_SAND;
 import static terrascape.utils.Settings.SEED;
 
-public class CorrodedMesa extends Biome {
+public final class CorrodedMesa extends Biome {
     @Override
     public boolean placeBlock(int inChunkX, int inChunkY, int inChunkZ, GenerationData data) {
         int totalY = data.chunk.Y << CHUNK_SIZE_BITS | inChunkY;

@@ -11,15 +11,6 @@ import static terrascape.utils.Settings.*;
 
 public record Target(Vector3i position, Vector3f inBlockPosition, int side, short block) {
 
-    private static final byte[][] VINE_AABBS = new byte[][]{
-            {0, 0, 0, 0, 15, 0},
-            {0, 0, 15, 0, 0, 0},
-            {15, 0, 0, 0, 0, 0},
-            {0, 0, 0, 0, 0, -15},
-            {0, 0, 0, -15, 0, 0},
-            {0, -15, 0, 0, 0, 0}};
-
-
     public static Target getTarget(Vector3f origin, Vector3f dir) {
 
         int x = Utils.floor(origin.x);
@@ -157,4 +148,12 @@ public record Target(Vector3i position, Vector3f inBlockPosition, int side, shor
             }
         }
     }
+
+    private static final byte[][] VINE_AABBS = new byte[][]{
+            {0, 0, 0, 0, 15, 0},
+            {0, 0, 15, 0, 0, 0},
+            {15, 0, 0, 0, 0, 0},
+            {0, 0, 0, 0, 0, -15},
+            {0, 0, 0, -15, 0, 0},
+            {0, -15, 0, 0, 0, 0}};
 }

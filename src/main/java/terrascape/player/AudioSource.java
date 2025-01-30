@@ -4,9 +4,7 @@ import org.lwjgl.openal.AL10;
 
 import static terrascape.utils.Settings.*;
 
-public class AudioSource {
-
-    private final int id;
+public final class AudioSource {
 
     public AudioSource() {
         id = AL10.alGenSources();
@@ -38,4 +36,6 @@ public class AudioSource {
     public void delete() {
         AL10.alDeleteSources(id);
     }
+
+    private final int id;
 }

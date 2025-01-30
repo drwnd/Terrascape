@@ -8,7 +8,7 @@ import org.joml.Vector3f;
 
 import static terrascape.utils.Constants.*;
 
-public class Block {
+public final class Block {
 
     public static final byte[][] NORMALS = {{0, 0, 1}, {0, 1, 0}, {1, 0, 0}, {0, 0, -1}, {0, -1, 0}, {-1, 0, 0}};
     public static final byte[][] CORNERS_OF_SIDE = {{1, 0, 5, 4}, {2, 0, 3, 1}, {3, 1, 7, 5}, {2, 3, 6, 7}, {6, 4, 7, 5}, {2, 0, 6, 4}};
@@ -323,8 +323,8 @@ public class Block {
             case UP_DOWN_BLACK_WOOD_LOG, NORTH_SOUTH_BLACK_WOOD_LOG, EAST_WEST_BLACK_WOOD_LOG -> UP_DOWN_BLACK_WOOD_LOG;
             case UP_DOWN_STRIPPED_BLACK_WOOD_LOG, NORTH_SOUTH_STRIPPED_BLACK_WOOD_LOG,
                  EAST_WEST_STRIPPED_BLACK_WOOD_LOG -> UP_DOWN_STRIPPED_BLACK_WOOD_LOG;
-
             case NORTH_FURNACE, SOUTH_FURNACE, WEST_FURNACE, EAST_FURNACE -> NORTH_FURNACE;
+            case UP_DOWN_BASALT, NORTH_SOUTH_BASALT, EAST_WEST_BASALT -> UP_DOWN_BASALT;
 
             default -> block & BASE_BLOCK_MASK;
         };
@@ -644,18 +644,6 @@ public class Block {
         };
     }
 
-    public static int minMaxXYZToSide(int minMaxXYZ) {
-        return switch (minMaxXYZ) {
-            case MAX_Z -> NORTH;
-            case MIN_Z -> SOUTH;
-            case MAX_X -> WEST;
-            case MIN_X -> EAST;
-            case MAX_Y -> TOP;
-            case MIN_Y -> BOTTOM;
-            default -> -1;
-        };
-    }
-
     public static boolean isSupported(short block, int x, int y, int z) {
         int properties = getBlockProperties(block);
         if ((properties & REQUIRES_BOTTOM_SUPPORT) != 0) {
@@ -765,10 +753,10 @@ public class Block {
 
         for (int upDownFenceType = UP_DOWN_FENCE; upDownFenceType <= UP_DOWN_FENCE_NORTH_WEST_SOUTH_EAST; upDownFenceType++)
             BLOCK_TYPE_DATA[upDownFenceType] = SMART_BLOCK_TYPE;
-        for (int EASTWESTFenceType = EAST_WEST_FENCE; EASTWESTFenceType <= EAST_WEST_FENCE_NORTH_UP_SOUTH_DOWN; EASTWESTFenceType++)
-            BLOCK_TYPE_DATA[EASTWESTFenceType] = SMART_BLOCK_TYPE;
-        for (int NORTHSOUTHFenceType = NORTH_SOUTH_FENCE; NORTHSOUTHFenceType <= NORTH_SOUTH_FENCE_UP_WEST_DOWN_EAST; NORTHSOUTHFenceType++)
-            BLOCK_TYPE_DATA[NORTHSOUTHFenceType] = SMART_BLOCK_TYPE;
+        for (int eastWestFence = EAST_WEST_FENCE; eastWestFence <= EAST_WEST_FENCE_NORTH_UP_SOUTH_DOWN; eastWestFence++)
+            BLOCK_TYPE_DATA[eastWestFence] = SMART_BLOCK_TYPE;
+        for (int northSouthFence = NORTH_SOUTH_FENCE; northSouthFence <= NORTH_SOUTH_FENCE_UP_WEST_DOWN_EAST; northSouthFence++)
+            BLOCK_TYPE_DATA[northSouthFence] = SMART_BLOCK_TYPE;
 
         for (int blockType = 0; blockType < TOTAL_AMOUNT_OF_BLOCK_TYPES; blockType++) {
             byte[] XYZSubData = BLOCK_TYPE_XYZ_SUB_DATA[blockType];
@@ -1158,12 +1146,17 @@ public class Block {
         setStandardBlockData(MOSSY_RED_SANDSTONE_BRICKS, 0, sound.digStone, sound.stepStone, (byte) 0xF3);
         setStandardBlockData(SANDSTONE_BRICKS, 0, sound.digStone, sound.stepStone, (byte) 0xB6);
         setStandardBlockData(RED_SANDSTONE_BRICKS, 0, sound.digStone, sound.stepStone, (byte) 0xBF);
-        setStandardBlockData(BLACKSTONE, 0, sound.digStone, sound.stepStone, (byte) 0x73);
+        setStandardBlockData(COBBLED_BLACKSTONE, 0, sound.digStone, sound.stepStone, (byte) 0x73);
         setStandardBlockData(BLACKSTONE_BRICKS, 0, sound.digStone, sound.stepStone, (byte) 0x74);
         setStandardBlockData(POLISHED_BLACKSTONE, 0, sound.digStone, sound.stepStone, (byte) 0x75);
         setStandardBlockData(COAL_BLOCK, 0, sound.digStone, sound.stepStone, (byte) 0x99);
         setStandardBlockData(IRON_BLOCK, 0, sound.digStone, sound.stepStone, (byte) 0x9A);
         setStandardBlockData(DIAMOND_BLOCK, 0, sound.digStone, sound.stepStone, (byte) 0x9B);
+        setStandardBlockData(MOSSY_COBBLED_BLACKSTONE, 0, sound.digStone, sound.stepStone, (byte) 0xF4);
+        setStandardBlockData(MOSSY_BLACKSTONE_BRICKS, 0, sound.digStone, sound.stepStone, (byte) (0xF5));
+        setStandardBlockData(MOSSY_POLISHED_BLACKSTONE, 0, sound.digStone, sound.stepStone, (byte) 0x9C);
+        setStandardBlockData(BLACKSTONE, 0, sound.digStone, sound.stepStone, (byte) 0x76);
+        setStandardBlockData(MOSSY_BLACKSTONE, 0, sound.digStone, sound.stepStone, (byte) 0x77);
 
         setStandardBlockData(NORTH_FURNACE, INTERACTABLE, sound.digStone, sound.stepStone, new byte[]{(byte) -104, (byte) -121, (byte) -105, (byte) -105, (byte) -89, (byte) -105});
         setStandardBlockData(SOUTH_FURNACE, INTERACTABLE, sound.digStone, sound.stepStone, new byte[]{(byte) -105, (byte) -121, (byte) -105, (byte) -104, (byte) -89, (byte) -105});
@@ -1199,7 +1192,9 @@ public class Block {
 
     private static final long[][] BLOCK_TYPE_OCCLUSION_DATA = new long[TOTAL_AMOUNT_OF_BLOCK_TYPES][0];
     private static final byte[] BLOCK_TYPE_DATA = new byte[TOTAL_AMOUNT_OF_BLOCK_TYPES];
-
     private static final byte[][] BLOCK_TYPE_XYZ_SUB_DATA = new byte[TOTAL_AMOUNT_OF_BLOCK_TYPES][0];
     private static final byte[][] BLOCK_TYPE_UV_SUB_DATA = new byte[TOTAL_AMOUNT_OF_BLOCK_TYPES][0];
+
+    private Block() {
+    }
 }

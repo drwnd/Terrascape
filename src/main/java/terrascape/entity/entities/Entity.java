@@ -14,7 +14,7 @@ import static terrascape.utils.Settings.*;
 
 public abstract class Entity {
 
-    public final int BASE_BYTE_SIZE = 25;
+    public static final int BASE_BYTE_SIZE = 25;
     public static final byte FALLING_BLOCK_ENTITY_TYPE = 1;
     public static final byte TNT_ENTITY_TYPE = 2;
     public static int vao, vbo;
@@ -25,9 +25,9 @@ public abstract class Entity {
     protected boolean isDead = false;
 
     public static void initAll() {
-        long vao_vbo = ObjectLoader.loadVAO_VBO(0, 2, getEntityVertices());
-        vao = (int) (vao_vbo >> 32 & 0xFFFFFFFFL);
-        vbo = (int) (vao_vbo & 0xFFFFFFFFL);
+        long vaoAndVbo = ObjectLoader.loadVoaAndVbo(0, 2, getEntityVertices());
+        vao = (int) (vaoAndVbo >> 32 & 0xFFFFFFFFL);
+        vbo = (int) (vaoAndVbo & 0xFFFFFFFFL);
 
     }
 

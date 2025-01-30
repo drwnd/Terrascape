@@ -4,14 +4,13 @@ import terrascape.player.ObjectLoader;
 
 public record Texture(int id) {
 
-    public static final Texture atlas;
+    public static final Texture ATLAS;
 
     static {
         try {
-            atlas = new Texture(ObjectLoader.loadTexture("textures/atlas256.png"));
+            ATLAS = new Texture(ObjectLoader.loadTexture("textures/atlas256.png"));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
-
 }

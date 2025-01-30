@@ -6,7 +6,7 @@ import terrascape.utils.Utils;
 import static terrascape.generation.WorldGeneration.*;
 import static terrascape.utils.Constants.CHUNK_SIZE_BITS;
 
-public class DryMountain extends Biome {
+public final class DryMountain extends Biome {
     @Override
     public boolean placeBlock(int inChunkX, int inChunkY, int inChunkZ, GenerationData data) {
         int totalX = data.chunk.X << CHUNK_SIZE_BITS | inChunkX;

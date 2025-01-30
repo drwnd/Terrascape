@@ -7,7 +7,7 @@ import static terrascape.generation.WorldGeneration.*;
 import static terrascape.utils.Constants.*;
 import static terrascape.utils.Constants.DIRT;
 
-public class RedwoodForest extends Biome {
+public final class RedwoodForest extends Biome {
     @Override
     public boolean placeBlock(int inChunkX, int inChunkY, int inChunkZ, GenerationData data) {
         int totalX = data.chunk.X << CHUNK_SIZE_BITS | inChunkX;

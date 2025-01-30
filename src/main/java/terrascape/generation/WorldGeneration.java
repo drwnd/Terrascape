@@ -12,7 +12,7 @@ import java.util.Random;
 import static terrascape.utils.Constants.*;
 import static terrascape.utils.Settings.*;
 
-public class WorldGeneration {
+public final class WorldGeneration {
 
     public static final int NO_CAVE = 0;
     public static final int WATER_LEVEL = 0;
@@ -37,26 +37,26 @@ public class WorldGeneration {
     public static final double SPARSE_FLOWER_THRESHOLD = 0.01;
 
     public static void init() {
-        biomes[DESERT] = new Desert();
-        biomes[WASTELAND] = new Wasteland();
-        biomes[DARK_OAK_FOREST] = new DarkOakForest();
-        biomes[SNOWY_SPRUCE_FOREST] = new SnowySpruceForest();
-        biomes[SNOWY_PLAINS] = new SnowyPlains();
-        biomes[SPRUCE_FOREST] = new SpruceForest();
-        biomes[PLAINS] = new Plains();
-        biomes[OAK_FOREST] = new OakForest();
-        biomes[WARM_OCEAN] = new WarmOcean();
-        biomes[COLD_OCEAN] = new ColdOcean();
-        biomes[OCEAN] = new Ocean();
-        biomes[DRY_MOUNTAIN] = new DryMountain();
-        biomes[SNOWY_MOUNTAIN] = new SnowyMountain();
-        biomes[MOUNTAIN] = new Mountain();
-        biomes[MESA] = new Mesa();
-        biomes[CORRODED_MESA] = new CorrodedMesa();
-        biomes[BEACH] = new Beach();
-        biomes[PINE_FOREST] = new PineForest();
-        biomes[REDWOOD_FOREST] = new RedwoodForest();
-        biomes[BLACK_WOOD_FOREST] = new BlackWoodForest();
+        BIOMES[DESERT] = new Desert();
+        BIOMES[WASTELAND] = new Wasteland();
+        BIOMES[DARK_OAK_FOREST] = new DarkOakForest();
+        BIOMES[SNOWY_SPRUCE_FOREST] = new SnowySpruceForest();
+        BIOMES[SNOWY_PLAINS] = new SnowyPlains();
+        BIOMES[SPRUCE_FOREST] = new SpruceForest();
+        BIOMES[PLAINS] = new Plains();
+        BIOMES[OAK_FOREST] = new OakForest();
+        BIOMES[WARM_OCEAN] = new WarmOcean();
+        BIOMES[COLD_OCEAN] = new ColdOcean();
+        BIOMES[OCEAN] = new Ocean();
+        BIOMES[DRY_MOUNTAIN] = new DryMountain();
+        BIOMES[SNOWY_MOUNTAIN] = new SnowyMountain();
+        BIOMES[MOUNTAIN] = new Mountain();
+        BIOMES[MESA] = new Mesa();
+        BIOMES[CORRODED_MESA] = new CorrodedMesa();
+        BIOMES[BEACH] = new Beach();
+        BIOMES[PINE_FOREST] = new PineForest();
+        BIOMES[REDWOOD_FOREST] = new RedwoodForest();
+        BIOMES[BLACK_WOOD_FOREST] = new BlackWoodForest();
     }
 
     public static void generateSurroundingChunkStructureBlocks(Chunk chunk) {
@@ -71,12 +71,12 @@ public class WorldGeneration {
             for (int inChunkZ = 0; inChunkZ < CHUNK_SIZE; inChunkZ++) {
                 generationData.set(inChunkX, inChunkZ);
                 int biomeIndex = getBiome(generationData);
-                generationData.setBiome(inChunkX, inChunkZ, biomes[biomeIndex]);
+                generationData.setBiome(inChunkX, inChunkZ, BIOMES[biomeIndex]);
 
                 for (int inChunkY = 0; inChunkY < CHUNK_SIZE; inChunkY++) {
                     int totalY = chunk.getWorldCoordinate().y | inChunkY;
                     if (totalY < generationData.height) continue;
-                    Biome biome = biomes[biomeIndex];
+                    Biome biome = BIOMES[biomeIndex];
                     biome.genSurroundingStructures(inChunkX, inChunkY, inChunkZ, generationData);
                 }
             }
@@ -84,7 +84,7 @@ public class WorldGeneration {
 
     public static void generate(Chunk chunk) {
         if (chunk.isGenerated()) {
-            Chunk.removeToGenerateBlocks(chunk.id);
+            Chunk.removeToGenerateBlocks(chunk.ID);
             return;
         }
         generate(chunk, new GenerationData(chunk.X, chunk.Z));
@@ -92,7 +92,7 @@ public class WorldGeneration {
 
     public static void generate(Chunk chunk, GenerationData generationData) {
         if (chunk.isGenerated()) {
-            Chunk.removeToGenerateBlocks(chunk.id);
+            Chunk.removeToGenerateBlocks(chunk.ID);
             return;
         }
         chunk.setGenerated();
@@ -103,7 +103,7 @@ public class WorldGeneration {
             for (int inChunkZ = 0; inChunkZ < CHUNK_SIZE; inChunkZ++) {
 
                 generationData.set(inChunkX, inChunkZ);
-                Biome biome = biomes[getBiome(generationData)];
+                Biome biome = BIOMES[getBiome(generationData)];
                 generationData.setBiome(inChunkX, inChunkZ, biome);
 
                 generateBiome(biome, inChunkX, inChunkZ, generationData);
@@ -111,7 +111,7 @@ public class WorldGeneration {
 
         genOres(generationData);
 
-        ArrayList<Integer> toGenerateBlocks = Chunk.removeToGenerateBlocks(chunk.id);
+        ArrayList<Integer> toGenerateBlocks = Chunk.removeToGenerateBlocks(chunk.ID);
         if (toGenerateBlocks != null) {
             for (int data : toGenerateBlocks) {
                 short block = (short) (data >> 16 & 0xFFFF);
@@ -390,7 +390,7 @@ public class WorldGeneration {
 
 
     private static void genOres(GenerationData generationData) {
-        Random random = new Random(generationData.chunk.id);
+        Random random = new Random(generationData.chunk.ID);
         genCoalOres(generationData, random);
         genIronOres(generationData, random);
         genDiamondOres(generationData, random);
@@ -454,8 +454,11 @@ public class WorldGeneration {
 
     private static short getGeneratingStoneType(int x, int y, int z) {
         double noise = OpenSimplex2S.noise3_ImproveXY(SEED ^ 0x1FCA4F81678D9EFEL, x * STONE_TYPE_FREQUENCY, y * STONE_TYPE_FREQUENCY, z * STONE_TYPE_FREQUENCY);
+        double dither = ((x * 0x8D2DD55FDBC32B66L) ^ (y * 0xACE124B15269BF3EL) ^ (z * 0x70A0A3D560EE6D5CL)) * 5.0842021724855044E-21;
+        noise += dither;
         if (Math.abs(noise) < ANDESITE_THRESHOLD) return ANDESITE;
         if (noise > SLATE_THRESHOLD) return SLATE;
+        if (noise < BLACKSTONE_THRESHOLD) return BLACKSTONE;
         return STONE;
     }
 
@@ -669,6 +672,7 @@ public class WorldGeneration {
     private static final double STONE_TYPE_FREQUENCY = 0.02;
     private static final double ANDESITE_THRESHOLD = 0.1;
     private static final double SLATE_THRESHOLD = 0.7;
+    private static final double BLACKSTONE_THRESHOLD = -0.7;
 
     private static final double MUD_TYPE_FREQUENCY = 0.04;
     private static final double GRAVEL_THRESHOLD = 0.1;
@@ -706,5 +710,7 @@ public class WorldGeneration {
     private static final int REDWOOD_FOREST = 18;
     private static final int BLACK_WOOD_FOREST = 19;
 
-    private static final Biome[] biomes = new Biome[20];
+    private static final Biome[] BIOMES = new Biome[20];
+
+    private WorldGeneration() { }
 }

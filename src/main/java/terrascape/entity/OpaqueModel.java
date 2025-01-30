@@ -6,15 +6,21 @@ import org.lwjgl.PointerBuffer;
 
 import static terrascape.utils.Constants.*;
 
-public class OpaqueModel {
+public final class OpaqueModel {
 
     public static final int FOLIAGE_VERTEX_COUNT_OFFSET = 6;
     public static final int DECORATION_VERTEX_COUNT_INDEX = 12;
 
-    public OpaqueModel(int vao, int[] vertexCounts, Vector3i pos, int vbo) {
+    public final int vao, vbo;
+    public final int X, Y, Z;
+
+
+    public OpaqueModel(int vao, int[] vertexCounts, Vector3i position, int vbo) {
         this.vao = vao;
         this.vertexCounts = vertexCounts;
-        this.position = pos;
+        X = position.x;
+        Y = position.y;
+        Z = position.z;
         this.vbo = vbo;
         toRenderVertexCounts = new int[13];
         indices = PointerBuffer.allocateDirect(vertexCounts.length);
@@ -26,14 +32,10 @@ public class OpaqueModel {
         indices.flip();
     }
 
-    public int getVao() {
-        return vao;
-    }
-
     public int[] getLowDetailVertexCounts(int playerChunkX, int playerChunkY, int playerChunkZ) {
-        int modelChunkX = position.x >> CHUNK_SIZE_BITS;
-        int modelChunkY = position.y >> CHUNK_SIZE_BITS;
-        int modelChunkZ = position.z >> CHUNK_SIZE_BITS;
+        int modelChunkX = X >> CHUNK_SIZE_BITS;
+        int modelChunkY = Y >> CHUNK_SIZE_BITS;
+        int modelChunkZ = Z >> CHUNK_SIZE_BITS;
 
         if (playerChunkX >= modelChunkX) {
             toRenderVertexCounts[WEST] = vertexCounts[WEST];
@@ -83,9 +85,9 @@ public class OpaqueModel {
     }
 
     public int[] getSolidOnlyVertexCounts(int playerChunkX, int playerChunkY, int playerChunkZ) {
-        int modelChunkX = position.x >> CHUNK_SIZE_BITS;
-        int modelChunkY = position.y >> CHUNK_SIZE_BITS;
-        int modelChunkZ = position.z >> CHUNK_SIZE_BITS;
+        int modelChunkX = X >> CHUNK_SIZE_BITS;
+        int modelChunkY = Y >> CHUNK_SIZE_BITS;
+        int modelChunkZ = Z >> CHUNK_SIZE_BITS;
 
         toRenderVertexCounts[WEST] = playerChunkX >= modelChunkX ? vertexCounts[WEST] : 0;
         toRenderVertexCounts[EAST] = playerChunkX <= modelChunkX ? vertexCounts[EAST] : 0;
@@ -106,9 +108,9 @@ public class OpaqueModel {
     }
 
     public int getDistanceFromPlayer(int playerChunkX, int playerChunkY, int playerChunkZ) {
-        int modelChunkX = position.x >> CHUNK_SIZE_BITS;
-        int modelChunkY = position.y >> CHUNK_SIZE_BITS;
-        int modelChunkZ = position.z >> CHUNK_SIZE_BITS;
+        int modelChunkX = X >> CHUNK_SIZE_BITS;
+        int modelChunkY = Y >> CHUNK_SIZE_BITS;
+        int modelChunkZ = Z >> CHUNK_SIZE_BITS;
 
         int distanceX = Math.abs(modelChunkX - playerChunkX);
         int distanceY = Math.abs(modelChunkY - playerChunkY);
@@ -131,20 +133,10 @@ public class OpaqueModel {
         return vertexCount;
     }
 
-    public Vector3i getPosition() {
-        return position;
-    }
-
     public PointerBuffer getIndices() {
         return indices;
     }
 
-    public int getVbo() {
-        return vbo;
-    }
-
-    private final int vao, vbo;
     private final int[] vertexCounts, toRenderVertexCounts;
-    private final Vector3i position;
     private final PointerBuffer indices;
 }

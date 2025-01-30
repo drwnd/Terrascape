@@ -16,15 +16,14 @@ import terrascape.utils.Transformation;
 import terrascape.utils.Utils;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
-import org.joml.Vector3i;
 import org.lwjgl.opengl.*;
 
-import java.awt.*;
+import java.awt.Color;
 import java.nio.IntBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
-public class RenderManager {
+public final class RenderManager {
 
     public RenderManager(Player player) {
         window = Launcher.getWindow();
@@ -35,16 +34,106 @@ public class RenderManager {
 
         loadTextures();
 
-        createBlockShader();
-        createWaterShader();
-        createFoliageShader();
-        createSkyBoxShader();
-        createGUIShader();
-        createTextShader();
-        createEntityShader();
-        createParticleShader();
+        loadShaders();
 
         createConstantBuffers();
+    }
+
+    public void reloadShaders() {
+        ShaderManager newBlockShader = null;
+        ShaderManager newWaterShader = null;
+        ShaderManager newFoliageShader = null;
+        ShaderManager newSkyBoxShader = null;
+        ShaderManager newGUIShader = null;
+        ShaderManager newTextShader = null;
+        ShaderManager newEntityShader = null;
+        ShaderManager newParticleShader = null;
+
+        try {
+            newBlockShader = createBlockShader();
+            blockShader.cleanUp();
+            blockShader = newBlockShader;
+        } catch (Exception exception) {
+            if (newBlockShader != null) newBlockShader.cleanUp();
+            System.err.println("Failed to reload block shader.");
+            System.err.println(exception.getMessage());
+        }
+        try {
+            newWaterShader = createWaterShader();
+            waterShader.cleanUp();
+            waterShader = newWaterShader;
+        } catch (Exception exception) {
+            if (newWaterShader != null) newWaterShader.cleanUp();
+            System.err.println("Failed to reload water shader.");
+            System.err.println(exception.getMessage());
+        }
+        try {
+            newFoliageShader = createFoliageShader();
+            foliageShader.cleanUp();
+            foliageShader = newFoliageShader;
+        } catch (Exception exception) {
+            if (newFoliageShader != null) newFoliageShader.cleanUp();
+            System.err.println("Failed to reload foliage shader.");
+            System.err.println(exception.getMessage());
+        }
+        try {
+            newSkyBoxShader = createSkyBoxShader();
+            skyBoxShader.cleanUp();
+            skyBoxShader = newSkyBoxShader;
+        } catch (Exception exception) {
+            if (newSkyBoxShader != null) newSkyBoxShader.cleanUp();
+            System.err.println("Failed to reload sky box shader.");
+            System.err.println(exception.getMessage());
+        }
+        try {
+            newGUIShader = createGUIShader();
+            GUIShader.cleanUp();
+            GUIShader = newGUIShader;
+        } catch (Exception exception) {
+            if (newGUIShader != null) newGUIShader.cleanUp();
+            System.err.println("Failed to reload GUI shader.");
+            System.err.println(exception.getMessage());
+        }
+        try {
+            newTextShader = createTextShader();
+            textShader.cleanUp();
+            textShader = newTextShader;
+        } catch (Exception exception) {
+            if (newTextShader != null) newTextShader.cleanUp();
+            System.err.println("Failed to reload text shader.");
+            System.err.println(exception.getMessage());
+        }
+        try {
+            newEntityShader = createEntityShader();
+            entityShader.cleanUp();
+            entityShader = newEntityShader;
+        } catch (Exception exception) {
+            if (newEntityShader != null) newEntityShader.cleanUp();
+            System.err.println("Failed to reload entity shader.");
+            System.err.println(exception.getMessage());
+        }
+        try {
+            newParticleShader = createParticleShader();
+            particleShader.cleanUp();
+            particleShader = newParticleShader;
+        } catch (Exception exception) {
+            if (newParticleShader != null) newParticleShader.cleanUp();
+            System.err.println("Failed to reload particle shader.");
+            System.err.println(exception.getMessage());
+        }
+
+        System.out.println("Shader reload completed.");
+    }
+
+    private void loadShaders() throws Exception {
+        blockShader = createBlockShader();
+        waterShader = createWaterShader();
+        foliageShader = createFoliageShader();
+        skyBoxShader = createSkyBoxShader();
+        GUIShader = createGUIShader();
+        textShader = createTextShader();
+        entityShader = createEntityShader();
+        particleShader = createParticleShader();
     }
 
     private void createConstantBuffers() {
@@ -76,8 +165,8 @@ public class RenderManager {
         textAtlas = new Texture(ObjectLoader.loadTexture("textures/textAtlas.png"));
     }
 
-    private void createParticleShader() throws Exception {
-        particleShader = new ShaderManager();
+    private ShaderManager createParticleShader() throws Exception {
+        ShaderManager particleShader = new ShaderManager();
         particleShader.createVertexShader(ObjectLoader.loadResources("shaders/ParticleVertex.glsl"));
         particleShader.createFragmentShader(ObjectLoader.loadResources("shaders/ParticleFragment.glsl"));
         particleShader.link();
@@ -90,10 +179,11 @@ public class RenderManager {
         particleShader.createUniform("textureOffset_");
         particleShader.createUniform("time");
         particleShader.createUniform("particleProperties");
+        return particleShader;
     }
 
-    private void createEntityShader() throws Exception {
-        entityShader = new ShaderManager();
+    private ShaderManager createEntityShader() throws Exception {
+        ShaderManager entityShader = new ShaderManager();
         entityShader.createVertexShader(ObjectLoader.loadResources("shaders/EntityVertex.glsl"));
         entityShader.createFragmentShader(ObjectLoader.loadResources("shaders/EntityFragment.glsl"));
         entityShader.link();
@@ -101,10 +191,11 @@ public class RenderManager {
         entityShader.createUniform("viewMatrix");
         entityShader.createUniform("time");
         entityShader.createUniform("textureSampler");
+        return entityShader;
     }
 
-    private void createTextShader() throws Exception {
-        textShader = new ShaderManager();
+    private ShaderManager createTextShader() throws Exception {
+        ShaderManager textShader = new ShaderManager();
         textShader.createVertexShader(ObjectLoader.loadResources("shaders/textVertex.glsl"));
         textShader.createFragmentShader(ObjectLoader.loadResources("shaders/textFragment.glsl"));
         textShader.link();
@@ -115,19 +206,21 @@ public class RenderManager {
         textShader.createUniform("textureSampler");
         textShader.createUniform("xOffset");
         textShader.createUniform("color");
+        return textShader;
     }
 
-    private void createGUIShader() throws Exception {
-        GUIShader = new ShaderManager();
+    private ShaderManager createGUIShader() throws Exception {
+        ShaderManager GUIShader = new ShaderManager();
         GUIShader.createVertexShader(ObjectLoader.loadResources("shaders/GUIVertex.glsl"));
         GUIShader.createFragmentShader(ObjectLoader.loadResources("shaders/GUIFragment.glsl"));
         GUIShader.link();
         GUIShader.createUniform("textureSampler");
         GUIShader.createUniform("position");
+        return GUIShader;
     }
 
-    private void createSkyBoxShader() throws Exception {
-        skyBoxShader = new ShaderManager();
+    private ShaderManager createSkyBoxShader() throws Exception {
+        ShaderManager skyBoxShader = new ShaderManager();
         skyBoxShader.createVertexShader(ObjectLoader.loadResources("shaders/skyBoxVertex.glsl"));
         skyBoxShader.createFragmentShader(ObjectLoader.loadResources("shaders/skyBoxFragment.glsl"));
         skyBoxShader.link();
@@ -137,10 +230,11 @@ public class RenderManager {
         skyBoxShader.createUniform("viewMatrix");
         skyBoxShader.createUniform("transformationMatrix");
         skyBoxShader.createUniform("time");
+        return skyBoxShader;
     }
 
-    private void createFoliageShader() throws Exception {
-        foliageShader = new ShaderManager();
+    private ShaderManager createFoliageShader() throws Exception {
+        ShaderManager foliageShader = new ShaderManager();
         foliageShader.createVertexShader(ObjectLoader.loadResources("shaders/FoliageVertex.glsl"));
         foliageShader.createFragmentShader(ObjectLoader.loadResources("shaders/blockFragment.glsl"));
         foliageShader.link();
@@ -152,10 +246,11 @@ public class RenderManager {
         foliageShader.createUniform("headUnderWater");
         foliageShader.createUniform("cameraPosition");
         foliageShader.createUniform("shouldSimulateWind");
+        return foliageShader;
     }
 
-    private void createWaterShader() throws Exception {
-        waterShader = new ShaderManager();
+    private ShaderManager createWaterShader() throws Exception {
+        ShaderManager waterShader = new ShaderManager();
         waterShader.createVertexShader(ObjectLoader.loadResources("shaders/waterVertex.glsl"));
         waterShader.createFragmentShader(ObjectLoader.loadResources("shaders/waterFragment.glsl"));
         waterShader.link();
@@ -167,10 +262,11 @@ public class RenderManager {
         waterShader.createUniform("headUnderWater");
         waterShader.createUniform("cameraPosition");
         waterShader.createUniform("shouldSimulateWaves");
+        return waterShader;
     }
 
-    private void createBlockShader() throws Exception {
-        blockShader = new ShaderManager();
+    private ShaderManager createBlockShader() throws Exception {
+        ShaderManager blockShader = new ShaderManager();
         blockShader.createVertexShader(ObjectLoader.loadResources("shaders/blockVertex.glsl"));
         blockShader.createFragmentShader(ObjectLoader.loadResources("shaders/blockFragment.glsl"));
         blockShader.link();
@@ -181,24 +277,25 @@ public class RenderManager {
         blockShader.createUniform("time");
         blockShader.createUniform("headUnderWater");
         blockShader.createUniform("cameraPosition");
+        return blockShader;
     }
 
     public void bindModel(OpaqueModel model) {
-        GL30.glBindVertexArray(model.getVao());
+        GL30.glBindVertexArray(model.vao);
         GL20.glEnableVertexAttribArray(0);
 
-        blockShader.setUniform("worldPos", model.getPosition());
+        blockShader.setUniform("worldPos", model.X, model.Y, model.Z);
         GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, modelIndexBuffer);
     }
 
     public void bindFoliageModel(OpaqueModel model) {
-        GL30.glBindVertexArray(model.getVao());
+        GL30.glBindVertexArray(model.vao);
         GL20.glEnableVertexAttribArray(0);
 
         boolean shouldSimulateWind = model.getDistanceFromPlayer(playerChunkX, playerChunkY, playerChunkZ) <= 1;
 
         foliageShader.setUniform("shouldSimulateWind", shouldSimulateWind ? 1 : 0);
-        foliageShader.setUniform("worldPos", model.getPosition());
+        foliageShader.setUniform("worldPos", model.X, model.Y, model.Z);
         GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, modelIndexBuffer);
     }
 
@@ -233,20 +330,19 @@ public class RenderManager {
     }
 
     public void bindWaterModel(WaterModel model) {
-        GL30.glBindVertexArray(model.getVao());
+        GL30.glBindVertexArray(model.vao);
         GL20.glEnableVertexAttribArray(0);
 
-        Vector3i modelPosition = model.getPosition();
-        int modelChunkX = modelPosition.x >> CHUNK_SIZE_BITS;
-        int modelChunkY = modelPosition.y >> CHUNK_SIZE_BITS;
-        int modelChunkZ = modelPosition.z >> CHUNK_SIZE_BITS;
+        int modelChunkX = model.X >> CHUNK_SIZE_BITS;
+        int modelChunkY = model.Y >> CHUNK_SIZE_BITS;
+        int modelChunkZ = model.Z >> CHUNK_SIZE_BITS;
 
         boolean shouldSimulateWaves = Math.abs(playerChunkX - modelChunkX) <= 1 &&
                 Math.abs(playerChunkY - modelChunkY) <= 1 &&
                 Math.abs(playerChunkZ - modelChunkZ) <= 1;
 
         waterShader.setUniform("shouldSimulateWaves", shouldSimulateWaves ? 1 : 0);
-        waterShader.setUniform("worldPos", modelPosition);
+        waterShader.setUniform("worldPos", model.X, model.Y, model.Z);
         GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, modelIndexBuffer);
     }
 
@@ -400,6 +496,10 @@ public class RenderManager {
     }
 
     public void renderParticles(Matrix4f projectionMatrix, Matrix4f viewMatrix, float passedTicks) {
+        if (particles.isEmpty()) return;
+
+        long renderTime = System.nanoTime();
+
         particleShader.bind();
         particleShader.setUniform("projectionMatrix", projectionMatrix);
         particleShader.setUniform("viewMatrix", viewMatrix);
@@ -416,6 +516,8 @@ public class RenderManager {
         for (Particle particle : particles) particle.render(particleShader, currentTime, modelIndexBuffer);
 
         particleShader.unBind();
+
+        if (player.printTimes) System.out.println("Particles " + (System.nanoTime() - renderTime));
     }
 
     public void renderWaterChunks(Matrix4f projectionMatrix, Matrix4f viewMatrix, float passedTicks) {
@@ -433,7 +535,7 @@ public class RenderManager {
         for (WaterModel waterModel : waterModels) {
             bindWaterModel(waterModel);
 
-            GL11.glDrawElements(GL11.GL_TRIANGLES, (int) (waterModel.getVertexCount() * 0.75), GL11.GL_UNSIGNED_INT, 0);
+            GL11.glDrawElements(GL11.GL_TRIANGLES, (int) (waterModel.vertexCount * 0.75), GL11.GL_UNSIGNED_INT, 0);
         }
         GL11.glDisable(GL11.GL_BLEND);
         waterShader.unBind();
@@ -561,7 +663,7 @@ public class RenderManager {
         GL20.glEnableVertexAttribArray(0);
         GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, modelIndexBuffer);
 
-        GL11.glDrawElements(GL11.GL_TRIANGLES, 384, GL11.GL_UNSIGNED_INT, 0);
+        GL11.glDrawElements(GL11.GL_TRIANGLES, MAX_TEXT_LENGTH * 6, GL11.GL_UNSIGNED_INT, 0);
     }
 
     private void renderDisplayString(DisplayString string) {
@@ -579,11 +681,11 @@ public class RenderManager {
     }
 
     private int[] toIntFormat(String text) {
-        int[] array = new int[64];
+        int[] array = new int[MAX_TEXT_LENGTH];
 
         byte[] stringBytes = text.getBytes(StandardCharsets.UTF_8);
 
-        for (int index = 0, max = Math.min(text.length(), 64); index < max; index++) {
+        for (int index = 0, max = Math.min(text.length(), MAX_TEXT_LENGTH); index < max; index++) {
             array[index] = stringBytes[index];
         }
         return array;

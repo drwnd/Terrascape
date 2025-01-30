@@ -18,79 +18,46 @@ import java.util.concurrent.TimeUnit;
 import static terrascape.utils.Constants.*;
 import static terrascape.utils.Settings.*;
 
-public class ChunkGenerator {
-
-    private final ThreadPoolExecutor executor;
-    private final LinkedList<Vector4i> blockChanges;
-
-    private final GenerationStarter generationStarter;
-
-    private final Thread starterThread;
-
-    private boolean shouldFinish = true;
-    private boolean shouldExecute = true;
-    private boolean shouldRestart = false;
+public final class ChunkGenerator {
 
     public ChunkGenerator() {
         blockChanges = new LinkedList<>();
         executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(NUMBER_OF_GENERATION_THREADS);
-        generationStarter = new GenerationStarter();
-        starterThread = new Thread(generationStarter);
-    }
-
-    public void start() {
-        Vector3f playerPosition = ServerLogic.getPlayer().getCamera().getPosition();
-        int playerX = Utils.floor(playerPosition.x) >> CHUNK_SIZE_BITS;
-        int playerY = Utils.floor(playerPosition.y) >> CHUNK_SIZE_BITS;
-        int playerZ = Utils.floor(playerPosition.z) >> CHUNK_SIZE_BITS;
-        starterThread.start();
-        generationStarter.restart(NONE, playerX, playerY, playerZ);
-        synchronized (starterThread) {
-            starterThread.notify();
-        }
     }
 
     public void generateSurrounding(Player player) {
         Vector3f playerPosition = player.getCamera().getPosition();
-        int playerX = Utils.floor(playerPosition.x) >> CHUNK_SIZE_BITS;
-        int playerY = Utils.floor(playerPosition.y) >> CHUNK_SIZE_BITS;
-        int playerZ = Utils.floor(playerPosition.z) >> CHUNK_SIZE_BITS;
-        generationStarter.submitTasks(playerX, playerY, playerZ, NONE, PRE_GAME_WORLD_GENERATION_DISTANCE - 1);
+        int playerChunkX = Utils.floor(playerPosition.x) >> CHUNK_SIZE_BITS;
+        int playerChunkY = Utils.floor(playerPosition.y) >> CHUNK_SIZE_BITS;
+        int playerChunkZ = Utils.floor(playerPosition.z) >> CHUNK_SIZE_BITS;
+        submitTasks(playerChunkX, playerChunkY, playerChunkZ, NONE, PRE_GAME_WORLD_GENERATION_DISTANCE - 1);
+        waitUntilHalt(false);
     }
 
     public void restart(int direction) {
         Vector3f playerPosition = ServerLogic.getPlayer().getCamera().getPosition();
-        int playerX = Utils.floor(playerPosition.x) >> CHUNK_SIZE_BITS;
-        int playerY = Utils.floor(playerPosition.y) >> CHUNK_SIZE_BITS;
-        int playerZ = Utils.floor(playerPosition.z) >> CHUNK_SIZE_BITS;
+        int playerChunkX = Utils.floor(playerPosition.x) >> CHUNK_SIZE_BITS;
+        int playerChunkY = Utils.floor(playerPosition.y) >> CHUNK_SIZE_BITS;
+        int playerChunkZ = Utils.floor(playerPosition.z) >> CHUNK_SIZE_BITS;
         synchronized (executor) {
             executor.getQueue().clear();
         }
-        generationStarter.restart(direction, playerX, playerY, playerZ);
-        synchronized (starterThread) {
-            starterThread.notify();
-        }
+        executor.getQueue().clear();
+        ServerLogic.unloadChunks(playerChunkX, playerChunkY, playerChunkZ);
+        handleBlockChanges();
+
+        submitTasks(playerChunkX, playerChunkY, playerChunkZ, direction, RENDER_DISTANCE_XZ);
     }
 
     public void waitUntilHalt(boolean haltImmediately) {
         if (haltImmediately) executor.getQueue().clear();
         executor.shutdown();
-        if (haltImmediately) generationStarter.halt();
-
         try {
             //noinspection ResultOfMethodCallIgnored
             executor.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
         } catch (InterruptedException e) {
             System.err.println("Crashed when awaiting termination");
             e.printStackTrace();
-        }
-        synchronized (starterThread) {
-            starterThread.notify();
-            try {
-                starterThread.join();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
         }
     }
 
@@ -101,23 +68,116 @@ public class ChunkGenerator {
     }
 
     public void cleanUp() {
-        generationStarter.stop();
-        synchronized (starterThread) {
-            starterThread.notify();
-        }
         executor.getQueue().clear();
         executor.shutdown();
     }
 
-    class Generator implements Runnable {
+    private void handleBlockChanges() {
+        synchronized (blockChanges) {
+            while (!blockChanges.isEmpty()) {
 
-        private final int chunkX, playerY, chunkZ;
+                Vector4i blockChange = blockChanges.removeFirst();
+                int x = blockChange.x;
+                int y = blockChange.y;
+                int z = blockChange.z;
+                short previousBlock = (short) (blockChange.w >> 16 & 0xFFFF);
+                short block = (short) (blockChange.w & 0xFFFF);
+                if (Chunk.getBlockInWorld(x, y, z) != block) continue;
 
-        public Generator(int chunkX, int playerY, int chunkZ) {
-            this.chunkX = chunkX;
-            this.playerY = playerY;
-            this.chunkZ = chunkZ;
+                int blockLightLevel = Block.getBlockProperties(block) & LIGHT_EMITTING;
+                int previousBlockLightLevel = Block.getBlockProperties(previousBlock) & LIGHT_EMITTING;
+                boolean blockEmitsLight = blockLightLevel != 0;
+                boolean previousBlockEmitsLight = previousBlockLightLevel != 0;
+
+                if (blockEmitsLight && previousBlockEmitsLight) {
+                    if (blockLightLevel > previousBlockLightLevel)
+                        LightLogic.setBlockLight(x, y, z, blockLightLevel);
+                    else if (previousBlockLightLevel > blockLightLevel) {
+                        LightLogic.dePropagateBlockLight(x, y, z);
+                        LightLogic.setBlockLight(x, y, z, blockLightLevel);
+                    }
+                } else if (blockEmitsLight) {
+                    if (Chunk.getBlockLightInWorld(x, y, z) > blockLightLevel)
+                        LightLogic.dePropagateBlockLight(x, y, z);
+                    LightLogic.setBlockLight(x, y, z, blockLightLevel);
+                } else if (block == AIR) {
+                    if (previousBlockEmitsLight) LightLogic.dePropagateBlockLight(x, y, z);
+                    else LightLogic.setBlockLight(x, y, z, LightLogic.getMaxSurroundingBlockLight(x, y, z) - 1);
+                } else
+                    LightLogic.dePropagateBlockLight(x, y, z);
+
+                if (block == AIR)
+                    LightLogic.setSkyLight(x, y, z, LightLogic.getMaxSurroundingSkyLight(x, y, z) - 1);
+                else LightLogic.dePropagateSkyLight(x, y, z);
+            }
         }
+    }
+
+    private void submitTasks(int playerChunkX, int playerChunkY, int playerChunkZ, int travelDirection, int maxDistance) {
+        if (!executor.isShutdown() && columnRequiresGeneration(playerChunkX, playerChunkY, playerChunkZ))
+            executor.submit(new Generator(playerChunkX, playerChunkY, playerChunkZ));
+        for (int ring = 1; ring <= maxDistance + 1; ring++) {
+
+            for (int chunkX = -ring; chunkX < ring && !executor.isShutdown(); chunkX++)
+                if (columnRequiresGeneration(chunkX + playerChunkX, playerChunkY, ring + playerChunkZ))
+                    executor.submit(new Generator(chunkX + playerChunkX, playerChunkY, ring + playerChunkZ));
+
+            for (int chunkZ = ring; chunkZ > -ring && !executor.isShutdown(); chunkZ--)
+                if (columnRequiresGeneration(ring + playerChunkX, playerChunkY, chunkZ + playerChunkZ))
+                    executor.submit(new Generator(ring + playerChunkX, playerChunkY, chunkZ + playerChunkZ));
+
+            for (int chunkX = ring; chunkX > -ring && !executor.isShutdown(); chunkX--)
+                if (columnRequiresGeneration(chunkX + playerChunkX, playerChunkY, -ring + playerChunkZ))
+                    executor.submit(new Generator(chunkX + playerChunkX, playerChunkY, -ring + playerChunkZ));
+
+            for (int chunkZ = -ring; chunkZ < ring && !executor.isShutdown(); chunkZ++)
+                if (columnRequiresGeneration(-ring + playerChunkX, playerChunkY, chunkZ + playerChunkZ))
+                    executor.submit(new Generator(-ring + playerChunkX, playerChunkY, chunkZ + playerChunkZ));
+
+            if (ring == 1 && !executor.isShutdown()) {
+                if (columnRequiresMeshing(playerChunkX, playerChunkY, playerChunkZ))
+                    executor.submit(new MeshHandler(playerChunkX, playerChunkY, playerChunkZ, travelDirection));
+                continue;
+            }
+            int meshRing = ring - 1;
+            for (int chunkX = -meshRing; chunkX < meshRing && !executor.isShutdown(); chunkX++)
+                if (columnRequiresMeshing(chunkX + playerChunkX, playerChunkY, meshRing + playerChunkZ))
+                    executor.submit(new MeshHandler(chunkX + playerChunkX, playerChunkY, meshRing + playerChunkZ, travelDirection));
+
+            for (int chunkZ = meshRing; chunkZ > -meshRing && !executor.isShutdown(); chunkZ--)
+                if (columnRequiresMeshing(meshRing + playerChunkX, playerChunkY, chunkZ + playerChunkZ))
+                    executor.submit(new MeshHandler(meshRing + playerChunkX, playerChunkY, chunkZ + playerChunkZ, travelDirection));
+
+            for (int chunkX = meshRing; chunkX > -meshRing && !executor.isShutdown(); chunkX--)
+                if (columnRequiresMeshing(chunkX + playerChunkX, playerChunkY, -meshRing + playerChunkZ))
+                    executor.submit(new MeshHandler(chunkX + playerChunkX, playerChunkY, -meshRing + playerChunkZ, travelDirection));
+
+            for (int chunkZ = -meshRing; chunkZ < meshRing && !executor.isShutdown(); chunkZ++)
+                if (columnRequiresMeshing(-meshRing + playerChunkX, playerChunkY, chunkZ + playerChunkZ))
+                    executor.submit(new MeshHandler(-meshRing + playerChunkX, playerChunkY, chunkZ + playerChunkZ, travelDirection));
+        }
+    }
+
+    private boolean columnRequiresGeneration(int chunkX, int playerChunkY, int chunkZ) {
+        for (int chunkY = playerChunkY + RENDER_DISTANCE_Y + 1; chunkY >= playerChunkY - RENDER_DISTANCE_Y - 1; chunkY--) {
+            Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
+            if (chunk == null || !chunk.isGenerated()) return true;
+        }
+        return false;
+    }
+
+    private boolean columnRequiresMeshing(int chunkX, int playerChunkY, int chunkZ) {
+        for (int chunkY = playerChunkY + RENDER_DISTANCE_Y; chunkY >= playerChunkY - RENDER_DISTANCE_Y; chunkY--) {
+            Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
+            if (chunk == null || !chunk.isMeshed()) return true;
+        }
+        return false;
+    }
+
+    private final ThreadPoolExecutor executor;
+    private final LinkedList<Vector4i> blockChanges;
+
+    private record Generator(int chunkX, int playerChunkY, int chunkZ) implements Runnable {
 
         @Override
         public void run() {
@@ -134,7 +194,7 @@ public class ChunkGenerator {
             GenerationData generationData = new GenerationData(chunkX, chunkZ);
             boolean hasGenerated = false;
 
-            for (int chunkY = playerY + RENDER_DISTANCE_Y + 1; chunkY >= playerY - RENDER_DISTANCE_Y - 1 && shouldFinish; chunkY--) {
+            for (int chunkY = playerChunkY + RENDER_DISTANCE_Y + 1; chunkY >= playerChunkY - RENDER_DISTANCE_Y - 1; chunkY--) {
                 try {
                     final long expectedId = Utils.getChunkId(chunkX, chunkY, chunkZ);
                     Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
@@ -145,7 +205,7 @@ public class ChunkGenerator {
                         else WorldGeneration.generateSurroundingChunkStructureBlocks(chunk, generationData);
 
                         Chunk.storeChunk(chunk);
-                    } else if (chunk.id != expectedId) {
+                    } else if (chunk.ID != expectedId) {
                         System.err.println("found chunk has wrong id");
                         ServerLogic.addToUnloadChunk(chunk);
 
@@ -173,7 +233,7 @@ public class ChunkGenerator {
                 for (int z = chunkZ << CHUNK_SIZE_BITS, maxZ = z + CHUNK_SIZE; z < maxZ; z++) {
 
                     int height = intHeightMap[(x & CHUNK_SIZE_MASK) << CHUNK_SIZE_BITS | (z & CHUNK_SIZE_MASK)];
-                    int y = (playerY + RENDER_DISTANCE_Y << CHUNK_SIZE_BITS) + CHUNK_SIZE - 1;
+                    int y = (playerChunkY + RENDER_DISTANCE_Y << CHUNK_SIZE_BITS) + CHUNK_SIZE - 1;
 
                     if (height >= y) continue;
 
@@ -189,16 +249,7 @@ public class ChunkGenerator {
 
     }
 
-    class MeshHandler implements Runnable {
-
-        private final int chunkX, playerY, chunkZ, travelDirection;
-
-        public MeshHandler(int chunkX, int playerY, int chunkZ, int travelDirection) {
-            this.chunkX = chunkX;
-            this.playerY = playerY;
-            this.chunkZ = chunkZ;
-            this.travelDirection = travelDirection;
-        }
+    private record MeshHandler(int chunkX, int playerChunkY, int chunkZ, int travelDirection) implements Runnable {
 
         @Override
         public void run() {
@@ -212,7 +263,7 @@ public class ChunkGenerator {
 
             MeshGenerator meshGenerator = new MeshGenerator();
 
-            for (int chunkY = playerY + RENDER_DISTANCE_Y; chunkY >= playerY - RENDER_DISTANCE_Y && shouldFinish; chunkY--) {
+            for (int chunkY = playerChunkY + RENDER_DISTANCE_Y; chunkY >= playerChunkY - RENDER_DISTANCE_Y; chunkY--) {
                 try {
                     Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
                     if (chunk == null) {
@@ -269,155 +320,6 @@ public class ChunkGenerator {
             if (maxY == Integer.MIN_VALUE) return;
 
             LightLogic.setChunkColumnSkyLight(chunkX, maxY, chunkZ);
-        }
-    }
-
-    class GenerationStarter implements Runnable {
-
-        private int travelDirection;
-        private int playerX, playerY, playerZ;
-
-        public void restart(int travelDirection, int playerX, int playerY, int playerZ) {
-            shouldRestart = true;
-            shouldFinish = false;
-            this.travelDirection = travelDirection;
-            this.playerX = playerX;
-            this.playerY = playerY;
-            this.playerZ = playerZ;
-        }
-
-        public void halt() {
-            shouldExecute = false;
-            shouldFinish = false;
-            shouldRestart = false;
-        }
-
-        @Override
-        public void run() {
-            while (shouldExecute) {
-                try {
-                    synchronized (starterThread) {
-                        if (!shouldRestart) starterThread.wait();
-                        shouldRestart = false;
-                    }
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-
-                shouldFinish = true;
-
-                executor.getQueue().clear();
-                ServerLogic.unloadChunks(playerX, playerY, playerZ);
-                handleBlockChanges();
-                submitTasks(playerX, playerY, playerZ, travelDirection, RENDER_DISTANCE_XZ);
-            }
-        }
-
-        private void handleBlockChanges() {
-            synchronized (blockChanges) {
-                while (!blockChanges.isEmpty()) {
-
-                    Vector4i blockChange = blockChanges.removeFirst();
-                    int x = blockChange.x;
-                    int y = blockChange.y;
-                    int z = blockChange.z;
-                    short previousBlock = (short) (blockChange.w >> 16 & 0xFFFF);
-                    short block = (short) (blockChange.w & 0xFFFF);
-                    if (Chunk.getBlockInWorld(x, y, z) != block) continue;
-
-                    int blockLightLevel = Block.getBlockProperties(block) & LIGHT_EMITTING;
-                    int previousBlockLightLevel = Block.getBlockProperties(previousBlock) & LIGHT_EMITTING;
-                    boolean blockEmitsLight = blockLightLevel != 0;
-                    boolean previousBlockEmitsLight = previousBlockLightLevel != 0;
-
-                    if (blockEmitsLight && previousBlockEmitsLight) {
-                        if (blockLightLevel > previousBlockLightLevel)
-                            LightLogic.setBlockLight(x, y, z, blockLightLevel);
-                        else if (previousBlockLightLevel > blockLightLevel) {
-                            LightLogic.dePropagateBlockLight(x, y, z);
-                            LightLogic.setBlockLight(x, y, z, blockLightLevel);
-                        }
-                    } else if (blockEmitsLight) {
-                        if (Chunk.getBlockLightInWorld(x, y, z) > blockLightLevel)
-                            LightLogic.dePropagateBlockLight(x, y, z);
-                        LightLogic.setBlockLight(x, y, z, blockLightLevel);
-                    } else if (block == AIR) {
-                        if (previousBlockEmitsLight) LightLogic.dePropagateBlockLight(x, y, z);
-                        else LightLogic.setBlockLight(x, y, z, LightLogic.getMaxSurroundingBlockLight(x, y, z) - 1);
-                    } else
-                        LightLogic.dePropagateBlockLight(x, y, z);
-
-                    if (block == AIR)
-                        LightLogic.setSkyLight(x, y, z, LightLogic.getMaxSurroundingSkyLight(x, y, z) - 1);
-                    else LightLogic.dePropagateSkyLight(x, y, z);
-                }
-            }
-        }
-
-        private void submitTasks(int playerX, int playerY, int playerZ, int travelDirection, int maxDistance) {
-            if (shouldFinish && !executor.isShutdown() && columnRequiresGeneration(playerX, playerY, playerZ))
-                executor.submit(new Generator(playerX, playerY, playerZ));
-            for (int ring = 1; ring <= maxDistance + 1 && shouldFinish; ring++) {
-
-                for (int chunkX = -ring; chunkX < ring && shouldFinish && !executor.isShutdown(); chunkX++)
-                    if (columnRequiresGeneration(chunkX + playerX, playerY, ring + playerZ))
-                        executor.submit(new Generator(chunkX + playerX, playerY, ring + playerZ));
-
-                for (int chunkZ = ring; chunkZ > -ring && shouldFinish && !executor.isShutdown(); chunkZ--)
-                    if (columnRequiresGeneration(ring + playerX, playerY, chunkZ + playerZ))
-                        executor.submit(new Generator(ring + playerX, playerY, chunkZ + playerZ));
-
-                for (int chunkX = ring; chunkX > -ring && shouldFinish && !executor.isShutdown(); chunkX--)
-                    if (columnRequiresGeneration(chunkX + playerX, playerY, -ring + playerZ))
-                        executor.submit(new Generator(chunkX + playerX, playerY, -ring + playerZ));
-
-                for (int chunkZ = -ring; chunkZ < ring && shouldFinish && !executor.isShutdown(); chunkZ++)
-                    if (columnRequiresGeneration(-ring + playerX, playerY, chunkZ + playerZ))
-                        executor.submit(new Generator(-ring + playerX, playerY, chunkZ + playerZ));
-
-                if (ring == 1 && shouldFinish && !executor.isShutdown()) {
-                    if (columnRequiresMeshing(playerX, playerY, playerZ))
-                        executor.submit(new MeshHandler(playerX, playerY, playerZ, travelDirection));
-                    continue;
-                }
-                int meshRing = ring - 1;
-                for (int chunkX = -meshRing; chunkX < meshRing && shouldFinish && !executor.isShutdown(); chunkX++)
-                    if (columnRequiresMeshing(chunkX + playerX, playerY, meshRing + playerZ))
-                        executor.submit(new MeshHandler(chunkX + playerX, playerY, meshRing + playerZ, travelDirection));
-
-                for (int chunkZ = meshRing; chunkZ > -meshRing && shouldFinish && !executor.isShutdown(); chunkZ--)
-                    if (columnRequiresMeshing(meshRing + playerX, playerY, chunkZ + playerZ))
-                        executor.submit(new MeshHandler(meshRing + playerX, playerY, chunkZ + playerZ, travelDirection));
-
-                for (int chunkX = meshRing; chunkX > -meshRing && shouldFinish && !executor.isShutdown(); chunkX--)
-                    if (columnRequiresMeshing(chunkX + playerX, playerY, -meshRing + playerZ))
-                        executor.submit(new MeshHandler(chunkX + playerX, playerY, -meshRing + playerZ, travelDirection));
-
-                for (int chunkZ = -meshRing; chunkZ < meshRing && shouldFinish && !executor.isShutdown(); chunkZ++)
-                    if (columnRequiresMeshing(-meshRing + playerX, playerY, chunkZ + playerZ))
-                        executor.submit(new MeshHandler(-meshRing + playerX, playerY, chunkZ + playerZ, travelDirection));
-            }
-        }
-
-        private boolean columnRequiresGeneration(int chunkX, int playerY, int chunkZ) {
-            for (int chunkY = playerY + RENDER_DISTANCE_Y + 1; chunkY >= playerY - RENDER_DISTANCE_Y - 1 && shouldFinish; chunkY--) {
-                Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
-                if (chunk == null || !chunk.isGenerated()) return true;
-            }
-            return false;
-        }
-
-        private boolean columnRequiresMeshing(int chunkX, int playerY, int chunkZ) {
-            for (int chunkY = playerY + RENDER_DISTANCE_Y; chunkY >= playerY - RENDER_DISTANCE_Y && shouldFinish; chunkY--) {
-                Chunk chunk = Chunk.getChunk(chunkX, chunkY, chunkZ);
-                if (chunk == null || !chunk.isMeshed()) return true;
-            }
-            return false;
-        }
-
-        public void stop() {
-            shouldFinish = false;
-            shouldExecute = false;
         }
     }
 }

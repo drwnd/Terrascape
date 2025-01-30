@@ -10,7 +10,7 @@ import java.util.Random;
 
 import static terrascape.utils.Constants.*;
 
-public class MeshGenerator {
+public final class MeshGenerator {
 
     public void setChunk(Chunk chunk) {
         this.chunk = chunk;

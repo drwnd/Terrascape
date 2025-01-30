@@ -14,12 +14,7 @@ import static terrascape.utils.Constants.*;
 import static terrascape.utils.Constants.EAST;
 import static terrascape.utils.Settings.GUI_SIZE;
 
-public class GUIElement {
-
-    private final int vao, vertexCount;
-    private final int vbo1, vbo2;
-    private Texture texture;
-    private Vector2f position;
+public final class GUIElement {
 
     public GUIElement(int vao, int vertexCount, int vbo1, int vbo2, Vector2f position) {
         this.vao = vao;
@@ -68,7 +63,8 @@ public class GUIElement {
         int height = window.getHeight();
         float size = 16;
 
-        return new float[]{-size * GUI_SIZE / width, size * GUI_SIZE / height,
+        return new float[]{
+                -size * GUI_SIZE / width, size * GUI_SIZE / height,
                 -size * GUI_SIZE / width, -size * GUI_SIZE / height,
                 size * GUI_SIZE / width, size * GUI_SIZE / height,
 
@@ -392,7 +388,7 @@ public class GUIElement {
         player.setHotBarSelectionIndicator(hotBarSelectionIndicator);
         player.setSelectedHotBarSlot(0);
 
-        generateInventoryElements(player.getInventoryElements(), Texture.atlas);
+        generateInventoryElements(player.getInventoryElements(), Texture.ATLAS);
     }
 
     public static void reloadGUIElements(Player player) throws Exception {
@@ -423,4 +419,9 @@ public class GUIElement {
 
         loadGUIElements(player);
     }
+
+    private final int vao, vertexCount;
+    private final int vbo1, vbo2;
+    private Texture texture;
+    private Vector2f position;
 }

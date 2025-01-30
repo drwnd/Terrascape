@@ -16,7 +16,7 @@ import static terrascape.utils.Constants.*;
 import static terrascape.utils.Constants.AIR;
 import static terrascape.utils.Settings.*;
 
-public class InteractionHandler {
+public final class InteractionHandler {
 
     public InteractionHandler(Player player) {
         this.player = player;
@@ -40,17 +40,20 @@ public class InteractionHandler {
     }
 
     public void input(int button, int action) {
-        if (button == DESTROY_BUTTON) if (action == GLFW.GLFW_PRESS) {
-            destroyButtonPressTime = System.nanoTime();
-            destroyButtonWasJustPressed = true;
-        } else {
-            destroyButtonPressTime = -1;
-        }
-        else if (button == USE_BUTTON) if (action == GLFW.GLFW_PRESS) {
-            useButtonPressTime = System.nanoTime();
-            useButtonWasJustPressed = true;
-        } else {
-            useButtonPressTime = -1;
+        if (button == DESTROY_BUTTON) {
+            if (action == GLFW.GLFW_PRESS) {
+                destroyButtonPressTime = System.nanoTime();
+                destroyButtonWasJustPressed = true;
+            } else {
+                destroyButtonPressTime = -1;
+            }
+        } else if (button == USE_BUTTON) {
+            if (action == GLFW.GLFW_PRESS) {
+                useButtonPressTime = System.nanoTime();
+                useButtonWasJustPressed = true;
+            } else {
+                useButtonPressTime = -1;
+            }
         }
     }
 

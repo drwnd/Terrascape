@@ -7,7 +7,7 @@ import terrascape.server.Launcher;
 import static terrascape.utils.Constants.*;
 import static terrascape.utils.Settings.FOV;
 
-public class Camera {
+public final class Camera {
 
     public Camera() {
         position = new Vector3f(0.0f, 0.0f, 0.0f);
@@ -40,7 +40,7 @@ public class Camera {
         return new Vector3f(x, y, z);
     }
 
-    public int getPrimaryXZDirection(Vector3f cameraDirection){
+    public int getPrimaryXZDirection(Vector3f cameraDirection) {
         float x = Math.abs(cameraDirection.x);
         float z = Math.abs(cameraDirection.z);
         if (x > z)

@@ -7,7 +7,7 @@ import org.joml.Vector4i;
 import static terrascape.utils.Constants.*;
 import static terrascape.utils.Settings.*;
 
-public class LightLogic {
+public final class LightLogic {
 
     public static void setBlockLight(int x, int y, int z, int blockLight) {
         if (blockLight <= 0)
@@ -419,4 +419,6 @@ public class LightLogic {
             if (chunk1 != null) chunk1.setMeshed(false);
         }
     }
+
+    private LightLogic() { }
 }

@@ -10,7 +10,7 @@ import static terrascape.utils.Constants.MAX_CHUNKS_Y;
 import static terrascape.utils.Settings.RENDERED_WORLD_HEIGHT;
 import static terrascape.utils.Settings.RENDERED_WORLD_WIDTH;
 
-public class Utils {
+public final class Utils {
 
     public static FloatBuffer storeDateInFloatBuffer(float[] data) {
         FloatBuffer buffer = MemoryUtil.memAllocFloat(data.length);
@@ -181,4 +181,6 @@ public class Utils {
         }
         return result;
     }
+
+    private Utils() { }
 }

@@ -9,7 +9,7 @@ import java.nio.IntBuffer;
 import static terrascape.utils.Constants.*;
 import static terrascape.utils.Settings.*;
 
-public class SoundManager {
+public final class SoundManager {
 
     long device, context;
 

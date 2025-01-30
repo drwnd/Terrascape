@@ -1,6 +1,6 @@
 package terrascape.utils;
 
-public class Constants {
+public final class Constants {
 
     // Literally do whatever
     public static final String TITLE = "Terrascape";
@@ -12,6 +12,7 @@ public class Constants {
     public static final float SPAWN_RADIUS = 150.0f; // More like halfSideLengthOfSpawnSquare
     public static final byte TARGET_TPS = 20;
     public static final int MAX_AMOUNT_OF_TO_RENDER_ENTITIES = 20000; // A thing with GPU memory not so much performance
+    public static final int MAX_TEXT_LENGTH = 128; // Must be a power of 2 and also change in textVertex.glsl
 
     // DO NOT CHANGE THESE VALUES (like really, it will crash)
     public static final byte CHUNK_SIZE_BITS = 5;
@@ -35,10 +36,8 @@ public class Constants {
     public static final byte MAX_CHUNKS_TO_BUFFER_PER_FRAME = 15;
     public static final byte MAX_AMOUNTS_OF_MISSED_TICKS_TO_EXECUTE_PER_TICK = 10;
     public static final byte PRE_GAME_WORLD_GENERATION_DISTANCE = 1;
-
     public static final byte NUMBER_OF_GENERATION_THREADS = 3;
     public static final byte MAX_OCCLUSION_CULLING_DAMPER = 6;
-
     public static final float MAX_SOUND_DISTANCE = 30.0f * 30.0f;
 
     // Other useful stuff
@@ -102,25 +101,24 @@ public class Constants {
     public static final int ROTATE_EAST_TEXTURE = 65536;
 
     // Block emitted light levels
-    public static final byte LIGHT_LEVEL_1 = 1;
-    public static final byte LIGHT_LEVEL_2 = 2;
-    public static final byte LIGHT_LEVEL_3 = 3;
-    public static final byte LIGHT_LEVEL_4 = 4;
-    public static final byte LIGHT_LEVEL_5 = 5;
-    public static final byte LIGHT_LEVEL_6 = 6;
+//    public static final byte LIGHT_LEVEL_1 = 1;
+//    public static final byte LIGHT_LEVEL_2 = 2;
+//    public static final byte LIGHT_LEVEL_3 = 3;
+//    public static final byte LIGHT_LEVEL_4 = 4;
+//    public static final byte LIGHT_LEVEL_5 = 5;
+//    public static final byte LIGHT_LEVEL_6 = 6;
     public static final byte LIGHT_LEVEL_7 = 7;
-    public static final byte LIGHT_LEVEL_8 = 8;
-    public static final byte LIGHT_LEVEL_9 = 9;
-    public static final byte LIGHT_LEVEL_10 = 10;
-    public static final byte LIGHT_LEVEL_11 = 11;
-    public static final byte LIGHT_LEVEL_12 = 12;
-    public static final byte LIGHT_LEVEL_13 = 13;
-    public static final byte LIGHT_LEVEL_14 = 14;
+//    public static final byte LIGHT_LEVEL_8 = 8;
+//    public static final byte LIGHT_LEVEL_9 = 9;
+//    public static final byte LIGHT_LEVEL_10 = 10;
+//    public static final byte LIGHT_LEVEL_11 = 11;
+//    public static final byte LIGHT_LEVEL_12 = 12;
+//    public static final byte LIGHT_LEVEL_13 = 13;
+//    public static final byte LIGHT_LEVEL_14 = 14;
     public static final byte LIGHT_LEVEL_15 = 15;
 
     // Indices for information on block types
     public static final byte FULL_BLOCK = 0;
-
     public static final byte BOTTOM_SLAB = 1;
     public static final byte TOP_SLAB = 2;
     public static final byte NORTH_SLAB = 3;
@@ -440,15 +438,20 @@ public class Constants {
     public static final short MOSSY_POLISHED_SANDSTONE = (short) (108 << BLOCK_TYPE_BITS);
     public static final short MOSSY_RED_SANDSTONE = (short) (109 << BLOCK_TYPE_BITS);
     public static final short MOSSY_RED_POLISHED_SANDSTONE = (short) (110 << BLOCK_TYPE_BITS);
-    public static final short BLACKSTONE = (short) (111 << BLOCK_TYPE_BITS);
+    public static final short COBBLED_BLACKSTONE = (short) (111 << BLOCK_TYPE_BITS);
     public static final short BLACKSTONE_BRICKS = (short) (112 << BLOCK_TYPE_BITS);
     public static final short POLISHED_BLACKSTONE = (short) (113 << BLOCK_TYPE_BITS);
     public static final short COAL_BLOCK = (short) (114 << BLOCK_TYPE_BITS);
     public static final short IRON_BLOCK = (short) (115 << BLOCK_TYPE_BITS);
     public static final short DIAMOND_BLOCK = (short) (116 << BLOCK_TYPE_BITS);
     public static final short UP_DOWN_BASALT = (short) (117 << BLOCK_TYPE_BITS);
+    public static final short MOSSY_COBBLED_BLACKSTONE = (short) (118 << BLOCK_TYPE_BITS);
+    public static final short MOSSY_BLACKSTONE_BRICKS = (short) (119 << BLOCK_TYPE_BITS);
+    public static final short MOSSY_POLISHED_BLACKSTONE = (short) (120 << BLOCK_TYPE_BITS);
+    public static final short BLACKSTONE = (short) (121 << BLOCK_TYPE_BITS);
+    public static final short MOSSY_BLACKSTONE = (short) (122 << BLOCK_TYPE_BITS);
 
-    public static final int AMOUNT_OF_TO_PLACE_STANDARD_BLOCKS = 118;
+    public static final int AMOUNT_OF_TO_PLACE_STANDARD_BLOCKS = 123;
 
     public static final short NORTH_SOUTH_OAK_LOG = (short) (255 << BLOCK_TYPE_BITS);
     public static final short EAST_WEST_OAK_LOG = (short) (254 << BLOCK_TYPE_BITS);
@@ -479,7 +482,6 @@ public class Constants {
     public static final short EAST_FURNACE = (short) (229 << BLOCK_TYPE_BITS);
     public static final short NORTH_SOUTH_BASALT = (short) (228 << BLOCK_TYPE_BITS);
     public static final short EAST_WEST_BASALT = (short) (227 << BLOCK_TYPE_BITS);
-
     public static final int AMOUNT_OF_STANDARD_BLOCKS = 256;
 
     // Just pretend it doesn't exist
@@ -492,6 +494,9 @@ public class Constants {
     public static final float[] GUI_ELEMENT_TEXTURE_COORDINATES;
 
     public static final float[] OVERLAY_VERTICES;
+
+    private Constants() {
+    }
 
     // No like actually, this doesn't exist! Trust me. please...
     static {

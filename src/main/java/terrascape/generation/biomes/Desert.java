@@ -6,7 +6,7 @@ import static terrascape.generation.WorldGeneration.*;
 import static terrascape.utils.Constants.*;
 import static terrascape.utils.Constants.SAND;
 
-public class Desert extends Biome {
+public final class Desert extends Biome {
     @Override
     public boolean placeBlock(int inChunkX, int inChunkY, int inChunkZ, GenerationData data) {
         int totalY = data.chunk.Y << CHUNK_SIZE_BITS | inChunkY;

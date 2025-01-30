@@ -2,12 +2,7 @@ package terrascape.entity;
 
 import org.joml.Vector3f;
 
-public class SkyBox {
-
-    private final int vao, vertexCount;
-    private Texture texture1;
-    private Texture texture2;
-    private final Vector3f position;
+public final class SkyBox {
 
     public SkyBox(int vao, int vertexCount, Vector3f position) {
         this.vao = vao;
@@ -27,7 +22,7 @@ public class SkyBox {
         return texture1;
     }
 
-    public Texture getTexture2(){
+    public Texture getTexture2() {
         return texture2;
     }
 
@@ -39,4 +34,9 @@ public class SkyBox {
         this.texture1 = texture1;
         this.texture2 = texture2;
     }
+
+    private final int vao, vertexCount;
+    private Texture texture1;
+    private Texture texture2;
+    private final Vector3f position;
 }

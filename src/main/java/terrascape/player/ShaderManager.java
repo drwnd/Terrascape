@@ -8,7 +8,7 @@ import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ShaderManager {
+public final class ShaderManager {
 
     private final int programID;
     private int vertexShaderID, fragmentShaderID;
@@ -40,12 +40,12 @@ public class ShaderManager {
         GL20.glUniform1iv(uniforms.get(uniformName), data);
     }
 
-    public void setUniform(String uniformName, int value_X, int value_Y) {
-        GL20.glUniform2i(uniforms.get(uniformName), value_X, value_Y);
+    public void setUniform(String uniformName, int x, int y) {
+        GL20.glUniform2i(uniforms.get(uniformName), x, y);
     }
 
-    public void setUniform(String uniformName, Vector3i value) {
-        GL20.glUniform3i(uniforms.get(uniformName), value.x, value.y, value.z);
+    public void setUniform(String uniformName, int x, int y, int z) {
+        GL20.glUniform3i(uniforms.get(uniformName), x, y, z);
     }
 
     public void setUniform(String uniformName, Vector3f value) {
@@ -58,10 +58,6 @@ public class ShaderManager {
 
     public void setUniform(String uniformName, float x, float y) {
         GL20.glUniform2f(uniforms.get(uniformName), x, y);
-    }
-
-    public void setUniform(String uniformName, float x, float y, float z) {
-        GL20.glUniform3f(uniforms.get(uniformName), x, y, z);
     }
 
     public void setUniform(String uniformName, float x, float y, float z, float w) {
@@ -119,7 +115,6 @@ public class ShaderManager {
         GL20.glValidateProgram(programID);
         if (GL20.glGetProgrami(programID, GL20.GL_VALIDATE_STATUS) == 0)
             throw new Exception("Unable to validate shader code: " + GL20.glGetProgramInfoLog(programID, 1024));
-
     }
 
     public void bind() {

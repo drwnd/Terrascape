@@ -19,13 +19,13 @@ public record BlockEvent(int x, int y, int z, byte type) {
         while (counter < MAX_AMOUNTS_OF_MISSED_TICKS_TO_EXECUTE_PER_TICK) {
             counter++;
             EventQueue queue = null;
-            synchronized (events) {
-                for (EventQueue currentQueue : events)
+            synchronized (EVENTS) {
+                for (EventQueue currentQueue : EVENTS)
                     if (currentQueue.tick <= tick) {
                         queue = currentQueue;
                         break;
                     }
-                events.remove(queue);
+                EVENTS.remove(queue);
             }
             if (queue == null) break; // Executed every tick up to current time
 
@@ -49,7 +49,7 @@ public record BlockEvent(int x, int y, int z, byte type) {
 
     public static int getAmountOfScheduledEvents(long currentTick) {
         int sum = 0;
-        for (EventQueue currentQueue : events)
+        for (EventQueue currentQueue : EVENTS)
             if (currentQueue.tick >= currentTick) sum += currentQueue.size();
         return sum;
     }
@@ -66,8 +66,8 @@ public record BlockEvent(int x, int y, int z, byte type) {
 
     public static ArrayList<BlockEvent> removeEventsInChunk(Chunk chunk) {
         ArrayList<BlockEvent> removedEvents = new ArrayList<>();
-        synchronized (events) {
-            for (EventQueue queue : events)
+        synchronized (EVENTS) {
+            for (EventQueue queue : EVENTS)
                 queue.removeEventsInChunk(chunk, removedEvents);
         }
         return removedEvents;
@@ -104,8 +104,8 @@ public record BlockEvent(int x, int y, int z, byte type) {
     }
 
     private static void add(int x, int y, int z, byte type, long tick) {
-        synchronized (events) {
-            for (EventQueue queue : events)
+        synchronized (EVENTS) {
+            for (EventQueue queue : EVENTS)
                 if (queue.tick == tick) {
                     synchronized (queue) {
                         if (!queue.hasEventScheduledAt(x, y, z)) queue.enqueue(new BlockEvent(x, y, z, type));
@@ -115,8 +115,8 @@ public record BlockEvent(int x, int y, int z, byte type) {
 
             EventQueue queue = new EventQueue(10, tick);
             queue.enqueue(new BlockEvent(x, y, z, type));
-            synchronized (events) {
-                events.add(queue);
+            synchronized (EVENTS) {
+                EVENTS.add(queue);
             }
         }
     }
@@ -147,7 +147,7 @@ public record BlockEvent(int x, int y, int z, byte type) {
         short block = Chunk.getBlockInWorld(event.x, event.y, event.z);
         if ((Block.getBlockTypeData(block) & SMART_BLOCK_TYPE) == 0) return;
         int blockType = Block.getBlockType(block);
-        int water_logged = block & WATER_LOGGED_MASK;
+        int waterLogged = block & WATER_LOGGED_MASK;
 
         int expectedBlockType = getSmartBlockType(block, event.x, event.y, event.z);
         if (expectedBlockType == blockType) return;
@@ -163,7 +163,7 @@ public record BlockEvent(int x, int y, int z, byte type) {
         int inChunkY = event.y & CHUNK_SIZE_MASK;
         int inChunkZ = event.z & CHUNK_SIZE_MASK;
 
-        chunk.placeBlock(inChunkX, inChunkY, inChunkZ, (short) (block & BASE_BLOCK_MASK | water_logged | expectedBlockType));
+        chunk.placeBlock(inChunkX, inChunkY, inChunkZ, (short) (block & BASE_BLOCK_MASK | waterLogged | expectedBlockType));
     }
 
     private static int getSmartBlockType(short block, int x, int y, int z) {
@@ -390,7 +390,7 @@ public record BlockEvent(int x, int y, int z, byte type) {
         ServerLogic.placeBlock(AIR, event.x, event.y, event.z, false);
     }
 
-    private static final ArrayList<EventQueue> events = new ArrayList<>();
+    private static final ArrayList<EventQueue> EVENTS = new ArrayList<>();
     private static final int EVENT_BYTE_SIZE = 13;
     private static final byte GRAVITY_BLOCK_FALL_EVENT = 1;
     private static final byte WATER_FLOW_EVENT = 2;

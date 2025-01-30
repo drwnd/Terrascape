@@ -15,9 +15,7 @@ import java.util.LinkedList;
 import static terrascape.utils.Constants.*;
 import static terrascape.utils.Settings.*;
 
-public class TNT_Entity extends Entity {
-    private static final float[] TNT_AABB = new float[]{-0.5f, 0.5f, -0.5f, 0.5f, -0.5f, 0.5f};
-    private static final int EXPLOSION_STRENGTH = 2;
+public final class TNT_Entity extends Entity {
 
     private int fuse;
 
@@ -237,9 +235,12 @@ public class TNT_Entity extends Entity {
         ServerLogic.spawnEntity(entity);
     }
 
-    protected static TNT_Entity getFromBytesCustom(byte[] bytes, int startIndex) {
+    static TNT_Entity getFromBytesCustom(byte[] bytes, int startIndex) {
         int fuse = Utils.getInt(bytes, startIndex);
 
         return new TNT_Entity(fuse, null, null);
     }
+
+    private static final float[] TNT_AABB = new float[]{-0.5f, 0.5f, -0.5f, 0.5f, -0.5f, 0.5f};
+    private static final int EXPLOSION_STRENGTH = 2;
 }

@@ -23,7 +23,7 @@ import static terrascape.generation.WorldGeneration.WATER_LEVEL;
 import static terrascape.utils.Constants.*;
 import static terrascape.utils.Settings.*;
 
-public class Player {
+public final class Player {
 
     public Player() {
         window = Launcher.getWindow();
@@ -184,7 +184,7 @@ public class Player {
         movement.setTouchingWater(isInWater);
     }
 
-    protected void handleInventoryHotkeys() {
+    private void handleInventoryHotkeys() {
         if (window.isKeyPressed(HOT_BAR_SLOT_1)) hotBar[0] = GUIElement.getHoveredOverBlock(inventoryScroll);
         else if (window.isKeyPressed(HOT_BAR_SLOT_2)) hotBar[1] = GUIElement.getHoveredOverBlock(inventoryScroll);
         else if (window.isKeyPressed(HOT_BAR_SLOT_3)) hotBar[2] = GUIElement.getHoveredOverBlock(inventoryScroll);
@@ -261,7 +261,7 @@ public class Player {
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
-        }
+        } else if (button == RELOAD_SHADERS_BUTTON && action == GLFW.GLFW_PRESS) renderer.reloadShaders();
     }
 
     public void setSelectedHotBarSlot(int slot) {
@@ -485,7 +485,7 @@ public class Player {
                 element = ObjectLoader.loadGUIElement(GUIElement.getBlockDisplayVertices(block), textureCoordinates, new Vector2f(xOffset, yOffset));
             }
 
-            element.setTexture(Texture.atlas);
+            element.setTexture(Texture.ATLAS);
             hotBarElements.add(element);
         }
     }

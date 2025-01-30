@@ -1,12 +1,12 @@
 package terrascape.utils;
 
-public class Settings {
+public final class Settings {
     public static final int IS_MOUSE_BUTTON = 0x80000000;
     public static final int IS_KEYBOARD_BUTTON = 0;
 
     //Change to whatever you want
 //        public static final long SEED = new Random().nextLong();
-    public static long SEED = 64891648131816132L;
+    public static long SEED;
 
     // Values read from file
     public static float FOV;
@@ -57,6 +57,7 @@ public class Settings {
     public static float DIG_GAIN;
     public static float MISCELLANEOUS_GAIN;
     public static float INVENTORY_GAIN;
+    public static int RELOAD_SHADERS_BUTTON;
 
     // Calculated values
     public static boolean SCROLL_HOT_BAR;
@@ -67,4 +68,6 @@ public class Settings {
 
     public static int RENDERED_WORLD_WIDTH;
     public static int RENDERED_WORLD_HEIGHT;
+
+    private Settings() { }
 }

@@ -10,7 +10,7 @@ import org.lwjgl.glfw.GLFW;
 import static terrascape.utils.Constants.*;
 import static terrascape.utils.Settings.*;
 
-public class MouseInput {
+public final class MouseInput {
 
     public MouseInput(Player player) {
         this.player = player;

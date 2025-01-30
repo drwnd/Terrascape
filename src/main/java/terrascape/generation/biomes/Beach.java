@@ -5,7 +5,7 @@ import terrascape.generation.GenerationData;
 import static terrascape.generation.WorldGeneration.*;
 import static terrascape.utils.Constants.*;
 
-public class Beach extends Biome {
+public final class Beach extends Biome {
 
     @Override
     public boolean placeBlock(int inChunkX, int inChunkY, int inChunkZ, GenerationData data) {

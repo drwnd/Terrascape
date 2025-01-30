@@ -9,7 +9,7 @@ import java.util.Random;
 import static terrascape.utils.Constants.*;
 import static terrascape.utils.Settings.SEED;
 
-public class GenerationData {
+public final class GenerationData {
 
     public double temperature;
     public double humidity;

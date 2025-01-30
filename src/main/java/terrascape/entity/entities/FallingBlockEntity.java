@@ -8,11 +8,7 @@ import terrascape.utils.Utils;
 
 import static terrascape.utils.Constants.*;
 
-public class FallingBlockEntity extends Entity {
-
-    private static final float[] FALLING_BLOCK_AABB = new float[]{-0.5f, 0.5f, -0.5f, 0.5f, -0.5f, 0.5f};
-    private final short block;
-    private final byte topTexture, sideTexture, bottomTexture;
+public final class FallingBlockEntity extends Entity {
 
     public FallingBlockEntity(Vector3f position, Vector3f velocity) {
         this.position = position;
@@ -86,9 +82,13 @@ public class FallingBlockEntity extends Entity {
         return BASE_BYTE_SIZE + 2;
     }
 
-    protected static FallingBlockEntity getFromBytesCustom(byte[] bytes, int startIndex) {
+    static FallingBlockEntity getFromBytesCustom(byte[] bytes, int startIndex) {
         short block = Utils.getShort(bytes, startIndex);
 
         return new FallingBlockEntity(null, null, block);
     }
+
+    private static final float[] FALLING_BLOCK_AABB = new float[]{-0.5f, 0.5f, -0.5f, 0.5f, -0.5f, 0.5f};
+    private final short block;
+    private final byte topTexture, sideTexture, bottomTexture;
 }

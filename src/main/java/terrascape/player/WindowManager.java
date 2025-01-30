@@ -11,16 +11,7 @@ import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.system.MemoryUtil;
 
-public class WindowManager {
-
-    private final String title;
-    private int width, height;
-    private long window;
-
-    private boolean resize;
-    private final boolean vSync, maximized;
-
-    private final Matrix4f projectionMatrix;
+public final class WindowManager {
 
     public WindowManager(String title, int width, int height, boolean vSync, boolean maximized) {
         this.title = title;
@@ -142,4 +133,13 @@ public class WindowManager {
     public Matrix4f getProjectionMatrix() {
         return projectionMatrix;
     }
+
+    private final String title;
+    private int width, height;
+    private long window;
+
+    private boolean resize;
+    private final boolean vSync, maximized;
+
+    private final Matrix4f projectionMatrix;
 }

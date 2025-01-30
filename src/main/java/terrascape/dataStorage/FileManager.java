@@ -23,9 +23,92 @@ import java.util.Map;
 import static terrascape.utils.Constants.*;
 import static terrascape.utils.Settings.*;
 
-public class FileManager {
+public final class FileManager {
 
     public static void init() {
+        KEY_CODES.put("LEFT_CLICK", GLFW.GLFW_MOUSE_BUTTON_LEFT | IS_MOUSE_BUTTON);
+        KEY_CODES.put("RIGHT_CLICK", GLFW.GLFW_MOUSE_BUTTON_RIGHT | IS_MOUSE_BUTTON);
+        KEY_CODES.put("MIDDLE_CLICK", GLFW.GLFW_MOUSE_BUTTON_MIDDLE | IS_MOUSE_BUTTON);
+        KEY_CODES.put("MOUSE_BUTTON_4", GLFW.GLFW_MOUSE_BUTTON_4 | IS_MOUSE_BUTTON);
+        KEY_CODES.put("MOUSE_BUTTON_5", GLFW.GLFW_MOUSE_BUTTON_5 | IS_MOUSE_BUTTON);
+        KEY_CODES.put("MOUSE_BUTTON_6", GLFW.GLFW_MOUSE_BUTTON_6 | IS_MOUSE_BUTTON);
+        KEY_CODES.put("MOUSE_BUTTON_7", GLFW.GLFW_MOUSE_BUTTON_7 | IS_MOUSE_BUTTON);
+        KEY_CODES.put("MOUSE_BUTTON_8", GLFW.GLFW_MOUSE_BUTTON_8 | IS_MOUSE_BUTTON);
+
+        KEY_CODES.put("0", GLFW.GLFW_KEY_0 | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("1", GLFW.GLFW_KEY_1 | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("2", GLFW.GLFW_KEY_2 | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("3", GLFW.GLFW_KEY_3 | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("4", GLFW.GLFW_KEY_4 | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("5", GLFW.GLFW_KEY_5 | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("6", GLFW.GLFW_KEY_6 | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("7", GLFW.GLFW_KEY_7 | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("8", GLFW.GLFW_KEY_8 | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("9", GLFW.GLFW_KEY_9 | IS_KEYBOARD_BUTTON);
+
+        KEY_CODES.put("F1", GLFW.GLFW_KEY_F1 | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("F2", GLFW.GLFW_KEY_F2 | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("F3", GLFW.GLFW_KEY_F3 | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("F4", GLFW.GLFW_KEY_F4 | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("F5", GLFW.GLFW_KEY_F5 | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("F6", GLFW.GLFW_KEY_F6 | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("F7", GLFW.GLFW_KEY_F7 | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("F8", GLFW.GLFW_KEY_F8 | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("F9", GLFW.GLFW_KEY_F9 | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("F10", GLFW.GLFW_KEY_F10 | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("F11", GLFW.GLFW_KEY_F11 | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("F12", GLFW.GLFW_KEY_F12 | IS_KEYBOARD_BUTTON);
+
+        KEY_CODES.put("TAB", GLFW.GLFW_KEY_TAB | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("CAPS_LOCK", GLFW.GLFW_KEY_CAPS_LOCK | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("SPACE", GLFW.GLFW_KEY_SPACE | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("LEFT_SHIFT", GLFW.GLFW_KEY_LEFT_SHIFT | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("<", GLFW.GLFW_KEY_WORLD_2 | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("LEFT_CONTROL", GLFW.GLFW_KEY_LEFT_CONTROL | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("LEFT_ALT", GLFW.GLFW_KEY_LEFT_ALT | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("RIGHT_SHIFT", GLFW.GLFW_KEY_RIGHT_SHIFT | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("RIGHT_CONTROL", GLFW.GLFW_KEY_RIGHT_CONTROL | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("RIGHT_ALT", GLFW.GLFW_KEY_RIGHT_ALT | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("PLUS", GLFW.GLFW_KEY_RIGHT_BRACKET);
+        KEY_CODES.put("HASHTAG", GLFW.GLFW_KEY_BACKSLASH);
+        KEY_CODES.put("COMMA", GLFW.GLFW_KEY_COMMA);
+        KEY_CODES.put("POINT", GLFW.GLFW_KEY_PERIOD);
+        KEY_CODES.put("MINUS", GLFW.GLFW_KEY_SLASH);
+        KEY_CODES.put("^", GLFW.GLFW_KEY_GRAVE_ACCENT);
+        KEY_CODES.put("UP", GLFW.GLFW_KEY_UP | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("LEFT", GLFW.GLFW_KEY_LEFT | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("DOWN", GLFW.GLFW_KEY_DOWN | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("RIGHT", GLFW.GLFW_KEY_RIGHT | IS_KEYBOARD_BUTTON);
+
+        KEY_CODES.put("A", GLFW.GLFW_KEY_A | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("B", GLFW.GLFW_KEY_B | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("C", GLFW.GLFW_KEY_C | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("D", GLFW.GLFW_KEY_D | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("E", GLFW.GLFW_KEY_E | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("F", GLFW.GLFW_KEY_F | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("G", GLFW.GLFW_KEY_G | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("H", GLFW.GLFW_KEY_H | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("I", GLFW.GLFW_KEY_I | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("J", GLFW.GLFW_KEY_J | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("K", GLFW.GLFW_KEY_K | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("L", GLFW.GLFW_KEY_L | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("M", GLFW.GLFW_KEY_M | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("N", GLFW.GLFW_KEY_N | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("O", GLFW.GLFW_KEY_O | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("P", GLFW.GLFW_KEY_P | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("Q", GLFW.GLFW_KEY_Q | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("R", GLFW.GLFW_KEY_R | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("S", GLFW.GLFW_KEY_S | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("T", GLFW.GLFW_KEY_T | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("U", GLFW.GLFW_KEY_U | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("V", GLFW.GLFW_KEY_V | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("W", GLFW.GLFW_KEY_W | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("X", GLFW.GLFW_KEY_X | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("Y", GLFW.GLFW_KEY_Y | IS_KEYBOARD_BUTTON);
+        KEY_CODES.put("Z", GLFW.GLFW_KEY_Z | IS_KEYBOARD_BUTTON);
+    }
+
+    private static void loadUniversalFiles() {
         seedFile = new File("Saves/" + SEED);
         if (!seedFile.exists()) //noinspection ResultOfMethodCallIgnored
             seedFile.mkdirs();
@@ -37,94 +120,13 @@ public class FileManager {
         chunksFile = new File(seedFile.getPath() + "/chunks");
         if (!chunksFile.exists()) //noinspection ResultOfMethodCallIgnored
             chunksFile.mkdirs();
-
-        keyCodes.put("LEFT_CLICK", GLFW.GLFW_MOUSE_BUTTON_LEFT | IS_MOUSE_BUTTON);
-        keyCodes.put("RIGHT_CLICK", GLFW.GLFW_MOUSE_BUTTON_RIGHT | IS_MOUSE_BUTTON);
-        keyCodes.put("MIDDLE_CLICK", GLFW.GLFW_MOUSE_BUTTON_MIDDLE | IS_MOUSE_BUTTON);
-        keyCodes.put("MOUSE_BUTTON_4", GLFW.GLFW_MOUSE_BUTTON_4 | IS_MOUSE_BUTTON);
-        keyCodes.put("MOUSE_BUTTON_5", GLFW.GLFW_MOUSE_BUTTON_5 | IS_MOUSE_BUTTON);
-        keyCodes.put("MOUSE_BUTTON_6", GLFW.GLFW_MOUSE_BUTTON_6 | IS_MOUSE_BUTTON);
-        keyCodes.put("MOUSE_BUTTON_7", GLFW.GLFW_MOUSE_BUTTON_7 | IS_MOUSE_BUTTON);
-        keyCodes.put("MOUSE_BUTTON_8", GLFW.GLFW_MOUSE_BUTTON_8 | IS_MOUSE_BUTTON);
-
-        keyCodes.put("0", GLFW.GLFW_KEY_0 | IS_KEYBOARD_BUTTON);
-        keyCodes.put("1", GLFW.GLFW_KEY_1 | IS_KEYBOARD_BUTTON);
-        keyCodes.put("2", GLFW.GLFW_KEY_2 | IS_KEYBOARD_BUTTON);
-        keyCodes.put("3", GLFW.GLFW_KEY_3 | IS_KEYBOARD_BUTTON);
-        keyCodes.put("4", GLFW.GLFW_KEY_4 | IS_KEYBOARD_BUTTON);
-        keyCodes.put("5", GLFW.GLFW_KEY_5 | IS_KEYBOARD_BUTTON);
-        keyCodes.put("6", GLFW.GLFW_KEY_6 | IS_KEYBOARD_BUTTON);
-        keyCodes.put("7", GLFW.GLFW_KEY_7 | IS_KEYBOARD_BUTTON);
-        keyCodes.put("8", GLFW.GLFW_KEY_8 | IS_KEYBOARD_BUTTON);
-        keyCodes.put("9", GLFW.GLFW_KEY_9 | IS_KEYBOARD_BUTTON);
-
-        keyCodes.put("F1", GLFW.GLFW_KEY_F1 | IS_KEYBOARD_BUTTON);
-        keyCodes.put("F2", GLFW.GLFW_KEY_F2 | IS_KEYBOARD_BUTTON);
-        keyCodes.put("F3", GLFW.GLFW_KEY_F3 | IS_KEYBOARD_BUTTON);
-        keyCodes.put("F4", GLFW.GLFW_KEY_F4 | IS_KEYBOARD_BUTTON);
-        keyCodes.put("F5", GLFW.GLFW_KEY_F5 | IS_KEYBOARD_BUTTON);
-        keyCodes.put("F6", GLFW.GLFW_KEY_F6 | IS_KEYBOARD_BUTTON);
-        keyCodes.put("F7", GLFW.GLFW_KEY_F7 | IS_KEYBOARD_BUTTON);
-        keyCodes.put("F8", GLFW.GLFW_KEY_F8 | IS_KEYBOARD_BUTTON);
-        keyCodes.put("F9", GLFW.GLFW_KEY_F9 | IS_KEYBOARD_BUTTON);
-        keyCodes.put("F10", GLFW.GLFW_KEY_F10 | IS_KEYBOARD_BUTTON);
-        keyCodes.put("F11", GLFW.GLFW_KEY_F11 | IS_KEYBOARD_BUTTON);
-        keyCodes.put("F12", GLFW.GLFW_KEY_F12 | IS_KEYBOARD_BUTTON);
-
-        keyCodes.put("TAB", GLFW.GLFW_KEY_TAB | IS_KEYBOARD_BUTTON);
-        keyCodes.put("CAPS_LOCK", GLFW.GLFW_KEY_CAPS_LOCK | IS_KEYBOARD_BUTTON);
-        keyCodes.put("SPACE", GLFW.GLFW_KEY_SPACE | IS_KEYBOARD_BUTTON);
-        keyCodes.put("LEFT_SHIFT", GLFW.GLFW_KEY_LEFT_SHIFT | IS_KEYBOARD_BUTTON);
-        keyCodes.put("<", GLFW.GLFW_KEY_WORLD_2 | IS_KEYBOARD_BUTTON);
-        keyCodes.put("LEFT_CONTROL", GLFW.GLFW_KEY_LEFT_CONTROL | IS_KEYBOARD_BUTTON);
-        keyCodes.put("LEFT_ALT", GLFW.GLFW_KEY_LEFT_ALT | IS_KEYBOARD_BUTTON);
-        keyCodes.put("RIGHT_SHIFT", GLFW.GLFW_KEY_RIGHT_SHIFT | IS_KEYBOARD_BUTTON);
-        keyCodes.put("RIGHT_CONTROL", GLFW.GLFW_KEY_RIGHT_CONTROL | IS_KEYBOARD_BUTTON);
-        keyCodes.put("RIGHT_ALT", GLFW.GLFW_KEY_RIGHT_ALT | IS_KEYBOARD_BUTTON);
-        keyCodes.put("PLUS", GLFW.GLFW_KEY_RIGHT_BRACKET);
-        keyCodes.put("HASHTAG", GLFW.GLFW_KEY_BACKSLASH);
-        keyCodes.put("COMMA", GLFW.GLFW_KEY_COMMA);
-        keyCodes.put("POINT", GLFW.GLFW_KEY_PERIOD);
-        keyCodes.put("MINUS", GLFW.GLFW_KEY_SLASH);
-        keyCodes.put("^", GLFW.GLFW_KEY_GRAVE_ACCENT);
-        keyCodes.put("UP", GLFW.GLFW_KEY_UP | IS_KEYBOARD_BUTTON);
-        keyCodes.put("LEFT", GLFW.GLFW_KEY_LEFT | IS_KEYBOARD_BUTTON);
-        keyCodes.put("DOWN", GLFW.GLFW_KEY_DOWN | IS_KEYBOARD_BUTTON);
-        keyCodes.put("RIGHT", GLFW.GLFW_KEY_RIGHT | IS_KEYBOARD_BUTTON);
-
-        keyCodes.put("A", GLFW.GLFW_KEY_A | IS_KEYBOARD_BUTTON);
-        keyCodes.put("B", GLFW.GLFW_KEY_B | IS_KEYBOARD_BUTTON);
-        keyCodes.put("C", GLFW.GLFW_KEY_C | IS_KEYBOARD_BUTTON);
-        keyCodes.put("D", GLFW.GLFW_KEY_D | IS_KEYBOARD_BUTTON);
-        keyCodes.put("E", GLFW.GLFW_KEY_E | IS_KEYBOARD_BUTTON);
-        keyCodes.put("F", GLFW.GLFW_KEY_F | IS_KEYBOARD_BUTTON);
-        keyCodes.put("G", GLFW.GLFW_KEY_G | IS_KEYBOARD_BUTTON);
-        keyCodes.put("H", GLFW.GLFW_KEY_H | IS_KEYBOARD_BUTTON);
-        keyCodes.put("I", GLFW.GLFW_KEY_I | IS_KEYBOARD_BUTTON);
-        keyCodes.put("J", GLFW.GLFW_KEY_J | IS_KEYBOARD_BUTTON);
-        keyCodes.put("K", GLFW.GLFW_KEY_K | IS_KEYBOARD_BUTTON);
-        keyCodes.put("L", GLFW.GLFW_KEY_L | IS_KEYBOARD_BUTTON);
-        keyCodes.put("M", GLFW.GLFW_KEY_M | IS_KEYBOARD_BUTTON);
-        keyCodes.put("N", GLFW.GLFW_KEY_N | IS_KEYBOARD_BUTTON);
-        keyCodes.put("O", GLFW.GLFW_KEY_O | IS_KEYBOARD_BUTTON);
-        keyCodes.put("P", GLFW.GLFW_KEY_P | IS_KEYBOARD_BUTTON);
-        keyCodes.put("Q", GLFW.GLFW_KEY_Q | IS_KEYBOARD_BUTTON);
-        keyCodes.put("R", GLFW.GLFW_KEY_R | IS_KEYBOARD_BUTTON);
-        keyCodes.put("S", GLFW.GLFW_KEY_S | IS_KEYBOARD_BUTTON);
-        keyCodes.put("T", GLFW.GLFW_KEY_T | IS_KEYBOARD_BUTTON);
-        keyCodes.put("U", GLFW.GLFW_KEY_U | IS_KEYBOARD_BUTTON);
-        keyCodes.put("V", GLFW.GLFW_KEY_V | IS_KEYBOARD_BUTTON);
-        keyCodes.put("W", GLFW.GLFW_KEY_W | IS_KEYBOARD_BUTTON);
-        keyCodes.put("X", GLFW.GLFW_KEY_X | IS_KEYBOARD_BUTTON);
-        keyCodes.put("Y", GLFW.GLFW_KEY_Y | IS_KEYBOARD_BUTTON);
-        keyCodes.put("Z", GLFW.GLFW_KEY_Z | IS_KEYBOARD_BUTTON);
     }
 
 
     public static void saveChunk(Chunk chunk) {
         chunk.setSaved();
         try {
-            File chunkFile = new File(chunksFile.getPath() + "/" + chunk.id);
+            File chunkFile = new File(chunksFile.getPath() + "/" + chunk.ID);
 
             if (!chunkFile.exists()) //noinspection ResultOfMethodCallIgnored
                 chunkFile.mkdir();
@@ -172,7 +174,7 @@ public class FileManager {
         Chunk chunk = new Chunk(ints[CHUNK_X], ints[CHUNK_Y], ints[CHUNK_Z], blocks, entityClusters);
         chunk.setGenerated();
         chunk.setSaved();
-        Chunk.removeToGenerateBlocks(chunk.id);
+        Chunk.removeToGenerateBlocks(chunk.ID);
 
         return chunk;
     }
@@ -320,6 +322,8 @@ public class FileManager {
         byte[] data = reader.readAllBytes();
         reader.close();
 
+        if (data.length != 12) return;
+
         long currentTick = Utils.getLong(data, 0);
         float currentTime = Float.intBitsToFloat(Utils.getInt(data, 8));
 
@@ -393,47 +397,49 @@ public class FileManager {
         int newRenderDistanceXZ = Integer.parseInt(getStingAfterColon(reader.readLine()));
         int newRenderDistanceY = Integer.parseInt(getStingAfterColon(reader.readLine()));
 
-        MOVE_FORWARD_BUTTON = keyCodes.get(getStingAfterColon(reader.readLine()));
-        MOVE_BACK_BUTTON = keyCodes.get(getStingAfterColon(reader.readLine()));
-        MOVE_RIGHT_BUTTON = keyCodes.get(getStingAfterColon(reader.readLine()));
-        MOVE_LEFT_BUTTON = keyCodes.get(getStingAfterColon(reader.readLine()));
+        MOVE_FORWARD_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
+        MOVE_BACK_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
+        MOVE_RIGHT_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
+        MOVE_LEFT_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
 
-        JUMP_BUTTON = keyCodes.get(getStingAfterColon(reader.readLine()));
-        SPRINT_BUTTON = keyCodes.get(getStingAfterColon(reader.readLine()));
-        SNEAK_BUTTON = keyCodes.get(getStingAfterColon(reader.readLine()));
-        CRAWL_BUTTON = keyCodes.get(getStingAfterColon(reader.readLine()));
-        FLY_FAST_BUTTON = keyCodes.get(getStingAfterColon(reader.readLine()));
+        JUMP_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
+        SPRINT_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
+        SNEAK_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
+        CRAWL_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
+        FLY_FAST_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
 
-        HOT_BAR_SLOT_1 = keyCodes.get(getStingAfterColon(reader.readLine()));
-        HOT_BAR_SLOT_2 = keyCodes.get(getStingAfterColon(reader.readLine()));
-        HOT_BAR_SLOT_3 = keyCodes.get(getStingAfterColon(reader.readLine()));
-        HOT_BAR_SLOT_4 = keyCodes.get(getStingAfterColon(reader.readLine()));
-        HOT_BAR_SLOT_5 = keyCodes.get(getStingAfterColon(reader.readLine()));
-        HOT_BAR_SLOT_6 = keyCodes.get(getStingAfterColon(reader.readLine()));
-        HOT_BAR_SLOT_7 = keyCodes.get(getStingAfterColon(reader.readLine()));
-        HOT_BAR_SLOT_8 = keyCodes.get(getStingAfterColon(reader.readLine()));
-        HOT_BAR_SLOT_9 = keyCodes.get(getStingAfterColon(reader.readLine()));
+        HOT_BAR_SLOT_1 = KEY_CODES.get(getStingAfterColon(reader.readLine()));
+        HOT_BAR_SLOT_2 = KEY_CODES.get(getStingAfterColon(reader.readLine()));
+        HOT_BAR_SLOT_3 = KEY_CODES.get(getStingAfterColon(reader.readLine()));
+        HOT_BAR_SLOT_4 = KEY_CODES.get(getStingAfterColon(reader.readLine()));
+        HOT_BAR_SLOT_5 = KEY_CODES.get(getStingAfterColon(reader.readLine()));
+        HOT_BAR_SLOT_6 = KEY_CODES.get(getStingAfterColon(reader.readLine()));
+        HOT_BAR_SLOT_7 = KEY_CODES.get(getStingAfterColon(reader.readLine()));
+        HOT_BAR_SLOT_8 = KEY_CODES.get(getStingAfterColon(reader.readLine()));
+        HOT_BAR_SLOT_9 = KEY_CODES.get(getStingAfterColon(reader.readLine()));
 
-        DESTROY_BUTTON = keyCodes.get(getStingAfterColon(reader.readLine()));
-        USE_BUTTON = keyCodes.get(getStingAfterColon(reader.readLine()));
-        PICK_BLOCK_BUTTON = keyCodes.get(getStingAfterColon(reader.readLine()));
+        DESTROY_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
+        USE_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
+        PICK_BLOCK_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
 
-        OPEN_INVENTORY_BUTTON = keyCodes.get(getStingAfterColon(reader.readLine()));
-        OPEN_DEBUG_MENU_BUTTON = keyCodes.get(getStingAfterColon(reader.readLine()));
-        TOGGLE_X_RAY_BUTTON = keyCodes.get(getStingAfterColon(reader.readLine()));
-        TOGGLE_NO_CLIP_BUTTON = keyCodes.get(getStingAfterColon(reader.readLine()));
-        USE_OCCLUSION_CULLING_BUTTON = keyCodes.get(getStingAfterColon(reader.readLine()));
-        SET_POSITION_1_BUTTON = keyCodes.get(getStingAfterColon(reader.readLine()));
-        SET_POSITION_2_BUTTON = keyCodes.get(getStingAfterColon(reader.readLine()));
-        RELOAD_SETTINGS_BUTTON = keyCodes.get(getStingAfterColon(reader.readLine()));
+        OPEN_INVENTORY_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
+        OPEN_DEBUG_MENU_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
+        TOGGLE_X_RAY_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
+        TOGGLE_NO_CLIP_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
+        USE_OCCLUSION_CULLING_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
+        SET_POSITION_1_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
+        SET_POSITION_2_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
+        RELOAD_SETTINGS_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
         SCROLL_HOT_BAR = Boolean.parseBoolean(getStingAfterColon(reader.readLine()));
-        ZOOM_BUTTON = keyCodes.get(getStingAfterColon(reader.readLine()));
+        ZOOM_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
         AUDIO_GAIN = Float.parseFloat(getStingAfterColon(reader.readLine()));
         STEP_GAIN = Float.parseFloat(getStingAfterColon(reader.readLine()));
         PLACE_GAIN = Float.parseFloat(getStingAfterColon(reader.readLine()));
         DIG_GAIN = Float.parseFloat(getStingAfterColon(reader.readLine()));
         MISCELLANEOUS_GAIN = Float.parseFloat(getStingAfterColon(reader.readLine()));
         INVENTORY_GAIN = Float.parseFloat(getStingAfterColon(reader.readLine()));
+        RELOAD_SHADERS_BUTTON = KEY_CODES.get(getStingAfterColon(reader.readLine()));
+        long seed = Long.parseLong(getStingAfterColon(reader.readLine()));
 
         reader.close();
 
@@ -464,8 +470,18 @@ public class FileManager {
 
             ServerLogic.startGenerator();
         }
+        if (GUI_SIZE != newGUISize) {
+            Player player = ServerLogic.getPlayer();
+            GUI_SIZE = newGUISize;
+            if (player != null) {
+                GUIElement.reloadGUIElements(player);
+                player.updateHotBarElements();
+            }
+        }
 
         if (initialLoad) {
+            SEED = seed;
+            loadUniversalFiles();
             RENDER_DISTANCE_XZ = newRenderDistanceXZ;
             RENDER_DISTANCE_Y = newRenderDistanceY;
             RENDERED_WORLD_WIDTH = newRenderDistanceXZ * 2 + 5;
@@ -475,14 +491,6 @@ public class FileManager {
                     new HeightMap[RENDERED_WORLD_WIDTH * RENDERED_WORLD_WIDTH],
                     new OpaqueModel[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH],
                     new WaterModel[RENDERED_WORLD_WIDTH * RENDERED_WORLD_HEIGHT * RENDERED_WORLD_WIDTH]);
-        }
-        Player player = ServerLogic.getPlayer();
-        if (GUI_SIZE != newGUISize) {
-            GUI_SIZE = newGUISize;
-            if (player != null) {
-                GUIElement.reloadGUIElements(player);
-                player.updateHotBarElements();
-            }
         }
     }
 
@@ -726,5 +734,8 @@ public class FileManager {
     private static File seedFile;
     private static File heightMapsFile;
     private static File chunksFile;
-    private static final Map<String, Integer> keyCodes = new HashMap<>(70);
+    private static final Map<String, Integer> KEY_CODES = new HashMap<>(70);
+
+    private FileManager() {
+    }
 }

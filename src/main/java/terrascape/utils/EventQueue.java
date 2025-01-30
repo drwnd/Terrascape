@@ -7,7 +7,7 @@ import java.util.ArrayList;
 
 import static terrascape.utils.Constants.*;
 
-public class EventQueue extends ArrayQueue<BlockEvent> {
+public final class EventQueue extends ArrayQueue<BlockEvent> {
 
     public final long tick;
 

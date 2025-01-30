@@ -12,11 +12,12 @@ import terrascape.player.WindowManager;
 
 import static terrascape.utils.Constants.*;
 
-public class EngineManager {
+public final class EngineManager {
 
     public static int currentFrameRate;
 
     private static WindowManager window;
+
     private static SoundManager sound;
     private static Server server;
     private static GLFWErrorCallback errorCallback;
@@ -112,4 +113,6 @@ public class EngineManager {
     public static void setTick(long tick) {
         EngineManager.tick = tick;
     }
+
+    private EngineManager() { }
 }

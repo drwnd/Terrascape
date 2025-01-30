@@ -6,7 +6,7 @@ import static terrascape.generation.WorldGeneration.*;
 import static terrascape.utils.Constants.CHUNK_SIZE_BITS;
 import static terrascape.utils.Constants.SAND;
 
-public class Ocean extends Biome {
+public final class Ocean extends Biome {
     @Override
     public boolean placeBlock(int inChunkX, int inChunkY, int inChunkZ, GenerationData data) {
         int totalX = data.chunk.X << CHUNK_SIZE_BITS | inChunkX;
