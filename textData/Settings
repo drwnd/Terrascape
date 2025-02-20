@@ -30,7 +30,7 @@ Open inventory:E
 Open debug menu:F3
 Toggle X-Ray:X
 Toggle no-clip:G
-Toggle occlusion culling:C
+Toggle culling:C
 Set position 1:T
 Set position 2:Y
 Reload settings:O

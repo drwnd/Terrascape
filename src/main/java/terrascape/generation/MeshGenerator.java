@@ -27,7 +27,7 @@ public final class MeshGenerator {
 
         if (chunk.getBlockLength() == 1 && chunk.getSaveBlock(0) == AIR) return;
 
-        @SuppressWarnings("unchecked") ArrayList<Integer>[] vertexLists = new ArrayList[13];
+        @SuppressWarnings("unchecked") ArrayList<Integer>[] vertexLists = new ArrayList[OpaqueModel.FACE_TYPE_COUNT];
         for (int index = 0; index < vertexLists.length; index++) vertexLists[index] = new ArrayList<>();
 
 
@@ -44,12 +44,12 @@ public final class MeshGenerator {
                     if (blockType == AIR_TYPE) continue;
 
                     if (blockType == FLOWER_TYPE) {
-                        list = vertexLists[OpaqueModel.DECORATION_VERTEX_COUNT_INDEX];
+                        list = vertexLists[OpaqueModel.DECORATION_FACES_INDEX];
                         addFlowerToList();
                         continue;
                     }
                     if (blockType == VINE_TYPE) {
-                        list = vertexLists[OpaqueModel.DECORATION_VERTEX_COUNT_INDEX];
+                        list = vertexLists[OpaqueModel.DECORATION_FACES_INDEX];
                         addVineToList();
                         continue;
                     }
@@ -94,7 +94,9 @@ public final class MeshGenerator {
                 int v = texture >> 4 & 15;
 
                 if (Block.isLeaveType(block))
-                    addFoliageSideToList(vertexLists[OpaqueModel.FOLIAGE_VERTEX_COUNT_OFFSET + side], u, v);
+                    addFoliageSideToList(vertexLists[OpaqueModel.FOLIAGE_FACES_OFFSET + side], u, v);
+                else if ((properties & HAS_ASKEW_FACES) != 0)
+                    addSideToList(u, v, vertexLists[OpaqueModel.ASKEW_FACES_INDEX]);
                 else addSideToList(u, v, vertexLists[side]);
             }
     }

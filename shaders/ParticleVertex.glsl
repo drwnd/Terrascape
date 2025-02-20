@@ -6,6 +6,7 @@ layout (location = 2) in vec2 textureCoordinates;
 
 out vec2 fragTextureCoordinates;
 out vec3 normal;
+out float distance;
 
 uniform vec3 position;
 uniform vec3 cameraPosition;
@@ -27,7 +28,7 @@ void main() {
     vec3 cross1 = cross(normal, vec3(0.0, 1.0, 0.0));
     vec3 cross2 = cross(normal, cross1);
 
-    float timeSacalar = (maxAliveTime - aliveTime) / maxAliveTime;
+    float timeSacalar = max(0.0, (maxAliveTime - aliveTime) / maxAliveTime);
 
     vec3 offsetLeftRight = normalize(cross1) * (gl_VertexID & 1) * particleSize * timeSacalar;
     vec3 offsetUpDown = normalize(cross2) * (gl_VertexID >> 1 & 1) * particleSize * timeSacalar;
@@ -35,4 +36,5 @@ void main() {
     gl_Position = projectionMatrix * viewMatrix * vec4(currentPosition + offsetLeftRight + offsetUpDown, 1.0);
 
     fragTextureCoordinates = textureCoordinates + vec2((gl_VertexID & 1) * particleSize, (gl_VertexID >> 1 & 1) * particleSize);
+    distance = length(currentPosition - cameraPosition);
 }

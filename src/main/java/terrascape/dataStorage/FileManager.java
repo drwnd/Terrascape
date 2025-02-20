@@ -577,6 +577,7 @@ public final class FileManager {
         ArrayList<BlockEvent> events = BlockEvent.removeEventsInChunk(chunk);
         FileOutputStream writer = new FileOutputStream(eventsFile.getPath());
 
+
         for (BlockEvent event : events) {
             writer.write(event.type());
             writer.write(Utils.toByteArray(event.x()));

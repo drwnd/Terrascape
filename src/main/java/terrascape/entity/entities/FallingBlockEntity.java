@@ -11,26 +11,35 @@ import static terrascape.utils.Constants.*;
 public final class FallingBlockEntity extends Entity {
 
     public FallingBlockEntity(Vector3f position, Vector3f velocity) {
-        this.position = position;
-        this.velocity = velocity;
-        aabb = FALLING_BLOCK_AABB;
-
-
-        short block = Chunk.getBlockInWorld(Utils.floor(position.x), Utils.floor(position.y), Utils.floor(position.z));
-        this.block = block;
-        topTexture = (byte) Block.getTextureIndex(block, TOP);
-        sideTexture = (byte) Block.getTextureIndex(block, NORTH);
-        bottomTexture = (byte) Block.getTextureIndex(block, BOTTOM);
+        this(position, velocity, Chunk.getBlockInWorld(Utils.floor(position.x), Utils.floor(position.y), Utils.floor(position.z)));
     }
 
     public FallingBlockEntity(Vector3f position, Vector3f velocity, short block) {
         this.position = position;
         this.velocity = velocity;
-        aabb = FALLING_BLOCK_AABB;
         this.block = block;
-        topTexture = (byte) Block.getTextureIndex(block, TOP);
-        sideTexture = (byte) Block.getTextureIndex(block, NORTH);
-        bottomTexture = (byte) Block.getTextureIndex(block, BOTTOM);
+
+        if (Block.getBlockType(block) == FULL_BLOCK) aabb = FALLING_BLOCK_AABB;
+        else {
+            byte[] XYZSubData = Block.getXYZSubData(block);
+            float[] aabb = new float[XYZSubData.length];
+            for (int index = 0; index < XYZSubData.length; index += 2) {
+                aabb[index] = XYZSubData[index] * 0.0625f - 0.5f;
+                aabb[index + 1] = XYZSubData[index + 1] * 0.0625f + 0.5f;
+            }
+            this.aabb = aabb;
+            rotations = new float[aabb.length >> 1];
+        }
+        textures = new short[aabb.length];
+
+        for (int aabbIndex = 0; aabbIndex < aabb.length; aabbIndex += 6) {
+            textures[aabbIndex + NORTH] = getTexture(block, NORTH, aabbIndex);
+            textures[aabbIndex + TOP] = getTexture(block, TOP, aabbIndex);
+            textures[aabbIndex + WEST] = getTexture(block, WEST, aabbIndex);
+            textures[aabbIndex + SOUTH] = getTexture(block, SOUTH, aabbIndex);
+            textures[aabbIndex + BOTTOM] = getTexture(block, BOTTOM, aabbIndex);
+            textures[aabbIndex + EAST] = getTexture(block, EAST, aabbIndex);
+        }
     }
 
     @Override
@@ -45,7 +54,6 @@ public final class FallingBlockEntity extends Entity {
             ServerLogic.placeBlock(block, Utils.floor(position.x), Utils.floor(position.y), Utils.floor(position.z), false);
 //        else
 //            // TODO Spawn item
-
     }
 
     @Override
@@ -54,18 +62,8 @@ public final class FallingBlockEntity extends Entity {
     }
 
     @Override
-    public byte getTopTexture() {
-        return topTexture;
-    }
-
-    @Override
-    public byte getSideTexture() {
-        return sideTexture;
-    }
-
-    @Override
-    public byte getBottomTexture() {
-        return bottomTexture;
+    public short getTextureUV(int side, int aabbIndex) {
+        return textures[aabbIndex + side];
     }
 
     @Override
@@ -88,7 +86,20 @@ public final class FallingBlockEntity extends Entity {
         return new FallingBlockEntity(null, null, block);
     }
 
+    private static short getTexture(short block, int side, int aabbIndex) {
+        int textureIndex = Block.getTextureIndex(block, side);
+        int blockType = Block.getBlockType(block);
+        int u = ((textureIndex & 15) << 4) + Block.getSubU(blockType, side, getCorner(side), aabbIndex);
+        int v = ((textureIndex >> 4 & 15) << 4) + Block.getSubV(blockType, side, getCorner(side), aabbIndex);
+
+        return (short) ((u & 0xFF) << 8 | (v & 0xFF));
+    }
+
+    private static int getCorner(int side) {
+        return side == EAST ? 0 : 1;
+    }
+
     private static final float[] FALLING_BLOCK_AABB = new float[]{-0.5f, 0.5f, -0.5f, 0.5f, -0.5f, 0.5f};
     private final short block;
-    private final byte topTexture, sideTexture, bottomTexture;
+    private final short[] textures;
 }

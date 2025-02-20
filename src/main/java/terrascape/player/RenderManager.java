@@ -1,6 +1,5 @@
 package terrascape.player;
 
-import terrascape.entity.entities.TNT_Entity;
 import terrascape.server.*;
 import terrascape.dataStorage.Chunk;
 import terrascape.entity.*;
@@ -156,8 +155,21 @@ public final class RenderManager {
 
         textRowVertexArray = ObjectLoader.loadTextRow();
 
-        entityDataBuffer = GL46.glCreateBuffers();
-        GL46.glNamedBufferStorage(entityDataBuffer, MAX_AMOUNT_OF_TO_RENDER_ENTITIES * 16, GL46.GL_DYNAMIC_STORAGE_BIT);
+        createEntityBuffers(1);
+    }
+
+    private void createEntityBuffers(int size) {
+        long byteSize = (long) size << 4;
+
+        entityPositionBuffer = GL46.glCreateBuffers();
+        entityRotationBuffer = GL46.glCreateBuffers();
+        entityIntsBuffers = GL46.glCreateBuffers();
+//        entityTranslationsBuffer = GL46.glCreateBuffers();
+
+        GL46.glNamedBufferStorage(entityPositionBuffer, byteSize, GL46.GL_DYNAMIC_STORAGE_BIT);
+        GL46.glNamedBufferStorage(entityRotationBuffer, byteSize, GL46.GL_DYNAMIC_STORAGE_BIT);
+        GL46.glNamedBufferStorage(entityIntsBuffers, byteSize, GL46.GL_DYNAMIC_STORAGE_BIT);
+//        GL46.glNamedBufferStorage(entityTranslationsBuffer, byteSize, GL46.GL_DYNAMIC_STORAGE_BIT);
     }
 
     private void loadTextures() throws Exception {
@@ -179,6 +191,7 @@ public final class RenderManager {
         particleShader.createUniform("textureOffset_");
         particleShader.createUniform("time");
         particleShader.createUniform("particleProperties");
+        particleShader.createUniform("headUnderWater");
         return particleShader;
     }
 
@@ -191,6 +204,8 @@ public final class RenderManager {
         entityShader.createUniform("viewMatrix");
         entityShader.createUniform("time");
         entityShader.createUniform("textureSampler");
+        entityShader.createUniform("headUnderWater");
+        entityShader.createUniform("cameraPosition");
         return entityShader;
     }
 
@@ -280,7 +295,7 @@ public final class RenderManager {
         return blockShader;
     }
 
-    public void bindModel(OpaqueModel model) {
+    private void bindModel(OpaqueModel model) {
         GL30.glBindVertexArray(model.vao);
         GL20.glEnableVertexAttribArray(0);
 
@@ -288,7 +303,7 @@ public final class RenderManager {
         GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, modelIndexBuffer);
     }
 
-    public void bindFoliageModel(OpaqueModel model) {
+    private void bindFoliageModel(OpaqueModel model) {
         GL30.glBindVertexArray(model.vao);
         GL20.glEnableVertexAttribArray(0);
 
@@ -299,7 +314,7 @@ public final class RenderManager {
         GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, modelIndexBuffer);
     }
 
-    public void bindSkyBox(SkyBox skyBox, Camera camera) {
+    private void bindSkyBox(SkyBox skyBox, Camera camera) {
         GL30.glBindVertexArray(skyBox.getVao());
         GL20.glEnableVertexAttribArray(0);
         GL20.glEnableVertexAttribArray(1);
@@ -317,7 +332,7 @@ public final class RenderManager {
         skyBoxShader.setUniform("transformationMatrix", Transformation.createTransformationMatrix(skyBox.getPosition()));
     }
 
-    public void bindGUIElement(GUIElement element) {
+    private void bindGUIElement(GUIElement element) {
         GL30.glBindVertexArray(element.getVao());
         GL20.glEnableVertexAttribArray(0);
         GL20.glEnableVertexAttribArray(1);
@@ -329,7 +344,7 @@ public final class RenderManager {
         GUIShader.setUniform("position", element.getPosition());
     }
 
-    public void bindWaterModel(WaterModel model) {
+    private void bindWaterModel(WaterModel model) {
         GL30.glBindVertexArray(model.vao);
         GL20.glEnableVertexAttribArray(0);
 
@@ -346,7 +361,7 @@ public final class RenderManager {
         GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, modelIndexBuffer);
     }
 
-    public void unbind() {
+    private void unbind() {
         GL20.glDisableVertexAttribArray(0);
         GL20.glDisableVertexAttribArray(1);
         GL30.glBindVertexArray(0);
@@ -388,7 +403,7 @@ public final class RenderManager {
         unbind();
     }
 
-    public void renderSkyBox(Camera camera) {
+    private void renderSkyBox(Camera camera) {
         skyBoxShader.bind();
         bindSkyBox(skyBox, camera);
 
@@ -397,7 +412,7 @@ public final class RenderManager {
         skyBoxShader.unBind();
     }
 
-    public void renderOpaqueChunks(Matrix4f projectionMatrix, Matrix4f viewMatrix, float passedTicks) {
+    private void renderOpaqueChunks(Matrix4f projectionMatrix, Matrix4f viewMatrix, float passedTicks) {
         blockShader.bind();
         blockShader.setUniform("projectionMatrix", projectionMatrix);
         blockShader.setUniform("viewMatrix", viewMatrix);
@@ -428,7 +443,7 @@ public final class RenderManager {
         blockShader.unBind();
     }
 
-    public void renderFoliageChunks(Matrix4f projectionMatrix, Matrix4f viewMatrix, float passedTicks) {
+    private void renderFoliageChunks(Matrix4f projectionMatrix, Matrix4f viewMatrix, float passedTicks) {
         foliageShader.bind();
         foliageShader.setUniform("projectionMatrix", projectionMatrix);
         foliageShader.setUniform("viewMatrix", viewMatrix);
@@ -448,7 +463,7 @@ public final class RenderManager {
         foliageShader.unBind();
     }
 
-    public void renderEntities(Matrix4f projectionMatrix, Matrix4f viewMatrix, float passedTicks) {
+    private void renderEntities(Matrix4f projectionMatrix, Matrix4f viewMatrix, float passedTicks) {
         if (entities.isEmpty()) return;
 
         long renderTime = System.nanoTime();
@@ -458,44 +473,77 @@ public final class RenderManager {
         entityShader.setUniform("viewMatrix", viewMatrix);
         entityShader.setUniform("time", time + TIME_SPEED * passedTicks);
         entityShader.setUniform("textureSampler", 0);
+        entityShader.setUniform("headUnderWater", headUnderWater ? 1 : 0);
+        entityShader.setUniform("cameraPosition", player.getCamera().getPosition());
 
         GL13.glActiveTexture(GL13.GL_TEXTURE0);
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, atlas.id());
         GL11.glEnable(GL11.GL_CULL_FACE);
+        resizeEntityBuffers();
 
         int index = 0;
 
         for (Entity entity : entities) {
             Vector3f position = entity.getPosition();
             Vector3f velocity = entity.getVelocity();
+            float[] aabb = entity.getAabb();
+            float[] rotations = entity.getRotations();
 
-            int otherData = 0;
-            otherData |= entity.getTopTexture() << 24 & 0xFF000000;
-            otherData |= entity.getSideTexture() << 16 & 0xFF0000;
-            otherData |= entity.getBottomTexture() << 8 & 0xFF00;
-            otherData |= Chunk.getLightInWorld(Utils.floor(position.x), Utils.floor(position.y), Utils.floor(position.z)) & 0xFF;
+            for (int aabbIndex = 0; aabbIndex < aabb.length; aabbIndex += 6) {
 
-            entityData[index++] = position.x - (1.0f / TARGET_TPS - passedTicks) * velocity.x;
-            entityData[index++] = position.y - (1.0f / TARGET_TPS - passedTicks) * velocity.y;
-            entityData[index++] = position.z - (1.0f / TARGET_TPS - passedTicks) * velocity.z;
-            entityData[index++] = Float.intBitsToFloat(otherData);
+//                entityTranslations[index] = aabb[aabbIndex + MIN_X];
+//                entityTranslations[index + 1] = aabb[aabbIndex + MIN_Y];
+//                entityTranslations[index + 2] = aabb[aabbIndex + MIN_Z];
+
+                entityPositions[index] = position.x - (1.0f / TARGET_TPS - passedTicks) * velocity.x;
+                entityPositions[index + 1] = position.y - (1.0f / TARGET_TPS - passedTicks) * velocity.y;
+                entityPositions[index + 2] = position.z - (1.0f / TARGET_TPS - passedTicks) * velocity.z;
+
+                int width = (int) ((aabb[aabbIndex + MAX_X] - aabb[aabbIndex + MIN_X]) * 16.0f) & 0xFF;
+                int height = (int) ((aabb[aabbIndex + MAX_Y] - aabb[aabbIndex + MIN_Y]) * 16.0f) & 0xFF;
+                int depth = (int) ((aabb[aabbIndex + MAX_Z] - aabb[aabbIndex + MIN_Z]) * 16.0f) & 0xFF;
+                int light = Chunk.getLightInWorld(Utils.floor(position.x), Utils.floor(position.y), Utils.floor(position.z)) & 0xFF;
+
+                entityInts[index] = width << 24 | height << 16 | depth << 8 | light;
+                entityInts[index + 1] = entity.getTextureUV(NORTH, aabbIndex) << 16 | entity.getTextureUV(TOP, aabbIndex) & 0xFFFF;
+                entityInts[index + 2] = entity.getTextureUV(WEST, aabbIndex) << 16 | entity.getTextureUV(SOUTH, aabbIndex) & 0xFFFF;
+                entityInts[index + 3] = entity.getTextureUV(BOTTOM, aabbIndex) << 16 | entity.getTextureUV(EAST, aabbIndex) & 0xFFFF;
+
+                int rotationIndex = aabbIndex >> 1;
+                entityRotations[index + ROTATE_AROUND_X] = rotations[rotationIndex + ROTATE_AROUND_X];
+                entityRotations[index + ROTATE_AROUND_Y] = rotations[rotationIndex + ROTATE_AROUND_Y];
+
+                entityPositions[index + 3] = aabb[aabbIndex + MIN_X];
+                entityRotations[index + 2] = aabb[aabbIndex + MIN_Y];
+                entityRotations[index + 3] = aabb[aabbIndex + MIN_Z];
+
+                index += 4;
+            }
         }
+        int boxCount = index >> 2;
 
-        GL46.glNamedBufferSubData(entityDataBuffer, 0, entityData);
-        GL46.glBindBufferBase(GL46.GL_SHADER_STORAGE_BUFFER, 0, entityDataBuffer);
+        GL46.glNamedBufferSubData(entityPositionBuffer, 0, entityPositions);
+        GL46.glNamedBufferSubData(entityRotationBuffer, 0, entityRotations);
+        GL46.glNamedBufferSubData(entityIntsBuffers, 0, entityInts);
+//        GL46.glNamedBufferSubData(entityTranslationsBuffer, 0, entityTranslations);
 
-        GL30.glBindVertexArray(TNT_Entity.vao);
+        GL46.glBindBufferBase(GL46.GL_SHADER_STORAGE_BUFFER, 0, entityPositionBuffer);
+        GL46.glBindBufferBase(GL46.GL_SHADER_STORAGE_BUFFER, 1, entityRotationBuffer);
+        GL46.glBindBufferBase(GL46.GL_SHADER_STORAGE_BUFFER, 2, entityIntsBuffers);
+//        GL46.glBindBufferBase(GL46.GL_SHADER_STORAGE_BUFFER, 2, entityTranslationsBuffer);
+
+        GL30.glBindVertexArray(Entity.vao);
         GL20.glEnableVertexAttribArray(0);
         GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, modelIndexBuffer);
 
-        GL40.glDrawElementsInstanced(GL11.GL_TRIANGLES, 36, GL11.GL_UNSIGNED_INT, 0, entities.size());
+        GL31.glDrawElementsInstanced(GL11.GL_TRIANGLES, 36, GL11.GL_UNSIGNED_INT, 0, boxCount);
 
         entityShader.unBind();
 
         if (player.printTimes) System.out.println("Entities " + (System.nanoTime() - renderTime));
     }
 
-    public void renderParticles(Matrix4f projectionMatrix, Matrix4f viewMatrix, float passedTicks) {
+    private void renderParticles(Matrix4f projectionMatrix, Matrix4f viewMatrix, float passedTicks) {
         if (particles.isEmpty()) return;
 
         long renderTime = System.nanoTime();
@@ -505,6 +553,7 @@ public final class RenderManager {
         particleShader.setUniform("viewMatrix", viewMatrix);
         particleShader.setUniform("textureSampler", 0);
         particleShader.setUniform("cameraPosition", player.getCamera().getPosition());
+        particleShader.setUniform("headUnderWater", headUnderWater ? 1 : 0);
         particleShader.setUniform("time", time + TIME_SPEED * passedTicks);
 
         GL11.glDisable(GL11.GL_CULL_FACE);
@@ -520,7 +569,7 @@ public final class RenderManager {
         if (player.printTimes) System.out.println("Particles " + (System.nanoTime() - renderTime));
     }
 
-    public void renderWaterChunks(Matrix4f projectionMatrix, Matrix4f viewMatrix, float passedTicks) {
+    private void renderWaterChunks(Matrix4f projectionMatrix, Matrix4f viewMatrix, float passedTicks) {
         waterShader.bind();
         waterShader.setUniform("projectionMatrix", projectionMatrix);
         waterShader.setUniform("viewMatrix", viewMatrix);
@@ -541,7 +590,7 @@ public final class RenderManager {
         waterShader.unBind();
     }
 
-    public void renderGUIElements() {
+    private void renderGUIElements() {
         GUIShader.bind();
         GL11.glDisable(GL11.GL_DEPTH_TEST);
 
@@ -568,7 +617,7 @@ public final class RenderManager {
             GL11.glEnable(GL11.GL_BLEND);
             GL11.glBindTexture(GL11.GL_TEXTURE_2D, textAtlas.id());
 
-            textShader.setUniform("screenSize", Launcher.getWindow().getWidth() / 2, Launcher.getWindow().getHeight() / 2);
+            textShader.setUniform("screenSize", Launcher.getWindow().getWidth() >> 1, Launcher.getWindow().getHeight() >> 1);
             textShader.setUniform("charSize", TEXT_CHAR_SIZE_X, TEXT_CHAR_SIZE_Y);
 
             for (DisplayString string : displayStrings) renderDisplayString(string);
@@ -578,14 +627,14 @@ public final class RenderManager {
         }
     }
 
-    public void renderDebugText() {
+    private void renderDebugText() {
         textShader.bind();
         GL11.glDisable(GL11.GL_DEPTH_TEST);
         GL11.glDisable(GL11.GL_CULL_FACE);
         GL11.glEnable(GL11.GL_BLEND);
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, textAtlas.id());
 
-        textShader.setUniform("screenSize", Launcher.getWindow().getWidth() / 2, Launcher.getWindow().getHeight() / 2);
+        textShader.setUniform("screenSize", Launcher.getWindow().getWidth() >> 1, Launcher.getWindow().getHeight() >> 1);
         textShader.setUniform("charSize", TEXT_CHAR_SIZE_X, TEXT_CHAR_SIZE_Y);
         textShader.setUniform("xOffset", 0);
 
@@ -610,7 +659,7 @@ public final class RenderManager {
         double temperatureMapValue = GenerationData.temperatureMapValue(x, z);
         double humidityMapValue = GenerationData.humidityMapValue(x, z);
 
-        renderTextLine("Frame rate:" + EngineManager.currentFrameRate + " GT-time:" + Launcher.getServer().getDeltaTime() / 1_000_000 + "ms", Color.RED, ++line);
+        renderTextLine("Frame rate:" + EngineManager.currentFrameRate + " last GT-time:" + Launcher.getServer().getLastGameTickProcessingTime() / 1_000_000 + "ms" + " current GT-time:" + Launcher.getServer().getDeltaTime() / 1_000_000 + "ms", Color.RED, ++line);
         renderTextLine("Memory:" + (Runtime.getRuntime().totalMemory() / 1_000_000) + "MB", Color.RED, ++line);
         renderTextLine("Coordinates: X:" + Utils.floor(position.x * 10) / 10f + " Y:" + Utils.floor(position.y * 10) / 10f + " Z:" + Utils.floor(position.z * 10) / 10f, Color.BLUE, ++line);
         renderTextLine("Chunk coordinates: X:" + chunkX + " Y:" + chunkY + " Z:" + chunkZ + " Id" + Utils.getChunkId(chunkX, chunkY, chunkZ), Color.BLUE, ++line);
@@ -637,12 +686,12 @@ public final class RenderManager {
         renderTextLine("Rendered chunk models:" + chunkModels.size() + "/" + Chunk.countOpaqueModels(), Color.RED, ++line);
         renderTextLine("Rendered water models:" + waterModels.size() + "/" + Chunk.countWaterModels(), Color.RED, ++line);
         renderTextLine("Rendered foliage models:" + foliageModels.size(), Color.RED, ++line);
-        renderTextLine("Rendered entities:" + entities.size() + "/" + ServerLogic.getAmountOfEntities(), Color.RED, ++line);
+        renderTextLine("Rendered entities:" + entities.size() + "/" + ServerLogic.getAmountOfEntities() + " [" + (entityPositions.length >> 2) + "]", Color.RED, ++line);
         renderTextLine("Rendered particles:" + particles.size() + "/" + ServerLogic.getAmountOfParticles(), Color.RED, ++line);
         renderTextLine("Rendered GUIElements:" + GUIElements.size(), Color.RED, ++line);
         renderTextLine("Render distance XZ:" + RENDER_DISTANCE_XZ + " Render distance Y:" + RENDER_DISTANCE_Y, Color.ORANGE, ++line);
         renderTextLine("Concurrent played sounds:" + sourceCounter, Color.YELLOW, ++line);
-        renderTextLine("Time:" + time + " Tick:" + EngineManager.getTick(), Color.WHITE, ++line);
+        renderTextLine("Tick:" + EngineManager.getTick() + " Time:" + time, Color.WHITE, ++line);
         renderTextLine("To buffer chunks:" + ServerLogic.getAmountOfToBufferChunks(), Color.RED, ++line);
         renderTextLine("Scheduled blockEvents:" + BlockEvent.getAmountOfScheduledEvents(EngineManager.getTick()), Color.RED, ++line);
         renderTextLine("Entities:" + ServerLogic.getAmountOfEntities(), Color.RED, ++line);
@@ -691,12 +740,39 @@ public final class RenderManager {
         return array;
     }
 
+    private void resizeEntityBuffers() {
+        int boxCount = 0;
+        for (Entity entity : entities) boxCount += entity.getAabb().length / 6;
+
+        int length = entityPositions.length, requiredLength = boxCount << 2;
+
+        while (true) {
+            if (requiredLength > length) length <<= 1;
+            else if (requiredLength < length / 3) length >>= 1;
+            else break;
+        }
+
+        if (length != entityPositions.length) {
+            int arrayLength = Math.max(1, length);
+            entityPositions = new float[arrayLength];
+            entityRotations = new float[arrayLength];
+            entityInts = new int[arrayLength];
+//            entityTranslations = new float[arrayLength];
+
+            GL46.glDeleteBuffers(entityPositionBuffer);
+            GL46.glDeleteBuffers(entityRotationBuffer);
+            GL46.glDeleteBuffers(entityIntsBuffers);
+//            GL46.glDeleteBuffers(entityTranslationsBuffer);
+
+            createEntityBuffers(length >> 2);
+        }
+    }
+
     public void processParticle(Particle particle) {
         particles.add(particle);
     }
 
     public void processEntity(Entity entity) {
-        if (entities.size() >= MAX_AMOUNT_OF_TO_RENDER_ENTITIES) return;
         entities.add(entity);
     }
 
@@ -732,7 +808,7 @@ public final class RenderManager {
         this.inventoryOverlay = inventoryOverlay;
     }
 
-    public void clear() {
+    private void clear() {
         GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
     }
 
@@ -785,8 +861,10 @@ public final class RenderManager {
 
     private int modelIndexBuffer;
     private int textRowVertexArray;
-    private int entityDataBuffer;
-    private final float[] entityData = new float[MAX_AMOUNT_OF_TO_RENDER_ENTITIES * 4];
+    private int entityPositionBuffer, entityRotationBuffer, entityIntsBuffers;
+    private float[] entityPositions = new float[1];
+    private float[] entityRotations = new float[1];
+    private int[] entityInts = new int[1];
 
     private Texture atlas;
     private Texture textAtlas;

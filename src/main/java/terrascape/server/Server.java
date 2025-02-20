@@ -9,7 +9,7 @@ import static terrascape.utils.Constants.*;
 public final class Server {
 
     private final ScheduledExecutorService executor;
-    private long gameTickTime;
+    private long gameTickStartTime, lastGameTickProcessingTime;
 
     public Server() {
         executor = Executors.newSingleThreadScheduledExecutor();
@@ -30,14 +30,20 @@ public final class Server {
     }
 
     private void executeGT() {
-        long gameTickTime = System.nanoTime();
+        gameTickStartTime = System.nanoTime();
         ServerLogic.updateGT(EngineManager.getTick());
         EngineManager.incTick();
         EngineManager.setLastGTTime(System.nanoTime());
-        this.gameTickTime = System.nanoTime() - gameTickTime;
+        long endTime = System.nanoTime();
+        lastGameTickProcessingTime = endTime - gameTickStartTime;
+        gameTickStartTime = endTime;
     }
 
     public long getDeltaTime() {
-        return gameTickTime;
+        return System.nanoTime() - gameTickStartTime;
+    }
+
+    public long getLastGameTickProcessingTime() {
+        return lastGameTickProcessingTime;
     }
 }

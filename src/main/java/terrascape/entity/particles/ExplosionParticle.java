@@ -20,7 +20,7 @@ public class ExplosionParticle extends Particle {
 
     @Override
     protected void renderUnique(ShaderManager shader, int modelIndexBuffer) {
-        shader.setUniform("textureOffset_", (float) ((byte) -10 - 1 & 15), (float) ((byte) -10 - 1 >> 4 & 15));
+        shader.setUniform("textureOffset_", 6.0f, 15.0f);
 
         GL30.glBindVertexArray(vao);
         GL20.glEnableVertexAttribArray(0);

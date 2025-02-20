@@ -2,133 +2,29 @@ package terrascape.server;
 
 import terrascape.dataStorage.Chunk;
 import terrascape.utils.ArrayQueue;
-import org.joml.Vector4i;
 
 import static terrascape.utils.Constants.*;
 import static terrascape.utils.Settings.*;
 
 public final class LightLogic {
 
+    // BlockLight
     public static void setBlockLight(int x, int y, int z, int blockLight) {
         if (blockLight <= 0)
             return;
-        ArrayQueue<Vector4i> toPlaceLights = new ArrayQueue<>(10);
-        toPlaceLights.enqueue(new Vector4i(x, y, z, blockLight));
+        ArrayQueue<LightInfo> toPlaceLights = new ArrayQueue<>(10);
+        toPlaceLights.enqueue(new LightInfo(x, y, z, (byte) blockLight));
         setBlockLight(toPlaceLights);
     }
 
-    public static void setBlockLight(ArrayQueue<Vector4i> toPlaceLights) {
-        int ignoreChecksCounter = toPlaceLights.size();
-        while (!toPlaceLights.isEmpty()) {
-            Vector4i toPlaceLight = toPlaceLights.dequeue();
-            int x = toPlaceLight.x;
-            int y = toPlaceLight.y;
-            int z = toPlaceLight.z;
-            int currentBlockLight = toPlaceLight.w;
-
-            Chunk chunk = Chunk.getChunk(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS);
-            if (chunk == null) continue;
-
-            int index = (x & CHUNK_SIZE_MASK) << CHUNK_SIZE_BITS * 2 | (z & CHUNK_SIZE_MASK) << CHUNK_SIZE_BITS | (y & CHUNK_SIZE_MASK);
-
-            if (chunk.getSaveBlockLight(index) >= currentBlockLight && ignoreChecksCounter <= 0) continue;
-
-            chunk.storeSaveBlockLight(index, currentBlockLight);
-            chunk.setMeshed(false);
-            unMeshNextChunkIfNecessary(x & CHUNK_SIZE_MASK, y & CHUNK_SIZE_MASK, z & CHUNK_SIZE_MASK, chunk);
-
-            byte nextBlockLight = (byte) (currentBlockLight - 1);
-            if (nextBlockLight <= 0) continue;
-            short currentBlock = chunk.getSaveBlock(index);
-
-            short nextBlock = Chunk.getBlockInWorld(x + 1, y, z);
-            if (Chunk.getBlockLightInWorld(x + 1, y, z) < nextBlockLight && canLightTravel(nextBlock, EAST, currentBlock, WEST))
-                toPlaceLights.enqueue(new Vector4i(x + 1, y, z, nextBlockLight));
-            nextBlock = Chunk.getBlockInWorld(x - 1, y, z);
-            if (Chunk.getBlockLightInWorld(x - 1, y, z) < nextBlockLight && canLightTravel(nextBlock, WEST, currentBlock, EAST))
-                toPlaceLights.enqueue(new Vector4i(x - 1, y, z, nextBlockLight));
-
-            nextBlock = Chunk.getBlockInWorld(x, y + 1, z);
-            if (Chunk.getBlockLightInWorld(x, y + 1, z) < nextBlockLight && canLightTravel(nextBlock, BOTTOM, currentBlock, TOP))
-                toPlaceLights.enqueue(new Vector4i(x, y + 1, z, nextBlockLight));
-            nextBlock = Chunk.getBlockInWorld(x, y - 1, z);
-            if (Chunk.getBlockLightInWorld(x, y - 1, z) < nextBlockLight && canLightTravel(nextBlock, TOP, currentBlock, BOTTOM))
-                toPlaceLights.enqueue(new Vector4i(x, y - 1, z, nextBlockLight));
-
-            nextBlock = Chunk.getBlockInWorld(x, y, z + 1);
-            if (Chunk.getBlockLightInWorld(x, y, z + 1) < nextBlockLight && canLightTravel(nextBlock, SOUTH, currentBlock, NORTH))
-                toPlaceLights.enqueue(new Vector4i(x, y, z + 1, nextBlockLight));
-            nextBlock = Chunk.getBlockInWorld(x, y, z - 1);
-            if (Chunk.getBlockLightInWorld(x, y, z - 1) < nextBlockLight && canLightTravel(nextBlock, NORTH, currentBlock, SOUTH))
-                toPlaceLights.enqueue(new Vector4i(x, y, z - 1, nextBlockLight));
-
-            ignoreChecksCounter--;
-        }
-    }
-
     public static void dePropagateBlockLight(int x, int y, int z) {
-        ArrayQueue<Vector4i> toRePropagate = new ArrayQueue<>(10);
-        ArrayQueue<Vector4i> toDePropagate = new ArrayQueue<>(10);
-        toDePropagate.enqueue(new Vector4i(x, y, z, Chunk.getBlockLightInWorld(x, y, z) + 1));
+        ArrayQueue<LightInfo> toRePropagate = new ArrayQueue<>(10);
+        ArrayQueue<LightInfo> toDePropagate = new ArrayQueue<>(10);
+        toDePropagate.enqueue(new LightInfo(x, y, z, (byte) (Chunk.getBlockLightInWorld(x, y, z) + 1)));
 
         dePropagateBlockLight(toRePropagate, toDePropagate);
 
         setBlockLight(toRePropagate);
-    }
-
-    public static void dePropagateBlockLight(ArrayQueue<Vector4i> toRePropagate, ArrayQueue<Vector4i> toDePropagate) {
-        boolean onFirstIteration = true;
-        while (!toDePropagate.isEmpty()) {
-            Vector4i position = toDePropagate.dequeue();
-            int x = position.x;
-            int y = position.y;
-            int z = position.z;
-            int lastBlockLight = position.w;
-
-            Chunk chunk = Chunk.getChunk(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS);
-            if (chunk == null) continue;
-
-            byte currentBlockLight = chunk.getSaveBlockLight(x & CHUNK_SIZE_MASK, y & CHUNK_SIZE_MASK, z & CHUNK_SIZE_MASK);
-            if (currentBlockLight == 0) continue;
-
-            if (currentBlockLight >= lastBlockLight) {
-                if (currentBlockLight > 1) {
-                    Vector4i nextPosition = new Vector4i(x, y, z, currentBlockLight);
-                    if (notContainsToRePropagatePosition(toRePropagate, nextPosition))
-                        toRePropagate.enqueue(nextPosition);
-                }
-                continue;
-            }
-
-            int index = (x & CHUNK_SIZE_MASK) << CHUNK_SIZE_BITS * 2 | (z & CHUNK_SIZE_MASK) << CHUNK_SIZE_BITS | y & CHUNK_SIZE_MASK;
-            chunk.removeBlockLight(index);
-            chunk.setMeshed(false);
-            unMeshNextChunkIfNecessary(x & CHUNK_SIZE_MASK, y & CHUNK_SIZE_MASK, z & CHUNK_SIZE_MASK, chunk);
-            short currentBlock = onFirstIteration ? AIR : chunk.getSaveBlock(index);
-
-            short nextBlock = Chunk.getBlockInWorld(x + 1, y, z);
-            if (canLightTravel(nextBlock, EAST, currentBlock, WEST))
-                toDePropagate.enqueue(new Vector4i(x + 1, y, z, currentBlockLight));
-            nextBlock = Chunk.getBlockInWorld(x - 1, y, z);
-            if (canLightTravel(nextBlock, WEST, currentBlock, EAST))
-                toDePropagate.enqueue(new Vector4i(x - 1, y, z, currentBlockLight));
-
-            nextBlock = Chunk.getBlockInWorld(x, y + 1, z);
-            if (canLightTravel(nextBlock, BOTTOM, currentBlock, TOP))
-                toDePropagate.enqueue(new Vector4i(x, y + 1, z, currentBlockLight));
-            nextBlock = Chunk.getBlockInWorld(x, y - 1, z);
-            if (canLightTravel(nextBlock, TOP, currentBlock, BOTTOM))
-                toDePropagate.enqueue(new Vector4i(x, y - 1, z, currentBlockLight));
-
-            nextBlock = Chunk.getBlockInWorld(x, y, z + 1);
-            if (canLightTravel(nextBlock, SOUTH, currentBlock, NORTH))
-                toDePropagate.enqueue(new Vector4i(x, y, z + 1, currentBlockLight));
-            nextBlock = Chunk.getBlockInWorld(x, y, z - 1);
-            if (canLightTravel(nextBlock, NORTH, currentBlock, SOUTH))
-                toDePropagate.enqueue(new Vector4i(x, y, z - 1, currentBlockLight));
-
-            onFirstIteration = false;
-        }
     }
 
     public static byte getMaxSurroundingBlockLight(int x, int y, int z) {
@@ -158,9 +54,113 @@ public final class LightLogic {
         return max;
     }
 
+    private static void setBlockLight(ArrayQueue<LightInfo> toPlaceLights) {
+        int ignoreChecksCounter = toPlaceLights.size();
+        while (!toPlaceLights.isEmpty()) {
+            LightInfo toPlaceLight = toPlaceLights.dequeue();
+            int x = toPlaceLight.x();
+            int y = toPlaceLight.y();
+            int z = toPlaceLight.z();
+            int currentBlockLight = toPlaceLight.level();
 
+            Chunk chunk = Chunk.getChunk(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS);
+            if (chunk == null) continue;
+
+            int index = (x & CHUNK_SIZE_MASK) << CHUNK_SIZE_BITS * 2 | (z & CHUNK_SIZE_MASK) << CHUNK_SIZE_BITS | (y & CHUNK_SIZE_MASK);
+
+            if (chunk.getSaveBlockLight(index) >= currentBlockLight && ignoreChecksCounter <= 0) continue;
+
+            chunk.storeSaveBlockLight(index, currentBlockLight);
+            chunk.setMeshed(false);
+            unMeshNextChunkIfNecessary(x & CHUNK_SIZE_MASK, y & CHUNK_SIZE_MASK, z & CHUNK_SIZE_MASK, chunk);
+
+            byte nextBlockLight = (byte) (currentBlockLight - 1);
+            if (nextBlockLight <= 0) continue;
+            short currentBlock = chunk.getSaveBlock(index);
+
+            short nextBlock = Chunk.getBlockInWorld(x + 1, y, z);
+            if (Chunk.getBlockLightInWorld(x + 1, y, z) < nextBlockLight && canLightTravel(nextBlock, EAST, currentBlock, WEST))
+                toPlaceLights.enqueue(new LightInfo(x + 1, y, z, nextBlockLight));
+            nextBlock = Chunk.getBlockInWorld(x - 1, y, z);
+            if (Chunk.getBlockLightInWorld(x - 1, y, z) < nextBlockLight && canLightTravel(nextBlock, WEST, currentBlock, EAST))
+                toPlaceLights.enqueue(new LightInfo(x - 1, y, z, nextBlockLight));
+
+            nextBlock = Chunk.getBlockInWorld(x, y + 1, z);
+            if (Chunk.getBlockLightInWorld(x, y + 1, z) < nextBlockLight && canLightTravel(nextBlock, BOTTOM, currentBlock, TOP))
+                toPlaceLights.enqueue(new LightInfo(x, y + 1, z, nextBlockLight));
+            nextBlock = Chunk.getBlockInWorld(x, y - 1, z);
+            if (Chunk.getBlockLightInWorld(x, y - 1, z) < nextBlockLight && canLightTravel(nextBlock, TOP, currentBlock, BOTTOM))
+                toPlaceLights.enqueue(new LightInfo(x, y - 1, z, nextBlockLight));
+
+            nextBlock = Chunk.getBlockInWorld(x, y, z + 1);
+            if (Chunk.getBlockLightInWorld(x, y, z + 1) < nextBlockLight && canLightTravel(nextBlock, SOUTH, currentBlock, NORTH))
+                toPlaceLights.enqueue(new LightInfo(x, y, z + 1, nextBlockLight));
+            nextBlock = Chunk.getBlockInWorld(x, y, z - 1);
+            if (Chunk.getBlockLightInWorld(x, y, z - 1) < nextBlockLight && canLightTravel(nextBlock, NORTH, currentBlock, SOUTH))
+                toPlaceLights.enqueue(new LightInfo(x, y, z - 1, nextBlockLight));
+
+            ignoreChecksCounter--;
+        }
+    }
+
+    private static void dePropagateBlockLight(ArrayQueue<LightInfo> toRePropagate, ArrayQueue<LightInfo> toDePropagate) {
+        boolean onFirstIteration = true;
+        while (!toDePropagate.isEmpty()) {
+            LightInfo position = toDePropagate.dequeue();
+            int x = position.x();
+            int y = position.y();
+            int z = position.z();
+            int lastBlockLight = position.level();
+
+            Chunk chunk = Chunk.getChunk(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS);
+            if (chunk == null) continue;
+
+            byte currentBlockLight = chunk.getSaveBlockLight(x & CHUNK_SIZE_MASK, y & CHUNK_SIZE_MASK, z & CHUNK_SIZE_MASK);
+            if (currentBlockLight == 0) continue;
+
+            if (currentBlockLight >= lastBlockLight) {
+                if (currentBlockLight > 1) {
+                    LightInfo nextPosition = new LightInfo(x, y, z, currentBlockLight);
+                    if (notContainsToRePropagatePosition(toRePropagate, nextPosition))
+                        toRePropagate.enqueue(nextPosition);
+                }
+                continue;
+            }
+
+            int index = (x & CHUNK_SIZE_MASK) << CHUNK_SIZE_BITS * 2 | (z & CHUNK_SIZE_MASK) << CHUNK_SIZE_BITS | y & CHUNK_SIZE_MASK;
+            chunk.removeBlockLight(index);
+            chunk.setMeshed(false);
+            unMeshNextChunkIfNecessary(x & CHUNK_SIZE_MASK, y & CHUNK_SIZE_MASK, z & CHUNK_SIZE_MASK, chunk);
+            short currentBlock = onFirstIteration ? AIR : chunk.getSaveBlock(index);
+
+            short nextBlock = Chunk.getBlockInWorld(x + 1, y, z);
+            if (canLightTravel(nextBlock, EAST, currentBlock, WEST))
+                toDePropagate.enqueue(new LightInfo(x + 1, y, z, currentBlockLight));
+            nextBlock = Chunk.getBlockInWorld(x - 1, y, z);
+            if (canLightTravel(nextBlock, WEST, currentBlock, EAST))
+                toDePropagate.enqueue(new LightInfo(x - 1, y, z, currentBlockLight));
+
+            nextBlock = Chunk.getBlockInWorld(x, y + 1, z);
+            if (canLightTravel(nextBlock, BOTTOM, currentBlock, TOP))
+                toDePropagate.enqueue(new LightInfo(x, y + 1, z, currentBlockLight));
+            nextBlock = Chunk.getBlockInWorld(x, y - 1, z);
+            if (canLightTravel(nextBlock, TOP, currentBlock, BOTTOM))
+                toDePropagate.enqueue(new LightInfo(x, y - 1, z, currentBlockLight));
+
+            nextBlock = Chunk.getBlockInWorld(x, y, z + 1);
+            if (canLightTravel(nextBlock, SOUTH, currentBlock, NORTH))
+                toDePropagate.enqueue(new LightInfo(x, y, z + 1, currentBlockLight));
+            nextBlock = Chunk.getBlockInWorld(x, y, z - 1);
+            if (canLightTravel(nextBlock, NORTH, currentBlock, SOUTH))
+                toDePropagate.enqueue(new LightInfo(x, y, z - 1, currentBlockLight));
+
+            onFirstIteration = false;
+        }
+    }
+
+    // SkyLight
     public static void propagateChunkSkyLight(final int chunkX, final int chunkY, final int chunkZ) {
-        ArrayQueue<Vector4i> toPlaceLights = new ArrayQueue<>(10);
+        ArrayQueue<LightInfo> toPlaceLights = new ArrayQueue<>(10);
 
         int x = chunkX << CHUNK_SIZE_BITS;
         int y = (chunkY << CHUNK_SIZE_BITS) + CHUNK_SIZE - 1;
@@ -178,7 +178,7 @@ public final class LightLogic {
                     byte skyLight = Chunk.getSkyLightInWorld(totalX, totalY, totalZ);
                     if (skyLightAbove == skyLight) continue;
 
-                    toPlaceLights.enqueue(new Vector4i(totalX, totalY, totalZ, skyLightAbove));
+                    toPlaceLights.enqueue(new LightInfo(totalX, totalY, totalZ, skyLightAbove));
                 }
 
             setSkyLight(toPlaceLights);
@@ -186,7 +186,7 @@ public final class LightLogic {
     }
 
     public static void setChunkColumnSkyLight(final int chunkX, int chunkY, final int chunkZ) {
-        ArrayQueue<Vector4i> toPlaceLights = new ArrayQueue<>(10);
+        ArrayQueue<LightInfo> toPlaceLights = new ArrayQueue<>(10);
         int[] heightMap = Chunk.getHeightMap(chunkX, chunkZ).map;
 
         int x = chunkX << CHUNK_SIZE_BITS;
@@ -201,7 +201,7 @@ public final class LightLogic {
 
                     if (Chunk.getSkyLightInWorld(totalX, totalY, totalZ) == MAX_SKY_LIGHT_VALUE) continue;
 
-                    toPlaceLights.enqueue(new Vector4i(totalX, totalY, totalZ, MAX_SKY_LIGHT_VALUE));
+                    toPlaceLights.enqueue(new LightInfo(totalX, totalY, totalZ, MAX_SKY_LIGHT_VALUE));
                 }
 
             setSkyLight(toPlaceLights);
@@ -211,128 +211,19 @@ public final class LightLogic {
     public static void setSkyLight(int x, int y, int z, int skyLight) {
         if (skyLight <= 0)
             return;
-        ArrayQueue<Vector4i> toPlaceLights = new ArrayQueue<>(10);
-        toPlaceLights.enqueue(new Vector4i(x, y, z, skyLight));
+        ArrayQueue<LightInfo> toPlaceLights = new ArrayQueue<>(10);
+        toPlaceLights.enqueue(new LightInfo(x, y, z, (byte) skyLight));
         setSkyLight(toPlaceLights);
     }
 
-    public static void setSkyLight(ArrayQueue<Vector4i> toPlaceLights) {
-        int ignoreChecksCounter = toPlaceLights.size();
-        while (!toPlaceLights.isEmpty()) {
-            Vector4i toPlaceLight = toPlaceLights.dequeue();
-            int x = toPlaceLight.x;
-            int y = toPlaceLight.y;
-            int z = toPlaceLight.z;
-            int currentSkyLight = toPlaceLight.w;
-
-            if (currentSkyLight <= 0)
-                continue;
-
-            Chunk chunk = Chunk.getChunk(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS);
-            if (chunk == null) continue;
-
-            int index = (x & CHUNK_SIZE_MASK) << CHUNK_SIZE_BITS * 2 | (z & CHUNK_SIZE_MASK) << CHUNK_SIZE_BITS | y & CHUNK_SIZE_MASK;
-
-            if (chunk.getSaveSkyLight(index) >= currentSkyLight && ignoreChecksCounter <= 0) continue;
-
-            chunk.storeSaveSkyLight(index, currentSkyLight);
-            chunk.setMeshed(false);
-            unMeshNextChunkIfNecessary(x & CHUNK_SIZE_MASK, y & CHUNK_SIZE_MASK, z & CHUNK_SIZE_MASK, chunk);
-
-            byte nextSkyLight = (byte) (currentSkyLight - 1);
-            short currentBlock = chunk.getSaveBlock(index);
-
-            short nextBlock = Chunk.getBlockInWorld(x + 1, y, z);
-            if (Chunk.getSkyLightInWorld(x + 1, y, z) < nextSkyLight && canLightTravel(nextBlock, EAST, currentBlock, WEST))
-                toPlaceLights.enqueue(new Vector4i(x + 1, y, z, nextSkyLight));
-            nextBlock = Chunk.getBlockInWorld(x - 1, y, z);
-            if (Chunk.getSkyLightInWorld(x - 1, y, z) < nextSkyLight && canLightTravel(nextBlock, WEST, currentBlock, EAST))
-                toPlaceLights.enqueue(new Vector4i(x - 1, y, z, nextSkyLight));
-
-            nextBlock = Chunk.getBlockInWorld(x, y + 1, z);
-            if (Chunk.getSkyLightInWorld(x, y + 1, z) < nextSkyLight && canLightTravel(nextBlock, BOTTOM, currentBlock, TOP))
-                toPlaceLights.enqueue(new Vector4i(x, y + 1, z, nextSkyLight));
-
-            nextBlock = Chunk.getBlockInWorld(x, y - 1, z);
-            if (Block.isLeaveType(nextBlock) || Block.getBlockType(nextBlock) == LIQUID_TYPE)
-                currentSkyLight--;
-            if (Chunk.getSkyLightInWorld(x, y - 1, z) < currentSkyLight && canLightTravel(nextBlock, TOP, currentBlock, BOTTOM))
-                toPlaceLights.enqueue(new Vector4i(x, y - 1, z, currentSkyLight));
-
-            nextBlock = Chunk.getBlockInWorld(x, y, z + 1);
-            if (Chunk.getSkyLightInWorld(x, y, z + 1) < nextSkyLight && canLightTravel(nextBlock, SOUTH, currentBlock, NORTH))
-                toPlaceLights.enqueue(new Vector4i(x, y, z + 1, nextSkyLight));
-            nextBlock = Chunk.getBlockInWorld(x, y, z - 1);
-            if (Chunk.getSkyLightInWorld(x, y, z - 1) < nextSkyLight && canLightTravel(nextBlock, NORTH, currentBlock, SOUTH))
-                toPlaceLights.enqueue(new Vector4i(x, y, z - 1, nextSkyLight));
-
-            ignoreChecksCounter--;
-        }
-    }
-
     public static void dePropagateSkyLight(int x, int y, int z) {
-        ArrayQueue<Vector4i> toRePropagate = new ArrayQueue<>(10);
-        ArrayQueue<Vector4i> toDePropagate = new ArrayQueue<>(10);
-        toDePropagate.enqueue(new Vector4i(x, y, z, Chunk.getSkyLightInWorld(x, y, z) + 1));
+        ArrayQueue<LightInfo> toRePropagate = new ArrayQueue<>(10);
+        ArrayQueue<LightInfo> toDePropagate = new ArrayQueue<>(10);
+        toDePropagate.enqueue(new LightInfo(x, y, z, (byte) (Chunk.getSkyLightInWorld(x, y, z) + 1)));
 
         dePropagateSkyLight(toRePropagate, toDePropagate);
 
         setSkyLight(toRePropagate);
-    }
-
-    public static void dePropagateSkyLight(ArrayQueue<Vector4i> toRePropagate, ArrayQueue<Vector4i> toDePropagate) {
-        boolean onFirstIteration = true;
-        while (!toDePropagate.isEmpty()) {
-            Vector4i position = toDePropagate.dequeue();
-            int x = position.x;
-            int y = position.y;
-            int z = position.z;
-            int lastSkyLight = position.w;
-
-            Chunk chunk = Chunk.getChunk(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS);
-            if (chunk == null) continue;
-
-            byte currentSkyLight = chunk.getSaveSkyLight(x & CHUNK_SIZE_MASK, y & CHUNK_SIZE_MASK, z & CHUNK_SIZE_MASK);
-            if (currentSkyLight == 0) continue;
-
-            if (currentSkyLight >= lastSkyLight) {
-                if (currentSkyLight > 1) {
-                    Vector4i nextPosition = new Vector4i(x, y, z, currentSkyLight);
-                    if (notContainsToRePropagatePosition(toRePropagate, nextPosition))
-                        toRePropagate.enqueue(nextPosition);
-                }
-                continue;
-            }
-
-            int index = (x & CHUNK_SIZE_MASK) << CHUNK_SIZE_BITS * 2 | (z & CHUNK_SIZE_MASK) << CHUNK_SIZE_BITS | (y & CHUNK_SIZE_MASK);
-            chunk.removeSkyLight(index);
-            chunk.setMeshed(false);
-            unMeshNextChunkIfNecessary(x & CHUNK_SIZE_MASK, y & CHUNK_SIZE_MASK, z & CHUNK_SIZE_MASK, chunk);
-            short currentBlock = onFirstIteration ? AIR : chunk.getSaveBlock(index);
-
-            short nextBlock = Chunk.getBlockInWorld(x + 1, y, z);
-            if (canLightTravel(nextBlock, EAST, currentBlock, WEST))
-                toDePropagate.enqueue(new Vector4i(x + 1, y, z, currentSkyLight));
-            nextBlock = Chunk.getBlockInWorld(x - 1, y, z);
-            if (canLightTravel(nextBlock, WEST, currentBlock, EAST))
-                toDePropagate.enqueue(new Vector4i(x - 1, y, z, currentSkyLight));
-
-            nextBlock = Chunk.getBlockInWorld(x, y + 1, z);
-            if (canLightTravel(nextBlock, BOTTOM, currentBlock, TOP))
-                toDePropagate.enqueue(new Vector4i(x, y + 1, z, currentSkyLight));
-            nextBlock = Chunk.getBlockInWorld(x, y - 1, z);
-            if (canLightTravel(nextBlock, TOP, currentBlock, BOTTOM))
-                toDePropagate.enqueue(new Vector4i(x, y - 1, z, currentSkyLight + 1));
-
-            nextBlock = Chunk.getBlockInWorld(x, y, z + 1);
-            if (canLightTravel(nextBlock, SOUTH, currentBlock, NORTH))
-                toDePropagate.enqueue(new Vector4i(x, y, z + 1, currentSkyLight));
-            nextBlock = Chunk.getBlockInWorld(x, y, z - 1);
-            if (canLightTravel(nextBlock, NORTH, currentBlock, SOUTH))
-                toDePropagate.enqueue(new Vector4i(x, y, z - 1, currentSkyLight));
-
-            onFirstIteration = false;
-        }
     }
 
     public static byte getMaxSurroundingSkyLight(int x, int y, int z) {
@@ -362,20 +253,129 @@ public final class LightLogic {
         return max;
     }
 
+    private static void setSkyLight(ArrayQueue<LightInfo> toPlaceLights) {
+        int ignoreChecksCounter = toPlaceLights.size();
+        while (!toPlaceLights.isEmpty()) {
+            LightInfo toPlaceLight = toPlaceLights.dequeue();
+            int x = toPlaceLight.x();
+            int y = toPlaceLight.y();
+            int z = toPlaceLight.z();
+            int currentSkyLight = toPlaceLight.level();
 
-    private static boolean notContainsToRePropagatePosition(ArrayQueue<Vector4i> toRePropagate, Vector4i position) {
+            if (currentSkyLight <= 0)
+                continue;
+
+            Chunk chunk = Chunk.getChunk(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS);
+            if (chunk == null) continue;
+
+            int index = (x & CHUNK_SIZE_MASK) << CHUNK_SIZE_BITS * 2 | (z & CHUNK_SIZE_MASK) << CHUNK_SIZE_BITS | y & CHUNK_SIZE_MASK;
+
+            if (chunk.getSaveSkyLight(index) >= currentSkyLight && ignoreChecksCounter <= 0) continue;
+
+            chunk.storeSaveSkyLight(index, currentSkyLight);
+            chunk.setMeshed(false);
+            unMeshNextChunkIfNecessary(x & CHUNK_SIZE_MASK, y & CHUNK_SIZE_MASK, z & CHUNK_SIZE_MASK, chunk);
+
+            byte nextSkyLight = (byte) (currentSkyLight - 1);
+            short currentBlock = chunk.getSaveBlock(index);
+
+            short nextBlock = Chunk.getBlockInWorld(x + 1, y, z);
+            if (Chunk.getSkyLightInWorld(x + 1, y, z) < nextSkyLight && canLightTravel(nextBlock, EAST, currentBlock, WEST))
+                toPlaceLights.enqueue(new LightInfo(x + 1, y, z, nextSkyLight));
+            nextBlock = Chunk.getBlockInWorld(x - 1, y, z);
+            if (Chunk.getSkyLightInWorld(x - 1, y, z) < nextSkyLight && canLightTravel(nextBlock, WEST, currentBlock, EAST))
+                toPlaceLights.enqueue(new LightInfo(x - 1, y, z, nextSkyLight));
+
+            nextBlock = Chunk.getBlockInWorld(x, y + 1, z);
+            if (Chunk.getSkyLightInWorld(x, y + 1, z) < nextSkyLight && canLightTravel(nextBlock, BOTTOM, currentBlock, TOP))
+                toPlaceLights.enqueue(new LightInfo(x, y + 1, z, nextSkyLight));
+
+            nextBlock = Chunk.getBlockInWorld(x, y - 1, z);
+            if (Block.isLeaveType(nextBlock) || Block.getBlockType(nextBlock) == LIQUID_TYPE)
+                currentSkyLight--;
+            if (Chunk.getSkyLightInWorld(x, y - 1, z) < currentSkyLight && canLightTravel(nextBlock, TOP, currentBlock, BOTTOM))
+                toPlaceLights.enqueue(new LightInfo(x, y - 1, z, (byte) currentSkyLight));
+
+            nextBlock = Chunk.getBlockInWorld(x, y, z + 1);
+            if (Chunk.getSkyLightInWorld(x, y, z + 1) < nextSkyLight && canLightTravel(nextBlock, SOUTH, currentBlock, NORTH))
+                toPlaceLights.enqueue(new LightInfo(x, y, z + 1, nextSkyLight));
+            nextBlock = Chunk.getBlockInWorld(x, y, z - 1);
+            if (Chunk.getSkyLightInWorld(x, y, z - 1) < nextSkyLight && canLightTravel(nextBlock, NORTH, currentBlock, SOUTH))
+                toPlaceLights.enqueue(new LightInfo(x, y, z - 1, nextSkyLight));
+
+            ignoreChecksCounter--;
+        }
+    }
+
+    private static void dePropagateSkyLight(ArrayQueue<LightInfo> toRePropagate, ArrayQueue<LightInfo> toDePropagate) {
+        boolean onFirstIteration = true;
+        while (!toDePropagate.isEmpty()) {
+            LightInfo position = toDePropagate.dequeue();
+            int x = position.x();
+            int y = position.y();
+            int z = position.z();
+            int lastSkyLight = position.level();
+
+            Chunk chunk = Chunk.getChunk(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS);
+            if (chunk == null) continue;
+
+            byte currentSkyLight = chunk.getSaveSkyLight(x & CHUNK_SIZE_MASK, y & CHUNK_SIZE_MASK, z & CHUNK_SIZE_MASK);
+            if (currentSkyLight == 0) continue;
+
+            if (currentSkyLight >= lastSkyLight) {
+                if (currentSkyLight > 1) {
+                    LightInfo nextPosition = new LightInfo(x, y, z, currentSkyLight);
+                    if (notContainsToRePropagatePosition(toRePropagate, nextPosition))
+                        toRePropagate.enqueue(nextPosition);
+                }
+                continue;
+            }
+
+            int index = (x & CHUNK_SIZE_MASK) << CHUNK_SIZE_BITS * 2 | (z & CHUNK_SIZE_MASK) << CHUNK_SIZE_BITS | (y & CHUNK_SIZE_MASK);
+            chunk.removeSkyLight(index);
+            chunk.setMeshed(false);
+            unMeshNextChunkIfNecessary(x & CHUNK_SIZE_MASK, y & CHUNK_SIZE_MASK, z & CHUNK_SIZE_MASK, chunk);
+            short currentBlock = onFirstIteration ? AIR : chunk.getSaveBlock(index);
+
+            short nextBlock = Chunk.getBlockInWorld(x + 1, y, z);
+            if (canLightTravel(nextBlock, EAST, currentBlock, WEST))
+                toDePropagate.enqueue(new LightInfo(x + 1, y, z, currentSkyLight));
+            nextBlock = Chunk.getBlockInWorld(x - 1, y, z);
+            if (canLightTravel(nextBlock, WEST, currentBlock, EAST))
+                toDePropagate.enqueue(new LightInfo(x - 1, y, z, currentSkyLight));
+
+            nextBlock = Chunk.getBlockInWorld(x, y + 1, z);
+            if (canLightTravel(nextBlock, BOTTOM, currentBlock, TOP))
+                toDePropagate.enqueue(new LightInfo(x, y + 1, z, currentSkyLight));
+            nextBlock = Chunk.getBlockInWorld(x, y - 1, z);
+            if (canLightTravel(nextBlock, TOP, currentBlock, BOTTOM))
+                toDePropagate.enqueue(new LightInfo(x, y - 1, z, (byte) (currentSkyLight + 1)));
+
+            nextBlock = Chunk.getBlockInWorld(x, y, z + 1);
+            if (canLightTravel(nextBlock, SOUTH, currentBlock, NORTH))
+                toDePropagate.enqueue(new LightInfo(x, y, z + 1, currentSkyLight));
+            nextBlock = Chunk.getBlockInWorld(x, y, z - 1);
+            if (canLightTravel(nextBlock, NORTH, currentBlock, SOUTH))
+                toDePropagate.enqueue(new LightInfo(x, y, z - 1, currentSkyLight));
+
+            onFirstIteration = false;
+        }
+    }
+
+    // Util
+    private static boolean notContainsToRePropagatePosition(ArrayQueue<LightInfo> toRePropagate, LightInfo position) {
 //        for (Object object : toRePropagate.getElements()) {
 //            if (object == null) continue;
-//            Vector4i vec = (Vector4i) object;
+//            LightInfo vec = (LightInfo) object;
 //
-//            if (vec.x == position.x && vec.y == position.y && vec.z == position.z && vec.w >= position.w)
+//            if (vec.x() == position.x() && vec.y() == position.y() && vec.z() == position.z() && vec.level() >= position.level())
 //                return false;
 //        }
 //        return true;
         return toRePropagate.notContainsToRePropagatePosition(position);
     }
 
-    public static boolean canLightTravel(short destinationBlock, int enterSide, short originBlock, int exitSide) {
+    private static boolean canLightTravel(short destinationBlock, int enterSide, short originBlock, int exitSide) {
         int blockType;
         long occlusionData;
         boolean lightEmitting;
@@ -421,4 +421,7 @@ public final class LightLogic {
     }
 
     private LightLogic() { }
+
+    public record LightInfo(int x, int y, int z, byte level) {
+    }
 }

@@ -18,11 +18,15 @@ public final class Transformation {
         Vector2f rot = camera.getRotation();
         Matrix4f matrix = new Matrix4f();
         matrix.identity();
-        matrix.rotate((float) Math.toRadians(rot.x), new Vector3f(1, 0, 0)).rotate((float) Math.toRadians(rot.y), new Vector3f(0, 1, 0));
+        matrix.rotate((float) Math.toRadians(rot.x), X_AXIS).rotate((float) Math.toRadians(rot.y), Y_AXIS);
 
         matrix.translate(-pos.x, -pos.y, -pos.z);
         return matrix;
     }
 
-    private Transformation() { }
+    private Transformation() {
+    }
+
+    private static final Vector3f X_AXIS = new Vector3f(1.0f, 0.0f, 0.0f);
+    private static final Vector3f Y_AXIS = new Vector3f(0.0f, 1.0f, 0.0f);
 }

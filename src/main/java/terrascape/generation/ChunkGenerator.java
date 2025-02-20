@@ -8,9 +8,7 @@ import terrascape.dataStorage.HeightMap;
 import terrascape.utils.Utils;
 import terrascape.server.ServerLogic;
 import org.joml.Vector3f;
-import org.joml.Vector4i;
 
-import java.util.LinkedList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -21,7 +19,6 @@ import static terrascape.utils.Settings.*;
 public final class ChunkGenerator {
 
     public ChunkGenerator() {
-        blockChanges = new LinkedList<>();
         executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(NUMBER_OF_GENERATION_THREADS);
     }
 
@@ -44,7 +41,6 @@ public final class ChunkGenerator {
         }
         executor.getQueue().clear();
         ServerLogic.unloadChunks(playerChunkX, playerChunkY, playerChunkZ);
-        handleBlockChanges();
 
         submitTasks(playerChunkX, playerChunkY, playerChunkZ, direction, RENDER_DISTANCE_XZ);
     }
@@ -61,56 +57,9 @@ public final class ChunkGenerator {
         }
     }
 
-    public void addBlockChange(Vector4i blockChange) {
-        synchronized (blockChanges) {
-            blockChanges.add(blockChange);
-        }
-    }
-
     public void cleanUp() {
         executor.getQueue().clear();
         executor.shutdown();
-    }
-
-    private void handleBlockChanges() {
-        synchronized (blockChanges) {
-            while (!blockChanges.isEmpty()) {
-
-                Vector4i blockChange = blockChanges.removeFirst();
-                int x = blockChange.x;
-                int y = blockChange.y;
-                int z = blockChange.z;
-                short previousBlock = (short) (blockChange.w >> 16 & 0xFFFF);
-                short block = (short) (blockChange.w & 0xFFFF);
-                if (Chunk.getBlockInWorld(x, y, z) != block) continue;
-
-                int blockLightLevel = Block.getBlockProperties(block) & LIGHT_EMITTING;
-                int previousBlockLightLevel = Block.getBlockProperties(previousBlock) & LIGHT_EMITTING;
-                boolean blockEmitsLight = blockLightLevel != 0;
-                boolean previousBlockEmitsLight = previousBlockLightLevel != 0;
-
-                if (blockEmitsLight && previousBlockEmitsLight) {
-                    if (blockLightLevel > previousBlockLightLevel)
-                        LightLogic.setBlockLight(x, y, z, blockLightLevel);
-                    else if (previousBlockLightLevel > blockLightLevel) {
-                        LightLogic.dePropagateBlockLight(x, y, z);
-                        LightLogic.setBlockLight(x, y, z, blockLightLevel);
-                    }
-                } else if (blockEmitsLight) {
-                    if (Chunk.getBlockLightInWorld(x, y, z) > blockLightLevel)
-                        LightLogic.dePropagateBlockLight(x, y, z);
-                    LightLogic.setBlockLight(x, y, z, blockLightLevel);
-                } else if (block == AIR) {
-                    if (previousBlockEmitsLight) LightLogic.dePropagateBlockLight(x, y, z);
-                    else LightLogic.setBlockLight(x, y, z, LightLogic.getMaxSurroundingBlockLight(x, y, z) - 1);
-                } else
-                    LightLogic.dePropagateBlockLight(x, y, z);
-
-                if (block == AIR)
-                    LightLogic.setSkyLight(x, y, z, LightLogic.getMaxSurroundingSkyLight(x, y, z) - 1);
-                else LightLogic.dePropagateSkyLight(x, y, z);
-            }
-        }
     }
 
     private void submitTasks(int playerChunkX, int playerChunkY, int playerChunkZ, int travelDirection, int maxDistance) {
@@ -175,7 +124,6 @@ public final class ChunkGenerator {
     }
 
     private final ThreadPoolExecutor executor;
-    private final LinkedList<Vector4i> blockChanges;
 
     private record Generator(int chunkX, int playerChunkY, int chunkZ) implements Runnable {
 

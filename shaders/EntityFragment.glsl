@@ -4,10 +4,12 @@ in vec2 fragTextureCoordinates;
 in float blockLight;
 in float skyLight;
 in vec3 normal;
+in float distance;
 
 out vec4 fragColor;
 
 uniform sampler2D textureSampler;
+uniform int headUnderWater;
 uniform float time;
 
 vec3 getSunDirection() {
@@ -38,6 +40,7 @@ void main() {
     float nightLight = 0.6 * (1 - absTime) * (1 - absTime);
     float light = max(blockLight + 0.2, max(0.2, skyLight) * timeLight + sunIllumination);
     vec3 fragLight = vec3(light, light, max(blockLight + 0.2, max(0.2, skyLight + nightLight) * timeLight + sunIllumination));
+    float waterFogMultiplier = min(1, headUnderWater * max(0.5, distance * 0.01));
 
-    fragColor = vec4(color.rgb * fragLight, color.a);
+    fragColor = vec4(color.rgb * fragLight * (1 - waterFogMultiplier) + vec3(0.0, 0.098, 0.643) * waterFogMultiplier * timeLight, color.a);
 }

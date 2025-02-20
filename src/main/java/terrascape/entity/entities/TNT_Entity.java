@@ -17,19 +17,21 @@ import static terrascape.utils.Settings.*;
 
 public final class TNT_Entity extends Entity {
 
-    private int fuse;
+    public static final int STANDARD_TNT_FUSE = 80;
 
     public TNT_Entity(int fuse, Vector3f position, Vector3f velocity) {
         this.fuse = fuse;
         this.position = position;
         this.velocity = velocity;
         aabb = TNT_AABB;
+        rotations = new float[aabb.length >> 1];
     }
 
     @Override
     public void update() {
         fuse--;
         move();
+        lookAtMovementDirection();
 
         if (fuse <= 0) {
             explode();
@@ -43,18 +45,13 @@ public final class TNT_Entity extends Entity {
     }
 
     @Override
-    public byte getTopTexture() {
-        return -122;
-    }
-
-    @Override
-    public byte getSideTexture() {
-        return -106;
-    }
-
-    @Override
-    public byte getBottomTexture() {
-        return -90;
+    public short getTextureUV(int side, int aabbIndex) {
+        return switch (side) {
+            case TOP -> (6 * 16 & 0xFF) << 8 | (8 * 16 & 0xFF);
+            case NORTH, WEST, SOUTH, EAST -> (6 * 16 & 0xFF) << 8 | (9 * 16 & 0xFF);
+            case BOTTOM -> (6 * 16 & 0xFF) << 8 | (10 * 16 & 0xFF);
+            default -> 0;
+        };
     }
 
     @Override
@@ -71,61 +68,61 @@ public final class TNT_Entity extends Entity {
         return BASE_BYTE_SIZE + 4;
     }
 
-    public void explode() {
-        castExplosionRay(position, -0.8164965809277261, -0.4082482904638631, -0.4082482904638631, EXPLOSION_STRENGTH);
-        castExplosionRay(position, -0.8944271909999159, -0.4472135954999579, 0.0, EXPLOSION_STRENGTH);
-        castExplosionRay(position, -0.8164965809277261, -0.4082482904638631, 0.4082482904638631, EXPLOSION_STRENGTH);
-        castExplosionRay(position, -0.8944271909999159, 0.0, -0.4472135954999579, EXPLOSION_STRENGTH);
-        castExplosionRay(position, -1.0, 0.0, 0.0, EXPLOSION_STRENGTH);
-        castExplosionRay(position, -0.8944271909999159, 0.0, 0.4472135954999579, EXPLOSION_STRENGTH);
-        castExplosionRay(position, -0.8164965809277261, 0.4082482904638631, -0.4082482904638631, EXPLOSION_STRENGTH);
-        castExplosionRay(position, -0.8944271909999159, 0.4472135954999579, 0.0, EXPLOSION_STRENGTH);
-        castExplosionRay(position, -0.8164965809277261, 0.4082482904638631, 0.4082482904638631, EXPLOSION_STRENGTH);
-        castExplosionRay(position, -0.4082482904638631, -0.8164965809277261, -0.4082482904638631, EXPLOSION_STRENGTH);
-        castExplosionRay(position, -0.4472135954999579, -0.8944271909999159, 0.0, EXPLOSION_STRENGTH);
-        castExplosionRay(position, -0.4082482904638631, -0.8164965809277261, 0.4082482904638631, EXPLOSION_STRENGTH);
-        castExplosionRay(position, -0.4082482904638631, -0.4082482904638631, -0.8164965809277261, EXPLOSION_STRENGTH);
-        castExplosionRay(position, -0.4082482904638631, -0.4082482904638631, 0.8164965809277261, EXPLOSION_STRENGTH);
-        castExplosionRay(position, -0.4472135954999579, 0.0, -0.8944271909999159, EXPLOSION_STRENGTH);
-        castExplosionRay(position, -0.4472135954999579, 0.0, 0.8944271909999159, EXPLOSION_STRENGTH);
-        castExplosionRay(position, -0.4082482904638631, 0.4082482904638631, -0.8164965809277261, EXPLOSION_STRENGTH);
-        castExplosionRay(position, -0.4082482904638631, 0.4082482904638631, 0.8164965809277261, EXPLOSION_STRENGTH);
-        castExplosionRay(position, -0.4082482904638631, 0.8164965809277261, -0.4082482904638631, EXPLOSION_STRENGTH);
-        castExplosionRay(position, -0.4472135954999579, 0.8944271909999159, 0.0, EXPLOSION_STRENGTH);
-        castExplosionRay(position, -0.4082482904638631, 0.8164965809277261, 0.4082482904638631, EXPLOSION_STRENGTH);
-        castExplosionRay(position, 0.0, -0.8944271909999159, -0.4472135954999579, EXPLOSION_STRENGTH);
-        castExplosionRay(position, 0.0, -1.0, 0.0, EXPLOSION_STRENGTH);
-        castExplosionRay(position, 0.0, -0.8944271909999159, 0.4472135954999579, EXPLOSION_STRENGTH);
-        castExplosionRay(position, 0.0, -0.4472135954999579, -0.8944271909999159, EXPLOSION_STRENGTH);
-        castExplosionRay(position, 0.0, -0.4472135954999579, 0.8944271909999159, EXPLOSION_STRENGTH);
-        castExplosionRay(position, 0.0, 0.0, -1.0, EXPLOSION_STRENGTH);
-        castExplosionRay(position, 0.0, 0.0, 1.0, EXPLOSION_STRENGTH);
-        castExplosionRay(position, 0.0, 0.4472135954999579, -0.8944271909999159, EXPLOSION_STRENGTH);
-        castExplosionRay(position, 0.0, 0.4472135954999579, 0.8944271909999159, EXPLOSION_STRENGTH);
-        castExplosionRay(position, 0.0, 0.8944271909999159, -0.4472135954999579, EXPLOSION_STRENGTH);
-        castExplosionRay(position, 0.0, 1.0, 0.0, EXPLOSION_STRENGTH);
-        castExplosionRay(position, 0.0, 0.8944271909999159, 0.4472135954999579, EXPLOSION_STRENGTH);
-        castExplosionRay(position, 0.4082482904638631, -0.8164965809277261, -0.4082482904638631, EXPLOSION_STRENGTH);
-        castExplosionRay(position, 0.4472135954999579, -0.8944271909999159, 0.0, EXPLOSION_STRENGTH);
-        castExplosionRay(position, 0.4082482904638631, -0.8164965809277261, 0.4082482904638631, EXPLOSION_STRENGTH);
-        castExplosionRay(position, 0.4082482904638631, -0.4082482904638631, -0.8164965809277261, EXPLOSION_STRENGTH);
-        castExplosionRay(position, 0.4082482904638631, -0.4082482904638631, 0.8164965809277261, EXPLOSION_STRENGTH);
-        castExplosionRay(position, 0.4472135954999579, 0.0, -0.8944271909999159, EXPLOSION_STRENGTH);
-        castExplosionRay(position, 0.4472135954999579, 0.0, 0.8944271909999159, EXPLOSION_STRENGTH);
-        castExplosionRay(position, 0.4082482904638631, 0.4082482904638631, -0.8164965809277261, EXPLOSION_STRENGTH);
-        castExplosionRay(position, 0.4082482904638631, 0.4082482904638631, 0.8164965809277261, EXPLOSION_STRENGTH);
-        castExplosionRay(position, 0.4082482904638631, 0.8164965809277261, -0.4082482904638631, EXPLOSION_STRENGTH);
-        castExplosionRay(position, 0.4472135954999579, 0.8944271909999159, 0.0, EXPLOSION_STRENGTH);
-        castExplosionRay(position, 0.4082482904638631, 0.8164965809277261, 0.4082482904638631, EXPLOSION_STRENGTH);
-        castExplosionRay(position, 0.8164965809277261, -0.4082482904638631, -0.4082482904638631, EXPLOSION_STRENGTH);
-        castExplosionRay(position, 0.8944271909999159, -0.4472135954999579, 0.0, EXPLOSION_STRENGTH);
-        castExplosionRay(position, 0.8164965809277261, -0.4082482904638631, 0.4082482904638631, EXPLOSION_STRENGTH);
-        castExplosionRay(position, 0.8944271909999159, 0.0, -0.4472135954999579, EXPLOSION_STRENGTH);
-        castExplosionRay(position, 1.0, 0.0, 0.0, EXPLOSION_STRENGTH);
-        castExplosionRay(position, 0.8944271909999159, 0.0, 0.4472135954999579, EXPLOSION_STRENGTH);
-        castExplosionRay(position, 0.8164965809277261, 0.4082482904638631, -0.4082482904638631, EXPLOSION_STRENGTH);
-        castExplosionRay(position, 0.8944271909999159, 0.4472135954999579, 0.0, EXPLOSION_STRENGTH);
-        castExplosionRay(position, 0.8164965809277261, 0.4082482904638631, 0.4082482904638631, EXPLOSION_STRENGTH);
+    private void explode() {
+        castExplosionRay(position, -0.8164965809277261, -0.4082482904638631, -0.4082482904638631);
+        castExplosionRay(position, -0.8944271909999159, -0.4472135954999579, 0.0);
+        castExplosionRay(position, -0.8164965809277261, -0.4082482904638631, 0.4082482904638631);
+        castExplosionRay(position, -0.8944271909999159, 0.0, -0.4472135954999579);
+        castExplosionRay(position, -1.0, 0.0, 0.0);
+        castExplosionRay(position, -0.8944271909999159, 0.0, 0.4472135954999579);
+        castExplosionRay(position, -0.8164965809277261, 0.4082482904638631, -0.4082482904638631);
+        castExplosionRay(position, -0.8944271909999159, 0.4472135954999579, 0.0);
+        castExplosionRay(position, -0.8164965809277261, 0.4082482904638631, 0.4082482904638631);
+        castExplosionRay(position, -0.4082482904638631, -0.8164965809277261, -0.4082482904638631);
+        castExplosionRay(position, -0.4472135954999579, -0.8944271909999159, 0.0);
+        castExplosionRay(position, -0.4082482904638631, -0.8164965809277261, 0.4082482904638631);
+        castExplosionRay(position, -0.4082482904638631, -0.4082482904638631, -0.8164965809277261);
+        castExplosionRay(position, -0.4082482904638631, -0.4082482904638631, 0.8164965809277261);
+        castExplosionRay(position, -0.4472135954999579, 0.0, -0.8944271909999159);
+        castExplosionRay(position, -0.4472135954999579, 0.0, 0.8944271909999159);
+        castExplosionRay(position, -0.4082482904638631, 0.4082482904638631, -0.8164965809277261);
+        castExplosionRay(position, -0.4082482904638631, 0.4082482904638631, 0.8164965809277261);
+        castExplosionRay(position, -0.4082482904638631, 0.8164965809277261, -0.4082482904638631);
+        castExplosionRay(position, -0.4472135954999579, 0.8944271909999159, 0.0);
+        castExplosionRay(position, -0.4082482904638631, 0.8164965809277261, 0.4082482904638631);
+        castExplosionRay(position, 0.0, -0.8944271909999159, -0.4472135954999579);
+        castExplosionRay(position, 0.0, -1.0, 0.0);
+        castExplosionRay(position, 0.0, -0.8944271909999159, 0.4472135954999579);
+        castExplosionRay(position, 0.0, -0.4472135954999579, -0.8944271909999159);
+        castExplosionRay(position, 0.0, -0.4472135954999579, 0.8944271909999159);
+        castExplosionRay(position, 0.0, 0.0, -1.0);
+        castExplosionRay(position, 0.0, 0.0, 1.0);
+        castExplosionRay(position, 0.0, 0.4472135954999579, -0.8944271909999159);
+        castExplosionRay(position, 0.0, 0.4472135954999579, 0.8944271909999159);
+        castExplosionRay(position, 0.0, 0.8944271909999159, -0.4472135954999579);
+        castExplosionRay(position, 0.0, 1.0, 0.0);
+        castExplosionRay(position, 0.0, 0.8944271909999159, 0.4472135954999579);
+        castExplosionRay(position, 0.4082482904638631, -0.8164965809277261, -0.4082482904638631);
+        castExplosionRay(position, 0.4472135954999579, -0.8944271909999159, 0.0);
+        castExplosionRay(position, 0.4082482904638631, -0.8164965809277261, 0.4082482904638631);
+        castExplosionRay(position, 0.4082482904638631, -0.4082482904638631, -0.8164965809277261);
+        castExplosionRay(position, 0.4082482904638631, -0.4082482904638631, 0.8164965809277261);
+        castExplosionRay(position, 0.4472135954999579, 0.0, -0.8944271909999159);
+        castExplosionRay(position, 0.4472135954999579, 0.0, 0.8944271909999159);
+        castExplosionRay(position, 0.4082482904638631, 0.4082482904638631, -0.8164965809277261);
+        castExplosionRay(position, 0.4082482904638631, 0.4082482904638631, 0.8164965809277261);
+        castExplosionRay(position, 0.4082482904638631, 0.8164965809277261, -0.4082482904638631);
+        castExplosionRay(position, 0.4472135954999579, 0.8944271909999159, 0.0);
+        castExplosionRay(position, 0.4082482904638631, 0.8164965809277261, 0.4082482904638631);
+        castExplosionRay(position, 0.8164965809277261, -0.4082482904638631, -0.4082482904638631);
+        castExplosionRay(position, 0.8944271909999159, -0.4472135954999579, 0.0);
+        castExplosionRay(position, 0.8164965809277261, -0.4082482904638631, 0.4082482904638631);
+        castExplosionRay(position, 0.8944271909999159, 0.0, -0.4472135954999579);
+        castExplosionRay(position, 1.0, 0.0, 0.0);
+        castExplosionRay(position, 0.8944271909999159, 0.0, 0.4472135954999579);
+        castExplosionRay(position, 0.8164965809277261, 0.4082482904638631, -0.4082482904638631);
+        castExplosionRay(position, 0.8944271909999159, 0.4472135954999579, 0.0);
+        castExplosionRay(position, 0.8164965809277261, 0.4082482904638631, 0.4082482904638631);
 
         pushEntities();
         ServerLogic.addParticle(new ExplosionParticle(new Vector3f(position.x, position.y + 0.375f, position.z)));
@@ -134,7 +131,7 @@ public final class TNT_Entity extends Entity {
         sound.playRandomSound(sound.explode, position.x, position.y, position.z, velocity.x, velocity.y, velocity.z, MISCELLANEOUS_GAIN);
     }
 
-    public static void castExplosionRay(Vector3f origin, double dirX, double dirY, double dirZ, int blastStrength) {
+    private static void castExplosionRay(Vector3f origin, double dirX, double dirY, double dirZ) {
         int x = Utils.floor(origin.x);
         int y = Utils.floor(origin.y);
         int z = Utils.floor(origin.z);
@@ -157,7 +154,7 @@ public final class TNT_Entity extends Entity {
         double length = 0;
         int blastResistance = 0;
 
-        while (blastResistance < blastStrength && length < 8.0) {
+        while (blastResistance < TNT_Entity.EXPLOSION_STRENGTH && length < 8.0) {
             short block = Chunk.getBlockInWorld(x, y, z);
             int blockType = Block.getBlockType(block);
             if ((Block.getBlockProperties(block) & BLAST_RESISTANT) != 0 || Block.isWaterLogged(block)) return;
@@ -191,7 +188,7 @@ public final class TNT_Entity extends Entity {
         }
     }
 
-    public void pushEntities() {
+    private void pushEntities() {
         int currentClusterX = Utils.floor(position.x) >> ENTITY_CLUSTER_SIZE_BITS;
         int currentClusterY = Utils.floor(position.y) >> ENTITY_CLUSTER_SIZE_BITS;
         int currentClusterZ = Utils.floor(position.z) >> ENTITY_CLUSTER_SIZE_BITS;
@@ -240,6 +237,8 @@ public final class TNT_Entity extends Entity {
 
         return new TNT_Entity(fuse, null, null);
     }
+
+    private int fuse;
 
     private static final float[] TNT_AABB = new float[]{-0.5f, 0.5f, -0.5f, 0.5f, -0.5f, 0.5f};
     private static final int EXPLOSION_STRENGTH = 2;

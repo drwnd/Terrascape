@@ -11,7 +11,6 @@ import terrascape.generation.ChunkGenerator;
 import terrascape.player.*;
 import terrascape.utils.Utils;
 import org.joml.Vector3f;
-import org.joml.Vector4i;
 import org.lwjgl.opengl.GL11;
 
 import java.util.ArrayList;
@@ -93,7 +92,7 @@ public final class ServerLogic {
 
         chunk.placeBlock(inChunkX, inChunkY, inChunkZ, block);
         BlockEvent.updateSurrounding(x, y, z);
-        addBlockChange(x, y, z, previousBlock, block);
+        handleBlockChange(x, y, z, previousBlock, block);
 
         int minX = chunkX, maxX = chunkX;
         int minY = chunkY, maxY = chunkY;
@@ -138,8 +137,28 @@ public final class ServerLogic {
         }
     }
 
-    public static void addBlockChange(int x, int y, int z, short previousBlock, short currentBlock) {
-        generator.addBlockChange(new Vector4i(x, y, z, previousBlock << 16 | currentBlock));
+    public static void handleBlockChange(int x, int y, int z, short previousBlock, short currentBlock) {
+        int blockLightLevel = Block.getBlockProperties(currentBlock) & LIGHT_EMITTING;
+        int previousBlockLightLevel = Block.getBlockProperties(previousBlock) & LIGHT_EMITTING;
+        boolean blockEmitsLight = blockLightLevel != 0;
+        boolean previousBlockEmitsLight = previousBlockLightLevel != 0;
+
+        if (blockEmitsLight && previousBlockEmitsLight) {
+            if (blockLightLevel > previousBlockLightLevel) LightLogic.setBlockLight(x, y, z, blockLightLevel);
+            else if (previousBlockLightLevel > blockLightLevel) {
+                LightLogic.dePropagateBlockLight(x, y, z);
+                LightLogic.setBlockLight(x, y, z, blockLightLevel);
+            }
+        } else if (blockEmitsLight) {
+            if (Chunk.getBlockLightInWorld(x, y, z) > blockLightLevel) LightLogic.dePropagateBlockLight(x, y, z);
+            LightLogic.setBlockLight(x, y, z, blockLightLevel);
+        } else if (currentBlock == AIR) {
+            if (previousBlockEmitsLight) LightLogic.dePropagateBlockLight(x, y, z);
+            else LightLogic.setBlockLight(x, y, z, LightLogic.getMaxSurroundingBlockLight(x, y, z) - 1);
+        } else LightLogic.dePropagateBlockLight(x, y, z);
+
+        if (currentBlock == AIR) LightLogic.setSkyLight(x, y, z, LightLogic.getMaxSurroundingSkyLight(x, y, z) - 1);
+        else LightLogic.dePropagateSkyLight(x, y, z);
     }
 
     public static void bufferChunkMesh(Chunk chunk) {

@@ -1,6 +1,6 @@
 package terrascape.utils;
 
-import org.joml.Vector4i;
+import terrascape.server.LightLogic;
 
 public class ArrayQueue<E> {
 
@@ -59,10 +59,10 @@ public class ArrayQueue<E> {
 
     // Not part of the actual class, but it doesn't work otherwise
     // Only use if E is Vector4i, only use in LightLogic
-    public boolean notContainsToRePropagatePosition(Vector4i position) {
+    public boolean notContainsToRePropagatePosition(LightLogic.LightInfo position) {
         for (int index = headPointer; index != tailPointer; index = incIndex(index)) {
-            Vector4i vec = (Vector4i) elements[index];
-            if (vec.x == position.x && vec.y == position.y && vec.z == position.z && vec.w >= position.w)
+            LightLogic.LightInfo info = (LightLogic.LightInfo) elements[index];
+            if (info.x() == position.x() && info.y() == position.y() && info.z() == position.z() && info.level() >= position.level())
                 return false;
         }
         return true;

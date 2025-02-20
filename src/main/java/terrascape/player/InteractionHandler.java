@@ -186,7 +186,7 @@ public final class InteractionHandler {
         }
         if (block == TNT) {
             if (heldBlock == TNT) return false;
-            TNT_Entity.spawnTNTEntity(target.position(), 80);
+            TNT_Entity.spawnTNTEntity(target.position(), TNT_Entity.STANDARD_TNT_FUSE);
             sound.playSound(sound.fuse, target.position().x, target.position().y, target.position().z, 0.0f, 0.0f, 0.0f, MISCELLANEOUS_GAIN);
             return true;
         }

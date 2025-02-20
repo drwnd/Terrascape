@@ -515,7 +515,7 @@ public final class Block {
     public static boolean canWaterFlow(short sourceBlock, short targetBlock, short blockBelow, int entrySide) {
         if (isLavaBlock(targetBlock)) return false;
         if (sourceBlock == FLOWING_WATER_LEVEL_1 && entrySide != TOP) return false;
-        if (blockBelow == FLOWING_WATER_LEVEL_8 || blockBelow == WATER_SOURCE || Block.getBlockOcclusionData(blockBelow, TOP) == 0L && entrySide != TOP)
+        if (isWaterLogged(blockBelow) || blockBelow == AIR && entrySide != TOP)
             return false;
         if (isWaterBlock(targetBlock))
             return targetBlock > sourceBlock + 1 || entrySide == TOP && targetBlock != WATER_SOURCE && targetBlock != FLOWING_WATER_LEVEL_8;
@@ -1024,11 +1024,11 @@ public final class Block {
         setNonStandardBlockData(FLOWING_WATER_LEVEL_6, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT, sound.splash, sound.splash, LIQUID_LEVEL_6, new byte[]{(byte) 64});
         setNonStandardBlockData(FLOWING_WATER_LEVEL_7, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT, sound.splash, sound.splash, LIQUID_LEVEL_7, new byte[]{(byte) 64});
         setNonStandardBlockData(FLOWING_WATER_LEVEL_8, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT, sound.splash, sound.splash, LIQUID_LEVEL_8, new byte[]{(byte) 64});
-        setNonStandardBlockData(LAVA_SOURCE, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT | LIGHT_LEVEL_15, sound.lavaPop, sound.lavaPop, LIQUID_TYPE, new byte[]{(byte) -127});
-        setNonStandardBlockData(FLOWING_LAVA_LEVEL_1, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT | LIGHT_LEVEL_15, sound.lavaPop, sound.lavaPop, LIQUID_LEVEL_1, new byte[]{(byte) -127});
-        setNonStandardBlockData(FLOWING_LAVA_LEVEL_2, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT | LIGHT_LEVEL_15, sound.lavaPop, sound.lavaPop, LIQUID_LEVEL_3, new byte[]{(byte) -127});
-        setNonStandardBlockData(FLOWING_LAVA_LEVEL_3, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT | LIGHT_LEVEL_15, sound.lavaPop, sound.lavaPop, LIQUID_LEVEL_5, new byte[]{(byte) -127});
-        setNonStandardBlockData(FLOWING_LAVA_LEVEL_4, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT | LIGHT_LEVEL_15, sound.lavaPop, sound.lavaPop, LIQUID_LEVEL_8, new byte[]{(byte) -127});
+        setNonStandardBlockData(LAVA_SOURCE, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT | LIGHT_LEVEL_15 | HAS_ASKEW_FACES, sound.lavaPop, sound.lavaPop, LIQUID_TYPE, new byte[]{(byte) -127});
+        setNonStandardBlockData(FLOWING_LAVA_LEVEL_1, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT | LIGHT_LEVEL_15 | HAS_ASKEW_FACES, sound.lavaPop, sound.lavaPop, LIQUID_LEVEL_1, new byte[]{(byte) -127});
+        setNonStandardBlockData(FLOWING_LAVA_LEVEL_2, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT | LIGHT_LEVEL_15 | HAS_ASKEW_FACES, sound.lavaPop, sound.lavaPop, LIQUID_LEVEL_3, new byte[]{(byte) -127});
+        setNonStandardBlockData(FLOWING_LAVA_LEVEL_3, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT | LIGHT_LEVEL_15 | HAS_ASKEW_FACES, sound.lavaPop, sound.lavaPop, LIQUID_LEVEL_5, new byte[]{(byte) -127});
+        setNonStandardBlockData(FLOWING_LAVA_LEVEL_4, NO_COLLISION | REPLACEABLE | BLAST_RESISTANT | LIGHT_LEVEL_15 | HAS_ASKEW_FACES, sound.lavaPop, sound.lavaPop, LIQUID_LEVEL_8, new byte[]{(byte) -127});
     }
 
     private static void initStandardBlocks() {

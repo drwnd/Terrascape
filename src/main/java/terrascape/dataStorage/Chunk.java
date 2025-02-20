@@ -196,7 +196,7 @@ public final class Chunk {
                 for (int inChunkY = 0; inChunkY < CHUNK_SIZE; inChunkY++) {
                     int properties = Block.getBlockProperties(getSaveBlock(inChunkX, inChunkY, inChunkZ));
                     if ((properties & LIGHT_EMITTING) != 0)
-                        LightLogic.setBlockLight(worldCoordinate.x | inChunkX, worldCoordinate.y | inChunkY, worldCoordinate.z | inChunkZ, properties & LIGHT_EMITTING);
+                        LightLogic.setBlockLight(X << CHUNK_SIZE_BITS | inChunkX, Y << CHUNK_SIZE_BITS | inChunkY, Z << CHUNK_SIZE_BITS | inChunkZ, properties & LIGHT_EMITTING);
                 }
     }
 
@@ -298,14 +298,14 @@ public final class Chunk {
         HeightMap heightMapObject = getHeightMap(X, Z);
         heightMapObject.setModified(true);
         int[] heightMap = heightMapObject.map;
-        int totalY = worldCoordinate.y | inChunkY;
+        int totalY = Y << CHUNK_SIZE_BITS | inChunkY;
 
         if (totalY > heightMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ] && block != AIR)
             heightMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ] = totalY;
 
         else if (totalY == heightMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ] && block == AIR) {
-            int totalX = worldCoordinate.x | inChunkX;
-            int totalZ = worldCoordinate.z | inChunkZ;
+            int totalX = X << CHUNK_SIZE_BITS | inChunkX;
+            int totalZ = Z << CHUNK_SIZE_BITS | inChunkZ;
             while (getBlockInWorld(totalX, totalY, totalZ) == AIR) totalY--;
             heightMap[inChunkX << CHUNK_SIZE_BITS | inChunkZ] = totalY;
         }
@@ -318,9 +318,9 @@ public final class Chunk {
     public void storeStructureBlock(int inChunkX, int inChunkY, int inChunkZ, short block) {
         if (block == AIR) return;
 
-        int x = worldCoordinate.x + inChunkX;
-        int y = worldCoordinate.y + inChunkY;
-        int z = worldCoordinate.z + inChunkZ;
+        int x = (X << CHUNK_SIZE_BITS) + inChunkX;
+        int y = (Y << CHUNK_SIZE_BITS) + inChunkY;
+        int z = (Z << CHUNK_SIZE_BITS) + inChunkZ;
 
         Chunk chunk = getChunk(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS);
 
@@ -342,9 +342,9 @@ public final class Chunk {
     public void storeSurroundingChunkStructureBlock(int inChunkX, int inChunkY, int inChunkZ, short block) {
         if (block == AIR) return;
 
-        int x = worldCoordinate.x + inChunkX;
-        int y = worldCoordinate.y + inChunkY;
-        int z = worldCoordinate.z + inChunkZ;
+        int x = (X << CHUNK_SIZE_BITS) + inChunkX;
+        int y = (Y << CHUNK_SIZE_BITS) + inChunkY;
+        int z = (Z << CHUNK_SIZE_BITS) + inChunkZ;
 
         inChunkX = x & CHUNK_SIZE_MASK;
         inChunkY = y & CHUNK_SIZE_MASK;

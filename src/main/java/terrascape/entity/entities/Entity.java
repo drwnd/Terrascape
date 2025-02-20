@@ -22,10 +22,11 @@ public abstract class Entity {
     protected Vector3f position;
     protected Vector3f velocity;
     protected float[] aabb;
+    protected float[] rotations;
     protected boolean isDead = false;
 
     public static void initAll() {
-        long vaoAndVbo = ObjectLoader.loadVoaAndVbo(0, 2, getEntityVertices());
+        long vaoAndVbo = ObjectLoader.loadVoaAndVbo(0, 1, getEntityVertices());
         vao = (int) (vaoAndVbo >> 32 & 0xFFFFFFFFL);
         vbo = (int) (vaoAndVbo & 0xFFFFFFFFL);
 
@@ -35,11 +36,7 @@ public abstract class Entity {
 
     public abstract void delete();
 
-    public abstract byte getTopTexture();
-
-    public abstract byte getSideTexture();
-
-    public abstract byte getBottomTexture();
+    public abstract short getTextureUV(int side, int aabbIndex);
 
     public abstract byte[] toBytes();
 
@@ -93,108 +90,114 @@ public abstract class Entity {
     public static float getIntersectionX(Vector3f position, float[] aabb) {
         float intersection = 0.0f;
 
-        float minX = aabb[MIN_X] + position.x;
-        float maxX = aabb[MAX_X] + position.x;
-        float minY = aabb[MIN_Y] + position.y;
-        float maxY = aabb[MAX_Y] + position.y;
-        float minZ = aabb[MIN_Z] + position.z;
-        float maxZ = aabb[MAX_Z] + position.z;
+        for (int entityAABBIndex = 0; entityAABBIndex < aabb.length; entityAABBIndex += 6) {
+            float minX = aabb[entityAABBIndex + MIN_X] + position.x;
+            float maxX = aabb[entityAABBIndex + MAX_X] + position.x;
+            float minY = aabb[entityAABBIndex + MIN_Y] + position.y;
+            float maxY = aabb[entityAABBIndex + MAX_Y] + position.y;
+            float minZ = aabb[entityAABBIndex + MIN_Z] + position.z;
+            float maxZ = aabb[entityAABBIndex + MAX_Z] + position.z;
 
-        for (int x = Utils.floor(minX), maxBlockX = Utils.floor(maxX); x <= maxBlockX; x++)
-            for (int y = Utils.floor(minY), maxBlockY = Utils.floor(maxY); y <= maxBlockY; y++)
-                for (int z = Utils.floor(minZ), maxBlockZ = Utils.floor(maxZ); z <= maxBlockZ; z++) {
+            for (int x = Utils.floor(minX), maxBlockX = Utils.floor(maxX); x <= maxBlockX; x++)
+                for (int y = Utils.floor(minY), maxBlockY = Utils.floor(maxY); y <= maxBlockY; y++)
+                    for (int z = Utils.floor(minZ), maxBlockZ = Utils.floor(maxZ); z <= maxBlockZ; z++) {
 
-                    short block = Chunk.getBlockInWorld(x, y, z);
-                    int blockProperties = Block.getBlockProperties(block);
-                    if ((blockProperties & NO_COLLISION) != 0) continue;
+                        short block = Chunk.getBlockInWorld(x, y, z);
+                        int blockProperties = Block.getBlockProperties(block);
+                        if ((blockProperties & NO_COLLISION) != 0) continue;
 
-                    byte[] blockXYZSubData = Block.getXYZSubData(block);
-                    for (int aabbIndex = 0; aabbIndex < blockXYZSubData.length; aabbIndex += 6) {
-                        float blockMinX = x + blockXYZSubData[MIN_X + aabbIndex] * 0.0625f;
-                        float blockMaxX = 1 + x + blockXYZSubData[MAX_X + aabbIndex] * 0.0625f;
-                        float blockMinY = y + blockXYZSubData[MIN_Y + aabbIndex] * 0.0625f;
-                        float blockMaxY = 1 + y + blockXYZSubData[MAX_Y + aabbIndex] * 0.0625f;
-                        float blockMinZ = z + blockXYZSubData[MIN_Z + aabbIndex] * 0.0625f;
-                        float blockMaxZ = 1 + z + blockXYZSubData[MAX_Z + aabbIndex] * 0.0625f;
+                        byte[] blockXYZSubData = Block.getXYZSubData(block);
+                        for (int blockAABBIndex = 0; blockAABBIndex < blockXYZSubData.length; blockAABBIndex += 6) {
+                            float blockMinX = x + blockXYZSubData[MIN_X + blockAABBIndex] * 0.0625f;
+                            float blockMaxX = 1 + x + blockXYZSubData[MAX_X + blockAABBIndex] * 0.0625f;
+                            float blockMinY = y + blockXYZSubData[MIN_Y + blockAABBIndex] * 0.0625f;
+                            float blockMaxY = 1 + y + blockXYZSubData[MAX_Y + blockAABBIndex] * 0.0625f;
+                            float blockMinZ = z + blockXYZSubData[MIN_Z + blockAABBIndex] * 0.0625f;
+                            float blockMaxZ = 1 + z + blockXYZSubData[MAX_Z + blockAABBIndex] * 0.0625f;
 
-                        if (minX < blockMaxX && maxX > blockMinX && minY < blockMaxY && maxY > blockMinY && minZ < blockMaxZ && maxZ > blockMinZ) {
+                            if (minX < blockMaxX && maxX > blockMinX && minY < blockMaxY && maxY > blockMinY && minZ < blockMaxZ && maxZ > blockMinZ) {
 
-                            intersection = Utils.absMax(intersection, Utils.absMin(minX - blockMaxX, maxX - blockMinX));
+                                intersection = Utils.absMax(intersection, Utils.absMin(minX - blockMaxX, maxX - blockMinX));
+                            }
                         }
                     }
-                }
+        }
         return intersection;
     }
 
     public static float getIntersectionY(Vector3f position, float[] aabb) {
         float intersection = 0.0f;
 
-        float minX = aabb[MIN_X] + position.x;
-        float maxX = aabb[MAX_X] + position.x;
-        float minY = aabb[MIN_Y] + position.y;
-        float maxY = aabb[MAX_Y] + position.y;
-        float minZ = aabb[MIN_Z] + position.z;
-        float maxZ = aabb[MAX_Z] + position.z;
+        for (int entityAABBIndex = 0; entityAABBIndex < aabb.length; entityAABBIndex += 6) {
+            float minX = aabb[entityAABBIndex + MIN_X] + position.x;
+            float maxX = aabb[entityAABBIndex + MAX_X] + position.x;
+            float minY = aabb[entityAABBIndex + MIN_Y] + position.y;
+            float maxY = aabb[entityAABBIndex + MAX_Y] + position.y;
+            float minZ = aabb[entityAABBIndex + MIN_Z] + position.z;
+            float maxZ = aabb[entityAABBIndex + MAX_Z] + position.z;
 
-        for (int x = Utils.floor(minX), maxBlockX = Utils.floor(maxX); x <= maxBlockX; x++)
-            for (int y = Utils.floor(minY), maxBlockY = Utils.floor(maxY); y <= maxBlockY; y++)
-                for (int z = Utils.floor(minZ), maxBlockZ = Utils.floor(maxZ); z <= maxBlockZ; z++) {
+            for (int x = Utils.floor(minX), maxBlockX = Utils.floor(maxX); x <= maxBlockX; x++)
+                for (int y = Utils.floor(minY), maxBlockY = Utils.floor(maxY); y <= maxBlockY; y++)
+                    for (int z = Utils.floor(minZ), maxBlockZ = Utils.floor(maxZ); z <= maxBlockZ; z++) {
 
-                    short block = Chunk.getBlockInWorld(x, y, z);
-                    int blockProperties = Block.getBlockProperties(block);
-                    if ((blockProperties & NO_COLLISION) != 0) continue;
+                        short block = Chunk.getBlockInWorld(x, y, z);
+                        int blockProperties = Block.getBlockProperties(block);
+                        if ((blockProperties & NO_COLLISION) != 0) continue;
 
-                    byte[] blockXYZSubData = Block.getXYZSubData(block);
-                    for (int aabbIndex = 0; aabbIndex < blockXYZSubData.length; aabbIndex += 6) {
-                        float blockMinX = x + blockXYZSubData[MIN_X + aabbIndex] * 0.0625f;
-                        float blockMaxX = 1 + x + blockXYZSubData[MAX_X + aabbIndex] * 0.0625f;
-                        float blockMinY = y + blockXYZSubData[MIN_Y + aabbIndex] * 0.0625f;
-                        float blockMaxY = 1 + y + blockXYZSubData[MAX_Y + aabbIndex] * 0.0625f;
-                        float blockMinZ = z + blockXYZSubData[MIN_Z + aabbIndex] * 0.0625f;
-                        float blockMaxZ = 1 + z + blockXYZSubData[MAX_Z + aabbIndex] * 0.0625f;
+                        byte[] blockXYZSubData = Block.getXYZSubData(block);
+                        for (int blockAABBIndex = 0; blockAABBIndex < blockXYZSubData.length; blockAABBIndex += 6) {
+                            float blockMinX = x + blockXYZSubData[MIN_X + blockAABBIndex] * 0.0625f;
+                            float blockMaxX = 1 + x + blockXYZSubData[MAX_X + blockAABBIndex] * 0.0625f;
+                            float blockMinY = y + blockXYZSubData[MIN_Y + blockAABBIndex] * 0.0625f;
+                            float blockMaxY = 1 + y + blockXYZSubData[MAX_Y + blockAABBIndex] * 0.0625f;
+                            float blockMinZ = z + blockXYZSubData[MIN_Z + blockAABBIndex] * 0.0625f;
+                            float blockMaxZ = 1 + z + blockXYZSubData[MAX_Z + blockAABBIndex] * 0.0625f;
 
-                        if (minX < blockMaxX && maxX > blockMinX && minY < blockMaxY && maxY > blockMinY && minZ < blockMaxZ && maxZ > blockMinZ) {
+                            if (minX < blockMaxX && maxX > blockMinX && minY < blockMaxY && maxY > blockMinY && minZ < blockMaxZ && maxZ > blockMinZ) {
 
-                            intersection = Utils.absMax(intersection, Utils.absMin(minY - blockMaxY, maxY - blockMinY));
+                                intersection = Utils.absMax(intersection, Utils.absMin(minY - blockMaxY, maxY - blockMinY));
+                            }
                         }
                     }
-                }
+        }
         return intersection;
     }
 
     public static float getIntersectionZ(Vector3f position, float[] aabb) {
         float intersection = 0.0f;
 
-        float minX = aabb[MIN_X] + position.x;
-        float maxX = aabb[MAX_X] + position.x;
-        float minY = aabb[MIN_Y] + position.y;
-        float maxY = aabb[MAX_Y] + position.y;
-        float minZ = aabb[MIN_Z] + position.z;
-        float maxZ = aabb[MAX_Z] + position.z;
+        for (int entityAABBIndex = 0; entityAABBIndex < aabb.length; entityAABBIndex += 6) {
+            float minX = aabb[entityAABBIndex + MIN_X] + position.x;
+            float maxX = aabb[entityAABBIndex + MAX_X] + position.x;
+            float minY = aabb[entityAABBIndex + MIN_Y] + position.y;
+            float maxY = aabb[entityAABBIndex + MAX_Y] + position.y;
+            float minZ = aabb[entityAABBIndex + MIN_Z] + position.z;
+            float maxZ = aabb[entityAABBIndex + MAX_Z] + position.z;
 
-        for (int x = Utils.floor(minX), maxBlockX = Utils.floor(maxX); x <= maxBlockX; x++)
-            for (int y = Utils.floor(minY), maxBlockY = Utils.floor(maxY); y <= maxBlockY; y++)
-                for (int z = Utils.floor(minZ), maxBlockZ = Utils.floor(maxZ); z <= maxBlockZ; z++) {
+            for (int x = Utils.floor(minX), maxBlockX = Utils.floor(maxX); x <= maxBlockX; x++)
+                for (int y = Utils.floor(minY), maxBlockY = Utils.floor(maxY); y <= maxBlockY; y++)
+                    for (int z = Utils.floor(minZ), maxBlockZ = Utils.floor(maxZ); z <= maxBlockZ; z++) {
 
-                    short block = Chunk.getBlockInWorld(x, y, z);
-                    int blockProperties = Block.getBlockProperties(block);
-                    if ((blockProperties & NO_COLLISION) != 0) continue;
+                        short block = Chunk.getBlockInWorld(x, y, z);
+                        int blockProperties = Block.getBlockProperties(block);
+                        if ((blockProperties & NO_COLLISION) != 0) continue;
 
-                    byte[] blockXYZSubData = Block.getXYZSubData(block);
-                    for (int aabbIndex = 0; aabbIndex < blockXYZSubData.length; aabbIndex += 6) {
-                        float blockMinX = x + blockXYZSubData[MIN_X + aabbIndex] * 0.0625f;
-                        float blockMaxX = 1 + x + blockXYZSubData[MAX_X + aabbIndex] * 0.0625f;
-                        float blockMinY = y + blockXYZSubData[MIN_Y + aabbIndex] * 0.0625f;
-                        float blockMaxY = 1 + y + blockXYZSubData[MAX_Y + aabbIndex] * 0.0625f;
-                        float blockMinZ = z + blockXYZSubData[MIN_Z + aabbIndex] * 0.0625f;
-                        float blockMaxZ = 1 + z + blockXYZSubData[MAX_Z + aabbIndex] * 0.0625f;
+                        byte[] blockXYZSubData = Block.getXYZSubData(block);
+                        for (int blockAABBIndex = 0; blockAABBIndex < blockXYZSubData.length; blockAABBIndex += 6) {
+                            float blockMinX = x + blockXYZSubData[MIN_X + blockAABBIndex] * 0.0625f;
+                            float blockMaxX = 1 + x + blockXYZSubData[MAX_X + blockAABBIndex] * 0.0625f;
+                            float blockMinY = y + blockXYZSubData[MIN_Y + blockAABBIndex] * 0.0625f;
+                            float blockMaxY = 1 + y + blockXYZSubData[MAX_Y + blockAABBIndex] * 0.0625f;
+                            float blockMinZ = z + blockXYZSubData[MIN_Z + blockAABBIndex] * 0.0625f;
+                            float blockMaxZ = 1 + z + blockXYZSubData[MAX_Z + blockAABBIndex] * 0.0625f;
 
-                        if (minX < blockMaxX && maxX > blockMinX && minY < blockMaxY && maxY > blockMinY && minZ < blockMaxZ && maxZ > blockMinZ) {
+                            if (minX < blockMaxX && maxX > blockMinX && minY < blockMaxY && maxY > blockMinY && minZ < blockMaxZ && maxZ > blockMinZ) {
 
-                            intersection = Utils.absMax(intersection, Utils.absMin(minZ - blockMaxZ, maxZ - blockMinZ));
+                                intersection = Utils.absMax(intersection, Utils.absMin(minZ - blockMaxZ, maxZ - blockMinZ));
+                            }
                         }
                     }
-                }
+        }
         return intersection;
     }
 
@@ -275,6 +278,10 @@ public abstract class Entity {
         return aabb;
     }
 
+    public float[] getRotations() {
+        return rotations;
+    }
+
     public boolean isTooFarFromPlayer(int playerChunkX, int playerChunkY, int playerChunkZ) {
         int entityChunkX = Utils.floor(position.x) >> CHUNK_SIZE_BITS;
         int entityChunkY = Utils.floor(position.y) >> CHUNK_SIZE_BITS;
@@ -303,27 +310,51 @@ public abstract class Entity {
         System.arraycopy(data, 0, bytes, 21, 4);
     }
 
+    protected void lookAtMovementDirection() {
+        float xRotation = (float) Math.asin(velocity.y / Math.sqrt(velocity.x * velocity.x + velocity.y * velocity.y));
+        float yRotation = (float) Math.asin(velocity.x / Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z));
+
+        if (!Float.isNaN(xRotation)) for (int rotationIndex = 0; rotationIndex < rotations.length; rotationIndex += 3)
+            rotations[rotationIndex + ROTATE_AROUND_X] = xRotation;
+        if (!Float.isNaN(yRotation)) for (int rotationIndex = 0; rotationIndex < rotations.length; rotationIndex += 3)
+            rotations[rotationIndex + ROTATE_AROUND_Y] = yRotation;
+    }
+
 
     private static int[] getEntityVertices() {
+        return new int[]{
+                packData(0, 0, TOP, 1, 1, 1),
+                packData(1, 0, TOP, 1, 1, 0),
+                packData(0, 1, TOP, 0, 1, 1),
+                packData(1, 1, TOP, 0, 1, 0),
 
-        return new int[]{packMiscellaneousData(0, 0, TOP), packPositionData(8, 8, 8), packMiscellaneousData(1, 0, TOP), packPositionData(8, 8, -8), packMiscellaneousData(0, 1, TOP), packPositionData(-8, 8, 8), packMiscellaneousData(1, 1, TOP), packPositionData(-8, 8, -8),
+                packData(0, 0, BOTTOM, 1, 0, 1),
+                packData(1, 0, BOTTOM, 0, 0, 1),
+                packData(0, 1, BOTTOM, 1, 0, 0),
+                packData(1, 1, BOTTOM, 0, 0, 0),
 
-                packMiscellaneousData(0, 0, BOTTOM), packPositionData(8, -8, 8), packMiscellaneousData(1, 0, BOTTOM), packPositionData(-8, -8, 8), packMiscellaneousData(0, 1, BOTTOM), packPositionData(8, -8, -8), packMiscellaneousData(1, 1, BOTTOM), packPositionData(-8, -8, -8),
+                packData(0, 0, WEST, 1, 1, 1),
+                packData(0, 1, WEST, 1, 0, 1),
+                packData(1, 0, WEST, 1, 1, 0),
+                packData(1, 1, WEST, 1, 0, 0),
 
-                packMiscellaneousData(0, 0, WEST), packPositionData(8, 8, 8), packMiscellaneousData(0, 1, WEST), packPositionData(8, -8, 8), packMiscellaneousData(1, 0, WEST), packPositionData(8, 8, -8), packMiscellaneousData(1, 1, WEST), packPositionData(8, -8, -8),
+                packData(0, 0, NORTH, 0, 1, 1),
+                packData(0, 1, NORTH, 0, 0, 1),
+                packData(1, 0, NORTH, 1, 1, 1),
+                packData(1, 1, NORTH, 1, 0, 1),
 
-                packMiscellaneousData(0, 0, NORTH), packPositionData(-8, 8, 8), packMiscellaneousData(0, 1, NORTH), packPositionData(-8, -8, 8), packMiscellaneousData(1, 0, NORTH), packPositionData(8, 8, 8), packMiscellaneousData(1, 1, NORTH), packPositionData(8, -8, 8),
+                packData(0, 0, EAST, 0, 1, 0),
+                packData(0, 1, EAST, 0, 0, 0),
+                packData(1, 0, EAST, 0, 1, 1),
+                packData(1, 1, EAST, 0, 0, 1),
 
-                packMiscellaneousData(0, 0, EAST), packPositionData(-8, 8, -8), packMiscellaneousData(0, 1, EAST), packPositionData(-8, -8, -8), packMiscellaneousData(1, 0, EAST), packPositionData(-8, 8, 8), packMiscellaneousData(1, 1, EAST), packPositionData(-8, -8, 8),
-
-                packMiscellaneousData(0, 0, SOUTH), packPositionData(8, 8, -8), packMiscellaneousData(0, 1, SOUTH), packPositionData(8, -8, -8), packMiscellaneousData(1, 0, SOUTH), packPositionData(-8, 8, -8), packMiscellaneousData(1, 1, SOUTH), packPositionData(-8, -8, -8)};
+                packData(0, 0, SOUTH, 1, 1, 0),
+                packData(0, 1, SOUTH, 1, 0, 0),
+                packData(1, 0, SOUTH, 0, 1, 0),
+                packData(1, 1, SOUTH, 0, 0, 0)};
     }
 
-    private static int packPositionData(int x, int y, int z) {
-        return x + 511 << 20 | y + 511 << 10 | z + 511;
-    }
-
-    private static int packMiscellaneousData(int u, int v, int side) {
-        return side | u << 3 | v << 4;
+    private static int packData(int u, int v, int side, int x, int y, int z) {
+        return x << 7 | y << 6 | z << 5 | v << 4 | u << 3 | side;
     }
 }
