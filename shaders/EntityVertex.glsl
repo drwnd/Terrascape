@@ -106,6 +106,6 @@ void main() {
 
     blockLight = (widthHeightDepthLight & 15) * 0.0625;
     skyLight = (widthHeightDepthLight >> 4 & 15) * 0.0625;
-    normal = normals[side];
+    normal = rotate(normals[side]);
     distance = length(vertexPosition - cameraPosition);
 }

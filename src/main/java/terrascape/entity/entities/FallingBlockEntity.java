@@ -28,8 +28,8 @@ public final class FallingBlockEntity extends Entity {
                 aabb[index + 1] = XYZSubData[index + 1] * 0.0625f + 0.5f;
             }
             this.aabb = aabb;
-            rotations = new float[aabb.length >> 1];
         }
+        initRotationArrays(aabb.length / 3);
         textures = new short[aabb.length];
 
         for (int aabbIndex = 0; aabbIndex < aabb.length; aabbIndex += 6) {

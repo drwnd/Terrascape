@@ -484,10 +484,12 @@ public final class RenderManager {
         int index = 0;
 
         for (Entity entity : entities) {
-            Vector3f position = entity.getPosition();
+            Vector3f position = entity.getToRenderPosition();
             Vector3f velocity = entity.getVelocity();
             float[] aabb = entity.getAabb();
-            float[] rotations = entity.getRotations();
+            float[] rotations = entity.getToRenderRotations();
+            float[] rotationSpeeds = entity.getRotationSpeeds();
+            float timeScalar = 1.0f / TARGET_TPS - passedTicks;
 
             for (int aabbIndex = 0; aabbIndex < aabb.length; aabbIndex += 6) {
 
@@ -495,9 +497,9 @@ public final class RenderManager {
 //                entityTranslations[index + 1] = aabb[aabbIndex + MIN_Y];
 //                entityTranslations[index + 2] = aabb[aabbIndex + MIN_Z];
 
-                entityPositions[index] = position.x - (1.0f / TARGET_TPS - passedTicks) * velocity.x;
-                entityPositions[index + 1] = position.y - (1.0f / TARGET_TPS - passedTicks) * velocity.y;
-                entityPositions[index + 2] = position.z - (1.0f / TARGET_TPS - passedTicks) * velocity.z;
+                entityPositions[index] = position.x - timeScalar * velocity.x;
+                entityPositions[index + 1] = position.y - timeScalar * velocity.y;
+                entityPositions[index + 2] = position.z - timeScalar * velocity.z;
 
                 int width = (int) ((aabb[aabbIndex + MAX_X] - aabb[aabbIndex + MIN_X]) * 16.0f) & 0xFF;
                 int height = (int) ((aabb[aabbIndex + MAX_Y] - aabb[aabbIndex + MIN_Y]) * 16.0f) & 0xFF;
@@ -509,9 +511,9 @@ public final class RenderManager {
                 entityInts[index + 2] = entity.getTextureUV(WEST, aabbIndex) << 16 | entity.getTextureUV(SOUTH, aabbIndex) & 0xFFFF;
                 entityInts[index + 3] = entity.getTextureUV(BOTTOM, aabbIndex) << 16 | entity.getTextureUV(EAST, aabbIndex) & 0xFFFF;
 
-                int rotationIndex = aabbIndex >> 1;
-                entityRotations[index + ROTATE_AROUND_X] = rotations[rotationIndex + ROTATE_AROUND_X];
-                entityRotations[index + ROTATE_AROUND_Y] = rotations[rotationIndex + ROTATE_AROUND_Y];
+                int rotationIndex = aabbIndex / 3;
+                entityRotations[index + ROTATE_AROUND_X] = rotations[rotationIndex + ROTATE_AROUND_X] - timeScalar * rotationSpeeds[rotationIndex + ROTATE_AROUND_X];
+                entityRotations[index + ROTATE_AROUND_Y] = rotations[rotationIndex + ROTATE_AROUND_Y] - timeScalar * rotationSpeeds[rotationIndex + ROTATE_AROUND_Y];
 
                 entityPositions[index + 3] = aabb[aabbIndex + MIN_X];
                 entityRotations[index + 2] = aabb[aabbIndex + MIN_Y];

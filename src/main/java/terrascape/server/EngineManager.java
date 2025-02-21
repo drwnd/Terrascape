@@ -22,6 +22,7 @@ public final class EngineManager {
     private static Server server;
     private static GLFWErrorCallback errorCallback;
     private static long tick = 0, lastGTTime;
+    private static boolean entityDataUpdateIsScheduled = true;
 
     public static void init() throws Exception {
         GLFW.glfwSetErrorCallback(errorCallback = GLFWErrorCallback.createPrint(System.err));
@@ -56,7 +57,7 @@ public final class EngineManager {
             lastTime = currentTime;
 
             update(TARGET_TPS * passedTime / NANOSECONDS_PER_SECOND);
-            render(TARGET_TPS * (currentTime - lastGTTime) / NANOSECONDS_PER_SECOND);
+            render(Math.min(1.0f, TARGET_TPS * (currentTime - lastGTTime) / NANOSECONDS_PER_SECOND));
             frames++;
 
             if (currentTime - lastFrameRateUpdateTime > NANOSECONDS_PER_SECOND * 0.25f) {
@@ -76,6 +77,10 @@ public final class EngineManager {
     }
 
     private static void render(float passedTicks) {
+        if (entityDataUpdateIsScheduled) {
+            ServerLogic.getPlayer().updateEntityData();
+            entityDataUpdateIsScheduled = false;
+        }
         ServerLogic.render(passedTicks);
         long gpuTime = System.nanoTime();
         window.update();
@@ -99,6 +104,7 @@ public final class EngineManager {
 
     public static void setLastGTTime(long lastGTTime) {
         EngineManager.lastGTTime = lastGTTime;
+        entityDataUpdateIsScheduled = true;
     }
 
     public static void cleanUp() {
@@ -114,5 +120,6 @@ public final class EngineManager {
         EngineManager.tick = tick;
     }
 
-    private EngineManager() { }
+    private EngineManager() {
+    }
 }

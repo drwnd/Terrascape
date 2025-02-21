@@ -12,6 +12,8 @@ public final class Constants {
     public static final float SPAWN_RADIUS = 150.0f; // More like halfSideLengthOfSpawnSquare
     public static final byte TARGET_TPS = 20;
     public static final int MAX_TEXT_LENGTH = 128; // Must be a power of 2 and also change in textVertex.glsl
+    public static final float ENTITY_ROTATION_SNAP_STRENGTH = 0.1f;
+    public static final float ENTITY_ROTATION_DAMPER = 0.9f;
 
     // DO NOT CHANGE THESE VALUES (like really, it will crash)
     public static final byte CHUNK_SIZE_BITS = 5;

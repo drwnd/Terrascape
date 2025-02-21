@@ -23,7 +23,11 @@ public abstract class Entity {
     protected Vector3f velocity;
     protected float[] aabb;
     protected float[] rotations;
+    protected float[] rotationSpeeds;
     protected boolean isDead = false;
+
+    private final Vector3f toRenderPosition = new Vector3f();
+    private float[] toRenderRotations;
 
     public static void initAll() {
         long vaoAndVbo = ObjectLoader.loadVoaAndVbo(0, 1, getEntityVertices());
@@ -42,6 +46,11 @@ public abstract class Entity {
 
     public abstract int getByteSize();
 
+
+    public void updateToRender() {
+        toRenderPosition.set(position);
+        System.arraycopy(rotations, 0, toRenderRotations, 0, rotations.length);
+    }
 
     public static Entity getFromBytes(byte[] bytes, int startIndex) {
         byte type = bytes[startIndex];
@@ -68,6 +77,14 @@ public abstract class Entity {
     public void move() {
         velocity.mul(AIR_FRICTION);
         velocity.y -= GRAVITY_ACCELERATION;
+
+        for (int rotationIndex = 0; rotationIndex < rotations.length; rotationIndex += 2) {
+            rotations[rotationIndex + ROTATE_AROUND_X] += rotationSpeeds[rotationIndex + ROTATE_AROUND_X];
+            rotations[rotationIndex + ROTATE_AROUND_Y] += rotationSpeeds[rotationIndex + ROTATE_AROUND_Y];
+
+            rotationSpeeds[rotationIndex + ROTATE_AROUND_X] *= ENTITY_ROTATION_DAMPER;
+            rotationSpeeds[rotationIndex + ROTATE_AROUND_Y] *= ENTITY_ROTATION_DAMPER;
+        }
 
         float intersection;
 
@@ -270,16 +287,16 @@ public abstract class Entity {
         return velocity;
     }
 
+    public float[] getRotationSpeeds() {
+        return rotationSpeeds;
+    }
+
     public void addVelocity(float x, float y, float z) {
         velocity.add(x, y, z);
     }
 
     public float[] getAabb() {
         return aabb;
-    }
-
-    public float[] getRotations() {
-        return rotations;
     }
 
     public boolean isTooFarFromPlayer(int playerChunkX, int playerChunkY, int playerChunkZ) {
@@ -292,6 +309,14 @@ public abstract class Entity {
                 || Math.abs(playerChunkZ - entityChunkZ) > RENDER_DISTANCE_XZ;
     }
 
+
+    public Vector3f getToRenderPosition() {
+        return toRenderPosition;
+    }
+
+    public float[] getToRenderRotations() {
+        return toRenderRotations;
+    }
 
     protected void putBaseByteData(byte[] bytes) {
         byte[] data;
@@ -311,13 +336,26 @@ public abstract class Entity {
     }
 
     protected void lookAtMovementDirection() {
-        float xRotation = (float) Math.asin(velocity.y / Math.sqrt(velocity.x * velocity.x + velocity.y * velocity.y));
-        float yRotation = (float) Math.asin(velocity.x / Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z));
+        float targetXRotation = (float) Math.asin(velocity.y / Math.sqrt(velocity.x * velocity.x + velocity.y * velocity.y));
+        float targetYRotation = (float) Math.asin(velocity.x / Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z));
 
-        if (!Float.isNaN(xRotation)) for (int rotationIndex = 0; rotationIndex < rotations.length; rotationIndex += 3)
-            rotations[rotationIndex + ROTATE_AROUND_X] = xRotation;
-        if (!Float.isNaN(yRotation)) for (int rotationIndex = 0; rotationIndex < rotations.length; rotationIndex += 3)
-            rotations[rotationIndex + ROTATE_AROUND_Y] = yRotation;
+        if (!Float.isNaN(targetXRotation) && Float.isFinite(targetXRotation))
+            for (int rotationIndex = 0; rotationIndex < rotations.length; rotationIndex += 2) {
+                float deltaRotation = targetXRotation - rotations[rotationIndex + ROTATE_AROUND_X];
+                rotationSpeeds[rotationIndex + ROTATE_AROUND_X] += deltaRotation * ENTITY_ROTATION_SNAP_STRENGTH;
+            }
+
+        if (!Float.isNaN(targetYRotation) && Float.isFinite(targetYRotation))
+            for (int rotationIndex = 0; rotationIndex < rotations.length; rotationIndex += 2) {
+                float deltaRotation = targetYRotation - rotations[rotationIndex + ROTATE_AROUND_Y];
+                rotationSpeeds[rotationIndex + ROTATE_AROUND_Y] += deltaRotation * ENTITY_ROTATION_SNAP_STRENGTH;
+            }
+    }
+
+    protected void initRotationArrays(int length) {
+        rotations = new float[length];
+        rotationSpeeds = new float[length];
+        toRenderRotations = new float[length];
     }
 
 

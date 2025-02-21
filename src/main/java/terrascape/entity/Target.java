@@ -41,6 +41,7 @@ public record Target(Vector3i position, Vector3f inBlockPosition, int side, shor
         while (length < REACH) {
 
             short block = Chunk.getBlockInWorld(x, y, z);
+            if (block == OUT_OF_WORLD) return null;
             int blockType = Block.getBlockType(block);
 
             if (blockType != AIR_TYPE && !Block.isLiquidType(blockType)) {

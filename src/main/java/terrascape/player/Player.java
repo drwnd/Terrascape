@@ -148,6 +148,12 @@ public final class Player {
         playFootstepsSounds(tick);
     }
 
+    public void updateEntityData() {
+        synchronized (ServerLogic.getEntities()) {
+            for (Entity entity : ServerLogic.getEntities()) entity.updateToRender();
+        }
+    }
+
     private void playFootstepsSounds(long tick) {
         int movementState = movement.getMovementState();
         if (movementState == Movement.SWIMMING) {

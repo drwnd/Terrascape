@@ -24,7 +24,7 @@ public final class TNT_Entity extends Entity {
         this.position = position;
         this.velocity = velocity;
         aabb = TNT_AABB;
-        rotations = new float[aabb.length >> 1];
+        initRotationArrays(aabb.length / 3);
     }
 
     @Override
