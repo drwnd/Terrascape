@@ -515,8 +515,8 @@ public final class Block {
     public static boolean canWaterFlow(short sourceBlock, short targetBlock, short blockBelow, int entrySide) {
         if (isLavaBlock(targetBlock)) return false;
         if (sourceBlock == FLOWING_WATER_LEVEL_1 && entrySide != TOP) return false;
-        if (isWaterLogged(blockBelow) || blockBelow == AIR && entrySide != TOP)
-            return false;
+        if ((isWaterLogged(blockBelow) || blockBelow == AIR) && entrySide != TOP) return false;
+        if (entrySide == TOP && (blockBelow == FLOWING_WATER_LEVEL_8 ||  blockBelow == WATER_SOURCE)) return false;
         if (isWaterBlock(targetBlock))
             return targetBlock > sourceBlock + 1 || entrySide == TOP && targetBlock != WATER_SOURCE && targetBlock != FLOWING_WATER_LEVEL_8;
         if (entrySide == TOP && (Block.getBlockProperties(blockBelow) & REPLACEABLE) != 0)

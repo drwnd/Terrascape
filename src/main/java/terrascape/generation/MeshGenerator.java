@@ -809,7 +809,7 @@ public final class MeshGenerator {
         boolean toTestBlockUp = toTestBlock == FLOWING_WATER_LEVEL_8 || Block.isWaterSource(toTestBlock) && (Block.isWaterLogged(blockAboveToTestBlock) || Block.getBlockOcclusionData(blockAboveToTestBlock, BOTTOM) == -1L);
         boolean occludingBlockUp = occludingBlock == FLOWING_WATER_LEVEL_8 || Block.isWaterSource(occludingBlock) && (Block.isWaterLogged(blockAboveOccludingBlock) || Block.getBlockOcclusionData(blockAboveOccludingBlock, BOTTOM) == -1L);
 
-        return !(toTestBlockUp && !occludingBlockUp);
+        return !toTestBlockUp || occludingBlockUp;
     }
 
     private static boolean occludesLava(short toTestBlock, short occludingBlock, int side, int x, int y, int z) {

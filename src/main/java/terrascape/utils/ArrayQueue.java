@@ -1,7 +1,5 @@
 package terrascape.utils;
 
-import terrascape.server.LightLogic;
-
 public class ArrayQueue<E> {
 
     protected int headPointer = 0;
@@ -55,16 +53,5 @@ public class ArrayQueue<E> {
 
     protected int incIndex(int index) {
         return index + 1 >= elements.length ? 0 : index + 1;
-    }
-
-    // Not part of the actual class, but it doesn't work otherwise
-    // Only use if E is Vector4i, only use in LightLogic
-    public boolean notContainsToRePropagatePosition(LightLogic.LightInfo position) {
-        for (int index = headPointer; index != tailPointer; index = incIndex(index)) {
-            LightLogic.LightInfo info = (LightLogic.LightInfo) elements[index];
-            if (info.x() == position.x() && info.y() == position.y() && info.z() == position.z() && info.level() >= position.level())
-                return false;
-        }
-        return true;
     }
 }

@@ -74,8 +74,7 @@ public record BlockEvent(int x, int y, int z, byte type) {
     public static ArrayList<BlockEvent> removeEventsInChunk(Chunk chunk) {
         ArrayList<BlockEvent> removedEvents = new ArrayList<>();
         synchronized (EVENTS) {
-            for (EventQueue queue : EVENTS)
-                queue.removeEventsInChunk(chunk, removedEvents);
+            for (EventQueue queue : EVENTS) queue.removeEventsInChunk(chunk, removedEvents);
         }
         return removedEvents;
     }
@@ -93,7 +92,7 @@ public record BlockEvent(int x, int y, int z, byte type) {
         }
     }
 
-    public static void addCorrectEvents(int x, int y, int z) {
+    private static void addCorrectEvents(int x, int y, int z) {
         short block = Chunk.getBlockInWorld(x, y, z);
         int properties = Block.getBlockProperties(block);
         byte blockTypeData = Block.getBlockTypeData(block);
@@ -193,7 +192,6 @@ public record BlockEvent(int x, int y, int z, byte type) {
 
         if (!Block.isWaterBlock(block)) handleWaterloggedBlockFlowing(x, y, z, block, blockBelow);
         else handleWaterBlockFlowing(x, y, z, block, blockBelow);
-
     }
 
     private static void executeLavaFlowEvent(int x, int y, int z) {

@@ -8,6 +8,8 @@ import static terrascape.utils.Settings.*;
 
 public final class LightLogic {
 
+    public static final byte UNKNOWN_LIGHT_LEVEL = -1;
+
     // BlockLight
     public static void setBlockLight(int x, int y, int z, int blockLight) {
         if (blockLight <= 0)
@@ -32,36 +34,33 @@ public final class LightLogic {
         short currentBlock = Chunk.getBlockInWorld(x, y, z);
 
         byte toTest = Chunk.getBlockLightInWorld(x + 1, y, z);
-        short nextBlock = Chunk.getBlockInWorld(x + 1, y, z);
-        if (max < toTest && canLightTravel(nextBlock, EAST, currentBlock, WEST)) max = toTest;
+        if (max < toTest && canLightTravel(Chunk.getBlockInWorld(x + 1, y, z), EAST, currentBlock, WEST)) max = toTest;
         toTest = Chunk.getBlockLightInWorld(x - 1, y, z);
-        nextBlock = Chunk.getBlockInWorld(x - 1, y, z);
-        if (max < toTest && canLightTravel(nextBlock, WEST, currentBlock, EAST)) max = toTest;
+        if (max < toTest && canLightTravel(Chunk.getBlockInWorld(x - 1, y, z), WEST, currentBlock, EAST)) max = toTest;
 
         toTest = Chunk.getBlockLightInWorld(x, y + 1, z);
-        nextBlock = Chunk.getBlockInWorld(x, y + 1, z);
-        if (max < toTest && canLightTravel(nextBlock, BOTTOM, currentBlock, TOP)) max = toTest;
+        if (max < toTest && canLightTravel(Chunk.getBlockInWorld(x, y + 1, z), BOTTOM, currentBlock, TOP)) max = toTest;
         toTest = Chunk.getBlockLightInWorld(x, y - 1, z);
-        nextBlock = Chunk.getBlockInWorld(x, y - 1, z);
-        if (max < toTest && canLightTravel(nextBlock, TOP, currentBlock, BOTTOM)) max = toTest;
+        if (max < toTest && canLightTravel(Chunk.getBlockInWorld(x, y - 1, z), TOP, currentBlock, BOTTOM)) max = toTest;
 
         toTest = Chunk.getBlockLightInWorld(x, y, z + 1);
-        nextBlock = Chunk.getBlockInWorld(x, y, z + 1);
-        if (max < toTest && canLightTravel(nextBlock, SOUTH, currentBlock, NORTH)) max = toTest;
+        if (max < toTest && canLightTravel(Chunk.getBlockInWorld(x, y, z + 1), SOUTH, currentBlock, NORTH))
+            max = toTest;
         toTest = Chunk.getBlockLightInWorld(x, y, z - 1);
-        nextBlock = Chunk.getBlockInWorld(x, y, z - 1);
-        if (max < toTest && canLightTravel(nextBlock, NORTH, currentBlock, SOUTH)) max = toTest;
+        if (max < toTest && canLightTravel(Chunk.getBlockInWorld(x, y, z - 1), NORTH, currentBlock, SOUTH))
+            max = toTest;
         return max;
     }
 
     private static void setBlockLight(ArrayQueue<LightInfo> toPlaceLights) {
         int ignoreChecksCounter = toPlaceLights.size();
         while (!toPlaceLights.isEmpty()) {
-            LightInfo toPlaceLight = toPlaceLights.dequeue();
-            int x = toPlaceLight.x();
-            int y = toPlaceLight.y();
-            int z = toPlaceLight.z();
-            int currentBlockLight = toPlaceLight.level();
+            LightInfo info = toPlaceLights.dequeue();
+            if (info == null) continue;
+            int x = info.x();
+            int y = info.y();
+            int z = info.z();
+            int currentBlockLight = info.lightLevel();
 
             Chunk chunk = Chunk.getChunk(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS);
             if (chunk == null) continue;
@@ -106,11 +105,12 @@ public final class LightLogic {
     private static void dePropagateBlockLight(ArrayQueue<LightInfo> toRePropagate, ArrayQueue<LightInfo> toDePropagate) {
         boolean onFirstIteration = true;
         while (!toDePropagate.isEmpty()) {
-            LightInfo position = toDePropagate.dequeue();
-            int x = position.x();
-            int y = position.y();
-            int z = position.z();
-            int lastBlockLight = position.level();
+            LightInfo info = toDePropagate.dequeue();
+            if (info == null) continue;
+            int x = info.x();
+            int y = info.y();
+            int z = info.z();
+            int lastBlockLight = info.lightLevel();
 
             Chunk chunk = Chunk.getChunk(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS);
             if (chunk == null) continue;
@@ -119,11 +119,7 @@ public final class LightLogic {
             if (currentBlockLight == 0) continue;
 
             if (currentBlockLight >= lastBlockLight) {
-                if (currentBlockLight > 1) {
-                    LightInfo nextPosition = new LightInfo(x, y, z, currentBlockLight);
-                    if (notContainsToRePropagatePosition(toRePropagate, nextPosition))
-                        toRePropagate.enqueue(nextPosition);
-                }
+                if (currentBlockLight > 1) toRePropagate.enqueue(new LightInfo(x, y, z, currentBlockLight));
                 continue;
             }
 
@@ -208,62 +204,60 @@ public final class LightLogic {
         }
     }
 
-    public static void setSkyLight(int x, int y, int z, int skyLight) {
-        if (skyLight <= 0)
-            return;
-        ArrayQueue<LightInfo> toPlaceLights = new ArrayQueue<>(10);
-        toPlaceLights.enqueue(new LightInfo(x, y, z, (byte) skyLight));
-        setSkyLight(toPlaceLights);
+    public static void computeSkyLight() {
+        dePropagateSkyLight(toRePropagateSkyLight, toDePropagateSkyLight);
+        setSkyLight(toRePropagateSkyLight);
+
+        if (toDePropagateSkyLight.size() > 1000) toDePropagateSkyLight = new ArrayQueue<>(10);
+        if (toRePropagateSkyLight.size() > 1000) toRePropagateSkyLight = new ArrayQueue<>(10);
+    }
+
+    public static void setSkyLight(int x, int y, int z, byte skyLight) {
+        toRePropagateSkyLight.enqueue(new LightInfo(x, y, z, skyLight));
     }
 
     public static void dePropagateSkyLight(int x, int y, int z) {
-        ArrayQueue<LightInfo> toRePropagate = new ArrayQueue<>(10);
-        ArrayQueue<LightInfo> toDePropagate = new ArrayQueue<>(10);
-        toDePropagate.enqueue(new LightInfo(x, y, z, (byte) (Chunk.getSkyLightInWorld(x, y, z) + 1)));
-
-        dePropagateSkyLight(toRePropagate, toDePropagate);
-
-        setSkyLight(toRePropagate);
+        toDePropagateSkyLight.enqueue(new LightInfo(x, y, z, (byte) (Chunk.getSkyLightInWorld(x, y, z) + 1)));
     }
 
     public static byte getMaxSurroundingSkyLight(int x, int y, int z) {
         byte max = 0;
-        short currentBlock = Chunk.getBlockInWorld(x, y, z);
+        short centerBlock = Chunk.getBlockInWorld(x, y, z);
 
         byte toTest = Chunk.getSkyLightInWorld(x + 1, y, z);
-        short nextBlock = Chunk.getBlockInWorld(x + 1, y, z);
-        if (max < toTest && canLightTravel(nextBlock, EAST, currentBlock, WEST)) max = toTest;
+        if (max < toTest && canLightTravel(Chunk.getBlockInWorld(x + 1, y, z), EAST, centerBlock, WEST)) max = toTest;
         toTest = Chunk.getSkyLightInWorld(x - 1, y, z);
-        nextBlock = Chunk.getBlockInWorld(x - 1, y, z);
-        if (max < toTest && canLightTravel(nextBlock, WEST, currentBlock, EAST)) max = toTest;
+        if (max < toTest && canLightTravel(Chunk.getBlockInWorld(x - 1, y, z), WEST, centerBlock, EAST)) max = toTest;
 
         toTest = (byte) (Chunk.getSkyLightInWorld(x, y + 1, z) + 1);
-        nextBlock = Chunk.getBlockInWorld(x, y + 1, z);
-        if (max < toTest && canLightTravel(nextBlock, BOTTOM, currentBlock, TOP)) max = toTest;
+        if (max < toTest && canLightTravel(Chunk.getBlockInWorld(x, y + 1, z), BOTTOM, centerBlock, TOP)) max = toTest;
         toTest = Chunk.getSkyLightInWorld(x, y - 1, z);
-        nextBlock = Chunk.getBlockInWorld(x, y - 1, z);
-        if (max < toTest && canLightTravel(nextBlock, TOP, currentBlock, BOTTOM)) max = toTest;
+        if (max < toTest && canLightTravel(Chunk.getBlockInWorld(x, y - 1, z), TOP, centerBlock, BOTTOM)) max = toTest;
 
         toTest = Chunk.getSkyLightInWorld(x, y, z + 1);
-        nextBlock = Chunk.getBlockInWorld(x, y, z + 1);
-        if (max < toTest && canLightTravel(nextBlock, SOUTH, currentBlock, NORTH)) max = toTest;
+        if (max < toTest && canLightTravel(Chunk.getBlockInWorld(x, y, z + 1), SOUTH, centerBlock, NORTH)) max = toTest;
         toTest = Chunk.getSkyLightInWorld(x, y, z - 1);
-        nextBlock = Chunk.getBlockInWorld(x, y, z - 1);
-        if (max < toTest && canLightTravel(nextBlock, NORTH, currentBlock, SOUTH)) max = toTest;
+        if (max < toTest && canLightTravel(Chunk.getBlockInWorld(x, y, z - 1), NORTH, centerBlock, SOUTH)) max = toTest;
+
         return max;
     }
 
     private static void setSkyLight(ArrayQueue<LightInfo> toPlaceLights) {
         int ignoreChecksCounter = toPlaceLights.size();
         while (!toPlaceLights.isEmpty()) {
-            LightInfo toPlaceLight = toPlaceLights.dequeue();
-            int x = toPlaceLight.x();
-            int y = toPlaceLight.y();
-            int z = toPlaceLight.z();
-            int currentSkyLight = toPlaceLight.level();
+            LightInfo info = toPlaceLights.dequeue();
+            if (info == null) continue;
+            int x = info.x();
+            int y = info.y();
+            int z = info.z();
+            byte currentSkyLight = info.lightLevel();
+            if (currentSkyLight == UNKNOWN_LIGHT_LEVEL) {
+                currentSkyLight = (byte) (getMaxSurroundingSkyLight(x, y, z) - 1);
+                short currentBlock = Chunk.getBlockInWorld(x, y, z);
+                if (Block.isLeaveType(currentBlock) || Block.isLiquidType(Block.getBlockType(currentBlock))) currentSkyLight--;
+            }
 
-            if (currentSkyLight <= 0)
-                continue;
+            if (currentSkyLight <= 0) continue;
 
             Chunk chunk = Chunk.getChunk(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS);
             if (chunk == null) continue;
@@ -291,10 +285,9 @@ public final class LightLogic {
                 toPlaceLights.enqueue(new LightInfo(x, y + 1, z, nextSkyLight));
 
             nextBlock = Chunk.getBlockInWorld(x, y - 1, z);
-            if (Block.isLeaveType(nextBlock) || Block.getBlockType(nextBlock) == LIQUID_TYPE)
-                currentSkyLight--;
+            if (Block.isLeaveType(nextBlock) || Block.isLiquidType(Block.getBlockType(nextBlock))) currentSkyLight--;
             if (Chunk.getSkyLightInWorld(x, y - 1, z) < currentSkyLight && canLightTravel(nextBlock, TOP, currentBlock, BOTTOM))
-                toPlaceLights.enqueue(new LightInfo(x, y - 1, z, (byte) currentSkyLight));
+                toPlaceLights.enqueue(new LightInfo(x, y - 1, z, currentSkyLight));
 
             nextBlock = Chunk.getBlockInWorld(x, y, z + 1);
             if (Chunk.getSkyLightInWorld(x, y, z + 1) < nextSkyLight && canLightTravel(nextBlock, SOUTH, currentBlock, NORTH))
@@ -310,11 +303,12 @@ public final class LightLogic {
     private static void dePropagateSkyLight(ArrayQueue<LightInfo> toRePropagate, ArrayQueue<LightInfo> toDePropagate) {
         boolean onFirstIteration = true;
         while (!toDePropagate.isEmpty()) {
-            LightInfo position = toDePropagate.dequeue();
-            int x = position.x();
-            int y = position.y();
-            int z = position.z();
-            int lastSkyLight = position.level();
+            LightInfo info = toDePropagate.dequeue();
+            if (info == null) continue;
+            int x = info.x();
+            int y = info.y();
+            int z = info.z();
+            int lastSkyLight = info.lightLevel();
 
             Chunk chunk = Chunk.getChunk(x >> CHUNK_SIZE_BITS, y >> CHUNK_SIZE_BITS, z >> CHUNK_SIZE_BITS);
             if (chunk == null) continue;
@@ -323,11 +317,7 @@ public final class LightLogic {
             if (currentSkyLight == 0) continue;
 
             if (currentSkyLight >= lastSkyLight) {
-                if (currentSkyLight > 1) {
-                    LightInfo nextPosition = new LightInfo(x, y, z, currentSkyLight);
-                    if (notContainsToRePropagatePosition(toRePropagate, nextPosition))
-                        toRePropagate.enqueue(nextPosition);
-                }
+                if (currentSkyLight > 1) toRePropagate.enqueue(new LightInfo(x, y, z, UNKNOWN_LIGHT_LEVEL));
                 continue;
             }
 
@@ -363,18 +353,6 @@ public final class LightLogic {
     }
 
     // Util
-    private static boolean notContainsToRePropagatePosition(ArrayQueue<LightInfo> toRePropagate, LightInfo position) {
-//        for (Object object : toRePropagate.getElements()) {
-//            if (object == null) continue;
-//            LightInfo vec = (LightInfo) object;
-//
-//            if (vec.x() == position.x() && vec.y() == position.y() && vec.z() == position.z() && vec.level() >= position.level())
-//                return false;
-//        }
-//        return true;
-        return toRePropagate.notContainsToRePropagatePosition(position);
-    }
-
     private static boolean canLightTravel(short destinationBlock, int enterSide, short originBlock, int exitSide) {
         int blockType;
         long occlusionData;
@@ -420,8 +398,12 @@ public final class LightLogic {
         }
     }
 
-    private LightLogic() { }
+    private LightLogic() {
+    }
 
-    public record LightInfo(int x, int y, int z, byte level) {
+    private static ArrayQueue<LightInfo> toDePropagateSkyLight = new ArrayQueue<>(10);
+    private static ArrayQueue<LightInfo> toRePropagateSkyLight = new ArrayQueue<>(10);
+
+    public record LightInfo(int x, int y, int z, byte lightLevel) {
     }
 }

@@ -583,7 +583,8 @@ public final class RenderManager {
         GL11.glEnable(GL11.GL_BLEND);
         GL11.glDisable(GL11.GL_CULL_FACE);
 
-        for (WaterModel waterModel : waterModels) {
+        for (int index = waterModels.size() - 1; index >= 0; index--) {
+            WaterModel waterModel = waterModels.get(index);
             bindWaterModel(waterModel);
 
             GL11.glDrawElements(GL11.GL_TRIANGLES, (int) (waterModel.vertexCount * 0.75), GL11.GL_UNSIGNED_INT, 0);

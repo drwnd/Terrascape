@@ -42,7 +42,7 @@ public final class CorrodedMesa extends Biome {
 
     @Override
     public int getSpecialHeight(int totalX, int totalZ, GenerationData data) {
-        // Cave at surface level prevents pillar generation
+        // Cave at surface lightLevel prevents pillar generation
         if (data.chunk.Y << CHUNK_SIZE_BITS <= data.height && data.chunk.Y + 1 << CHUNK_SIZE_BITS > data.height) {
             if (data.caveBits >> ((data.height & CHUNK_SIZE_MASK) << 1) != NO_CAVE) return 0;
         } else if (getCaveType(totalX, data.height, totalZ) != NO_CAVE) return 0;

@@ -157,7 +157,7 @@ public final class ServerLogic {
             else LightLogic.setBlockLight(x, y, z, LightLogic.getMaxSurroundingBlockLight(x, y, z) - 1);
         } else LightLogic.dePropagateBlockLight(x, y, z);
 
-        if (currentBlock == AIR) LightLogic.setSkyLight(x, y, z, LightLogic.getMaxSurroundingSkyLight(x, y, z) - 1);
+        if (currentBlock == AIR) LightLogic.setSkyLight(x, y, z, LightLogic.UNKNOWN_LIGHT_LEVEL);
         else LightLogic.dePropagateSkyLight(x, y, z);
     }
 
@@ -198,6 +198,7 @@ public final class ServerLogic {
         updateEntities();
         updateParticles();
         BlockEvent.execute(tick);
+        LightLogic.computeSkyLight();
 
         if (generatorRestartScheduled != 0) {
             generator.restart(generatorRestartScheduled & 0xF);

@@ -1,5 +1,7 @@
 package terrascape.server;
 
+import org.lwjgl.glfw.GLFW;
+
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -30,13 +32,23 @@ public final class Server {
     }
 
     private void executeGT() {
-        gameTickStartTime = System.nanoTime();
-        ServerLogic.updateGT(EngineManager.getTick());
-        EngineManager.incTick();
-        EngineManager.setLastGTTime(System.nanoTime());
-        long endTime = System.nanoTime();
-        lastGameTickProcessingTime = endTime - gameTickStartTime;
-        gameTickStartTime = endTime;
+        if (Launcher.getWindow().isKeyPressed(GLFW.GLFW_KEY_U)) return;
+
+
+        try {
+            gameTickStartTime = System.nanoTime();
+
+            ServerLogic.updateGT(EngineManager.getTick());
+            EngineManager.incTick();
+            EngineManager.setLastGTTime(System.nanoTime());
+
+            long endTime = System.nanoTime();
+            lastGameTickProcessingTime = endTime - gameTickStartTime;
+            gameTickStartTime = endTime;
+
+        } catch (Exception exception) {
+            exception.printStackTrace();
+        }
     }
 
     public long getDeltaTime() {
