@@ -182,5 +182,6 @@ public final class Utils {
         return result;
     }
 
-    private Utils() { }
+    private Utils() {
+    }
 }

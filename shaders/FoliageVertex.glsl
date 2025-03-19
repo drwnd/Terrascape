@@ -9,8 +9,7 @@ out float skyLight;
 out float ambientOcclusionLevel;
 out float distance;
 
-uniform mat4 projectionMatrix;
-uniform mat4 viewMatrix;
+uniform mat4 projectionViewMatrix;
 uniform ivec3 worldPos;
 uniform float time;
 uniform vec3 cameraPosition;
@@ -162,7 +161,7 @@ void main() {
         totalPosition.z += snoise(vec4(totalPosition * 0.333, abs(time) * 350 + 200)) * 0.09 * windMultiplier;
     }
 
-    gl_Position = projectionMatrix * viewMatrix * vec4(totalPosition, 1.0);
+    gl_Position = projectionViewMatrix * vec4(totalPosition, 1.0);
 
     float u = (((data.y >> 9) & 511) - 15) * 0.00390625;
     float v = ((data.y & 511) - 15) * 0.00390625;

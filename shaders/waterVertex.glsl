@@ -9,8 +9,7 @@ out float ambientOcclusionLevel;
 out vec3 totalPosition;
 out vec3 normal;
 
-uniform mat4 projectionMatrix;
-uniform mat4 viewMatrix;
+uniform mat4 projectionViewMatrix;
 uniform ivec3 worldPos;
 uniform float time;
 uniform vec3 cameraPosition;
@@ -106,7 +105,7 @@ void main() {
         totalPosition.y += (snoise(vec3(totalPosition.xz * 0.333, abs(time) * 350)) * 0.09) * waveMultiplier;
     }
 
-    gl_Position = projectionMatrix * viewMatrix * vec4(totalPosition, 1.0);
+    gl_Position = projectionViewMatrix * vec4(totalPosition, 1.0);
 
     float u = (((data.y >> 9) & 511) - 15) * 0.00390625;
     float v = ((data.y & 511) - 15) * 0.00390625;

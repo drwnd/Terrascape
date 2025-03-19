@@ -12,8 +12,6 @@ import static terrascape.utils.Constants.*;
 
 public class ExplosionParticle extends Particle {
 
-    private static int vao;
-
     public ExplosionParticle(Vector3f position) {
         super(position);
     }
@@ -80,4 +78,6 @@ public class ExplosionParticle extends Particle {
     public static float[] textureCoordinates() {
         return BlockBreakParticle.textureCoordinates();
     }
+
+    private static int vao;
 }

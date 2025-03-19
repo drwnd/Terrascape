@@ -47,7 +47,7 @@ public record BlockEvent(int x, int y, int z, byte type) {
                 case UNSUPPORTED_BLOCK_BREAK_EVENT -> executeUnsupportedBlockBreakEvent(event.x, event.y, event.z);
                 case LAVA_FREEZE_EVENT -> executeLavaFreezeEvent(event.x, event.y, event.z);
                 case WATER_SOLIDIFY_EVENT -> executeWaterSolidifyEvent(event.x, event.y, event.z);
-                default -> System.out.println("unknown block event " + event.type);
+                default -> System.err.println("unknown block event " + event.type);
             }
         }
     }

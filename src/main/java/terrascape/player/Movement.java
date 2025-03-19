@@ -5,6 +5,7 @@ import org.joml.Vector3f;
 import terrascape.dataStorage.Chunk;
 
 import terrascape.entity.entities.Entity;
+import terrascape.entity.particles.BlockSprayParticle;
 import terrascape.server.Block;
 import terrascape.server.ServerLogic;
 import terrascape.server.Launcher;
@@ -25,6 +26,7 @@ public final class Movement {
     public static final float HALF_PLAYER_WIDTH = 0.23f;
     public static final float PLAYER_HEAD_OFFSET = 0.08f;
     public static final float[] PLAYER_FEET_OFFSETS = new float[]{1.65f, 1.4f, 0.4f, 0.4f};
+    public static final float BLOCK_SPRAY_SPEED = 0.095f;
 
     public Movement(Player player) {
         this.player = player;
@@ -49,6 +51,99 @@ public final class Movement {
         normalizeVelocity(velocity);
         addVelocityChange(velocity);
     }
+
+    void moveCameraHandleCollisions(float x, float y, float z) {
+        Vector3f position = new Vector3f(camera.getPosition());
+        Vector3f oldPosition = new Vector3f(position);
+        position.add(x, y, z);
+
+        moveXYZ(x, y, z, position, oldPosition);
+        handleNonCollisionStopping(y, oldPosition, position);
+        restartGeneratorIfNecessary(oldPosition, position);
+
+        camera.setPosition(position.x, position.y, position.z);
+        if (isGrounded && y < -BLOCK_SPRAY_SPEED) {
+            Vector3f particlePosition = new Vector3f(position.x, position.y - PLAYER_FEET_OFFSETS[movementState], position.z);
+            ServerLogic.addParticle(new BlockSprayParticle(particlePosition, getStandingBlock()));
+        }
+        if (position.y != oldPosition.y) isGrounded = false;
+    }
+
+    boolean collidesWithWater(float x, float y, float z, int movementState) {
+        if (!player.hasCollision()) return false;
+
+        final float minX = x - HALF_PLAYER_WIDTH;
+        final float maxX = x + HALF_PLAYER_WIDTH;
+        final float minY = y - PLAYER_FEET_OFFSETS[movementState];
+        final float maxY = y + PLAYER_HEAD_OFFSET;
+        final float minZ = z - HALF_PLAYER_WIDTH;
+        final float maxZ = z + HALF_PLAYER_WIDTH;
+
+        for (int blockX = Utils.floor(minX), maxBlockX = Utils.floor(maxX); blockX <= maxBlockX; blockX++)
+            for (int blockY = Utils.floor(minY), maxBlockY = Utils.floor(maxY); blockY <= maxBlockY; blockY++)
+                for (int blockZ = Utils.floor(minZ), maxBlockZ = Utils.floor(maxZ); blockZ <= maxBlockZ; blockZ++)
+                    if (Block.isWaterLogged(Chunk.getBlockInWorld(blockX, blockY, blockZ))) return true;
+        return false;
+    }
+
+    public short getStandingBlock() {
+        Vector3f position = camera.getPosition();
+
+        final float minX = position.x - HALF_PLAYER_WIDTH;
+        final float maxX = position.x + HALF_PLAYER_WIDTH;
+        final float minY = position.y - PLAYER_FEET_OFFSETS[movementState] - 0.125f;
+        final float maxY = position.y - PLAYER_FEET_OFFSETS[movementState] + 0.125f;
+        final float minZ = position.z - HALF_PLAYER_WIDTH;
+        final float maxZ = position.z + HALF_PLAYER_WIDTH;
+
+        for (int blockX = Utils.floor(minX), maxBlockX = Utils.floor(maxX); blockX <= maxBlockX; blockX++)
+            for (int blockY = Utils.floor(minY), maxBlockY = Utils.floor(maxY); blockY <= maxBlockY; blockY++)
+                for (int blockZ = Utils.floor(minZ), maxBlockZ = Utils.floor(maxZ); blockZ <= maxBlockZ; blockZ++) {
+
+                    short block = Chunk.getBlockInWorld(blockX, blockY, blockZ);
+
+                    if (Entity.entityIntersectsBlock(minX, maxX, minY, maxY, minZ, maxZ, blockX, blockY, blockZ, block))
+                        return block;
+                }
+        return AIR;
+    }
+
+    public int getMovementState() {
+        return movementState;
+    }
+
+    public boolean isGrounded() {
+        return isGrounded;
+    }
+
+    public boolean isFlying() {
+        return isFlying;
+    }
+
+    public boolean isTouchingWater() {
+        return touchingWater;
+    }
+
+    public void setTouchingWater(boolean touchingWater) {
+        this.touchingWater = touchingWater;
+    }
+
+    public void setMovementState(int movementState) {
+        this.movementState = movementState;
+    }
+
+    public void setFlying(boolean flying) {
+        isFlying = flying;
+    }
+
+    public Vector3f getVelocity() {
+        return velocity;
+    }
+
+    public void setVelocity(float x, float y, float z) {
+        velocity.set(x, y, z);
+    }
+
 
     private void handleInputMovementStateChange(Vector3f position) {
         if (player.isInInventory()) return;
@@ -244,7 +339,7 @@ public final class Movement {
         }
     }
 
-    void addVelocityChange(Vector3f velocity) {
+    private void addVelocityChange(Vector3f velocity) {
         Vector2f rotation = camera.getRotation();
 
         if (velocity.z != 0) {
@@ -258,15 +353,48 @@ public final class Movement {
         this.velocity.y += velocity.y;
     }
 
-    void applyGravity() {
+    private void applyGravity() {
         velocity.y -= GRAVITY_ACCELERATION;
     }
 
-    void moveCameraHandleCollisions(float x, float y, float z) {
-        Vector3f position = new Vector3f(camera.getPosition());
-        Vector3f oldPosition = new Vector3f(position);
-        position.add(x, y, z);
+    private static void restartGeneratorIfNecessary(Vector3f oldPosition, Vector3f position) {
+        if (Utils.floor(oldPosition.x) >> CHUNK_SIZE_BITS != Utils.floor(position.x) >> CHUNK_SIZE_BITS)
+            ServerLogic.restartGenerator(position.x > oldPosition.x ? NORTH : SOUTH);
 
+        else if (Utils.floor(oldPosition.y) >> CHUNK_SIZE_BITS != Utils.floor(position.y) >> CHUNK_SIZE_BITS)
+            ServerLogic.restartGenerator(position.y > oldPosition.y ? TOP : BOTTOM);
+
+        else if (Utils.floor(oldPosition.z) >> CHUNK_SIZE_BITS != Utils.floor(position.z) >> CHUNK_SIZE_BITS)
+            ServerLogic.restartGenerator(position.z > oldPosition.z ? WEST : EAST);
+    }
+
+    private void handleNonCollisionStopping(float y, Vector3f oldPosition, Vector3f position) {
+        // Not falling of an edge when sneaking or crawling
+        if ((movementState == CROUCHING || movementState == CRAWLING) && isGrounded && y <= 0.0f && collidesWithBlock(oldPosition.x, position.y - 0.0625f, oldPosition.z, movementState)) {
+            boolean onEdgeX = !collidesWithBlock(position.x, position.y - 0.5625f, oldPosition.z, movementState);
+            boolean onEdgeZ = !collidesWithBlock(oldPosition.x, position.y - 0.5625f, position.z, movementState);
+
+            if (onEdgeX) {
+                position.x = oldPosition.x;
+                position.y = oldPosition.y;
+                velocity.x = 0.0f;
+                velocity.y = 0.0f;
+            }
+            if (onEdgeZ) {
+                position.z = oldPosition.z;
+                position.y = oldPosition.y;
+                velocity.z = 0.0f;
+                velocity.y = 0.0f;
+            }
+        }
+        // Not swimming out of the water
+        if (movementState == SWIMMING && y > 0.0f && !collidesWithWater(position.x, position.y, position.z, SWIMMING)) {
+            position.y = oldPosition.y;
+            velocity.y = 0.0f;
+        }
+    }
+
+    private void moveXYZ(float x, float y, float z, Vector3f position, Vector3f oldPosition) {
         boolean xFirst = collidesWithBlock(position.x, oldPosition.y, oldPosition.z, movementState);
         boolean zFirst = collidesWithBlock(oldPosition.x, oldPosition.y, position.z, movementState);
         boolean xAndZ = collidesWithBlock(position.x, oldPosition.y, position.z, movementState);
@@ -302,50 +430,10 @@ public final class Movement {
             isGrounded = y < 0.0f;
             velocity.y = 0.0f;
             if (y < 0.0f) isFlying = false;
-        } else if ((movementState == CROUCHING || movementState == CRAWLING) && isGrounded && y <= 0.0f && collidesWithBlock(oldPosition.x, position.y - 0.0625f, oldPosition.z, movementState)) {
-            boolean onEdgeX = !collidesWithBlock(position.x, position.y - 0.5625f, oldPosition.z, movementState);
-            boolean onEdgeZ = !collidesWithBlock(oldPosition.x, position.y - 0.5625f, position.z, movementState);
-
-            if (onEdgeX) {
-                position.x = oldPosition.x;
-                position.y = oldPosition.y;
-                velocity.x = 0.0f;
-                velocity.y = 0.0f;
-            }
-            if (onEdgeZ) {
-                position.z = oldPosition.z;
-                position.y = oldPosition.y;
-                velocity.z = 0.0f;
-                velocity.y = 0.0f;
-            }
         }
-        if (movementState == SWIMMING && y > 0.0f && !collidesWithWater(position.x, position.y, position.z, SWIMMING)) {
-            position.y = oldPosition.y;
-            velocity.y = 0.0f;
-        }
-
-        if (collidesWithBlock(position.x, position.y, position.z, movementState)) {
-            position.x = oldPosition.x;
-            position.y = oldPosition.y;
-            position.z = oldPosition.z;
-            velocity.set(0.0f, 0.0f, 0.0f);
-        }
-
-        if (position.y != oldPosition.y) isGrounded = false;
-
-        if (Utils.floor(oldPosition.x) >> CHUNK_SIZE_BITS != Utils.floor(position.x) >> CHUNK_SIZE_BITS)
-            ServerLogic.restartGenerator(position.x > oldPosition.x ? NORTH : SOUTH);
-
-        else if (Utils.floor(oldPosition.y) >> CHUNK_SIZE_BITS != Utils.floor(position.y) >> CHUNK_SIZE_BITS)
-            ServerLogic.restartGenerator(position.y > oldPosition.y ? TOP : BOTTOM);
-
-        else if (Utils.floor(oldPosition.z) >> CHUNK_SIZE_BITS != Utils.floor(position.z) >> CHUNK_SIZE_BITS)
-            ServerLogic.restartGenerator(position.z > oldPosition.z ? WEST : EAST);
-
-        camera.setPosition(position.x, position.y, position.z);
     }
 
-    boolean collidesWithBlock(float x, float y, float z, int movementState) {
+    private boolean collidesWithBlock(float x, float y, float z, int movementState) {
         if (!player.hasCollision()) return false;
 
         final float minX = x - HALF_PLAYER_WIDTH;
@@ -367,24 +455,7 @@ public final class Movement {
         return false;
     }
 
-    boolean collidesWithWater(float x, float y, float z, int movementState) {
-        if (!player.hasCollision()) return false;
-
-        final float minX = x - HALF_PLAYER_WIDTH;
-        final float maxX = x + HALF_PLAYER_WIDTH;
-        final float minY = y - PLAYER_FEET_OFFSETS[movementState];
-        final float maxY = y + PLAYER_HEAD_OFFSET;
-        final float minZ = z - HALF_PLAYER_WIDTH;
-        final float maxZ = z + HALF_PLAYER_WIDTH;
-
-        for (int blockX = Utils.floor(minX), maxBlockX = Utils.floor(maxX); blockX <= maxBlockX; blockX++)
-            for (int blockY = Utils.floor(minY), maxBlockY = Utils.floor(maxY); blockY <= maxBlockY; blockY++)
-                for (int blockZ = Utils.floor(minZ), maxBlockZ = Utils.floor(maxZ); blockZ <= maxBlockZ; blockZ++)
-                    if (Block.isWaterLogged(Chunk.getBlockInWorld(blockX, blockY, blockZ))) return true;
-        return false;
-    }
-
-    float getRequiredStepHeight(float x, float y, float z, int movementState) {
+    private float getRequiredStepHeight(float x, float y, float z, int movementState) {
         final float minX = x - HALF_PLAYER_WIDTH;
         final float maxX = x + HALF_PLAYER_WIDTH;
         final float minY = y - PLAYER_FEET_OFFSETS[movementState];
@@ -419,53 +490,6 @@ public final class Movement {
                     }
                 }
         return requiredStepHeight;
-    }
-
-    public short getStandingBlock() {
-        Vector3f position = camera.getPosition();
-        float height = Movement.PLAYER_FEET_OFFSETS[movementState];
-
-        int standingBlockX = Utils.floor(position.x);
-        int standingBlockY = Utils.floor(position.y - height - 0.0625f);
-        int standingBlockZ = Utils.floor(position.z);
-
-        return Chunk.getBlockInWorld(standingBlockX, standingBlockY, standingBlockZ);
-    }
-
-    public int getMovementState() {
-        return movementState;
-    }
-
-    public boolean isGrounded() {
-        return isGrounded;
-    }
-
-    public boolean isFlying() {
-        return isFlying;
-    }
-
-    public boolean isTouchingWater() {
-        return touchingWater;
-    }
-
-    public void setTouchingWater(boolean touchingWater) {
-        this.touchingWater = touchingWater;
-    }
-
-    public void setMovementState(int movementState) {
-        this.movementState = movementState;
-    }
-
-    public void setFlying(boolean flying) {
-        isFlying = flying;
-    }
-
-    public Vector3f getVelocity() {
-        return velocity;
-    }
-
-    public void setVelocity(float x, float y, float z) {
-        velocity.set(x, y, z);
     }
 
     private long spaceButtonPressTime;

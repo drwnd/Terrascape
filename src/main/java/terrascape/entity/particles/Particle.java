@@ -29,7 +29,7 @@ public abstract class Particle {
         renderUnique(shader, modelIndexBuffer);
     }
 
-    protected abstract void renderUnique(ShaderManager shaderManager, int modelIndexBuffer);
+    protected abstract void renderUnique(ShaderManager shader, int modelIndexBuffer);
 
     public abstract float getGravity();
 
@@ -48,5 +48,6 @@ public abstract class Particle {
     public static void initAll() {
         BlockBreakParticle.init();
         ExplosionParticle.init();
+        BlockSprayParticle.init();
     }
 }

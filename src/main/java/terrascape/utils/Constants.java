@@ -4,7 +4,7 @@ public final class Constants {
 
     // Literally do whatever
     public static final String TITLE = "Terrascape";
-    public static final float Z_NEAR = 0.088f;
+    public static final float Z_NEAR = 0.0513f; // Just barely can't xRay
     public static final float Z_FAR = Float.POSITIVE_INFINITY;
     public static final float TIME_SPEED = 0.00008333f;
     public static final float NANOSECONDS_PER_SECOND = 1_000_000_000;

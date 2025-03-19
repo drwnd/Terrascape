@@ -13,9 +13,6 @@ import static terrascape.utils.Constants.*;
 
 public class BlockBreakParticle extends Particle {
 
-    private static int vao;
-    private final byte textureIndex;
-
     public BlockBreakParticle(Vector3f position, short block) {
         super(position);
         textureIndex = (byte) Block.getTextureIndex(block, TOP);
@@ -23,7 +20,6 @@ public class BlockBreakParticle extends Particle {
 
     @Override
     protected void renderUnique(ShaderManager shader, int modelIndexBuffer) {
-
         shader.setUniform("textureOffset_", (float) (textureIndex & 15), (float) (textureIndex >> 4 & 15));
 
         GL30.glBindVertexArray(vao);
@@ -117,4 +113,7 @@ public class BlockBreakParticle extends Particle {
 
         return textureCoordinates;
     }
+
+    private static int vao;
+    private final byte textureIndex;
 }

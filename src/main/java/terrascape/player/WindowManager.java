@@ -62,7 +62,7 @@ public final class WindowManager {
 
         GLFW.glfwMakeContextCurrent(window);
 
-        if (isvSync()) GLFW.glfwSwapInterval(1);
+        GLFW.glfwSwapInterval(vSync ? 1 : 0);
 
         GLFW.glfwShowWindow(window);
 
@@ -94,10 +94,6 @@ public final class WindowManager {
 
     public boolean windowShouldClose() {
         return GLFW.glfwWindowShouldClose(window);
-    }
-
-    public boolean isvSync() {
-        return vSync;
     }
 
     public boolean isResize() {

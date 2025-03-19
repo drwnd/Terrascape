@@ -8,21 +8,20 @@ out float skyLight;
 out vec3 normal;
 out float distance;
 
-layout (std430, binding = 0) readonly buffer positionBuffer {
+layout (std430, binding = 0) restrict readonly buffer positionBuffer {
     vec4[] position;
 };
-layout (std430, binding = 1) readonly buffer rotationBuffer {
+layout (std430, binding = 1) restrict readonly buffer rotationBuffer {
     vec4[] rotation;
 };
 //layout (std430, binding = 2) readonly buffer translationsBuffer {
 //    vec4[] translations;
 //};
-layout (std430, binding = 2) readonly buffer intsBuffers {
+layout (std430, binding = 2) restrict readonly buffer intsBuffers {
     ivec4[] ints;
 };
 
-uniform mat4 projectionMatrix;
-uniform mat4 viewMatrix;
+uniform mat4 projectionViewMatrix;
 uniform vec3 cameraPosition;
 
 const vec3[6] normals = vec3[6](vec3(0, 0, 1), vec3(0, 1, 0), vec3(1, 0, 0), vec3(0, 0, -1), vec3(0, -1, 0), vec3(-1, 0, 0));
@@ -96,7 +95,7 @@ void main() {
     vec3 vertexPosition = vec3(x, y, z);
     vertexPosition = position[gl_InstanceID].xyz + rotate(vertexPosition);
 
-    gl_Position = projectionMatrix * viewMatrix * vec4(vertexPosition, 1.0);
+    gl_Position = projectionViewMatrix * vec4(vertexPosition, 1.0);
 
     int side = data & 7;
     int textureIndex = getTextureIndex(side);

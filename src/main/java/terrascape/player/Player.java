@@ -1,6 +1,7 @@
 package terrascape.player;
 
 import terrascape.entity.*;
+import terrascape.entity.particles.BlockSprayParticle;
 import terrascape.entity.particles.Particle;
 import terrascape.server.*;
 import terrascape.dataStorage.Chunk;
@@ -186,8 +187,11 @@ public final class Player {
         interactionHandler.handleDestroyUsePickBlockInput();
         if (inInventory) handleInventoryHotkeys();
 
-        if (isInWater != movement.isTouchingWater())
+        if (isInWater != movement.isTouchingWater()) {
             sound.playRandomSound(sound.splash, position.x, position.y, position.z, 0.0f, 0.0f, 0.0f, MISCELLANEOUS_GAIN);
+            Vector3f splashPosition = new Vector3f(position.x, position.y - Movement.PLAYER_FEET_OFFSETS[movement.getMovementState()], position.z);
+            ServerLogic.addParticle(new BlockSprayParticle(splashPosition, WATER_SOURCE));
+        }
         movement.setTouchingWater(isInWater);
     }
 
@@ -393,10 +397,7 @@ public final class Player {
     private void calculateCulling(int playerChunkX, int playerChunkY, int playerChunkZ) {
         Arrays.fill(visibleChunks, 0);
 
-        Matrix4f projectionMatrix = window.getProjectionMatrix();
-        Matrix4f viewMatrix = Transformation.getViewMatrix(camera);
-        Matrix4f projectionViewMatrix = new Matrix4f();
-        projectionMatrix.mul(viewMatrix, projectionViewMatrix);
+        Matrix4f projectionViewMatrix = Transformation.getProjectionViewMatrix(camera, window);
         FrustumIntersection frustumIntersection = new FrustumIntersection(projectionViewMatrix);
 
         int chunkIndex = Utils.getChunkIndex(playerChunkX, playerChunkY, playerChunkZ);

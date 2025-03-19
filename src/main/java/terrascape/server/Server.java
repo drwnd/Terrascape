@@ -1,6 +1,5 @@
 package terrascape.server;
 
-import org.lwjgl.glfw.GLFW;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -32,9 +31,6 @@ public final class Server {
     }
 
     private void executeGT() {
-        if (Launcher.getWindow().isKeyPressed(GLFW.GLFW_KEY_U)) return;
-
-
         try {
             gameTickStartTime = System.nanoTime();
 

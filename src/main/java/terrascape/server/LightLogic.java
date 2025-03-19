@@ -31,24 +31,22 @@ public final class LightLogic {
 
     public static byte getMaxSurroundingBlockLight(int x, int y, int z) {
         byte max = 0;
-        short currentBlock = Chunk.getBlockInWorld(x, y, z);
+        short centerBlock = Chunk.getBlockInWorld(x, y, z);
 
         byte toTest = Chunk.getBlockLightInWorld(x + 1, y, z);
-        if (max < toTest && canLightTravel(Chunk.getBlockInWorld(x + 1, y, z), EAST, currentBlock, WEST)) max = toTest;
+        if (max < toTest && canLightTravel(Chunk.getBlockInWorld(x + 1, y, z), EAST, centerBlock, WEST)) max = toTest;
         toTest = Chunk.getBlockLightInWorld(x - 1, y, z);
-        if (max < toTest && canLightTravel(Chunk.getBlockInWorld(x - 1, y, z), WEST, currentBlock, EAST)) max = toTest;
+        if (max < toTest && canLightTravel(Chunk.getBlockInWorld(x - 1, y, z), WEST, centerBlock, EAST)) max = toTest;
 
         toTest = Chunk.getBlockLightInWorld(x, y + 1, z);
-        if (max < toTest && canLightTravel(Chunk.getBlockInWorld(x, y + 1, z), BOTTOM, currentBlock, TOP)) max = toTest;
+        if (max < toTest && canLightTravel(Chunk.getBlockInWorld(x, y + 1, z), BOTTOM, centerBlock, TOP)) max = toTest;
         toTest = Chunk.getBlockLightInWorld(x, y - 1, z);
-        if (max < toTest && canLightTravel(Chunk.getBlockInWorld(x, y - 1, z), TOP, currentBlock, BOTTOM)) max = toTest;
+        if (max < toTest && canLightTravel(Chunk.getBlockInWorld(x, y - 1, z), TOP, centerBlock, BOTTOM)) max = toTest;
 
         toTest = Chunk.getBlockLightInWorld(x, y, z + 1);
-        if (max < toTest && canLightTravel(Chunk.getBlockInWorld(x, y, z + 1), SOUTH, currentBlock, NORTH))
-            max = toTest;
+        if (max < toTest && canLightTravel(Chunk.getBlockInWorld(x, y, z + 1), SOUTH, centerBlock, NORTH)) max = toTest;
         toTest = Chunk.getBlockLightInWorld(x, y, z - 1);
-        if (max < toTest && canLightTravel(Chunk.getBlockInWorld(x, y, z - 1), NORTH, currentBlock, SOUTH))
-            max = toTest;
+        if (max < toTest && canLightTravel(Chunk.getBlockInWorld(x, y, z - 1), NORTH, centerBlock, SOUTH)) max = toTest;
         return max;
     }
 
@@ -254,7 +252,8 @@ public final class LightLogic {
             if (currentSkyLight == UNKNOWN_LIGHT_LEVEL) {
                 currentSkyLight = (byte) (getMaxSurroundingSkyLight(x, y, z) - 1);
                 short currentBlock = Chunk.getBlockInWorld(x, y, z);
-                if (Block.isLeaveType(currentBlock) || Block.isLiquidType(Block.getBlockType(currentBlock))) currentSkyLight--;
+                if (Block.isLeaveType(currentBlock) || Block.isLiquidType(Block.getBlockType(currentBlock)))
+                    currentSkyLight--;
             }
 
             if (currentSkyLight <= 0) continue;

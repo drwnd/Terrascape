@@ -646,7 +646,7 @@ public final class MeshGenerator {
         return Math.min(3, level);
     }
 
-    public int getVertexBlockLightInWorld(int x, int y, int z, int subX, int subY, int subZ) {
+    private int getVertexBlockLightInWorld(int x, int y, int z, int subX, int subY, int subZ) {
         byte max = 0;
         int startX, startY, startZ;
 
@@ -692,7 +692,7 @@ public final class MeshGenerator {
         return max;
     }
 
-    public int getVertexSkyLightInWorld(int x, int y, int z, int subX, int subY, int subZ) {
+    private int getVertexSkyLightInWorld(int x, int y, int z, int subX, int subY, int subZ) {
         byte max = 0;
         int startX, startY, startZ;
 
@@ -738,7 +738,7 @@ public final class MeshGenerator {
         return max;
     }
 
-    public static int getVertexWaterLevelInWorld(int x, int blockY, int z) {
+    private static int getVertexWaterLevelInWorld(int x, int blockY, int z) {
         int max = 0;
 
         for (int blockX = x - 1; blockX <= x; blockX++)
@@ -750,7 +750,7 @@ public final class MeshGenerator {
         return max;
     }
 
-    public static int getVertexLavaLevelInWorld(int x, int blockY, int z) {
+    private static int getVertexLavaLevelInWorld(int x, int blockY, int z) {
         int max = 0;
 
         for (int blockX = x - 1; blockX <= x; blockX++)

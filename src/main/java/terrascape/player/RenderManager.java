@@ -182,8 +182,7 @@ public final class RenderManager {
         particleShader.createVertexShader(ObjectLoader.loadResources("shaders/ParticleVertex.glsl"));
         particleShader.createFragmentShader(ObjectLoader.loadResources("shaders/ParticleFragment.glsl"));
         particleShader.link();
-        particleShader.createUniform("projectionMatrix");
-        particleShader.createUniform("viewMatrix");
+        particleShader.createUniform("projectionViewMatrix");
         particleShader.createUniform("position");
         particleShader.createUniform("cameraPosition");
         particleShader.createUniform("lightLevel");
@@ -200,8 +199,7 @@ public final class RenderManager {
         entityShader.createVertexShader(ObjectLoader.loadResources("shaders/EntityVertex.glsl"));
         entityShader.createFragmentShader(ObjectLoader.loadResources("shaders/EntityFragment.glsl"));
         entityShader.link();
-        entityShader.createUniform("projectionMatrix");
-        entityShader.createUniform("viewMatrix");
+        entityShader.createUniform("projectionViewMatrix");
         entityShader.createUniform("time");
         entityShader.createUniform("textureSampler");
         entityShader.createUniform("headUnderWater");
@@ -241,8 +239,7 @@ public final class RenderManager {
         skyBoxShader.link();
         skyBoxShader.createUniform("textureSampler1");
         skyBoxShader.createUniform("textureSampler2");
-        skyBoxShader.createUniform("projectionMatrix");
-        skyBoxShader.createUniform("viewMatrix");
+        skyBoxShader.createUniform("projectionViewMatrix");
         skyBoxShader.createUniform("transformationMatrix");
         skyBoxShader.createUniform("time");
         return skyBoxShader;
@@ -254,8 +251,7 @@ public final class RenderManager {
         foliageShader.createFragmentShader(ObjectLoader.loadResources("shaders/blockFragment.glsl"));
         foliageShader.link();
         foliageShader.createUniform("textureSampler");
-        foliageShader.createUniform("projectionMatrix");
-        foliageShader.createUniform("viewMatrix");
+        foliageShader.createUniform("projectionViewMatrix");
         foliageShader.createUniform("worldPos");
         foliageShader.createUniform("time");
         foliageShader.createUniform("headUnderWater");
@@ -270,8 +266,7 @@ public final class RenderManager {
         waterShader.createFragmentShader(ObjectLoader.loadResources("shaders/waterFragment.glsl"));
         waterShader.link();
         waterShader.createUniform("textureSampler");
-        waterShader.createUniform("projectionMatrix");
-        waterShader.createUniform("viewMatrix");
+        waterShader.createUniform("projectionViewMatrix");
         waterShader.createUniform("worldPos");
         waterShader.createUniform("time");
         waterShader.createUniform("headUnderWater");
@@ -286,8 +281,7 @@ public final class RenderManager {
         blockShader.createFragmentShader(ObjectLoader.loadResources("shaders/blockFragment.glsl"));
         blockShader.link();
         blockShader.createUniform("textureSampler");
-        blockShader.createUniform("projectionMatrix");
-        blockShader.createUniform("viewMatrix");
+        blockShader.createUniform("projectionViewMatrix");
         blockShader.createUniform("worldPos");
         blockShader.createUniform("time");
         blockShader.createUniform("headUnderWater");
@@ -314,7 +308,7 @@ public final class RenderManager {
         GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, modelIndexBuffer);
     }
 
-    private void bindSkyBox(SkyBox skyBox, Camera camera) {
+    private void bindSkyBox(SkyBox skyBox) {
         GL30.glBindVertexArray(skyBox.getVao());
         GL20.glEnableVertexAttribArray(0);
         GL20.glEnableVertexAttribArray(1);
@@ -323,13 +317,6 @@ public final class RenderManager {
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, skyBox.getTexture1().id());
         GL13.glActiveTexture(GL13.GL_TEXTURE1);
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, skyBox.getTexture2().id());
-
-        skyBoxShader.setUniform("textureSampler1", 0);
-        skyBoxShader.setUniform("textureSampler2", 1);
-        skyBoxShader.setUniform("time", time);
-        skyBoxShader.setUniform("viewMatrix", Transformation.getViewMatrix(camera));
-        skyBoxShader.setUniform("projectionMatrix", window.getProjectionMatrix());
-        skyBoxShader.setUniform("transformationMatrix", Transformation.createTransformationMatrix(skyBox.getPosition()));
     }
 
     private void bindGUIElement(GUIElement element) {
@@ -368,8 +355,7 @@ public final class RenderManager {
     }
 
     public void render(Camera camera, float passedTicks) {
-        Matrix4f projectionMatrix = window.getProjectionMatrix();
-        Matrix4f viewMatrix = Transformation.getViewMatrix(camera);
+        Matrix4f projectionViewMatrix = Transformation.getProjectionViewMatrix(camera, window);
         Vector3f playerPosition = player.getCamera().getPosition();
         playerChunkX = Utils.floor(playerPosition.x) >> CHUNK_SIZE_BITS;
         playerChunkY = Utils.floor(playerPosition.y) >> CHUNK_SIZE_BITS;
@@ -377,17 +363,17 @@ public final class RenderManager {
 
         clear();
 
-        renderSkyBox(camera);
+        renderSkyBox(projectionViewMatrix);
 
-        renderOpaqueChunks(projectionMatrix, viewMatrix, passedTicks);
+        renderOpaqueChunks(projectionViewMatrix, passedTicks);
 
-        renderFoliageChunks(projectionMatrix, viewMatrix, passedTicks);
+        renderFoliageChunks(projectionViewMatrix, passedTicks);
 
-        renderEntities(projectionMatrix, viewMatrix, passedTicks);
+        renderEntities(projectionViewMatrix, passedTicks);
 
-        renderParticles(projectionMatrix, viewMatrix, passedTicks);
+        renderParticles(projectionViewMatrix, passedTicks);
 
-        renderWaterChunks(projectionMatrix, viewMatrix, passedTicks);
+        renderWaterChunks(projectionViewMatrix, passedTicks);
 
         renderGUIElements();
 
@@ -403,21 +389,27 @@ public final class RenderManager {
         unbind();
     }
 
-    private void renderSkyBox(Camera camera) {
+    private void renderSkyBox(Matrix4f projectionViewMatrix) {
         skyBoxShader.bind();
-        bindSkyBox(skyBox, camera);
+
+        skyBoxShader.setUniform("textureSampler1", 0);
+        skyBoxShader.setUniform("textureSampler2", 1);
+        skyBoxShader.setUniform("time", time);
+        skyBoxShader.setUniform("projectionViewMatrix", projectionViewMatrix);
+        skyBoxShader.setUniform("transformationMatrix", Transformation.createTransformationMatrix(skyBox.getPosition()));
+
+        bindSkyBox(skyBox);
 
         GL11.glDrawElements(GL11.GL_TRIANGLES, skyBox.getVertexCount(), GL11.GL_UNSIGNED_INT, 0);
 
         skyBoxShader.unBind();
     }
 
-    private void renderOpaqueChunks(Matrix4f projectionMatrix, Matrix4f viewMatrix, float passedTicks) {
+    private void renderOpaqueChunks(Matrix4f projectionViewMatrix, float passedTicks) {
         blockShader.bind();
-        blockShader.setUniform("projectionMatrix", projectionMatrix);
-        blockShader.setUniform("viewMatrix", viewMatrix);
+        blockShader.setUniform("projectionViewMatrix", projectionViewMatrix);
         blockShader.setUniform("textureSampler", 0);
-        blockShader.setUniform("time", time + TIME_SPEED * passedTicks);
+        blockShader.setUniform("time", getRenderTime(passedTicks));
         blockShader.setUniform("headUnderWater", headUnderWater ? 1 : 0);
         blockShader.setUniform("cameraPosition", player.getCamera().getPosition());
 
@@ -443,12 +435,11 @@ public final class RenderManager {
         blockShader.unBind();
     }
 
-    private void renderFoliageChunks(Matrix4f projectionMatrix, Matrix4f viewMatrix, float passedTicks) {
+    private void renderFoliageChunks(Matrix4f projectionViewMatrix, float passedTicks) {
         foliageShader.bind();
-        foliageShader.setUniform("projectionMatrix", projectionMatrix);
-        foliageShader.setUniform("viewMatrix", viewMatrix);
+        foliageShader.setUniform("projectionViewMatrix", projectionViewMatrix);
         foliageShader.setUniform("textureSampler", 0);
-        foliageShader.setUniform("time", time + TIME_SPEED * passedTicks);
+        foliageShader.setUniform("time", getRenderTime(passedTicks));
         foliageShader.setUniform("headUnderWater", headUnderWater ? 1 : 0);
         foliageShader.setUniform("cameraPosition", player.getCamera().getPosition());
 
@@ -463,15 +454,14 @@ public final class RenderManager {
         foliageShader.unBind();
     }
 
-    private void renderEntities(Matrix4f projectionMatrix, Matrix4f viewMatrix, float passedTicks) {
+    private void renderEntities(Matrix4f projectionViewMatrix, float passedTicks) {
         if (entities.isEmpty()) return;
 
         long renderTime = System.nanoTime();
 
         entityShader.bind();
-        entityShader.setUniform("projectionMatrix", projectionMatrix);
-        entityShader.setUniform("viewMatrix", viewMatrix);
-        entityShader.setUniform("time", time + TIME_SPEED * passedTicks);
+        entityShader.setUniform("projectionViewMatrix", projectionViewMatrix);
+        entityShader.setUniform("time", getRenderTime(passedTicks));
         entityShader.setUniform("textureSampler", 0);
         entityShader.setUniform("headUnderWater", headUnderWater ? 1 : 0);
         entityShader.setUniform("cameraPosition", player.getCamera().getPosition());
@@ -545,18 +535,17 @@ public final class RenderManager {
         if (player.printTimes) System.out.println("Entities " + (System.nanoTime() - renderTime));
     }
 
-    private void renderParticles(Matrix4f projectionMatrix, Matrix4f viewMatrix, float passedTicks) {
+    private void renderParticles(Matrix4f projectionViewMatrix, float passedTicks) {
         if (particles.isEmpty()) return;
 
         long renderTime = System.nanoTime();
 
         particleShader.bind();
-        particleShader.setUniform("projectionMatrix", projectionMatrix);
-        particleShader.setUniform("viewMatrix", viewMatrix);
+        particleShader.setUniform("projectionViewMatrix", projectionViewMatrix);
         particleShader.setUniform("textureSampler", 0);
         particleShader.setUniform("cameraPosition", player.getCamera().getPosition());
         particleShader.setUniform("headUnderWater", headUnderWater ? 1 : 0);
-        particleShader.setUniform("time", time + TIME_SPEED * passedTicks);
+        particleShader.setUniform("time", getRenderTime(passedTicks));
 
         GL11.glDisable(GL11.GL_CULL_FACE);
         GL13.glActiveTexture(GL13.GL_TEXTURE0);
@@ -571,12 +560,11 @@ public final class RenderManager {
         if (player.printTimes) System.out.println("Particles " + (System.nanoTime() - renderTime));
     }
 
-    private void renderWaterChunks(Matrix4f projectionMatrix, Matrix4f viewMatrix, float passedTicks) {
+    private void renderWaterChunks(Matrix4f projectionViewMatrix, float passedTicks) {
         waterShader.bind();
-        waterShader.setUniform("projectionMatrix", projectionMatrix);
-        waterShader.setUniform("viewMatrix", viewMatrix);
+        waterShader.setUniform("projectionViewMatrix", projectionViewMatrix);
         waterShader.setUniform("textureSampler", 0);
-        waterShader.setUniform("time", time + TIME_SPEED * passedTicks);
+        waterShader.setUniform("time", getRenderTime(passedTicks));
         waterShader.setUniform("headUnderWater", headUnderWater ? 1 : 0);
         waterShader.setUniform("cameraPosition", player.getCamera().getPosition());
 
@@ -589,8 +577,15 @@ public final class RenderManager {
 
             GL11.glDrawElements(GL11.GL_TRIANGLES, (int) (waterModel.vertexCount * 0.75), GL11.GL_UNSIGNED_INT, 0);
         }
+
         GL11.glDisable(GL11.GL_BLEND);
         waterShader.unBind();
+    }
+
+    private float getRenderTime(float passedTicks) {
+        float renderTime = time + TIME_SPEED * passedTicks;
+        if (renderTime > 1.0f) renderTime -= 2.0f;
+        return renderTime;
     }
 
     private void renderGUIElements() {

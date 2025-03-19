@@ -10,8 +10,7 @@ out float distance;
 
 uniform vec3 position;
 uniform vec3 cameraPosition;
-uniform mat4 projectionMatrix;
-uniform mat4 viewMatrix;
+uniform mat4 projectionViewMatrix;
 uniform vec4 particleProperties;
 
 void main() {
@@ -33,7 +32,7 @@ void main() {
     vec3 offsetLeftRight = normalize(cross1) * (gl_VertexID & 1) * particleSize * timeSacalar;
     vec3 offsetUpDown = normalize(cross2) * (gl_VertexID >> 1 & 1) * particleSize * timeSacalar;
 
-    gl_Position = projectionMatrix * viewMatrix * vec4(currentPosition + offsetLeftRight + offsetUpDown, 1.0);
+    gl_Position = projectionViewMatrix * vec4(currentPosition + offsetLeftRight + offsetUpDown, 1.0);
 
     fragTextureCoordinates = textureCoordinates + vec2((gl_VertexID & 1) * particleSize, (gl_VertexID >> 1 & 1) * particleSize);
     distance = length(currentPosition - cameraPosition);
